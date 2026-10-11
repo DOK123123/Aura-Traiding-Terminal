@@ -1,0 +1,109 @@
+{
+  "checked_at": "2026-09-11T20:02:26.616236+00:00",
+  "checks": [
+    {
+      "symbol": "XAUUSD",
+      "timeframe": "1m",
+      "requested": 500,
+      "received": 500,
+      "status": "OK",
+      "source": "TradingView · OANDA:XAUUSD",
+      "fallback": false,
+      "fallback_reason": null,
+      "last_close": 4349.365,
+      "first_open_at": "2026-09-11T11:42:00+00:00",
+      "last_closed_at": "2026-09-11T20:02:00+00:00"
+    },
+    {
+      "symbol": "XAUUSD",
+      "timeframe": "1m",
+      "requested": 2000,
+      "received": 2000,
+      "status": "OK",
+      "source": "TradingView · OANDA:XAUUSD",
+      "fallback": false,
+      "fallback_reason": null,
+      "last_close": 4349.365,
+      "first_open_at": "2026-09-10T09:38:00+00:00",
+      "last_closed_at": "2026-09-11T20:02:00+00:00"
+    },
+    {
+      "symbol": "XAUUSD",
+      "timeframe": "5m",
+      "requested": 500,
+      "received": 500,
+      "status": "OK",
+      "source": "TradingView · OANDA:XAUUSD",
+      "fallback": false,
+      "fallback_reason": null,
+      "last_close": 4348.75,
+      "first_open_at": "2026-09-10T01:20:00+00:00",
+      "last_closed_at": "2026-09-11T20:00:00+00:00"
+    },
+    {
+      "symbol": "XAUUSD",
+      "timeframe": "5m",
+      "requested": 2000,
+      "received": 2000,
+      "status": "OK",
+      "source": "TradingView · OANDA:XAUUSD",
+      "fallback": false,
+      "fallback_reason": null,
+      "last_close": 4348.75,
+      "first_open_at": "2026-09-02T11:50:00+00:00",
+      "last_closed_at": "2026-09-11T20:00:00+00:00"
+    },
+    {
+      "symbol": "XAUUSD",
+      "timeframe": "15m",
+      "requested": 500,
+      "received": 500,
+      "status": "OK",
+      "source": "TradingView · OANDA:XAUUSD",
+      "fallback": false,
+      "fallback_reason": null,
+      "last_close": 4348.75,
+      "first_open_at": "2026-09-04T07:30:00+00:00",
+      "last_closed_at": "2026-09-11T20:00:00+00:00"
+    },
+    {
+      "symbol": "XAUUSD",
+      "timeframe": "15m",
+      "requested": 2000,
+      "received": 2000,
+      "status": "OK",
+      "source": "TradingView · OANDA:XAUUSD",
+      "fallback": false,
+      "fallback_reason": null,
+      "last_close": 4348.75,
+      "first_open_at": "2026-08-13T00:30:00+00:00",
+      "last_closed_at": "2026-09-11T20:00:00+00:00"
+    },
+    {
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "requested": 500,
+      "received": 500,
+      "status": "OK",
+      "source": "TradingView · OANDA:XAUUSD",
+      "fallback": false,
+      "fallback_reason": null,
+      "last_close": 4348.75,
+      "first_open_at": "2026-08-13T01:00:00+00:00",
+      "last_closed_at": "2026-09-11T20:00:00+00:00"
+    },
+    {
+      "symbol": "XAUUSD",
+      "timeframe": "1h",
+      "requested": 2000,
+      "received": 2000,
+      "status": "OK",
+      "source": "TradingView · OANDA:XAUUSD",
+      "fallback": false,
+      "fallback_reason": null,
+      "last_close": 4348.75,
+      "first_open_at": "2026-05-13T09:00:00+00:00",
+      "last_closed_at": "2026-09-11T20:00:00+00:00"
+    }
+  ]
+}

@@ -1,0 +1,233 @@
+{
+  "checked_at": 1789156543.4307442,
+  "checks": [
+    {
+      "symbol": "BTCUSDT",
+      "timeframe": "1m",
+      "limit": 500,
+      "observations": [
+        {
+          "received_at": 1789156546.9645183,
+          "mode": "streaming",
+          "source": "Binance · Spot",
+          "current_closed": false,
+          "candle": {
+            "time": 1789156500,
+            "open": 77358.77,
+            "high": 77368.0,
+            "low": 77329.26,
+            "close": 77329.26,
+            "volume": 5.62275
+          },
+          "analysis": {
+            "price": 77329.26,
+            "ema20": 77302.45389832523,
+            "ema50": 77256.91151191518,
+            "rsi": 56.30357571256814,
+            "atr": 34.858081428571396,
+            "momentum_pct": 0.04101035013264198,
+            "signal_up": 78.9
+          }
+        },
+        {
+          "received_at": 1789156547.8581212,
+          "mode": "streaming",
+          "source": "Binance · Spot",
+          "current_closed": false,
+          "candle": {
+            "time": 1789156500,
+            "open": 77358.77,
+            "high": 77368.0,
+            "low": 77329.26,
+            "close": 77329.26,
+            "volume": 5.72752
+          },
+          "analysis": {
+            "price": 77329.26,
+            "ema20": 77302.45389832523,
+            "ema50": 77256.91151191518,
+            "rsi": 56.30357571256814,
+            "atr": 34.858081428571396,
+            "momentum_pct": 0.04101035013264198,
+            "signal_up": 78.9
+          }
+        },
+        {
+          "received_at": 1789156549.8841481,
+          "mode": "streaming",
+          "source": "Binance · Spot",
+          "current_closed": true,
+          "candle": {
+            "time": 1789156500,
+            "open": 77358.77,
+            "high": 77368.0,
+            "low": 77329.26,
+            "close": 77329.26,
+            "volume": 5.72797
+          },
+          "analysis": {
+            "price": 77329.26,
+            "ema20": 77302.45389832523,
+            "ema50": 77256.91151191518,
+            "rsi": 56.30357571256814,
+            "atr": 34.858081428571396,
+            "momentum_pct": 0.04101035013264198,
+            "signal_up": 78.9
+          }
+        },
+        {
+          "received_at": 1789156551.8581424,
+          "mode": "streaming",
+          "source": "Binance · Spot",
+          "current_closed": false,
+          "candle": {
+            "time": 1789156560,
+            "open": 77329.27,
+            "high": 77329.27,
+            "low": 77327.66,
+            "close": 77327.66,
+            "volume": 0.36879
+          },
+          "analysis": {
+            "price": 77327.66,
+            "ema20": 77304.85447943711,
+            "ema50": 77259.68596245986,
+            "rsi": 56.02778404653012,
+            "atr": 32.483218469387765,
+            "momentum_pct": 0.08504833232918507,
+            "signal_up": 83.8
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "BTCUSDT",
+      "timeframe": "5m",
+      "limit": 2000,
+      "observations": [
+        {
+          "received_at": 1789156556.8859162,
+          "mode": "streaming",
+          "source": "Binance · Spot",
+          "current_closed": false,
+          "candle": {
+            "time": 1789156500,
+            "open": 77358.77,
+            "high": 77368.0,
+            "low": 77327.66,
+            "close": 77327.67,
+            "volume": 6.12021
+          },
+          "analysis": {
+            "price": 77327.67,
+            "ema20": 77286.72177370502,
+            "ema50": 77479.08909575504,
+            "rsi": 49.87545204085537,
+            "atr": 112.65943151573187,
+            "momentum_pct": 0.18873571558135627,
+            "signal_up": 33.3
+          }
+        },
+        {
+          "received_at": 1789156556.9965315,
+          "mode": "streaming",
+          "source": "Binance · Spot",
+          "current_closed": false,
+          "candle": {
+            "time": 1789156500,
+            "open": 77358.77,
+            "high": 77368.0,
+            "low": 77327.66,
+            "close": 77327.66,
+            "volume": 6.12291
+          },
+          "analysis": {
+            "price": 77327.66,
+            "ema20": 77286.72082132408,
+            "ema50": 77479.08870359819,
+            "rsi": 49.874861081397626,
+            "atr": 112.65943151573187,
+            "momentum_pct": 0.1887227591925722,
+            "signal_up": 33.3
+          }
+        },
+        {
+          "received_at": 1789156557.8816755,
+          "mode": "streaming",
+          "source": "Binance · Spot",
+          "current_closed": false,
+          "candle": {
+            "time": 1789156500,
+            "open": 77358.77,
+            "high": 77368.0,
+            "low": 77327.66,
+            "close": 77327.66,
+            "volume": 6.18384
+          },
+          "analysis": {
+            "price": 77327.66,
+            "ema20": 77286.72082132408,
+            "ema50": 77479.08870359819,
+            "rsi": 49.874861081397626,
+            "atr": 112.65943151573187,
+            "momentum_pct": 0.1887227591925722,
+            "signal_up": 33.3
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "XAUUSD",
+      "timeframe": "1m",
+      "limit": 500,
+      "observations": [
+        {
+          "received_at": 1789156559.3378973,
+          "mode": "source_stream",
+          "source": "TradingView · OANDA:XAUUSD",
+          "current_closed": false,
+          "candle": {
+            "time": 1789156560,
+            "open": 4345.7,
+            "high": 4345.7,
+            "low": 4345.3,
+            "close": 4345.515,
+            "volume": 66.0
+          },
+          "analysis": {
+            "price": 4345.515,
+            "ema20": 4345.477028152862,
+            "ema50": 4346.902050735969,
+            "rsi": 48.027835031048994,
+            "atr": 1.491052796002379,
+            "momentum_pct": 0.02957946517565535,
+            "signal_up": 31.7
+          }
+        },
+        {
+          "received_at": 1789156560.3520515,
+          "mode": "source_stream",
+          "source": "TradingView · OANDA:XAUUSD",
+          "current_closed": false,
+          "candle": {
+            "time": 1789156560,
+            "open": 4345.7,
+            "high": 4345.7,
+            "low": 4345.1,
+            "close": 4345.415,
+            "volume": 120.0
+          },
+          "analysis": {
+            "price": 4345.415,
+            "ema20": 4345.467504343338,
+            "ema50": 4346.898129167342,
+            "rsi": 47.55630725996472,
+            "atr": 1.5053385102880803,
+            "momentum_pct": 0.02727756127094416,
+            "signal_up": 31.3
+          }
+        }
+      ]
+    }
+  ]
+}
