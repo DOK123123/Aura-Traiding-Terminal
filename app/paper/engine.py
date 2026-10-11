@@ -53,7 +53,54 @@ class Engine:
                 raise PaperError('CORRUPT_JOURNAL')
             try:
                 settings = self._settings(db)
+                for key in ('balance','peak','maximum_drawdown_pct','maximum_drawdown_usdt'):
+                    value = D(store.get(db,key))
+                    if not value.is_finite() or value != money(value) or (key != 'balance' and value < 0):
+                        raise ValueError()
+                if D(store.get(db,'peak')) < settings.starting_balance:
+                    raise ValueError()
                 trades = store.trades(db)
+                sequence = int(store.get(db,'close_sequence'))
+                closed_sequences = sorted(t['close_seq'] for t in trades if t['status'] == 'CLOSED')
+                if sequence != len(closed_sequences) or closed_sequences != list(range(1,len(closed_sequences)+1)):
+                    raise ValueError()
+                for row,trade in zip(db.execute('SELECT * FROM trades ORDER BY seq'),trades):
+                    if any(row[key] != trade.get(key) for key in ('id','status','symbol','timeframe','source','signal_id','close_seq')):
+                        raise ValueError()
+                for trade in trades:
+                    commands = list(db.execute('SELECT key,kind,digest FROM requests WHERE trade_id=?',(trade['id'],)))
+                    if sum(row['kind'] == 'open' for row in commands) != 1 or sum(row['kind'] == 'close' for row in commands) > 1:
+                        raise ValueError()
+                    for row in commands:
+                        if (row['kind'] not in ('open','close') or str(uuid.UUID(row['key'])) != row['key']
+                                or len(row['digest']) != 64 or any(c not in '0123456789abcdef' for c in row['digest'])):
+                            raise ValueError()
+                if db.execute('PRAGMA foreign_key_check').fetchone() is not None:
+                    raise ValueError()
+                points = list(db.execute('SELECT * FROM curve ORDER BY seq'))
+                if not points:
+                    raise ValueError()
+                previous_peak = settings.starting_balance
+                previous_maximum = D(0)
+                maximum_loss = D(0)
+                for point in points:
+                    values = {key:D(point[key]) if point[key] is not None else None for key in
+                              ('balance','equity','peak','drawdown_pct','maximum_drawdown_pct')}
+                    if any(v is not None and (not v.is_finite() or v != money(v)) for v in values.values()):
+                        raise ValueError()
+                    peak,maximum = values['peak'],values['maximum_drawdown_pct']
+                    if peak is None or maximum is None or peak < previous_peak or maximum < previous_maximum:
+                        raise ValueError()
+                    equity,drawdown = values['equity'],values['drawdown_pct']
+                    expected_drawdown = None if equity is None else money(max(D(0),peak-equity)/peak*100)
+                    if equity is not None:
+                        maximum_loss = max(maximum_loss,peak-equity)
+                    if drawdown != expected_drawdown or (drawdown is not None and maximum < drawdown):
+                        raise ValueError()
+                    previous_peak,previous_maximum = peak,maximum
+                if (previous_peak != D(store.get(db,'peak')) or previous_maximum != D(store.get(db,'maximum_drawdown_pct'))
+                        or maximum_loss != D(store.get(db,'maximum_drawdown_usdt'))):
+                    raise ValueError()
                 expected = settings.starting_balance
                 for trade in trades:
                     self._validate_trade(trade)
@@ -77,6 +124,21 @@ class Engine:
                   'reserved_notional','risk_usdt','risk_budget_usdt','planned_risk_reward','mark_price')]+[rate]
         if any(not v.is_finite() for v in values) or size <= 0 or price <= 0 or not 0 <= rate <= 10:
             raise ValueError()
+        direction = trade['direction']
+        if direction not in ('LONG','SHORT') or trade['status'] not in ('OPEN','CLOSED'):
+            raise ValueError()
+        sign = 1 if direction == 'LONG' else -1
+        stop,target = D(trade['stop_loss']),D(trade['take_profit'])
+        if min(stop,target,D(trade['mark_price'])) <= 0 or sign*(price-stop) <= 0 or sign*(target-price) <= 0:
+            raise ValueError()
+        step = STEPS[trade['timeframe']]
+        for key in ('entry_time','entry_price_time','observed_at','mark_time','last_candle_time','processed_at'):
+            if type(trade[key]) is not int or trade[key] < 0:
+                raise ValueError()
+        if (trade['last_candle_time'] % step or trade['mark_time'] != (trade['last_candle_time']+step)*1000
+                or trade['entry_price_time'] % (step*1000) or trade['entry_price_time'] > trade['entry_time']
+                or trade['mark_time'] < trade['entry_price_time']):
+            raise ValueError()
         if size != quantity(size) or D(trade['entry_fee']) != fee(price,size,rate) or D(trade['reserved_notional']) != money(price*size,ceiling=True):
             raise ValueError()
         if trade['status'] == 'CLOSED':
@@ -87,7 +149,10 @@ class Engine:
             exit_fee = fee(exit_price,size,rate)
             if (D(trade['exit_fee']) != exit_fee or D(trade['gross_price_pnl']) != gross
                     or D(trade['realized_pnl']) != money(gross-D(trade['entry_fee'])-exit_fee)
-                    or D(trade['commissions']) != D(trade['entry_fee'])+exit_fee):
+                    or D(trade['commissions']) != D(trade['entry_fee'])+exit_fee
+                    or D(trade['pnl_pct']) != money(D(trade['realized_pnl'])/D(trade['reserved_notional'])*100)
+                    or type(trade['exit_time']) is not int or trade['exit_time'] < trade['entry_time']
+                    or type(trade['close_seq']) is not int or trade['close_seq'] <= 0):
                 raise ValueError()
         elif D(trade['commissions']) != D(trade['entry_fee']):
             raise ValueError()
@@ -98,11 +163,18 @@ class Engine:
     def _balance(self, db):
         return D(self.store.get(db, 'balance'))
 
-    def _equity(self, db, now):
+    def _equity(self, db, now, *, valuation_at=None):
+        reference = now if valuation_at is None else valuation_at
+        if valuation_at is not None:
+            # Do not combine a historical candle with future entry fees/settlements.
+            for trade in self.store.trades(db):
+                if trade['entry_time'] > reference or (trade['exit_time'] is not None and trade['exit_time'] > reference):
+                    return None
         result = self._balance(db)
         for trade in self.store.trades(db, opened=True):
             if (trade.get('market_error') or now-trade['observed_at'] > 30000
-                    or now-trade['mark_time'] > 2*STEPS[trade['timeframe']]*1000):
+                    or reference-trade['mark_time'] > 2*STEPS[trade['timeframe']]*1000
+                    or trade['mark_time'] > reference):
                 return None
             price, size = D(trade['mark_price']), D(trade['position_size'])
             result += self._gross(trade, price) - fee(price, size, D(trade['commission_pct']))
@@ -113,8 +185,8 @@ class Engine:
         sign = 1 if trade['direction'] == 'LONG' else -1
         return money(sign*(price-D(trade['entry_price']))*D(trade['position_size']))
 
-    def _point(self, db, now, market_at=None):
-        equity = self._equity(db, now)
+    def _point(self, db, now, market_at=None, *, historical=False):
+        equity = self._equity(db, now, valuation_at=market_at if historical else None)
         peak = D(self.store.get(db,'peak'))
         maximum = D(self.store.get(db,'maximum_drawdown_pct'))
         maximum_usdt = D(self.store.get(db,'maximum_drawdown_usdt'))
@@ -315,7 +387,7 @@ class Engine:
                 else:
                     self.store.save(db,trade)
             if changed:
-                self._point(db,now,(bar.time+step)*1000)
+                self._point(db,now,(bar.time+step)*1000,historical=True)
 
     @precise
     def advance(self, window: Window) -> None:

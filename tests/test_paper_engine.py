@@ -314,3 +314,71 @@ def test_maximum_drawdown_retained_after_curve_truncation(ledger):
     state=engine.snapshot()
     assert state['equity_curve_truncated'] is True and len(state['equity_curve'])==500
     assert D(state['statistics']['maximum_drawdown_usdt'])==10
+
+
+@pytest.mark.parametrize('key,value',[('peak',None),('maximum_drawdown_pct','NaN'),('close_sequence','not-an-integer'),('maximum_drawdown_usdt','777')])
+def test_audit_corrupt_metadata_fails_at_startup(ledger,key,value):
+    engine,_=ledger
+    with engine.store.transaction() as db:
+        if value is None:db.execute('DELETE FROM meta WHERE key=?',(key,))
+        else:engine.store.set(db,key,value)
+    with pytest.raises(PaperError,match='CORRUPT_JOURNAL'):Engine(Store(engine.store.path))
+
+
+@pytest.mark.parametrize('change',[{'stop_loss':'-80'},{'take_profit':'90'},{'observed_at':None},{'pnl_pct':'999'},{'last_candle_time':1}])
+def test_audit_corrupt_trade_fields_fail_at_startup(ledger,change):
+    engine,clock=ledger;trade=opened(ledger)
+    if 'pnl_pct' in change:trade=manual_close(engine,clock,trade,'110')
+    trade.update(change)
+    with engine.store.transaction() as db:engine.store.save(db,trade)
+    with pytest.raises(PaperError,match='CORRUPT_JOURNAL'):Engine(Store(engine.store.path))
+
+
+def test_audit_indexed_status_mismatch_fails_at_startup(ledger):
+    engine,_=ledger;trade=opened(ledger)
+    with engine.store.transaction() as db:db.execute("UPDATE trades SET status='CLOSED' WHERE id=?",(trade['id'],))
+    with pytest.raises(PaperError,match='CORRUPT_JOURNAL'):Engine(Store(engine.store.path))
+
+
+def test_audit_missing_idempotency_journal_fails_at_startup(ledger):
+    engine,_=ledger;opened(ledger)
+    with engine.store.transaction() as db:db.execute('DELETE FROM requests')
+    with pytest.raises(PaperError,match='CORRUPT_JOURNAL'):Engine(Store(engine.store.path))
+
+
+def test_audit_missing_equity_curve_fails_at_startup(ledger):
+    engine,_=ledger
+    with engine.store.transaction() as db:db.execute('DELETE FROM curve')
+    with pytest.raises(PaperError,match='CORRUPT_JOURNAL'):Engine(Store(engine.store.path))
+
+
+def test_audit_restart_replay_preserves_historical_drawdown(ledger):
+    engine,clock=ledger;trade=opened(ledger)
+    start=clock[0]//1000
+    bars=[Bar(start+i*60,D(p),D(p),D(p),D(p)) for i,p in enumerate(('90','100','100','100','100'))]
+    clock[0]+=300000
+    restarted=Engine(Store(engine.store.path),clock=lambda:clock[0])
+    restarted.advance(window(clock,bars=bars))
+    assert D(restarted.snapshot()['statistics']['maximum_drawdown_usdt'])==10
+    curve=restarted.snapshot()['equity_curve']
+    assert D(curve[2]['equity'])==9990
+
+
+def test_audit_historical_curve_never_uses_future_trade_cashflow(ledger):
+    engine,clock=ledger;first=opened(ledger)
+    start=clock[0]//1000;clock[0]+=180000
+    # A later trade on another timeframe has already charged an entry fee.
+    config=engine.snapshot()['settings'];config['commission_pct']='1';engine.configure(config)
+    # Refresh the first position before manual new entry; future mark must not enter replay equity.
+    engine.advance(window(clock,bars=[Bar(start+i*60,D(100),D(100),D(100),D(100)) for i in range(3)]))
+    opened(ledger)
+    with engine.store.transaction() as db:
+        engine._point(db,clock[0],(start+60)*1000,historical=True)
+    assert engine.snapshot()['equity_curve'][-1]['equity'] is None
+
+
+@pytest.mark.parametrize('field,value',[('equity','NaN'),('drawdown_pct','25'),('peak','1')])
+def test_audit_corrupt_curve_fails_at_startup(ledger,field,value):
+    engine,_=ledger
+    with engine.store.transaction() as db:db.execute('UPDATE curve SET '+field+'=?',(value,))
+    with pytest.raises(PaperError,match='CORRUPT_JOURNAL'):Engine(Store(engine.store.path))

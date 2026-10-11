@@ -2,7 +2,7 @@
 (() => {
   const el = id => document.getElementById('paper-' + id);
   const fields = () => Array.from(document.querySelectorAll('[data-paper-setting]'));
-  let quote = null, busy = false, loaded = false, pending = null, timer = null;
+  let quote = null, busy = false, loaded = false, pending = null, timer = null, lastState = 0, stopped = false;
   const pendingKey = 'aura.paper.pending.v1';
   try {
     const stored = sessionStorage.getItem(pendingKey);
@@ -78,9 +78,10 @@
     }); flush();
   }
   function render(data) {
+    if (stopped) return;
     safety(data);
     if (!data.statistics || !Array.isArray(data.open_positions) || !Array.isArray(data.closed_trades) || !Array.isArray(data.equity_curve)) throw new Error('Некорректные данные Paper.');
-    loaded = true; el('data').hidden = false;
+    loaded = true; lastState = Date.now(); el('data').hidden = false;
     el('storage').textContent = 'Журнал SQLite. На Render без persistent disk он теряется при restart/redeploy. Скачивайте резервные копии; для постоянного хранения настройте PAPER_DB_PATH на диск.';
     const s = data.statistics, metrics = el('metrics'); metrics.replaceChildren();
     for (const [name,value] of [['Virtual Balance',s.current_balance],['Equity',s.equity],['Realized PnL',s.net_pnl],['Win Rate %',s.win_rate],['Profit Factor',s.profit_factor],['Max Drawdown %',s.maximum_drawdown_pct],['Open Positions',s.open_positions],['Closed Trades',s.total_trades],['Available USDT',s.available_balance],['Return %',s.return_pct],['Gross Profit',s.gross_profit],['Gross Loss',s.gross_loss],['Avg Win / Loss',`${display(s.average_win)} / ${display(s.average_loss)}`],['Planned Risk/Reward',s.risk_reward],['Win / Loss Streak',`${s.consecutive_wins} / ${s.consecutive_losses}`],['Fees USDT',s.total_commissions]]) {
@@ -106,14 +107,14 @@
   }
   function fail(error) { status(error.message || 'Paper временно недоступен.'); loaded = false; el('data').hidden = true; invalidate(); }
   async function refresh() {
-    if (busy || pending) return;
+    if (stopped || busy || pending) return;
     busy = true; buttons();
     try { render(await request('state')); status('PAPER ONLY · manual entry · protective SL/TP · AUTO ENTRY OFF'); }
     catch(error) { fail(error); }
     finally { busy = false; buttons(); }
   }
   async function getQuote() {
-    if (busy || pending) return;
+    if (stopped || busy || pending) return;
     const before = scope();
     if (!before.fresh || before.symbol !== 'BTCUSDT' || !before.source) { status('Нужен свежий график BTCUSDT.'); invalidate(); return; }
     busy = true; buttons();
@@ -127,7 +128,7 @@
     finally { busy = false; buttons(); }
   }
   async function execute() {
-    if (!pending || busy) return;
+    if (stopped || !pending || busy) return;
     busy = true; buttons();
     try { await request(pending.path,pending.body); pending = null; invalidate(); render(await request('state')); status('Paper action выполнено. Биржевые ордера не отправлялись.'); }
     catch(error) {
@@ -136,7 +137,7 @@
     } finally { retainPending(); busy = false; buttons(); }
   }
   function open() {
-    if (!matched() || pending) return;
+    if (stopped || !matched() || pending) return;
     const reason = el('reason').value.trim(); if (!reason) { status('Укажите причину входа.'); return; }
     pending = {path:'positions/open',body:{request_id:crypto.randomUUID(),symbol:quote.symbol,timeframe:quote.timeframe,direction:el('direction').value,
       expected_source:quote.source,expected_candle_time:quote.candle_time,expected_price:quote.price,entry_reason:reason,
@@ -144,12 +145,12 @@
     retainPending(); execute();
   }
   function close(trade) {
-    if (busy || pending) return;
+    if (stopped || busy || pending) return;
     pending = {path:'positions/'+encodeURIComponent(trade.id)+'/close',body:{request_id:crypto.randomUUID(),exit_reason:'Ручное закрытие владельцем'}};
     retainPending(); execute();
   }
   async function save() {
-    if (busy || pending) return;
+    if (stopped || busy || pending) return;
     const values = Object.fromEntries(fields().map(i => [i.dataset.paperSetting,i.dataset.paperSetting === 'maximum_simultaneous_positions' ? Number(i.value) : i.value.trim()]));
     busy = true; buttons();
     try { await request('settings',values); render(await request('state')); status('Paper настройки сохранены. Открытые позиции не изменены.'); invalidate(); }
@@ -162,8 +163,13 @@
   document.getElementById('timeframes').addEventListener('click',invalidate);
   document.addEventListener('market-unavailable',invalidate);
   document.addEventListener('market-data-changed',buttons);
-  timer = setInterval(() => { buttons(); if (!document.hidden) refresh(); },15000);
-  window.addEventListener('pagehide',() => { clearInterval(timer); });
+  function expire() {
+    if (loaded && Date.now()-lastState > 30000) fail(new Error('Снимок Paper устарел. Ожидаем обновления.' + (pending ? ' Повторите неподтверждённое действие с прежним ID.' : '')));
+  }
+  timer = setInterval(() => { expire(); buttons(); if (!document.hidden) refresh(); },15000);
+  document.addEventListener('visibilitychange',() => { expire(); if (!document.hidden) refresh(); });
+  window.addEventListener('pagehide',() => { stopped = true; clearInterval(timer); loaded = false; el('data').hidden = true; invalidate(); });
+  window.addEventListener('pageshow',() => { if (stopped) location.reload(); });
   if (pending) { status('Есть неподтверждённое paper действие. Повторите его с прежним request ID.'); buttons(); }
   else refresh();
 })();

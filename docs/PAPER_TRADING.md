@@ -156,6 +156,9 @@ Equity points record initial account, entries, exits, accepted new closed bars
 and transitions to unavailable marks. Repeated same candle adds no duplicate
 point. Curve gaps remain null and SVG does not connect across them. This is a
 **sampled liquidation-equity** curve, not tick/intrabar or exchange equity.
+Replay curve points evaluate marks at their historical candle close, with current
+fetch freshness still enforced. Future trade cashflows/marks cannot enter those
+points; unreconstructable historical portfolio points remain null.
 Maximum drawdown compares sampled equity with its prior peak; peak and historical
 maximum are persisted independently of response truncation. Multi-timeframe
 marks are latest fresh observations, not a reconstructed synchronous tick book.
@@ -167,8 +170,8 @@ flags. Statistics cover the complete journal; full history is in backup.
 Default database: `.data/paper.sqlite3`, excluded from GitHub along with WAL/SHM.
 SQLite uses WAL, FULL sync, foreign keys, `BEGIN IMMEDIATE` writes and per-operation
 connections. Trades, balance, idempotency requests and curve updates commit
-atomically. On startup the engine checks version, accounting invariants, fees and
-closed PnL. A corrupt/unavailable journal disables paper; it is **never silently
+atomically. On startup the engine checks version, metadata/curve/command/index consistency,
+stop/time alignment, accounting invariants, fees, closed PnL and PnL %. A corrupt/unavailable journal disables paper; it is **never silently
 reset** to 10000. The market application can still start.
 
 **Render ordinary local filesystem is ephemeral.** Page reload does not lose
@@ -205,3 +208,5 @@ After Render deployment manually verify phone layout, owner login, new paper
 quote/manual open/close, SL/TP handling, fee totals, backup download, and restart
 recovery only when persistent storage is configured. No live Render or exchange
 account was accessed by the offline test suite.
+
+Latest pre-Render audit and Android manual checklist: [AUDIT_RENDER_ANDROID.md](AUDIT_RENDER_ANDROID.md).

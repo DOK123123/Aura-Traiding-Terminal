@@ -7,6 +7,7 @@ const path = require('node:path');
 function environment(answer, initialPending=null) {
   const storage = new Map(initialPending ? [['aura.paper.pending.v1',JSON.stringify(initialPending)]] : []);
   const elements = new Map(), events = new Map(), requests = [], timers = [];
+  let reloads = 0;
   let now = 1800000060000, response = answer, fresh = true;
   class Element {
     constructor() { this.textContent='';this.hidden=false;this.disabled=false;this.children=[];this.events={};this.value='';this.dataset={}; }
@@ -24,7 +25,7 @@ function environment(answer, initialPending=null) {
     querySelector:()=>selected,querySelectorAll:()=>settings,
     createElement:tag=>Object.assign(new Element(),{tag}),createElementNS:(_,tag)=>Object.assign(new Element(),{tag})};
   class Clock extends Date {static now(){return now;}}
-  const sandbox={document,sessionStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},window:{addEventListener:(name,fn)=>events.set(name,fn)},Date:Clock,
+  const sandbox={document,location:{reload:()=>{reloads++;}},sessionStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},window:{addEventListener:(name,fn)=>events.set(name,fn)},Date:Clock,
     currentData:{source:'Binance',symbol:'BTCUSDT',timeframe:'1m'},marketIsFresh:()=>fresh,crypto:{randomUUID:()=> '11111111-1111-4111-8111-111111111111'},
     AbortController, setTimeout:()=>1,clearTimeout(){},setInterval:fn=>{timers.push(fn);return 1;},clearInterval(){},
     fetch:async(url,options)=>{requests.push({url,options});if(response instanceof Error)throw response;
@@ -32,7 +33,7 @@ function environment(answer, initialPending=null) {
       return {status:r.status||200,ok:(r.status||200)<400,json:async()=>r.body||r};}};
   vm.createContext(sandbox);vm.runInContext(fs.readFileSync(path.join(__dirname,'../static/paper.js'),'utf8'),sandbox);
   const flush=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
-  return {el,requests,events,storage,timers,sandbox,settings,flush,setResponse:r=>{response=r;},setFresh:v=>{fresh=v;},advance:ms=>{now+=ms;},selected};
+  return {el,requests,events,getReloads:()=>reloads,storage,timers,sandbox,settings,flush,setResponse:r=>{response=r;},setFresh:v=>{fresh=v;},advance:ms=>{now+=ms;},selected};
 }
 function state(overrides={}) {
  return {paper:true,real_money_execution:'DISABLED',automatic_signal_execution:false,
@@ -60,3 +61,5 @@ test('equity curve never bridges missing data',async()=>{const e=environment(sta
 test('existing position close only hits local ledger',async()=>{const e=environment(state({open_positions:[{id:'paper-id',symbol:'BTCUSDT',direction:'SHORT',data_status:'FRESH'}]}));await e.flush();const button=e.el('paper-positions').querySelectorAll('button')[0];e.setResponse(url=>url.endsWith('/close')?{id:'paper-id'}:state());button.events.click();await e.flush();assert.ok(e.requests.some(r=>r.url==='/api/paper/positions/paper-id/close'));assert.ok(e.requests.every(r=>!r.url.includes('bybit')&&!r.url.includes('binance')));});
 test('unknown action survives page refresh without automatic retry',async()=>{const action={path:'positions/open',body:{request_id:'11111111-1111-4111-8111-111111111111',symbol:'BTCUSDT'}};const e=environment(state(),action);await e.flush();assert.equal(e.requests.length,0);assert.equal(e.el('paper-retry').hidden,false);e.setResponse(url=>url.includes('positions/open')?{id:'local'}:state());await e.el('paper-retry').events.click();await e.flush();assert.equal(e.requests[0].options.body,JSON.stringify(action.body));assert.equal(e.storage.size,0);});
 test('pending action cannot redirect fetch to any exchange endpoint',async()=>{const e=environment(state(),{path:'https://api.bybit.com/v5/order/create',body:{request_id:'11111111-1111-4111-8111-111111111111'}});await e.flush();assert.equal(e.requests[0].url,'/api/paper/state');assert.equal(e.el('paper-retry').hidden,true);});
+test('audit hidden-tab paper snapshot expires instead of displaying old equity',async()=>{const e=environment(state());await e.flush();e.sandbox.document.hidden=true;e.advance(90001);e.timers[0]();assert.equal(e.el('paper-data').hidden,true);assert.equal(e.el('paper-open').disabled,true);assert.match(e.el('paper-status').textContent,/устарел/);assert.equal(e.requests.length,1);});
+test('audit bfcache restoration cannot leave paper polling stopped',async()=>{const e=environment(state());await e.flush();e.events.get('pagehide')();const count=e.requests.length;await e.el('paper-refresh').events.click();await e.flush();assert.equal(e.requests.length,count);e.events.get('pageshow')();assert.equal(e.getReloads(),1);assert.equal(e.el('paper-data').hidden,true);});

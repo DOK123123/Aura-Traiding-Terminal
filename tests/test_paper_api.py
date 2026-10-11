@@ -169,3 +169,18 @@ def test_no_exchange_order_routes_added():
     assert not any('order' in path and set(methods)-{'get','head'} for path,methods in routes.items())
     allowed={'/api/paper/positions/open','/api/paper/positions/{trade_id}/close','/api/paper/settings','/api/paper/refresh'}
     assert {path for path,methods in routes.items() if 'post' in methods and path.startswith('/api/paper/')}==allowed
+
+
+def test_audit_corrupt_structured_journal_keeps_market_alive(ledger,monkeypatch):
+    engine,clock=ledger;body=payload(window(clock));engine.open(body,window(clock))
+    with engine.store.transaction() as db:db.execute("DELETE FROM meta WHERE key='peak'")
+    monkeypatch.setenv('PAPER_DB_PATH',str(engine.store.path))
+    monkeypatch.setenv('AURA_TESTNET_VIEW_PASSWORD',PASSWORD)
+    with TestClient(app) as c:
+        assert c.get('/api/health').status_code==200 and c.get('/').status_code==200
+        response=c.get('/api/paper/state',auth=('aura',PASSWORD))
+        assert response.status_code==503
+        assert str(engine.store.path) not in response.text
+    with engine.store.transaction(write=False) as db:
+        assert len(engine.store.trades(db))==1
+        assert engine.store.get(db,'peak') is None
