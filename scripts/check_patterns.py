@@ -19,7 +19,10 @@ def main():
             for tf in ('1m','5m','15m','1h'):
                 for context in (500,2000):
                     start=time.monotonic()
-                    response=client.post('/api/patterns/analyze',json={'symbol':symbol,'timeframe':tf,'context':context})
+                    market=client.get('/api/market',params={'symbol':symbol,'timeframe':tf,'limit':context})
+                    market_data=market.json()
+                    response=client.post('/api/patterns/analyze',json={'symbol':symbol,'timeframe':tf,'context':context,
+                                                                  'chart_source':market_data.get('source')})
                     data=response.json()
                     row=dict(symbol=symbol,timeframe=tf,context=context,http_status=response.status_code,
                              elapsed=round(time.monotonic()-start,2))

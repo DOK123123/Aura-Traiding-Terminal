@@ -11,7 +11,7 @@
     for(const input of document.querySelectorAll('.pattern-controls input[type="number"]')){
       if(!input.checkValidity())throw new Error('Проверьте настройку: '+input.parentElement.textContent.trim());
     }
-    return {...selected(),config:{lookback:value('lookback'),max_matches:value('matches'),minimum_similarity:value('similarity'),
+    return {...selected(),chart_source:currentData?.source || null,config:{lookback:value('lookback'),max_matches:value('matches'),minimum_similarity:value('similarity'),
       signal_threshold:value('threshold'),minimum_sample:value('sample'),minimum_confidence:value('confidence'),
       horizons:p('pattern-horizons').value.split(',').map(Number),decision_horizon:value('horizon'),round_trip_cost_bps:value('cost')}};
   }
@@ -59,21 +59,43 @@
   }
   async function run(mode='current'){
     if(busy)return;
-    const id=++generation;activeController=new AbortController();busy=true;controls(true);lastRun=Date.now();
+    const id=++generation;activeController=new AbortController();const controller=activeController;busy=true;controls(true);lastRun=Date.now();
     clear();p('pattern-status').textContent='Загрузка реального архива и расчёт… live-график продолжает работать.';
-    const timeout=setTimeout(()=>activeController?.abort(),150000);
+    const timeout=setTimeout(()=>controller.abort(),150000);
     try{
       const body=requestBody();
       if(mode==='point'){body.as_of=date('asof');if(!body.as_of)throw new Error('Укажите историческую точку UTC.');}
       if(mode==='backtest'){body.start_at=date('start');body.end_at=date('end');body.max_points=value('points');}
-      const response=await fetch('/api/patterns/'+(mode==='backtest'?'backtest':'analyze'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:activeController.signal});
+      const response=await fetch('/api/patterns/'+(mode==='backtest'?'backtest':'analyze'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal});
       const data=await response.json();if(id!==generation)return;
       if(!response.ok)throw new Error(data.message||JSON.stringify(data.detail)||'Источник недоступен');
       if(mode==='backtest')renderBacktest(data);else render(data);
       p('pattern-status').textContent=`${data.status} · ${mode==='backtest'?'BACKTEST':data.mode} · рассчитано ${new Date().toISOString().slice(11,19)} UTC`;
+      verifySource();
     }catch(error){if(id!==generation)return;clear();p('pattern-status').textContent='NO DATA · '+(error.name==='AbortError'?'Превышено время ожидания. Повторите анализ.':error.message);}
     finally{clearTimeout(timeout);if(id===generation){busy=false;controls(false);}}
   }
+  function verifySource() {
+    if(!latest || latest.mode!=='CURRENT MARKET')return;
+    const step={'1m':60,'5m':300,'15m':900,'1h':3600}[latest.timeframe];
+    const valid=currentData && currentData.symbol===latest.symbol && currentData.timeframe===latest.timeframe
+      && currentData.source===latest.source && latest.source_verified===true && marketIsFresh()
+      && Date.now()/1000-latest.as_of>=0 && Date.now()/1000-latest.as_of<=2*step;
+    if(!valid){
+      p('pattern-signal').textContent='WAIT';
+      p('pattern-status').textContent='WAIT · Источник или свежесть графика не подтверждены. Повторите анализ после восстановления данных.';
+    } else {
+      p('pattern-signal').textContent=latest.signal;
+      p('pattern-status').textContent=`${latest.status} · CURRENT MARKET · источник графика подтверждён`;
+    }
+  }
+  document.addEventListener('market-data-changed',verifySource);
+  document.addEventListener('market-unavailable',()=>{
+    if(latest?.mode==='CURRENT MARKET'){
+      p('pattern-signal').textContent='WAIT';
+      p('pattern-status').textContent='WAIT · Данные графика недоступны или устарели; сигнал отключён.';
+    }
+  });
   function changed(){generation++;activeController?.abort();busy=false;controls(false);clear();automatic=true;lastRun=0;p('pattern-status').textContent='NO DATA · Параметры изменены. Ожидаем анализ нового рынка.';}
   p('pattern-run').addEventListener('click',()=>{automatic=true;run();});
   p('pattern-point').addEventListener('click',()=>{automatic=false;run('point');});

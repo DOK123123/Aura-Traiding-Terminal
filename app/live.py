@@ -4,6 +4,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 import json
 import time
+import logging
 
 from fastapi import WebSocket, WebSocketDisconnect
 from websockets.asyncio.client import connect
@@ -11,8 +12,10 @@ from websockets.asyncio.client import connect
 from .gold import FAILURES, TradingViewGoldProvider, failure_reason
 from .indicators import analyze
 from .market_state import LiveWindow
-from .models import Candle, INTERVALS
+from .models import Candle, INTERVALS, validate_candles, data_fresh
 from .providers import DataUnavailable
+
+logger = logging.getLogger(__name__)
 
 
 def envelope(symbol, timeframe, source, mode, candle, *, closed=True, event_time=None, note="", clock_offset=0):
@@ -25,7 +28,9 @@ def envelope(symbol, timeframe, source, mode, candle, *, closed=True, event_time
         "current_closed": closed, "note": note,
         "last_closed_at": candle.time + INTERVALS[timeframe] if closed else candle.time,
         "fetched_at": datetime.now(timezone.utc).isoformat(),
-        "stale": mode != "streaming" or (event_time is not None and now + clock_offset - event_time / 1000 > 10),
+        "stale": (not data_fresh(candle, timeframe, now + clock_offset, closed=closed)
+                  or mode in ('syncing', 'delayed')
+                  or (event_time is not None and now + clock_offset - event_time / 1000 > 10)),
     }
 
 
@@ -35,6 +40,8 @@ def snapshot(candles, symbol, timeframe, source, mode, **kwargs):
 
 
 def parse_binance(message, timeframe, clock_offset=0):
+    if not isinstance(message, dict) or not isinstance(message.get('k'), dict):
+        raise DataUnavailable('Malformed Binance event')
     if message.get('e') != 'kline' or message.get('s') != 'BTCUSDT':
         raise DataUnavailable('Unexpected Binance event')
     k = message['k']
@@ -44,6 +51,8 @@ def parse_binance(message, timeframe, clock_offset=0):
     event_time = int(message['E'])
     if event_time > (time.time()+clock_offset+10)*1000 or candle.time > time.time()+clock_offset+10:
         raise DataUnavailable('Future Binance event')
+    if event_time <= 0 or time.time()+clock_offset-event_time/1000 > 15:
+        raise DataUnavailable('Stale Binance event: fresh history required')
     return candle, k['x'], event_time
 
 
@@ -59,8 +68,9 @@ async def btc_messages(client, provider, timeframe, limit):
                 server_ms = int(response.json()['serverTime'])
                 clock_offset = server_ms/1000 - time.time()
                 history = await provider.fetch(client,timeframe,limit,now_ms=server_ms)
-                window = LiveWindow(history,timeframe,limit)
+                window = LiveWindow(history,timeframe,limit,now=server_ms/1000)
                 yield snapshot(history,'BTCUSDT',timeframe,provider.name,'syncing',
+                               clock_offset=clock_offset,
                                note='История закрытых свечей; ожидаем событие Binance.')
                 while True:
                     raw = await asyncio.wait_for(upstream.recv(), timeout=15)
@@ -81,6 +91,7 @@ async def btc_messages(client, provider, timeframe, limit):
                     yield payload
                     delay = 2
         except FAILURES as exc:
+            logger.warning('BTC stream %s/%s failed; retry in %ss: %s', timeframe, limit, delay, exc)
             yield {'type':'status','state':'reconnecting',
                    'message':f'BTC: {failure_reason(exc)}. Данные заморожены; переподключение через {delay} с.'}
             await asyncio.sleep(delay)
@@ -91,6 +102,7 @@ def gold_snapshot(candles, timeframe, limit, source, mode):
     if len(candles) != limit or any(a.time >= b.time for a,b in zip(candles,candles[1:])):
         raise DataUnavailable('Incomplete gold history')
     now, step = time.time(), INTERVALS[timeframe]
+    validate_candles(candles, timeframe, now=now, closed=False, count=limit)
     if any(c.time % step or c.time > now+60 for c in candles) or now-candles[-1].time-step > 4*86400:
         raise DataUnavailable('Invalid or old gold history')
     return snapshot(candles,'XAUUSD',timeframe,source,mode,
@@ -107,6 +119,7 @@ async def gold_messages(client, provider, timeframe, limit):
                 candles = await asyncio.wait_for(anext(stream),timeout=60)
                 yield gold_snapshot(candles,timeframe,limit,TradingViewGoldProvider.name,'source_stream')
         except FAILURES + (StopAsyncIteration,) as exc:
+            logger.warning('Gold stream %s/%s failed: %s', timeframe, limit, exc)
             yield {'type':'status','state':'delayed','message':f'Поток XAUUSD: {failure_reason(exc)}. Переходим на polling 30 с.'}
         finally:
             await stream.aclose()
@@ -132,6 +145,7 @@ async def gold_poll_messages(client, provider, timeframe, limit):
             candles = await alternative.fetch(client,timeframe,limit,include_open=True)
             yield gold_snapshot(candles,timeframe,limit,alternative.name,'polling')
         except FAILURES as exc:
+            logger.warning('Gold polling %s/%s failed: %s', timeframe, limit, exc)
             yield {'type':'status','state':'delayed',
                    'message':f'XAUUSD: {failure_reason(exc)}. Проверяем резервную историю; котировки могут задерживаться.'}
             try:
@@ -140,6 +154,7 @@ async def gold_poll_messages(client, provider, timeframe, limit):
                 yield snapshot(candles,'XAUUSD',timeframe,candles.source,'delayed',
                                note='Доступна только история закрытых свечей. ' + candles.note)
             except FAILURES as fallback_error:
+                logger.warning('Gold fallback %s/%s failed: %s', timeframe, limit, fallback_error)
                 yield {'type':'status','state':'unavailable',
                        'message':f'XAUUSD недоступен: {failure_reason(fallback_error)}. Показанные данные заморожены; повтор автоматически.'}
         await asyncio.sleep(max(1,30-(time.monotonic()-started)))

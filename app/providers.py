@@ -9,7 +9,7 @@ from typing import Protocol
 
 import httpx
 
-from .models import Candle, INTERVALS
+from .models import Candle, INTERVALS, validate_candles
 
 CACHE = Path(__file__).resolve().parent.parent / ".cache" / "dukascopy"
 
@@ -45,11 +45,15 @@ class BinanceProvider:
             for row in batch:
                 if int(row[6]) < now:
                     c = Candle(int(row[0]) // 1000, *map(float, row[1:6]))
+                    if c.time in rows and rows[c.time] != c:
+                        raise DataUnavailable("Conflicting duplicate Binance candle")
                     rows[c.time] = c
             if len(rows) >= count:
                 break
             end = int(batch[0][0]) - 1
-        return sorted(rows.values(), key=lambda c: c.time)[-count:]
+        result = sorted(rows.values(), key=lambda c: c.time)[-count:]
+        validate_candles(result, timeframe, now=now / 1000, contiguous=True, count=count)
+        return result
 
 
 def decode_bi5(data: bytes, origin: int) -> list[Candle]:
@@ -66,16 +70,24 @@ def decode_bi5(data: bytes, origin: int) -> list[Candle]:
 
 def aggregate(candles: list[Candle], seconds: int, source_seconds: int, now: int) -> list[Candle]:
     groups = {}
-    for candle in sorted({c.time: c for c in candles}.values(), key=lambda c: c.time):
+    unique = {}
+    for c in candles:
+        if c.time % source_seconds:
+            raise ValueError("Misaligned source candle")
+        if c.time in unique and unique[c.time] != c:
+            raise ValueError("Conflicting duplicate source candle")
+        unique[c.time] = c
+    for candle in sorted(unique.values(), key=lambda c: c.time):
         bucket = candle.time // seconds * seconds
         if bucket + seconds > now:
             continue
         groups.setdefault(bucket, []).append(candle)
-    # Exclude partially published last buckets; market breaks are allowed within a bucket.
-    latest_end = max((c.time + source_seconds for c in candles), default=0)
+    # A missing source bar is not a complete OHLCV bucket, even at a market break.
     return [Candle(t, rows[0].open, max(c.high for c in rows), min(c.low for c in rows),
                    rows[-1].close, sum(c.volume for c in rows))
-            for t, rows in sorted(groups.items()) if t + seconds <= latest_end]
+            for t, rows in sorted(groups.items())
+            if len(rows) == seconds // source_seconds
+            and all(c.time == t + i * source_seconds for i, c in enumerate(rows))]
 
 
 class DukascopyProvider:

@@ -165,7 +165,7 @@ def test_api_real_failure_no_fictitious_signal(monkeypatch):
 
 def test_api_point_replay_and_delayed_data(monkeypatch):
     candles=bars(1500)
-    async def dataset(*a):return Dataset(candles,'test-only',time.time(),1500,'test fixture')
+    async def dataset(*a):return Dataset(candles,'Binance · Spot',time.time(),1500,'test fixture')
     monkeypatch.setattr(history_service,'get',dataset)
     with TestClient(app) as client:
         data=client.post('/api/patterns/analyze',json={'timeframe':'1m','as_of':candles[1200].time+60}).json()
@@ -173,6 +173,6 @@ def test_api_point_replay_and_delayed_data(monkeypatch):
         assert data['actual_after_point']['20'] is not None
         assert all(m['time']<data['query_time'] for m in data['top_matches'])
         candles[:]=[replace(c,time=c.time-3600) for c in candles]
-        delayed=client.post('/api/patterns/analyze',json={'timeframe':'1m'}).json()
+        delayed=client.post('/api/patterns/analyze',json={'timeframe':'1m','chart_source':'Binance · Spot'}).json()
         assert delayed['status']=='DELAYED' and delayed['signal']=='WAIT'
         assert client.post('/api/patterns/analyze',json={'config':{'horizons':[0]}}).status_code==422

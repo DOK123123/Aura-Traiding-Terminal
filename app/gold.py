@@ -5,6 +5,7 @@ import json
 import lzma
 import time
 import uuid
+import logging
 
 import httpx
 from websockets.asyncio.client import connect
@@ -12,6 +13,8 @@ from websockets.exceptions import WebSocketException
 
 from .models import Candle, INTERVALS
 from .providers import DataUnavailable, DukascopyProvider
+
+logger = logging.getLogger(__name__)
 
 
 class CandleBatch(list):
@@ -95,18 +98,29 @@ class TradingViewGoldProvider:
                         await socket.send(frame(payload))
                         continue
                     message = json.loads(payload)
+                    if not isinstance(message, dict):
+                        raise DataUnavailable('Malformed chart message')
                     method = message.get("m")
                     params = message.get("p", [])
+                    if not isinstance(params, list):
+                        raise DataUnavailable('Malformed chart parameters')
                     if method in ("critical_error", "protocol_error", "series_error", "symbol_error"):
                         raise DataUnavailable(f"TradingView: {method}")
                     if method == "symbol_resolved":
                         metadata = params[2]
+                        if not isinstance(metadata, dict):
+                            raise DataUnavailable('Malformed gold instrument metadata')
                         if metadata.get("name") != "XAUUSD" or metadata.get("exchange") != "OANDA":
                             raise DataUnavailable("Unexpected resolved gold instrument")
                         resolved = True
                     if method in ("timescale_update", "du"):
+                        if len(params) < 2 or not isinstance(params[1], dict):
+                            raise DataUnavailable('Malformed gold series update')
+                        prices = params[1].get("prices", {})
+                        if not isinstance(prices, dict):
+                            raise DataUnavailable('Malformed gold price series')
                         now = int(time.time())
-                        for item in params[1].get("prices", {}).get("s", []):
+                        for item in prices.get("s", []):
                             values = item["v"]
                             stamp = int(values[0])
                             if stamp + INTERVALS[timeframe] <= now or (include_open and stamp <= now+60):
@@ -186,6 +200,7 @@ class GoldProvider:
                     self.reason = None
                     return CandleBatch(candles, self.primary.name, self.primary.note)
                 except FAILURES as exc:
+                    logger.warning('Dukascopy %s/%s failed; using fallback: %s', timeframe, count, exc)
                     self.reason = failure_reason(exc)
                     self.retry_at = time.monotonic() + cooldown(exc)
             try:
@@ -193,5 +208,6 @@ class GoldProvider:
                 validate_history(candles, timeframe, count)
                 return CandleBatch(candles, self.alternative.name, self.alternative.note, True, self.reason)
             except FAILURES as exc:
+                logger.warning('Gold fallback %s/%s failed: %s', timeframe, count, exc)
                 raise DataUnavailable(f"Dukascopy: {self.reason}; TradingView: {failure_reason(exc)}. "
                                       "Реальные данные недоступны; повторите запрос позже.") from exc

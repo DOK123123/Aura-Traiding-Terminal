@@ -72,6 +72,8 @@ async function loadMarket() {
     volume.setData(data.candles.filter(c => c.volume != null).map(c => ({time: c.time, value: c.volume, color: c.close >= c.open ? '#42d6b030' : '#fa788b30'})));
     chart.timeScale().setVisibleLogicalRange({from: Math.max(0, data.candles.length - 120), to: data.candles.length + 4});
     currentData = data;
+    lastLiveReceipt = Date.now(); liveMode = 'history'; lastSourceEvent = null;
+    marketDataChanged();
     $('chart-overlay').hidden = true;
     $('headline-price').textContent = fmt(a.price);
     signed('headline-return', a.return_pct, '% за выборку');
@@ -94,6 +96,7 @@ async function loadMarket() {
     }
     $('last-updated').textContent = 'Получено: ' + utc(new Date(data.fetched_at).getTime() / 1000);
     $('factor-values').textContent = `Вклад: EMA ${fmt(a.factors.ema, 3)}, RSI ${fmt(a.factors.rsi, 3)}, momentum ${fmt(a.factors.momentum, 3)}. D = ${fmt(a.damping, 3)}.`;
+    if (data.stale) invalidateMarketSignal('История устарела; сигнал отключён.');
     startMarketLive(id, symbol, timeframe, limit);
     return {symbol: data.symbol, timeframe: data.timeframe, count: a.count, signal_up: a.signal_up, signal_down: a.signal_down};
   } catch (error) {

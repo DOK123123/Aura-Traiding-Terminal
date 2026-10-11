@@ -1,8 +1,9 @@
 """Small live window, independent of HTTP, providers and future archive storage."""
 from dataclasses import dataclass
 from typing import AsyncIterator, Protocol
+import time
 
-from .models import Candle, INTERVALS
+from .models import Candle, INTERVALS, validate_candles, data_fresh
 from .providers import DataUnavailable
 
 
@@ -25,9 +26,14 @@ class HistoryReader(Protocol):
 
 
 class LiveWindow:
-    def __init__(self, candles, timeframe, limit):
+    def __init__(self, candles, timeframe, limit, *, now=None):
         if len(candles) != limit:
             raise DataUnavailable("Incomplete live bootstrap")
+        now = time.time() if now is None else now
+        validate_candles(candles, timeframe, now=now,
+                         contiguous=True, count=limit)
+        if not data_fresh(candles[-1], timeframe, now):
+            raise DataUnavailable('Stale live bootstrap: fresh history required')
         self.candles = list(candles)
         self.step, self.limit = INTERVALS[timeframe], limit
         self.closed_through = candles[-1].time
@@ -49,6 +55,9 @@ class LiveWindow:
             self.candles.append(candle)
             self.candles = self.candles[-self.limit:]
         else:
+            if (candle.open != last.open or candle.high < last.high or candle.low > last.low
+                    or (last.volume is not None and candle.volume is not None and candle.volume < last.volume)):
+                raise DataUnavailable("Regressing live OHLCV: fresh history required")
             self.candles[-1] = candle
         if closed:
             self.closed_through = candle.time

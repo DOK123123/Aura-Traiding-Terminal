@@ -2,6 +2,7 @@ import httpx
 import lzma
 from fastapi.testclient import TestClient
 import pytest
+import time
 
 from app.main import app, cache, locks, PROVIDERS
 from app.models import Candle
@@ -32,7 +33,10 @@ def test_query_validation(client, query):
 @pytest.mark.parametrize('limit', [500,2000])
 def test_market_contract(client, monkeypatch, symbol, timeframe, limit):
     async def fetch(*args):
-        return [Candle(i * 3600, 100, 102, 99, 101, 10) for i in range(limit)]
+        from app.models import INTERVALS
+        step = INTERVALS[timeframe]
+        end = int(time.time()) // step * step - 4 * step
+        return [Candle(end - (limit-i)*step, 100, 102, 99, 101, 10) for i in range(limit)]
     monkeypatch.setattr(PROVIDERS[symbol], 'fetch', fetch)
     response = client.get(f'/api/market?symbol={symbol}&timeframe={timeframe}&limit={limit}')
     assert response.status_code == 200

@@ -5,12 +5,14 @@ from dataclasses import dataclass
 from pathlib import Path
 import sqlite3
 import time
+import logging
 
 from ..gold import TradingViewGoldProvider, FAILURES, failure_reason, GoldProvider
-from ..models import Candle, INTERVALS
+from ..models import Candle, INTERVALS, validate_candles
 from ..providers import DataUnavailable
 
 DB_PATH = Path(__file__).resolve().parents[2] / '.cache' / 'patterns.sqlite3'
+logger = logging.getLogger(__name__)
 
 
 class Archive:
@@ -66,6 +68,8 @@ class HistoryService:
             for row in batch:
                 if int(row[6]) < now:
                     c = Candle(int(row[0])//1000,*map(float,row[1:6]))
+                    if c.time in rows and rows[c.time] != c:
+                        raise DataUnavailable('Conflicting duplicate Binance archive candle')
                     rows[c.time] = c
             next_end = int(batch[0][0])-1
             if next_end >= end:
@@ -92,12 +96,14 @@ class HistoryService:
                         rows = await TradingViewGoldProvider().fetch(client,timeframe,requested)
                         source = TradingViewGoldProvider.name
                     except FAILURES as exc:
+                        logger.warning('Gold archive %s fallback: %s', timeframe, exc)
                         note = 'OANDA archive: '+failure_reason(exc)+'. '
                         rows = await GoldProvider().fetch(client,timeframe,2000)
                         source = rows.source
             if len(rows) < 500:
                 raise DataUnavailable('Insufficient real archive: fewer than 500 candles')
             step, now = INTERVALS[timeframe], time.time()
+            validate_candles(rows, timeframe, now=now, contiguous=symbol=='BTCUSDT')
             if (any(c.time % step or c.time+step > now for c in rows)
                     or any(a.time >= b.time for a,b in zip(rows,rows[1:]))):
                 raise DataUnavailable('Invalid archive timestamps')
@@ -108,6 +114,16 @@ class HistoryService:
             merged = await asyncio.to_thread(self.archive.read,symbol,timeframe,source)
             # If a provider rolls back, do not resurrect newer cached bars silently.
             merged = [c for c in merged if c.time <= rows[-1].time]
+            if symbol == 'BTCUSDT':
+                # Retain the recent continuous segment; old disk gaps must not
+                # permanently poison all future requests after a long outage.
+                for i in range(len(merged)-1, 0, -1):
+                    if merged[i].time != merged[i-1].time + step:
+                        logger.warning('BTC archive gap at %s; using continuous recent segment', merged[i].time)
+                        merged = merged[i:]
+                        note += 'Older archive gap excluded from this analysis. '
+                        break
+            validate_candles(merged, timeframe, now=now, contiguous=symbol=='BTCUSDT')
             note += ('Closed bars only; archive grows on successful refreshes. '
                      'Broker gaps remain gaps. Horizon counts available bars, not wall-clock minutes. ')
             if len(rows) < requested:

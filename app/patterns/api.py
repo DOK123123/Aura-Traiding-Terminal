@@ -1,6 +1,7 @@
 import asyncio
 import time
 import sqlite3
+import logging
 from typing import Literal
 
 from fastapi import APIRouter, Request
@@ -8,7 +9,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..gold import FAILURES, failure_reason
-from ..models import INTERVALS
+from ..models import INTERVALS, data_fresh
 from .config import PatternConfig
 from .history import history_service
 from .engine import evaluate
@@ -17,6 +18,7 @@ from .outcomes import outcome
 
 router=APIRouter(prefix='/api/patterns',tags=['Historical Pattern Engine'])
 compute_slots=asyncio.Semaphore(2)
+logger = logging.getLogger(__name__)
 
 
 class PatternRequest(BaseModel):
@@ -26,6 +28,7 @@ class PatternRequest(BaseModel):
     context: Literal[500,2000]=500
     config: PatternConfig=Field(default_factory=PatternConfig)
     as_of: int | None=Field(None,gt=0)
+    chart_source: Literal['Binance · Spot', 'Dukascopy · XAUUSD BID', 'TradingView · OANDA:XAUUSD'] | None = None
 
 
 class BacktestRequest(PatternRequest):
@@ -55,6 +58,7 @@ def metadata(data,body):
 
 
 def failure(exc,status=503):
+    logger.warning('Pattern request failed: %s', exc)
     return JSONResponse(status_code=status,content=dict(status='NO DATA',signal=None,confidence=None,
                          message=str(exc) if isinstance(exc,ValueError) else failure_reason(exc)))
 
@@ -75,9 +79,15 @@ async def analyze_patterns(body: PatternRequest,request: Request):
         if body.as_of is not None:
             # Evaluation results are attached AFTER prediction; never passed to similarity.
             result['actual_after_point']={str(h):outcome(data.candles,target,h) for h in body.config.horizons}
-        elif time.time()-data.candles[-1].time-step>2*step:
+        elif not data_fresh(data.candles[-1], body.timeframe, time.time()):
             result['status']='DELAYED'; result['signal']='WAIT'
             result['explanation']['risks'].append('Последнее закрытие задержано / рынок закрыт. Текущий направленный сигнал отключён.')
+        if body.as_of is None:
+            result['source_verified'] = body.chart_source == data.source
+            if not result['source_verified']:
+                result['status'] = 'SOURCE MISMATCH'
+                result['signal'] = 'WAIT'
+                result['explanation']['risks'].append('Источник графика не подтверждён или отличается от архива. Направленный сигнал отключён.')
         return result
     except ValueError as exc:
         return failure(exc,422)

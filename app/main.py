@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .indicators import analyze
-from .models import INTERVALS
+from .models import Candle, INTERVALS, validate_candles, data_fresh
 from .providers import BinanceProvider, DataUnavailable
 from .gold import GoldProvider
 from .live import serve_market
@@ -63,13 +63,17 @@ async def market(symbol: Literal["BTCUSDT", "XAUUSD"] = "BTCUSDT",
     key = (symbol, timeframe, limit)
     async with locks.setdefault(key, asyncio.Lock()):
         if key in cache and time.monotonic() - cache[key][0] < 30:
-            return cache[key][1]
+            result = dict(cache[key][1])
+            result['stale'] = not data_fresh(Candle(**result['candles'][-1]), timeframe, time.time())
+            return result
         provider = PROVIDERS[symbol]
         try:
             async with asyncio.timeout(100):
                 candles = await provider.fetch(app.state.client, timeframe, limit)
             if len(candles) < limit:
                 raise DataUnavailable(f"Источник вернул {len(candles)} из {limit} свечей.")
+            validate_candles(candles, timeframe, now=time.time(),
+                             contiguous=symbol == 'BTCUSDT', count=limit)
             analysis = analyze(candles)
         except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError, DataUnavailable, TimeoutError, lzma.LZMAError, OSError) as exc:
             logger.warning("Provider %s failed: %s", symbol, exc)
@@ -88,7 +92,7 @@ async def market(symbol: Literal["BTCUSDT", "XAUUSD"] = "BTCUSDT",
             "source": getattr(candles, "source", provider.name), "note": getattr(candles, "note", provider.note),
             "fetched_at": datetime.now(timezone.utc).isoformat(),
             "last_closed_at": closed_at,
-            "stale": now - closed_at > 2 * INTERVALS[timeframe],
+            "stale": not data_fresh(candles[-1], timeframe, now),
             "candles": [asdict(c) for c in candles], "analysis": analysis,
         }
         if symbol == "XAUUSD":
