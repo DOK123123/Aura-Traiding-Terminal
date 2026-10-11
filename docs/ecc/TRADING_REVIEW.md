@@ -41,8 +41,10 @@ signals,backtesting}.py` with their tests.
 
 Review `app/testnet/{client,api}.py`, `static/testnet.js`, `tests/test_testnet.py`
 and `tests/test_testnet_frontend.cjs`.
+Also review `app/bybit_demo/{client,api}.py`, `static/bybit_demo.js`,
+`tests/test_bybit_demo.py` and `tests/test_bybit_demo_frontend.cjs`.
 
-- Only the fixed official Testnet API and allowed GET endpoints are used. No
+- Only the fixed official Demo/Testnet APIs and allowed GET endpoints are used. No
   production account fallback, order-writing methods, transfers or exchange keys
   in market ingestion. Public production quotes do not authorize real trading.
 - HMAC key/secret stay server-side in environment variables; signed URLs, headers,
@@ -51,6 +53,13 @@ and `tests/test_testnet_frontend.cjs`.
   with working market UI. Cache is bounded in freshness and failures hide old data.
 - Timeout, invalid keys/data, clock errors, cooldown and temporary network loss
   have offline regression coverage. Test data is clearly dummy, never actual keys.
+- Bybit is pinned to `api-demo.bybit.com`, V5 HMAC GET signatures and Demo-only
+  keys. No funding/top-up, transfer, withdraw or order-writing endpoints. Preserve
+  explicit VIRTUAL FUNDS / REAL MONEY IS NOT USED and provider/scope identity.
+- UNIFIED wallet balance, equity, spot-locked assets and available margin are
+  different quantities. Do not invent per-coin free funds from deprecated fields
+  or mislabel USD totals as USDT. Paginated reads must have bounded time/counts
+  and explicit truncation/scope; do not present partial history as a complete log.
 
 ## Mandatory gate for future execution changes
 

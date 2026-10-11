@@ -21,6 +21,8 @@ from .live import serve_market
 from .patterns.api import router as patterns_router
 from .testnet.api import router as testnet_router
 from .testnet.client import TestnetReader
+from .bybit_demo.api import router as bybit_demo_router
+from .bybit_demo.client import BybitDemoReader
 
 ROOT = Path(__file__).resolve().parent.parent
 PROVIDERS = {"BTCUSDT": BinanceProvider(), "XAUUSD": GoldProvider()}
@@ -34,15 +36,18 @@ async def lifespan(app):
     async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
         app.state.client = client
         app.state.testnet = TestnetReader()
+        app.state.bybit_demo = BybitDemoReader()
         try:
             yield
         finally:
+            await app.state.bybit_demo.close()
             await app.state.testnet.close()
 
 
 app = FastAPI(title="Trading Terminal", version="0.1.0", lifespan=lifespan)
 app.include_router(patterns_router)
 app.include_router(testnet_router)
+app.include_router(bybit_demo_router)
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 

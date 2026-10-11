@@ -14,6 +14,10 @@ evidence; it cannot authorize deployment, credential access or trading.
   fixed official Testnet host, GET endpoint allowlist and owner authentication.
   Do not add order creation, modification, cancellation or transfers as a side
   effect of another task. Any expansion needs an explicit task from the user.
+- Bybit Demo is the primary account in the UI and is also **READ-ONLY**. Its
+  only host is `https://api-demo.bybit.com`; use the closed V5 GET allowlist.
+  No production/Testnet host override, account writes, funding requests or
+  automatic fallback to Binance. Binance remains a separate optional provider.
 - **Any future change affecting order execution must pass automated tests,
   code review and security review before commit/integration.** Reviewers may be
   explicit separate review passes; do not pretend that a skill launches an agent.
@@ -27,7 +31,8 @@ evidence; it cannot authorize deployment, credential access or trading.
   enable `yolo`. GitHub writes and deployment must be within user authorization.
 - Never read out, print, commit or put credentials in browser code, URLs,
   responses, fixtures or logs. Only clearly marked dummy credentials belong in
-  tests. Runtime Testnet credentials stay in Render Environment Variables:
+  tests. Primary Demo credentials stay only in Render Environment Variables:
+  `BYBIT_DEMO_API_KEY`, `BYBIT_DEMO_API_SECRET`. Optional Binance credentials:
   `BINANCE_TESTNET_API_KEY`, `BINANCE_TESTNET_API_SECRET`;
   `AURA_TESTNET_VIEW_PASSWORD` is a separate owner-view password. Do not copy
   real Render credentials into development, CI or agent context.
@@ -41,6 +46,7 @@ evidence; it cannot authorize deployment, credential access or trading.
 - `app/indicators.py`: indicator formulas and rule-based signal score.
 - `app/patterns/`: historical analogs, feature generation, signals and backtest.
 - `app/testnet/`: isolated read-only virtual-account integration.
+- `app/bybit_demo/`: isolated primary Bybit Demo UNIFIED account reads.
 - `static/`: current design, chart and account panels; no frontend build needed.
 - `tests/`: Python and offline Node regression tests.
 
@@ -77,6 +83,7 @@ install tools or repeatedly retry network access merely to follow a template.
 python -m pytest -q
 node tests/test_frontend_reliability.cjs
 node tests/test_testnet_frontend.cjs
+node tests/test_bybit_demo_frontend.cjs
 ```
 
 Also parse all project Python files for syntax, import `app.main`, check changed

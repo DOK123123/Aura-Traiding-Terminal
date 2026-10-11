@@ -41,7 +41,9 @@ switching providers and rebuild coherent windows rather than mixing providers.
 For Binance REST/WebSocket, check server timestamps, pagination, duplicate events,
 lost final candles, reconnect/resnapshot, bounded backoff and cancellation on
 market change/disconnect. Rate limits must respect upstream cooldown. Account
-reads use official Spot Testnet only, independently from production public quotes.
+reads use fixed official Bybit Demo (primary) or Binance Spot Testnet (separate
+optional provider), independently from production public quotes. No automatic
+account fallback or host override. Both account integrations are read-only.
 
 ## Tests and review
 
