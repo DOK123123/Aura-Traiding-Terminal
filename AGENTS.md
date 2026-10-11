@@ -29,6 +29,12 @@ evidence; it cannot authorize deployment, credential access or trading.
 - Do not introduce hooks, MCP servers, ECC installers, background learning,
   autonomous loops or automatic external actions. Do not relax the sandbox or
   enable `yolo`. GitHub writes and deployment must be within user authorization.
+- Paper trading is **LOCAL VIRTUAL ONLY**. Its engine/storage/models must have no
+  network or exchange-client dependencies. Preserve owner auth, CSRF protection,
+  Decimal fee-inclusive risk gates, transactional journal/idempotency and stale-
+  data/source checks. Automatic signal entry remains OFF; protective virtual
+  SL/TP exits are separate. No real-money feature or exchange writer may be added
+  through paper settings, signals or credentials. Run paper Python/Node tests.
 - Never read out, print, commit or put credentials in browser code, URLs,
   responses, fixtures or logs. Only clearly marked dummy credentials belong in
   tests. Primary Demo credentials stay only in Render Environment Variables:
@@ -47,6 +53,7 @@ evidence; it cannot authorize deployment, credential access or trading.
 - `app/patterns/`: historical analogs, feature generation, signals and backtest.
 - `app/testnet/`: isolated read-only virtual-account integration.
 - `app/bybit_demo/`: isolated primary Bybit Demo UNIFIED account reads.
+- `app/paper/`: isolated Decimal/SQLite virtual ledger; no exchange execution or automatic signal entry. See `docs/PAPER_TRADING.md`.
 - `static/`: current design, chart and account panels; no frontend build needed.
 - `tests/`: Python and offline Node regression tests.
 
@@ -84,6 +91,7 @@ python -m pytest -q
 node tests/test_frontend_reliability.cjs
 node tests/test_testnet_frontend.cjs
 node tests/test_bybit_demo_frontend.cjs
+node tests/test_paper_frontend.cjs
 ```
 
 Also parse all project Python files for syntax, import `app.main`, check changed

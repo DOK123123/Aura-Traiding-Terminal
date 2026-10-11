@@ -23,6 +23,9 @@ from .testnet.api import router as testnet_router
 from .testnet.client import TestnetReader
 from .bybit_demo.api import router as bybit_demo_router
 from .bybit_demo.client import BybitDemoReader
+from .paper.api import router as paper_router
+from .paper.market import Market as PaperMarket
+from .paper.service import Service as PaperService
 
 ROOT = Path(__file__).resolve().parent.parent
 PROVIDERS = {"BTCUSDT": BinanceProvider(), "XAUUSD": GoldProvider()}
@@ -37,9 +40,14 @@ async def lifespan(app):
         app.state.client = client
         app.state.testnet = TestnetReader()
         app.state.bybit_demo = BybitDemoReader()
+        async def paper_fetch(symbol, timeframe):
+            return await market(symbol, timeframe, 500)
+        app.state.paper = PaperService(PaperMarket(paper_fetch))
+        await app.state.paper.start(ROOT)
         try:
             yield
         finally:
+            await app.state.paper.close()
             await app.state.bybit_demo.close()
             await app.state.testnet.close()
 
@@ -48,6 +56,7 @@ app = FastAPI(title="Trading Terminal", version="0.1.0", lifespan=lifespan)
 app.include_router(patterns_router)
 app.include_router(testnet_router)
 app.include_router(bybit_demo_router)
+app.include_router(paper_router)
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 

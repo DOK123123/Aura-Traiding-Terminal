@@ -81,3 +81,13 @@ If a separate future task authorizes demo/paper execution, its integration requi
 Real-money trading remains prohibited by default. An eventual production feature
 needs a separately authorized opt-in that defaults disabled and cannot be enabled
 merely by setting keys. None of those future features is introduced here.
+
+## Paper Trading review
+
+Review `app/paper/`, `static/paper.js`, `tests/test_paper_*.py` and
+`tests/test_paper_frontend.cjs`. Preserve network-free Decimal accounting, local
+owner/CSRF boundaries, atomic balance/journal/idempotency, explicit closed-candle
+fill semantics and fee-inclusive risk. Verify SHORT signs, collateral, duplicate
+commands/signals, pre-entry OHLC look-ahead, ambiguous SL/TP, adverse gaps, stale
+equity, restart recovery and Render ephemeral-disk disclosure. No automatic
+signal entry, exchange writer or real-money override. See `../PAPER_TRADING.md`.

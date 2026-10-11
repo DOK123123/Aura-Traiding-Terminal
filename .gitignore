@@ -7,3 +7,9 @@ __pycache__/
 .env.*
 .sites-runtime/
 python-runtime.zip
+
+# Virtual ledger and consistent backups stay outside GitHub
+.data/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm

@@ -134,3 +134,8 @@ Historical Pattern Engine реализован отдельным пакетом
 ## Historical Pattern Engine
 
 Добавлен блок HISTORICAL ANALOGS: реальные исторические аналоги, LONG / SHORT / WAIT, отдельный confidence score, исходы 5/10/20/50, объяснения и backtest. После обновления установите зависимости повторно (добавлен NumPy). [Инструкция и методика](docs/PATTERN_ENGINE.md).
+
+
+## Paper Trading
+
+Добавлен отдельный виртуальный счёт 10 000 USDT: ручные LONG/SHORT, Decimal-комиссии, риск, SL/TP, SQLite-журнал, статистика и equity curve. **REAL MONEY EXECUTION = DISABLED; автоматический вход OFF.** Binance/Bybit остаются READ ONLY. Просмотр и действия защищены существующим паролем владельца. На Render для сохранения после redeploy нужен persistent disk; без него скачивайте резервные копии. [Настройка, расчёты и ограничения](docs/PAPER_TRADING.md).

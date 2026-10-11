@@ -12,6 +12,8 @@
   <script defer src="/static/app.js"></script>
   <script defer src="/static/patterns.js"></script>
   <script defer src="/static/bybit_demo.js"></script>
+  <link rel="stylesheet" href="/static/paper.css">
+  <script defer src="/static/paper.js"></script>
 </head>
 <body>
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
@@ -100,6 +102,39 @@
         <h3 id="demo-trades-title">TRADE HISTORY</h3>
         <div class="pattern-table-wrap"><table><thead><tr><th>Execution ID</th><th>Order ID</th><th>Сторона</th><th>Тип исполнения</th><th>Цена</th><th>Количество</th><th>Сумма</th><th>Комиссия</th><th>UTC</th></tr></thead><tbody id="demo-trades"></tbody></table></div>
       </div>
+    </div>
+  </section>
+  <section class="panel patterns paper" aria-labelledby="paper-title">
+    <div class="modules-heading"><div><p class="eyebrow">VIRTUAL FUNDS / LOCAL SIMULATOR</p><h2 id="paper-title">PAPER TRADING</h2></div><span class="tiny-badge">AUTO ENTRY OFF</span></div>
+    <p class="score-note">REAL MONEY EXECUTION = DISABLED · REAL MONEY IS NOT USED. Ручные виртуальные LONG/SHORT; комиссии — настройка симуляции, не тариф биржи. SL/TP проверяются по закрытым свечам. Входы по сигналам отключены.</p>
+    <div class="pattern-actions"><button id="paper-refresh">Обновить Paper</button><a id="paper-login" href="/api/paper/login" hidden>Войти: пользователь aura</a><a href="/api/paper/export">Скачать резервную копию журнала</a></div>
+    <p id="paper-status" role="status" aria-live="polite">Загрузка виртуального счёта…</p>
+    <div class="pattern-actions"><button id="paper-retry" hidden>Повторить неподтверждённое действие</button></div>
+    <div id="paper-data" hidden>
+      <p id="paper-storage" class="pattern-warning"></p>
+      <div class="pattern-kpis" id="paper-metrics"></div>
+      <h3>EQUITY CURVE · USDT</h3><p id="paper-curve-note" class="score-note"></p><svg id="paper-curve" viewBox="0 0 600 160" role="img" aria-label="Кривая виртуального капитала"></svg>
+      <details><summary>Paper risk settings</summary><div class="pattern-controls" id="paper-settings">
+        <label>Starting balance USDT<input data-paper-setting="starting_balance" inputmode="decimal" value="10000"></label>
+        <label>Commission per side %<input data-paper-setting="commission_pct" inputmode="decimal" value="0.10"></label>
+        <label>Risk per trade %<input data-paper-setting="risk_per_trade_pct" inputmode="decimal" value="1"></label>
+        <label>Max notional USDT<input data-paper-setting="maximum_position_size_usdt" inputmode="decimal" value="2000"></label>
+        <label>Max open positions<input data-paper-setting="maximum_simultaneous_positions" inputmode="numeric" value="3"></label>
+        <label>Default Stop Loss %<input data-paper-setting="stop_loss_pct" inputmode="decimal" value="2"></label>
+        <label>Default Take Profit %<input data-paper-setting="take_profit_pct" inputmode="decimal" value="4"></label>
+      </div><p class="score-note">Начальный баланс блокируется после первой сделки. Настройки комиссий/SL/TP применяются к новым позициям. Все позиции резервируют 1× notional; плечо, spread, funding и проскальзывание не моделируются.</p><div class="pattern-actions"><button id="paper-save">Сохранить настройки</button></div></details>
+      <h3>MANUAL PAPER POSITION · BTCUSDT</h3><p class="score-note">Источник и timeframe — как на графике. Цена исполнения — close последней проверенной закрытой свечи, не live bid/ask. XAUUSD пока не поддерживается: нет конвертации USD/USDT.</p>
+      <div class="pattern-actions"><button id="paper-quote-refresh">Получить paper quote</button><span id="paper-quote" class="score-note">Сначала получите подтверждённую цену.</span></div>
+      <div class="pattern-controls">
+        <label>Direction<select id="paper-direction"><option value="LONG">LONG</option><option value="SHORT">SHORT</option></select></label>
+        <label>Size BTC (пусто = risk sizing)<input id="paper-size" inputmode="decimal" placeholder="Auto"></label>
+        <label>Stop Loss price (пусто = default)<input id="paper-stop" inputmode="decimal" placeholder="Default %"></label>
+        <label>Take Profit price (пусто = default)<input id="paper-target" inputmode="decimal" placeholder="Default %"></label>
+        <label>Причина входа<input id="paper-reason" maxlength="300" placeholder="Ручная проверка гипотезы"></label>
+      </div><div class="pattern-actions"><button id="paper-open" disabled>Open Paper Position</button></div>
+      <p class="pattern-warning">SL/TP не гарантируют ограничение убытка при gap. Если одна свеча касается обоих уровней, приоритет SL. При устаревших данных, смене источника или пропуске истории операции/защитные exits блокируются; устаревшая equity показана как —.</p>
+      <h3>OPEN POSITIONS</h3><div class="pattern-table-wrap"><table><thead><tr><th>Пара / Side</th><th>Entry</th><th>Size</th><th>SL</th><th>TP</th><th>Unrealized PnL</th><th>Data</th><th>Действие</th></tr></thead><tbody id="paper-positions"></tbody></table></div>
+      <h3>CLOSED TRADES · ЖУРНАЛ</h3><p id="paper-journal-note" class="score-note"></p><div class="pattern-table-wrap"><table><thead><tr><th>Exit UTC</th><th>Пара / Side</th><th>Entry</th><th>Exit</th><th>Size</th><th>Fees</th><th>Net PnL</th><th>PnL %</th><th>Причина входа</th><th>Причина выхода</th><th>Source / TF</th></tr></thead><tbody id="paper-trades"></tbody></table></div>
     </div>
   </section>
   <footer><span>Аналитический инструмент · без исполнения сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
