@@ -69,6 +69,53 @@ Binance периодически сбрасывает тестовую исто�
 - Устаревшие снимки на клиенте через 90 секунд скрываются; после возврата
   на вкладку приложение повторяет чтение. При ошибке старый баланс не сохраняется.
 
+## Диагностика подключения на Render
+
+Раньше `UNAVAILABLE` объединял сетевые исключения, большинство HTTP-ошибок
+и неизвестные Binance codes. Такой ответ не устанавливает причину сбоя.
+Теперь защищённый `/api/testnet/account` возвращает безопасный `diagnostics`:
+только allowlisted `endpoint` (путь без query), числовые `http_status` и
+`binance_code`, фиксированные категории `network_error`/`timeout_phase`, если
+они доступны. Те же поля пишутся в Render Logs без raw response/exception.
+Отсутствие HTTP status означает, что HTTP-ответ не получен, а не HTTP 200.
+
+| Code Aura | Значение / действие |
+| --- | --- |
+| `NETWORK_ERROR` | DNS/TLS/connect/read/write/proxy/protocol; проверьте исходящий доступ Render. DNS/TLS выделяются только если transport сохранил тип причины. |
+| `TIMEOUT` | Connect/read/write/pool timeout, общий timeout снимка или Binance -1007 (`UPSTREAM`). |
+| `KEY_INVALID` | Binance -2014: неверный формат API Key. |
+| `KEY_REJECTED` | Binance -2015: неверный ключ **или** IP-ограничение **или** permissions. API не позволяет однозначно различить эти причины. |
+| `SIGNATURE_INVALID` | Binance -1022: подпись отвергнута; проверьте парный Secret и тип HMAC-ключа. |
+| `PERMISSION_DENIED` | Binance -1002: чтение не разрешено; проверьте USER_DATA и IP restrictions. Не включайте TRADE для диагностики. |
+| `AUTH_FAILED` | HTTP 401 без более точного Binance code. |
+| `CLOCK_ERROR` | Binance -1021 после одной повторной синхронизации времени. |
+| `RATE_LIMITED` | HTTP 418/429 или Binance -1003/-1015; соблюдается общий cooldown. |
+| `REGION_RESTRICTED` | HTTP 451: ограничение доступа для региона/IP; это не доказательство неверного Secret. |
+| `WAF_BLOCKED` | HTTP 403 без более точного code: возможна WAF/IP блокировка, не автоматически «неверный ключ». |
+| `ENDPOINT_UNAVAILABLE` | HTTP 404/405/410 или Binance -1016/-1020. |
+| `REDIRECT_BLOCKED` | HTTP 3xx: credentials не пересылаются по Location. |
+| `UPSTREAM_UNAVAILABLE` | HTTP 5xx или Binance -1000/-1001/-1006/-1008. |
+| `HTTP_ERROR` / `BINANCE_ERROR` | Другой HTTP error / отрицательный Binance code при HTTP success; смотрите числовые поля. |
+| `INVALID_DATA` | Некорректный успешный ответ или невалидные данные аккаунта. |
+
+После redeploy войдите владельцем и откройте `/api/testnet/account`; проверяйте
+только `code` и перечисленные поля `diagnostics`, либо строку `Testnet read failed`
+в Render Logs. Не копируйте signed URL, HTTP headers, raw bodies или credentials.
+Старый баланс при любой ошибке скрывается; повтор выполняется после cooldown.
+
+BASE URL остаётся официальным `https://testnet.binance.vision` с путями
+`/api/v3/time`, `/api/v3/account`, `/api/v3/openOrders`. HMAC-SHA256 вычисляется
+по URL-encoded query, ровно эта строка отправляется с appended signature;
+timestamp — миллисекунды с поправкой `/time`, recvWindow — 5000 ms.
+
+Если ключ ограничен IP, сверьте список с **Connect → Outbound** вашего сервиса
+Render по [официальной инструкции](https://render.com/docs/outbound-ip-addresses).
+Не отключайте TLS и не переключайте аккаунт на production. При HTTP 451 сначала
+установите допустимость региона/доступа у Binance; эту внешнюю блокировку нельзя
+исправить изменением подписи. Codex-сеть не является проверкой Render egress.
+Без ответа/логов именно работающего Render-сервиса его конкретная причина
+не подтверждена; offline tests проверяют классификацию и безопасность.
+
 ## Безопасность и ограничения
 
 Binance credentials читаются только из Environment Variables сервером. Secret
@@ -112,4 +159,5 @@ pinned Render-версий: возможен deprecation warning TestClient, э�
 
 - [Testnet general info](https://developers.binance.com/en/docs/products/spot/testnet/general-info)
 - [Testnet REST API: подписанные USER_DATA GET-запросы](https://developers.binance.com/en/docs/products/spot/testnet/rest-api)
+- [Официальные Binance Testnet error codes](https://developers.binance.com/en/docs/products/spot/testnet/errors)
 - [Spot Test Network: вход, виртуальные активы и сбросы](https://testnet.binance.vision/)

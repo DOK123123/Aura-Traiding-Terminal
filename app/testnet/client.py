@@ -11,6 +11,8 @@ import logging
 import math
 import os
 import re
+import socket
+import ssl
 import time
 import traceback
 from urllib.parse import urlencode
@@ -39,16 +41,41 @@ class Credentials:
 
 
 class SafeFailure(Exception):
-    """Only fixed safe codes are carried across the public API boundary."""
-    def __init__(self, code, retry_after=30):
+    """Fixed categories and allowlisted metadata, never upstream text or URLs."""
+    def __init__(self, code, retry_after=30, *, endpoint=None, http_status=None,
+                 binance_code=None, network_error=None, timeout_phase=None):
+        if code not in MESSAGES:
+            raise ValueError('Unsupported safe failure category')
         self.code, self.retry_after = code, retry_after
+        self.diagnostics = {}
+        if endpoint in READ_PATHS:
+            self.diagnostics['endpoint'] = endpoint
+        if type(http_status) is int and 100 <= http_status <= 599:
+            self.diagnostics['http_status'] = http_status
+        if type(binance_code) is int and -1000000 <= binance_code <= 1000000:
+            self.diagnostics['binance_code'] = binance_code
+        if network_error in {'DNS', 'TLS', 'CONNECT', 'READ', 'WRITE', 'PROTOCOL', 'PROXY', 'NETWORK'}:
+            self.diagnostics['network_error'] = network_error
+        if timeout_phase in {'CONNECT', 'READ', 'WRITE', 'POOL', 'UPSTREAM', 'SNAPSHOT'}:
+            self.diagnostics['timeout_phase'] = timeout_phase
         super().__init__(code)
 
 
 MESSAGES = {
-    'AUTH_FAILED': 'Неверные Testnet credentials или отсутствует разрешение USER_DATA.',
+    'AUTH_FAILED': 'Testnet отклонил авторизацию. Проверьте HMAC-ключ Testnet и разрешение USER_DATA в портале Binance.',
+    'KEY_INVALID': 'Некорректный формат API Key Testnet. Проверьте значение в Environment Variables Render.',
+    'KEY_REJECTED': 'Binance отклонил Testnet API Key: возможны неверный ключ, IP-ограничение или отсутствие USER_DATA. Код -2015 не различает эти причины.',
+    'SIGNATURE_INVALID': 'Binance отклонил HMAC-подпись. Проверьте соответствие Secret выбранному HMAC-ключу Testnet.',
+    'PERMISSION_DENIED': 'Чтение аккаунта не разрешено Binance. Проверьте USER_DATA и IP-ограничения ключа Testnet; TRADE не требуется.',
     'TIMEOUT': 'Testnet не ответил вовремя. Повторим чтение автоматически.',
-    'UNAVAILABLE': 'Testnet временно недоступен. Повторим чтение автоматически.',
+    'NETWORK_ERROR': 'Сетевая ошибка соединения с Testnet. Проверьте DNS, TLS и исходящий доступ сервиса Render.',
+    'UPSTREAM_UNAVAILABLE': 'Сервис Binance Testnet временно недоступен. Повторим чтение автоматически.',
+    'HTTP_ERROR': 'Testnet отклонил HTTP-запрос. Безопасные HTTP status и Binance code доступны в diagnostics.',
+    'BINANCE_ERROR': 'Binance Testnet вернул ошибку API. Числовой код доступен в diagnostics.',
+    'ENDPOINT_UNAVAILABLE': 'Endpoint Testnet недоступен или не поддерживает запрос GET.',
+    'REGION_RESTRICTED': 'Testnet вернул HTTP 451: доступ ограничен для региона/IP сервиса. Проверьте доступность Binance для региона Render.',
+    'WAF_BLOCKED': 'Testnet вернул HTTP 403: возможна блокировка WAF/IP. Это само по себе не доказывает ошибку API Key.',
+    'REDIRECT_BLOCKED': 'Testnet вернул перенаправление. Оно заблокировано для защиты credentials.',
     'RATE_LIMITED': 'Достигнут лимит запросов Testnet. Ожидаем разрешённого повтора.',
     'CLOCK_ERROR': 'Не удалось синхронизировать время с Testnet.',
     'INVALID_DATA': 'Testnet вернул некорректные данные.',
@@ -66,7 +93,8 @@ class CredentialLogFilter(logging.Filter):
         message = record.getMessage()
         if record.exc_info:
             message += ''.join(traceback.format_exception(*record.exc_info))
-        return ('testnet.binance.vision' not in message and not any(
+        sensitive = ('signature=', 'x-mbx-apikey', 'authorization:', 'authorization=')
+        return ('testnet.binance.vision' not in message and not any(token in message.lower() for token in sensitive) and not any(
             value and value in message for value in (self.credentials.key, self.credentials.secret)))
 
 
@@ -92,6 +120,33 @@ class TestnetReader:
         self._failure = None
         self._offset_ms = 0
         self._synced_at = None
+        self._active_endpoint = None
+
+    @staticmethod
+    def _network_kind(exc):
+        # Inspect exception types only: exception strings may contain signed URLs.
+        current, seen = exc, set()
+        while current is not None and id(current) not in seen:
+            seen.add(id(current))
+            if isinstance(current, socket.gaierror):
+                return 'DNS'
+            if isinstance(current, ssl.SSLError):
+                return 'TLS'
+            current = current.__cause__ or current.__context__
+        for kind, cls in [('PROXY', httpx.ProxyError), ('CONNECT', httpx.ConnectError),
+                          ('READ', httpx.ReadError), ('WRITE', httpx.WriteError),
+                          ('PROTOCOL', httpx.ProtocolError)]:
+            if isinstance(exc, cls):
+                return kind
+        return 'NETWORK'
+
+    @staticmethod
+    def _timeout_phase(exc):
+        for phase, cls in [('CONNECT', httpx.ConnectTimeout), ('READ', httpx.ReadTimeout),
+                           ('WRITE', httpx.WriteTimeout), ('POOL', httpx.PoolTimeout)]:
+            if isinstance(exc, cls):
+                return phase
+        return None
 
     @property
     def configured(self):
@@ -121,6 +176,7 @@ class TestnetReader:
     async def _get(self, path, params=None, *, signed=False):
         if path not in READ_PATHS:
             raise ValueError('Only allowlisted Testnet reads are supported')
+        self._active_endpoint = path
         query = dict(params or {})
         headers = {}
         if signed:
@@ -133,26 +189,52 @@ class TestnetReader:
             query_string = urlencode(query)
         try:
             response = await self._client.get(BASE_URL+path, params=query_string, headers=headers)
-        except httpx.TimeoutException:
-            raise SafeFailure('TIMEOUT') from None
-        except httpx.HTTPError:
-            raise SafeFailure('UNAVAILABLE') from None
-        if response.status_code in (418, 429):
-            raise SafeFailure('RATE_LIMITED', self._retry_seconds(response))
+        except httpx.TimeoutException as exc:
+            raise SafeFailure('TIMEOUT', endpoint=path, timeout_phase=self._timeout_phase(exc)) from None
+        except httpx.HTTPError as exc:
+            raise SafeFailure('NETWORK_ERROR', endpoint=path, network_error=self._network_kind(exc)) from None
+        # Classify HTTP errors even when an intermediary returns HTML/non-JSON.
+        # Never propagate response bodies, headers, redirects or exception text.
         try:
             data = response.json()
         except (ValueError, UnicodeError):
-            raise SafeFailure('INVALID_DATA') from None
+            data = None
         code = data.get('code') if isinstance(data, dict) else None
+        if type(code) is not int or not -1000000 <= code <= 1000000:
+            code = None
+        details = dict(endpoint=path, http_status=response.status_code, binance_code=code)
+        if response.status_code in (418, 429) or code in (-1003, -1015):
+            raise SafeFailure('RATE_LIMITED', self._retry_seconds(response), **details)
         if code == -1021:
-            raise SafeFailure('CLOCK_ERROR')
-        if response.status_code in (401, 403) or code in (-2014, -2015, -1022):
-            raise SafeFailure('AUTH_FAILED', 60)
+            raise SafeFailure('CLOCK_ERROR', **details)
+        auth_codes = {-2014:'KEY_INVALID', -2015:'KEY_REJECTED',
+                      -1022:'SIGNATURE_INVALID', -1002:'PERMISSION_DENIED'}
+        if code in auth_codes:
+            raise SafeFailure(auth_codes[code], 60, **details)
         if code == -1121:
-            raise SafeFailure('INVALID_SYMBOL')
+            raise SafeFailure('INVALID_SYMBOL', **details)
+        if code == -1007:
+            raise SafeFailure('TIMEOUT', timeout_phase='UPSTREAM', **details)
         # Redirects are never followed, even if sent by a compromised upstream.
-        if not response.is_success or (isinstance(code, int) and code < 0):
-            raise SafeFailure('UNAVAILABLE')
+        status = response.status_code
+        if 300 <= status < 400:
+            raise SafeFailure('REDIRECT_BLOCKED', **details)
+        if status == 451:
+            raise SafeFailure('REGION_RESTRICTED', 300, **details)
+        if status == 403:
+            raise SafeFailure('WAF_BLOCKED', 60, **details)
+        if status == 401:
+            raise SafeFailure('AUTH_FAILED', 60, **details)
+        if status in (404, 405, 410) or code in (-1016, -1020):
+            raise SafeFailure('ENDPOINT_UNAVAILABLE', **details)
+        if status >= 500 or code in (-1000, -1001, -1006, -1008):
+            raise SafeFailure('UPSTREAM_UNAVAILABLE', **details)
+        if not response.is_success:
+            raise SafeFailure('HTTP_ERROR', **details)
+        if code is not None and code < 0:
+            raise SafeFailure('BINANCE_ERROR', **details)
+        if data is None:
+            raise SafeFailure('INVALID_DATA', **details)
         return data
 
     async def _sync_clock(self, force=False):
@@ -291,19 +373,23 @@ class TestnetReader:
                 self._failure = None
                 return dict(result, cache_age_seconds=0)
             except TimeoutError:
-                failure = SafeFailure('TIMEOUT')
+                failure = SafeFailure('TIMEOUT', timeout_phase='SNAPSHOT')
             except SafeFailure as exc:
                 failure = exc
             except (ValueError, TypeError, KeyError, OverflowError):
                 failure = SafeFailure('INVALID_DATA')
             self._cache.clear()
+            if 'endpoint' not in failure.diagnostics and self._active_endpoint in READ_PATHS:
+                failure.diagnostics['endpoint'] = self._active_endpoint
             self._failure = failure
             self._retry_at = time.monotonic()+failure.retry_after
-            logger.warning('Testnet read failed: %s; retry after %ss', failure.code, failure.retry_after)
+            logger.warning('Testnet read failed: %s; diagnostics=%s; retry after %ss',
+                           failure.code, json.dumps(failure.diagnostics, sort_keys=True), failure.retry_after)
             return self._error(failure, failure.retry_after)
 
     @staticmethod
     def _error(failure, retry_after):
         return dict(status='Disconnected', testnet=True, read_only=True, stale=True,
                     code=failure.code, message=MESSAGES[failure.code], retry_after=retry_after,
+                    diagnostics=dict(failure.diagnostics),
                     checked_at=datetime.now(timezone.utc).isoformat())

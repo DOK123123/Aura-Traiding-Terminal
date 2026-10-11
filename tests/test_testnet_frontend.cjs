@@ -44,6 +44,15 @@ function environment(first) {
 
 const reply=data=>({status:200,ok:true,json:async()=>data});
 
+test('safe upstream diagnosis is shown without redesign or account data',async()=>{
+  const message='Testnet вернул HTTP 451: проверьте регион Render.';
+  const e=environment(reply({status:'Disconnected',stale:true,code:'REGION_RESTRICTED',message,
+    diagnostics:{endpoint:'/api/v3/time',http_status:451},retry_after:300}));await e.flush();
+  assert.equal(e.el('state').textContent,'Disconnected');assert.equal(e.el('message').textContent,message);
+  assert.equal(e.el('data').hidden,true);assert.equal(e.el('login').hidden,true);
+  e.tick(60001);await e.flush();assert.equal(e.requests.length,1);
+});
+
 test('missing config keeps account hidden and fetches only own GET endpoint',async()=>{
   const e=environment(reply({status:'Not configured',message:'Настройте Render.'}));await e.flush();
   assert.equal(e.el('state').textContent,'Not configured');assert.equal(e.el('data').hidden,true);

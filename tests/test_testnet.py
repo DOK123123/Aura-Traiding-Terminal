@@ -134,12 +134,12 @@ def test_history_support_is_symbol_scoped_read_only():
 
 
 @pytest.mark.parametrize('status,body,code', [
-    (401,{'code':-2015,'msg':DUMMY.secret},'AUTH_FAILED'),
-    (400,{'code':-2014,'msg':DUMMY.key},'AUTH_FAILED'),
-    (400,{'code':-1022,'msg':DUMMY.secret},'AUTH_FAILED'),
-    (403,{'msg':DUMMY.secret},'AUTH_FAILED'),
-    (503,{'msg':DUMMY.secret},'UNAVAILABLE'),
-    (302,{'msg':DUMMY.secret},'UNAVAILABLE'),
+    (401,{'code':-2015,'msg':DUMMY.secret},'KEY_REJECTED'),
+    (400,{'code':-2014,'msg':DUMMY.key},'KEY_INVALID'),
+    (400,{'code':-1022,'msg':DUMMY.secret},'SIGNATURE_INVALID'),
+    (403,{'msg':DUMMY.secret},'WAF_BLOCKED'),
+    (503,{'msg':DUMMY.secret},'UPSTREAM_UNAVAILABLE'),
+    (302,{'msg':DUMMY.secret},'REDIRECT_BLOCKED'),
 ])
 def test_failures_hide_upstream_credentials_and_no_redirect(status, body, code, caplog):
     def callback(request):
@@ -155,7 +155,7 @@ def test_failures_hide_upstream_credentials_and_no_redirect(status, body, code, 
     assert DUMMY.secret not in caplog.text and DUMMY.key not in caplog.text
 
 
-@pytest.mark.parametrize('error,code', [(httpx.ReadTimeout,'TIMEOUT'),(httpx.ConnectError,'UNAVAILABLE')])
+@pytest.mark.parametrize('error,code', [(httpx.ReadTimeout,'TIMEOUT'),(httpx.ConnectError,'NETWORK_ERROR')])
 def test_transport_errors_sanitized_and_recovered(error,code,caplog):
     offline=True
     def callback(request):
