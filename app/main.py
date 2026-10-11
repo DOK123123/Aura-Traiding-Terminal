@@ -19,6 +19,8 @@ from .providers import BinanceProvider, DataUnavailable
 from .gold import GoldProvider
 from .live import serve_market
 from .patterns.api import router as patterns_router
+from .testnet.api import router as testnet_router
+from .testnet.client import TestnetReader
 
 ROOT = Path(__file__).resolve().parent.parent
 PROVIDERS = {"BTCUSDT": BinanceProvider(), "XAUUSD": GoldProvider()}
@@ -31,11 +33,16 @@ logger = logging.getLogger(__name__)
 async def lifespan(app):
     async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
         app.state.client = client
-        yield
+        app.state.testnet = TestnetReader()
+        try:
+            yield
+        finally:
+            await app.state.testnet.close()
 
 
 app = FastAPI(title="Trading Terminal", version="0.1.0", lifespan=lifespan)
 app.include_router(patterns_router)
+app.include_router(testnet_router)
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 

@@ -11,6 +11,7 @@
   <script defer src="/static/live.js"></script>
   <script defer src="/static/app.js"></script>
   <script defer src="/static/patterns.js"></script>
+  <script defer src="/static/testnet.js"></script>
 </head>
 <body>
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
@@ -77,6 +78,28 @@
       <p id="pattern-actual" class="score-note"></p>
     </div>
     <div id="backtest-result" hidden><h3>BACKTEST · WALK FORWARD</h3><p id="backtest-meta" class="score-note"></p><div id="backtest-summary" class="pattern-kpis"></div><div class="pattern-table-wrap"><table><thead><tr><th>Decision UTC</th><th>Signal</th><th>Confidence</th><th>Matches</th><th>Actual close move %</th><th>Net trade %</th></tr></thead><tbody id="backtest-rows"></tbody></table></div></div>
+  </section>
+  <section class="panel patterns" aria-labelledby="testnet-title">
+    <div class="modules-heading"><div><p class="eyebrow">BINANCE SPOT TESTNET / READ ONLY</p><h2 id="testnet-title">TESTNET ACCOUNT</h2></div><span class="tiny-badge">VIRTUAL FUNDS</span></div>
+    <p class="score-note">Это TESTNET: тестовые активы, реальные деньги не используются. Aura только читает аккаунт и не создаёт, не изменяет и не отменяет ордера. Рыночный график использует прежние публичные источники.</p>
+    <div class="pattern-actions"><button id="testnet-refresh">Обновить аккаунт</button><a id="testnet-login" href="/api/testnet/login" hidden>Войти для просмотра Testnet</a></div>
+    <p role="status" aria-live="polite"><strong id="testnet-state">Проверка…</strong> · <span id="testnet-message">Ожидаем состояние аккаунта.</span></p>
+    <div id="testnet-data" hidden>
+      <p id="testnet-meta" class="score-note"></p>
+      <h3>ТЕСТОВЫЙ БАЛАНС ПО АКТИВАМ</h3><p class="score-note">Баланс указан в единицах каждого актива; общий баланс в USDT не рассчитывается.</p>
+      <div class="pattern-table-wrap"><table><thead><tr><th>Актив</th><th>Доступно</th><th>Заблокировано</th><th>Всего</th></tr></thead><tbody id="testnet-balances"></tbody></table></div>
+      <p id="testnet-assets" class="score-note"></p>
+      <h3>ОТКРЫТЫЕ ТЕСТОВЫЕ ОРДЕРА · ВСЕ ПАРЫ</h3>
+      <div class="pattern-table-wrap"><table><thead><tr><th>Order ID</th><th>Пара</th><th>Сторона</th><th>Тип</th><th>Статус</th><th>Цена</th><th>Количество</th><th>Исполнено</th></tr></thead><tbody id="testnet-orders"></tbody></table></div>
+      <div class="pattern-actions"><div class="pattern-controls"><label>Пара истории<input id="testnet-history-symbol" value="BTCUSDT" pattern="[A-Z0-9]{5,20}" maxlength="20" aria-label="Пара истории Testnet"></label></div><button id="testnet-history-refresh">Показать историю</button></div>
+      <p id="testnet-history-status" role="status" class="score-note">История загружается по запросу: до 100 последних ордеров и сделок выбранной пары, доступных в Testnet.</p>
+      <div id="testnet-history" hidden>
+        <h3 id="testnet-past-orders-title">ИСТОРИЯ ТЕСТОВЫХ ОРДЕРОВ</h3>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Order ID</th><th>Пара</th><th>Сторона</th><th>Тип</th><th>Статус</th><th>Цена</th><th>Количество</th><th>Исполнено</th><th>UTC</th></tr></thead><tbody id="testnet-past-orders"></tbody></table></div>
+        <h3 id="testnet-trades-title">ИСТОРИЯ ТЕСТОВЫХ СДЕЛОК</h3>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Trade ID</th><th>Order ID</th><th>Сторона</th><th>Цена</th><th>Количество</th><th>Сумма</th><th>Комиссия</th><th>UTC</th></tr></thead><tbody id="testnet-trades"></tbody></table></div>
+      </div>
+    </div>
   </section>
   <footer><span>Аналитический инструмент · без исполнения сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
 </main>

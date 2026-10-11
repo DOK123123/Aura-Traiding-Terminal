@@ -53,7 +53,9 @@ def test_upstream_failure_and_recovery(client, monkeypatch):
     assert client.get('/api/market').status_code == 503
     assert not cache
     async def recover(*args):
-        return [Candle(i * 60, 100, 102, 99, 101, 10) for i in range(500)]
+        step = 900  # Default API timeframe is 15m, not 1m.
+        end = int(time.time()) // step * step
+        return [Candle(end - (500-i)*step, 100, 102, 99, 101, 10) for i in range(500)]
     monkeypatch.setattr(PROVIDERS['BTCUSDT'], 'fetch', recover)
     assert client.get('/api/market').status_code == 200
 
@@ -76,7 +78,9 @@ def test_corrupt_archive_returns_readable_error(client, monkeypatch):
 
 def test_fallback_source_preserved_in_api_and_cache(client, monkeypatch):
     async def fallback(*args):
-        return CandleBatch([Candle(i*60,100,102,99,101,None) for i in range(500)],
+        step = 900
+        end = int(time.time()) // step * step
+        return CandleBatch([Candle(end-(500-i)*step,100,102,99,101,None) for i in range(500)],
                            'TradingView · OANDA:XAUUSD','Actual fallback note',True,'HTTP 429')
     monkeypatch.setattr(PROVIDERS['XAUUSD'],'fetch',fallback)
     first = client.get('/api/market?symbol=XAUUSD').json()

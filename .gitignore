@@ -4,5 +4,6 @@ __pycache__/
 .pytest_cache/
 *.log
 .env
+.env.*
 .sites-runtime/
 python-runtime.zip

@@ -63,8 +63,11 @@ def test_binance_parser_validates_symbol_and_ohlcv():
 
 def test_snapshot_polling_never_claims_streaming():
     result = snapshot(history(),'XAUUSD','1m','OANDA','polling',closed=False)
-    assert result['stale'] and result['event_time'] is None
+    assert result['mode'] == 'polling' and result['event_time'] is None
     assert not result['current_closed']
+    assert not result['stale']  # Recent polling data is fresh, but is not streaming.
+    old = [Candle(c.time-600,c.open,c.high,c.low,c.close,c.volume) for c in history()]
+    assert snapshot(old,'XAUUSD','1m','OANDA','polling',closed=False)['stale']
 
 
 def test_stream_updates_recalculate_and_do_not_accumulate_volume(monkeypatch):
