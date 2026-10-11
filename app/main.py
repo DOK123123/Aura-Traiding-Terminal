@@ -1,0 +1,98 @@
+import asyncio
+from contextlib import asynccontextmanager
+from dataclasses import asdict
+from datetime import datetime, timezone
+from pathlib import Path
+import time
+from typing import Literal
+import logging
+import lzma
+
+import httpx
+from fastapi import FastAPI, HTTPException, Query, WebSocket
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+from .indicators import analyze
+from .models import INTERVALS
+from .providers import BinanceProvider, DataUnavailable
+from .gold import GoldProvider
+from .live import serve_market
+from .patterns.api import router as patterns_router
+
+ROOT = Path(__file__).resolve().parent.parent
+PROVIDERS = {"BTCUSDT": BinanceProvider(), "XAUUSD": GoldProvider()}
+cache = {}
+locks = {}
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app):
+    async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+        app.state.client = client
+        yield
+
+
+app = FastAPI(title="Trading Terminal", version="0.1.0", lifespan=lifespan)
+app.include_router(patterns_router)
+app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
+
+
+@app.get("/")
+def index():
+    return FileResponse(ROOT / "static" / "index.html")
+
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.websocket('/ws/market')
+async def live_market(socket: WebSocket):
+    await serve_market(socket, app.state.client, PROVIDERS)
+
+
+@app.get("/api/market")
+async def market(symbol: Literal["BTCUSDT", "XAUUSD"] = "BTCUSDT",
+                 timeframe: Literal["1m", "5m", "15m", "1h"] = "15m",
+                 limit: int = Query(500)):
+    if limit not in (500, 2000):
+        raise HTTPException(422, "Число свечей должно быть 500 или 2000.")
+    key = (symbol, timeframe, limit)
+    async with locks.setdefault(key, asyncio.Lock()):
+        if key in cache and time.monotonic() - cache[key][0] < 30:
+            return cache[key][1]
+        provider = PROVIDERS[symbol]
+        try:
+            async with asyncio.timeout(100):
+                candles = await provider.fetch(app.state.client, timeframe, limit)
+            if len(candles) < limit:
+                raise DataUnavailable(f"Источник вернул {len(candles)} из {limit} свечей.")
+            analysis = analyze(candles)
+        except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError, DataUnavailable, TimeoutError, lzma.LZMAError, OSError) as exc:
+            logger.warning("Provider %s failed: %s", symbol, exc)
+            message = f"{provider.name}: источник временно недоступен или вернул некорректные данные. Повторите запрос позже."
+            if isinstance(exc, DataUnavailable):
+                message = f"{provider.name}: {exc} Выберите меньшую глубину или повторите запрос позже."
+            elif isinstance(exc, httpx.HTTPStatusError):
+                message = f"{provider.name}: источник ответил HTTP {exc.response.status_code}. Повторите запрос позже или выберите другой инструмент."
+            elif isinstance(exc, (TimeoutError, httpx.TimeoutException)):
+                message = f"{provider.name}: превышено время ожидания источника. Повторите запрос позже."
+            raise HTTPException(503, message) from exc
+        now = time.time()
+        closed_at = candles[-1].time + INTERVALS[timeframe]
+        result = {
+            "symbol": symbol, "timeframe": timeframe,
+            "source": getattr(candles, "source", provider.name), "note": getattr(candles, "note", provider.note),
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+            "last_closed_at": closed_at,
+            "stale": now - closed_at > 2 * INTERVALS[timeframe],
+            "candles": [asdict(c) for c in candles], "analysis": analysis,
+        }
+        if symbol == "XAUUSD":
+            result.update(fallback=getattr(candles, "fallback", False),
+                          fallback_reason=getattr(candles, "reason", None))
+        cache[key] = (time.monotonic(), result)
+        return result
