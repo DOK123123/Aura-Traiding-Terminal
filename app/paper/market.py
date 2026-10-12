@@ -45,7 +45,7 @@ class Market:
                     if type(raw) not in (int,float) or not math.isfinite(raw):
                         raise PaperError('INVALID_MARKET_DATA')
                     prices.append(Decimal(str(raw)))
-                bars.append(Bar(candle['time'],*prices))
+                bars.append(Bar(candle['time'],*prices,Decimal(str(volume))))
             window = Window(symbol,timeframe,data['source'],now,tuple(bars))
             window.validate(now)
             if data.get('last_closed_at') != bars[-1].time+STEPS[timeframe]:

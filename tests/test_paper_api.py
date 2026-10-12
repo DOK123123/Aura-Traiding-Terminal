@@ -167,7 +167,7 @@ def test_storage_failed_lifespan_does_not_break_health(monkeypatch,tmp_path):
 def test_no_exchange_order_routes_added():
     routes=app.openapi()['paths']
     assert not any('order' in path and set(methods)-{'get','head'} for path,methods in routes.items())
-    allowed={'/api/paper/positions/open','/api/paper/positions/{trade_id}/close','/api/paper/settings','/api/paper/refresh'}
+    allowed={'/api/paper/auto','/api/paper/positions/open','/api/paper/positions/{trade_id}/close','/api/paper/settings','/api/paper/refresh'}
     assert {path for path,methods in routes.items() if 'post' in methods and path.startswith('/api/paper/')}==allowed
 
 
@@ -184,3 +184,20 @@ def test_audit_corrupt_structured_journal_keeps_market_alive(ledger,monkeypatch)
     with engine.store.transaction(write=False) as db:
         assert len(engine.store.trades(db))==1
         assert engine.store.get(db,'peak') is None
+
+
+def test_auto_route_owner_csrf_strict_scope_and_no_external_signal_injection(client):
+    c,engine,clock=client
+    from app.paper.auto import Auto
+    app.state.paper.auto=Auto(engine)
+    body={'enabled':True,'symbol':'BTCUSDT','timeframe':'1m','expected_source':'Binance','fallback_policy':'PAPER_SETTINGS'}
+    assert c.post('/api/paper/auto',json=body).status_code==401
+    assert c.post('/api/paper/auto',auth=('aura',PASSWORD),json=body).status_code==403
+    assert c.post('/api/paper/auto',auth=('aura',PASSWORD),headers=HEADERS,json=dict(body,signal='LONG')).status_code==422
+    assert c.post('/api/paper/auto',auth=('aura',PASSWORD),headers=HEADERS,json=dict(body,enabled='true')).status_code==422
+    assert c.post('/api/paper/auto',auth=('aura',PASSWORD),headers=HEADERS,json=body).json()['status']=='ON'
+    state=c.get('/api/paper/state?scope=AUTO',auth=('aura',PASSWORD)).json()
+    assert state['statistics_scope']=='AUTO' and state['auto_paper']['status']=='ON'
+    assert c.get('/api/paper/state?scope=REAL',auth=('aura',PASSWORD)).status_code==422
+    body['enabled']=False
+    assert c.post('/api/paper/auto',auth=('aura',PASSWORD),headers=HEADERS,json=body).json()['status']=='OFF'

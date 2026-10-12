@@ -116,8 +116,8 @@ def login():
 
 
 @router.get('/state',dependencies=[Depends(owner)])
-async def state(request:Request):
-    return await respond(request.app.state.paper.state())
+async def state(request:Request,scope:Literal['ALL','MANUAL','AUTO']='ALL'):
+    return await respond(request.app.state.paper.state(scope))
 
 
 @router.get('/quote',dependencies=[Depends(owner)])
@@ -153,3 +153,18 @@ async def export(request:Request):
         return Response(data,media_type='application/vnd.sqlite3',headers=dict(HEADERS,**{'Content-Disposition':'attachment; filename="aura-paper-backup.sqlite3"'}))
     except PaperError:
         return JSONResponse({'code':'STORAGE_UNAVAILABLE','message':MESSAGES['STORAGE_UNAVAILABLE']},status_code=503,headers=HEADERS)
+
+
+class AutoConfiguration(StrictModel):
+    enabled: bool
+    symbol: Literal['BTCUSDT'] = 'BTCUSDT'
+    timeframe: Literal['1m','5m','15m','1h'] = '15m'
+    expected_source: StrictStr = Field(default='Binance · Spot',min_length=1,max_length=120)
+    fallback_policy: Literal['SKIP','PAPER_SETTINGS'] = 'SKIP'
+
+    model_config = ConfigDict(extra='forbid',strict=True)
+
+
+@router.post('/auto',dependencies=[Depends(mutation)])
+async def auto_configuration(request:Request,body:AutoConfiguration):
+    return await respond(request.app.state.paper.configure_auto(body.model_dump()))

@@ -89,5 +89,10 @@ Review `app/paper/`, `static/paper.js`, `tests/test_paper_*.py` and
 owner/CSRF boundaries, atomic balance/journal/idempotency, explicit closed-candle
 fill semantics and fee-inclusive risk. Verify SHORT signs, collateral, duplicate
 commands/signals, pre-entry OHLC look-ahead, ambiguous SL/TP, adverse gaps, stale
-equity, restart recovery and Render ephemeral-disk disclosure. No automatic
-signal entry, exchange writer or real-money override. See `../PAPER_TRADING.md`.
+equity, restart recovery and Render ephemeral-disk disclosure. Auto Paper defaults OFF, permits only owner-enabled server-confirmed closed
+signals, and never permits exchange writers or real-money override. See `../PAPER_TRADING.md`.
+
+Review `app/paper/{auto,signals}.py`: causal cutoff before features, exact archive/
+market tail match, atomic decision/trade/watermark, permanent dedup beyond audit
+retention, one-open-position risk cap, explicit stops fallback, generations and
+restart PAUSED. Bybit 403 must not be bypassed. See `../AUTO_PAPER_TRADING.md`.

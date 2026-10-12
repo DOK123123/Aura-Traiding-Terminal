@@ -1,6 +1,7 @@
 # Aura Paper Trading — virtual local ledger
 
-**REAL MONEY EXECUTION = DISABLED. Automatic signal entry = OFF.**
+**REAL MONEY EXECUTION = DISABLED. Auto Paper defaults OFF.**
+Explicit owner-enabled Auto Paper is documented in [AUTO_PAPER_TRADING.md](AUTO_PAPER_TRADING.md).
 This engine cannot submit exchange orders. Binance Testnet and Bybit Demo remain
 separate GET-only integrations. No exchange key is needed by paper trading.
 
@@ -92,7 +93,7 @@ Defaults (paper assumptions, **not an exchange tariff**):
 | Commission each side % | 0.10 | `PAPER_COMMISSION_PCT` |
 | Risk per trade % | 1 | `PAPER_RISK_PER_TRADE_PCT` |
 | Maximum position notional USDT | 2000 | `PAPER_MAXIMUM_POSITION_SIZE_USDT` |
-| Maximum simultaneous positions | 3 | `PAPER_MAXIMUM_SIMULTANEOUS_POSITIONS` |
+| Maximum simultaneous positions | 1 | `PAPER_MAXIMUM_SIMULTANEOUS_POSITIONS` |
 | Default stop distance % | 2 | `PAPER_STOP_LOSS_PCT` |
 | Default target distance % | 4 | `PAPER_TAKE_PROFIT_PCT` |
 
@@ -210,3 +211,7 @@ recovery only when persistent storage is configured. No live Render or exchange
 account was accessed by the offline test suite.
 
 Latest pre-Render audit and Android manual checklist: [AUDIT_RENDER_ANDROID.md](AUDIT_RENDER_ANDROID.md).
+
+Auto Paper now supports separately opted-in server-owned signals, decision audit
+and ALL/MANUAL/AUTO attribution. Earlier audit reports describe their pinned
+pre-Auto snapshots. Generic arbitrary signal/exchange execution remains disabled.

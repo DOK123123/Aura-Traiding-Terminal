@@ -26,6 +26,8 @@ from .bybit_demo.client import BybitDemoReader
 from .paper.api import router as paper_router
 from .paper.market import Market as PaperMarket
 from .paper.service import Service as PaperService
+from .paper.signals import SignalReader as PaperSignalReader
+from .patterns.history import history_service
 
 ROOT = Path(__file__).resolve().parent.parent
 PROVIDERS = {"BTCUSDT": BinanceProvider(), "XAUUSD": GoldProvider()}
@@ -42,7 +44,9 @@ async def lifespan(app):
         app.state.bybit_demo = BybitDemoReader()
         async def paper_fetch(symbol, timeframe):
             return await market(symbol, timeframe, 500)
-        app.state.paper = PaperService(PaperMarket(paper_fetch))
+        async def paper_history(symbol,timeframe):
+            return await history_service.get(client,symbol,timeframe)
+        app.state.paper = PaperService(PaperMarket(paper_fetch),signals=PaperSignalReader(paper_history))
         await app.state.paper.start(ROOT)
         try:
             yield

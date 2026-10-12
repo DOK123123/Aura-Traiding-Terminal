@@ -34,6 +34,11 @@ class Store:
                     seq INTEGER PRIMARY KEY AUTOINCREMENT, recorded_at INTEGER NOT NULL,
                     market_at INTEGER, balance TEXT NOT NULL, equity TEXT, peak TEXT NOT NULL,
                     drawdown_pct TEXT, maximum_drawdown_pct TEXT NOT NULL)''')
+                db.execute("""CREATE TABLE IF NOT EXISTS curve_slices (
+                    seq INTEGER NOT NULL REFERENCES curve(seq) ON DELETE CASCADE,
+                    entry_type TEXT NOT NULL, balance TEXT NOT NULL, equity TEXT, peak TEXT NOT NULL,
+                    drawdown_pct TEXT, maximum_drawdown_pct TEXT NOT NULL,
+                    maximum_drawdown_usdt TEXT NOT NULL, PRIMARY KEY(seq,entry_type))""")
         except (OSError, sqlite3.Error):
             raise PaperError('STORAGE_UNAVAILABLE') from None
 

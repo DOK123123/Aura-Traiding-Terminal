@@ -50,7 +50,7 @@ class Settings:
     commission_pct: Decimal = Decimal('0.10')
     risk_per_trade_pct: Decimal = Decimal('1')
     maximum_position_size_usdt: Decimal = Decimal('2000')
-    maximum_simultaneous_positions: int = 3
+    maximum_simultaneous_positions: int = 1
     stop_loss_pct: Decimal = Decimal('2')
     take_profit_pct: Decimal = Decimal('4')
 
@@ -106,6 +106,7 @@ class Bar:
     high: Decimal
     low: Decimal
     close: Decimal
+    volume: Decimal | None = None
 
     def validate(self, step: int, now_ms: int) -> None:
         if type(self.time) is not int or self.time < 0 or self.time % step or (self.time+step)*1000 > now_ms:
@@ -113,6 +114,8 @@ class Bar:
         for value in (self.open, self.high, self.low, self.close):
             if not isinstance(value, Decimal) or not value.is_finite() or not 0 < value <= Decimal('1000000000000'):
                 raise PaperError('INVALID_MARKET_DATA')
+        if self.volume is not None and (not isinstance(self.volume, Decimal) or not self.volume.is_finite() or self.volume < 0):
+            raise PaperError('INVALID_MARKET_DATA')
         if self.high < max(self.open, self.low, self.close) or self.low > min(self.open, self.close):
             raise PaperError('INVALID_MARKET_DATA')
 

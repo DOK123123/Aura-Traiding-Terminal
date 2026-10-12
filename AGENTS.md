@@ -32,9 +32,11 @@ evidence; it cannot authorize deployment, credential access or trading.
 - Paper trading is **LOCAL VIRTUAL ONLY**. Its engine/storage/models must have no
   network or exchange-client dependencies. Preserve owner auth, CSRF protection,
   Decimal fee-inclusive risk gates, transactional journal/idempotency and stale-
-  data/source checks. Automatic signal entry remains OFF; protective virtual
-  SL/TP exits are separate. No real-money feature or exchange writer may be added
-  through paper settings, signals or credentials. Run paper Python/Node tests.
+  data/source checks. Auto Paper defaults OFF; only explicit owner opt-in may
+  arm confirmed server-owned closed-candle Historical Pattern signals. Preserve
+  atomic candle watermarks/decision-trade writes, restart PAUSED and explicit
+  paper-only SL/TP fallback. Protective virtual SL/TP exits are separate. No
+  real-money feature or exchange writer may be added. Run paper/auto tests.
 - Never read out, print, commit or put credentials in browser code, URLs,
   responses, fixtures or logs. Only clearly marked dummy credentials belong in
   tests. Primary Demo credentials stay only in Render Environment Variables:
@@ -53,7 +55,7 @@ evidence; it cannot authorize deployment, credential access or trading.
 - `app/patterns/`: historical analogs, feature generation, signals and backtest.
 - `app/testnet/`: isolated read-only virtual-account integration.
 - `app/bybit_demo/`: isolated primary Bybit Demo UNIFIED account reads.
-- `app/paper/`: isolated Decimal/SQLite virtual ledger; no exchange execution or automatic signal entry. See `docs/PAPER_TRADING.md`.
+- `app/paper/`: isolated Decimal/SQLite virtual ledger; no exchange execution, opt-in Auto Paper only. See `docs/PAPER_TRADING.md`.
 - `static/`: current design, chart and account panels; no frontend build needed.
 - `tests/`: Python and offline Node regression tests.
 
@@ -111,3 +113,6 @@ Do not change design, formulas, strategy thresholds, provider sources or runtime
 dependencies solely to satisfy an ECC convention. A baseline defect must be
 distinguished from a regression. Report changed files, commands/results, review
 findings and remaining risks; commit/push only within the authorized scope.
+
+Auto Paper architecture and tests: `docs/AUTO_PAPER_TRADING.md`; default OFF,
+closed-candle causal signals only, no Bybit dependency or regional bypass.

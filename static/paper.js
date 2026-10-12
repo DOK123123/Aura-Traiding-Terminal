@@ -2,7 +2,7 @@
 (() => {
   const el = id => document.getElementById('paper-' + id);
   const fields = () => Array.from(document.querySelectorAll('[data-paper-setting]'));
-  let quote = null, busy = false, loaded = false, pending = null, timer = null, lastState = 0, stopped = false;
+  let quote = null, busy = false, loaded = false, pending = null, timer = null, lastState = 0, stopped = false, latestAuto = null, viewGeneration = 0, pendingView = false;
   const pendingKey = 'aura.paper.pending.v1';
   try {
     const stored = sessionStorage.getItem(pendingKey);
@@ -32,7 +32,7 @@
   }
   function buttons() {
     el('open').disabled = !matched() || Boolean(pending);
-    for (const id of ['refresh','save','quote-refresh']) el(id).disabled = busy || Boolean(pending);
+    for (const id of ['refresh','save','quote-refresh','auto-save']) el(id).disabled = busy || Boolean(pending);
     el('retry').hidden = !pending; el('retry').disabled = busy;
     for (const button of el('positions').querySelectorAll('button')) button.disabled = busy || Boolean(pending);
   }
@@ -80,6 +80,7 @@
   function render(data) {
     if (stopped) return;
     safety(data);
+    if ((data.statistics_scope || 'ALL') !== (el('scope').value || 'ALL')) throw new Error('Statistics scope mismatch; обновите Paper.');
     if (!data.statistics || !Array.isArray(data.open_positions) || !Array.isArray(data.closed_trades) || !Array.isArray(data.equity_curve)) throw new Error('Некорректные данные Paper.');
     loaded = true; lastState = Date.now(); el('data').hidden = false;
     el('storage').textContent = 'Журнал SQLite. На Render без persistent disk он теряется при restart/redeploy. Скачивайте резервные копии; для постоянного хранения настройте PAPER_DB_PATH на диск.';
@@ -90,7 +91,7 @@
     }
     for (const input of fields()) if (document.activeElement !== input) {
       input.value = data.settings[input.dataset.paperSetting];
-      input.disabled = input.dataset.paperSetting === 'starting_balance' && (s.total_trades+s.open_positions > 0);
+      input.disabled = input.dataset.paperSetting === 'starting_balance' && (data.starting_balance_locked === true || s.total_trades+s.open_positions > 0);
     }
     el('positions').replaceChildren();
     for (const trade of data.open_positions) {
@@ -100,18 +101,60 @@
     }
     if (!data.open_positions.length) cells(el('positions'),['Нет открытых paper positions']);
     el('trades').replaceChildren();
-    for (const t of data.closed_trades) cells(el('trades'),[new Date(t.exit_time).toISOString(),t.symbol+' / '+t.direction,t.entry_price,t.exit_price,t.position_size,t.commissions,t.realized_pnl,t.pnl_pct,t.entry_reason,t.exit_reason,t.source+' / '+t.timeframe]);
+    for (const t of data.closed_trades) cells(el('trades'),[new Date(t.exit_time).toISOString(),t.symbol+' / '+t.direction,t.entry_price,t.exit_price,t.position_size,t.commissions,t.realized_pnl,t.pnl_pct,t.entry_reason,t.exit_reason,t.source+' / '+t.timeframe,t.entry_type === 'AUTO_SIGNAL' ? 'AUTO PAPER' : 'MANUAL PAPER']);
     if (!data.closed_trades.length) cells(el('trades'),['Нет закрытых paper trades']);
     el('journal-note').textContent = `Показано ${data.closed_trades.length} из ${data.closed_trades_total}; полный архив — SQLite backup. Gross profit/loss агрегируют net исходы после комиссий. Profit Factor без убытков = —.`;
-    renderCurve(data); buttons();
+    renderAuto(data); renderCurve(data); buttons();
+  }
+  function statePath() {
+    const mode = el('scope').value || 'ALL';
+    return 'state' + (mode === 'ALL' ? '' : '?scope=' + encodeURIComponent(mode));
+  }
+  function renderAuto(data) {
+    const state = data.auto_paper;
+    if (!state) return; // Old offline fixtures / server compatibility: no automatic actions.
+    if (!['OFF','ON','PAUSED','ERROR'].includes(state.status) || typeof state.enabled !== 'boolean') throw new Error('Некорректный Auto Paper state');
+    latestAuto = state;
+    el('auto-badge').textContent = 'AUTO PAPER ' + state.status;
+    el('auto-state').textContent = state.status + ' · ' + state.symbol + ' / ' + state.timeframe + ' · ' + state.source;
+    for (const [id,value] of [['auto-mode',state.enabled ? 'ON' : 'OFF'],['auto-policy',state.fallback_policy]])
+      if (document.activeElement !== el(id)) el(id).value = value;
+    el('auto-last').textContent = 'Last candle: ' + (state.last_processed_candle ? new Date(state.last_processed_candle).toISOString() : '—') +
+      ' · Last signal: ' + display(state.last_signal) + ' · Action: ' + display(state.last_action) + ' · Rejection: ' + display(state.last_rejection_reason);
+    el('auto-metrics').replaceChildren();
+    const stats = data.auto_statistics || {};
+    for (const [name,value] of [['Auto closed trades',stats.total_trades],['Auto PnL',stats.net_pnl],['Auto Win Rate %',stats.win_rate],['Auto Profit Factor',stats.profit_factor]]) {
+      const card = document.createElement('div'), label = document.createElement('span'), strong = document.createElement('strong');
+      label.textContent = name; strong.textContent = display(value); card.append(label,strong); el('auto-metrics').append(card);
+    }
+    el('auto-decisions').replaceChildren();
+    for (const row of state.decisions || []) cells(el('auto-decisions'),[new Date(row.timestamp).toISOString(),row.symbol+' / '+row.timeframe,
+      row.signal_result,row.auto_status,row.trade_opened ? 'YES' : 'NO',row.rejection_reason || row.action]);
+  }
+  async function saveAuto() {
+    if (stopped || busy || pending) return;
+    const enabled = el('auto-mode').value === 'ON', selected = scope();
+    if (enabled && (!selected.fresh || selected.symbol !== 'BTCUSDT')) { status('Для ON/RESUME нужен свежий BTCUSDT график.'); return; }
+    busy = true; buttons();
+    try {
+      await request('auto',{enabled,symbol:'BTCUSDT',timeframe:selected.timeframe || latestAuto?.timeframe || '15m',
+        expected_source:selected.source || latestAuto?.source || 'Binance · Spot',fallback_policy:el('auto-policy').value || 'SKIP'});
+      render(await request(statePath())); invalidate(); status(enabled ? 'Auto Paper ON: ждём следующую закрытую свечу; virtual funds only.' : 'Auto Paper OFF. Защитные paper SL/TP продолжаются.');
+    } catch (error) { status(error.message + ' Проверьте состояние: операция настройки могла иметь неизвестный исход.'); }
+    finally { busy = false; buttons(); if (pendingView) { pendingView = false; refresh(); } }
   }
   function fail(error) { status(error.message || 'Paper временно недоступен.'); loaded = false; el('data').hidden = true; invalidate(); }
   async function refresh() {
     if (stopped || busy || pending) return;
     busy = true; buttons();
-    try { render(await request('state')); status('PAPER ONLY · manual entry · protective SL/TP · AUTO ENTRY OFF'); }
+    const generation = viewGeneration;
+    try {
+      const data = await request(statePath());
+      if (generation !== viewGeneration) return;
+      render(data); status('PAPER ONLY · manual / explicitly armed AUTO · protective SL/TP · real money DISABLED');
+    }
     catch(error) { fail(error); }
-    finally { busy = false; buttons(); }
+    finally { busy = false; buttons(); if (pendingView) { pendingView = false; refresh(); } }
   }
   async function getQuote() {
     if (stopped || busy || pending) return;
@@ -125,12 +168,12 @@
       quote = result; el('quote').textContent = `${result.price} USDT · ${result.source} · ${result.timeframe} · closed ${new Date(result.price_time).toISOString()}`;
       status('Quote подтверждена. Виртуальное исполнение по closed candle close.');
     } catch(error) { invalidate(); status(error.message); }
-    finally { busy = false; buttons(); }
+    finally { busy = false; buttons(); if (pendingView) { pendingView = false; refresh(); } }
   }
   async function execute() {
     if (stopped || !pending || busy) return;
     busy = true; buttons();
-    try { await request(pending.path,pending.body); pending = null; invalidate(); render(await request('state')); status('Paper action выполнено. Биржевые ордера не отправлялись.'); }
+    try { await request(pending.path,pending.body); pending = null; invalidate(); render(await request(statePath())); status('Paper action выполнено. Биржевые ордера не отправлялись.'); }
     catch(error) {
       if (error.definitive) { pending = null; invalidate(); }
       status(error.message + (pending ? ' Исход неизвестен: повторите с тем же request ID; не открывайте новую сделку.' : ''));
@@ -153,10 +196,12 @@
     if (stopped || busy || pending) return;
     const values = Object.fromEntries(fields().map(i => [i.dataset.paperSetting,i.dataset.paperSetting === 'maximum_simultaneous_positions' ? Number(i.value) : i.value.trim()]));
     busy = true; buttons();
-    try { await request('settings',values); render(await request('state')); status('Paper настройки сохранены. Открытые позиции не изменены.'); invalidate(); }
+    try { await request('settings',values); render(await request(statePath())); status('Paper настройки сохранены. Открытые позиции не изменены.'); invalidate(); }
     catch(error) { status(error.message); }
-    finally { busy = false; buttons(); }
+    finally { busy = false; buttons(); if (pendingView) { pendingView = false; refresh(); } }
   }
+  el('auto-save').addEventListener('click',saveAuto);
+  el('scope').addEventListener('change',() => { viewGeneration++; loaded = false; el('data').hidden = true; invalidate(); if (busy) pendingView = true; else refresh(); });
   el('refresh').addEventListener('click',refresh); el('quote-refresh').addEventListener('click',getQuote);
   el('open').addEventListener('click',open); el('save').addEventListener('click',save); el('retry').addEventListener('click',execute);
   document.getElementById('symbol').addEventListener('change',invalidate);

@@ -139,3 +139,8 @@ Historical Pattern Engine реализован отдельным пакетом
 ## Paper Trading
 
 Добавлен отдельный виртуальный счёт 10 000 USDT: ручные LONG/SHORT, Decimal-комиссии, риск, SL/TP, SQLite-журнал, статистика и equity curve. **REAL MONEY EXECUTION = DISABLED; автоматический вход OFF.** Binance/Bybit остаются READ ONLY. Просмотр и действия защищены существующим паролем владельца. На Render для сохранения после redeploy нужен persistent disk; без него скачивайте резервные копии. [Настройка, расчёты и ограничения](docs/PAPER_TRADING.md).
+
+
+## Auto Paper Trading
+
+Добавлен opt-in **AUTO PAPER** (по умолчанию OFF): подтверждённые сигналы существующего Historical Pattern Engine, закрытые свечи, виртуальный риск ≤1%, максимум одна открытая позиция. После restart — PAUSED до ручного resume. SL/TP fallback выбирается явно; Bybit не требуется. REAL MONEY EXECUTION = DISABLED. [Инструкция, audit/dedup и Render limits](docs/AUTO_PAPER_TRADING.md).

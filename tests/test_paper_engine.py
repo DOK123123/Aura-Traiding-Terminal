@@ -18,7 +18,7 @@ from app.paper.storage import Store
 @pytest.fixture
 def ledger(tmp_path):
     clock = [1800000060000]
-    settings = replace(Settings(),commission_pct=D('0'),maximum_position_size_usdt=D('10000'),risk_per_trade_pct=D('10'),stop_loss_pct=D('20'),take_profit_pct=D('20'))
+    settings = replace(Settings(),maximum_simultaneous_positions=3,commission_pct=D('0'),maximum_position_size_usdt=D('10000'),risk_per_trade_pct=D('10'),stop_loss_pct=D('20'),take_profit_pct=D('20'))
     engine = Engine(Store(tmp_path/'paper.sqlite3'),settings,lambda:clock[0])
     return engine,clock
 
