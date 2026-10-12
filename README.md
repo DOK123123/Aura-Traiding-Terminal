@@ -144,3 +144,11 @@ Historical Pattern Engine реализован отдельным пакетом
 ## Auto Paper Trading
 
 Добавлен opt-in **AUTO PAPER** (по умолчанию OFF): подтверждённые сигналы существующего Historical Pattern Engine, закрытые свечи, виртуальный риск ≤1%, максимум одна открытая позиция. После restart — PAUSED до ручного resume. SL/TP fallback выбирается явно; Bybit не требуется. REAL MONEY EXECUTION = DISABLED. [Инструкция, audit/dedup и Render limits](docs/AUTO_PAPER_TRADING.md).
+
+## Strategy Lab v1.1
+
+Отдельный research-only блок сравнивает Donchian, Trend + ATR и EMA + RSI + ADX
+на одинаковом BTCUSDT snapshot (15m/1h/4h), с независимыми development/validation
+счетами. Aura Existing честно отмечен INCOMPATIBLE: его текущий backtest не
+изменён. Без активации стратегий, связи с Paper ledger или биржевых ордеров.
+[Методика, ограничения и Render/Android checklist](docs/STRATEGY_LAB.md).

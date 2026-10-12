@@ -96,3 +96,13 @@ Review `app/paper/{auto,signals}.py`: causal cutoff before features, exact archi
 market tail match, atomic decision/trade/watermark, permanent dedup beyond audit
 retention, one-open-position risk cap, explicit stops fallback, generations and
 restart PAUSED. Bybit 403 must not be bypassed. See `../AUTO_PAPER_TRADING.md`.
+
+## Strategy Lab research review
+
+Review `app/lab/` and `docs/STRATEGY_LAB.md`. Check common calendar and complete
+closed OHLCV, causal indicator prefixes, next-open signals, conservative gap/SLTP
+fills, independent validation cashflows, Decimal fee-inclusive sizing and undefined
+metrics. Never alter Aura to force shared execution compatibility. Prove Lab has
+no Paper state/private exchange dependencies or activation route. Preserve bounded
+fetch/CPU/storage, hashed snapshot/configuration/replay and explicit ephemeral-disk
+limitations. Compare formulas independently of implementation fixtures.

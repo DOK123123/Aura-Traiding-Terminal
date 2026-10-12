@@ -28,6 +28,9 @@ from .paper.market import Market as PaperMarket
 from .paper.service import Service as PaperService
 from .paper.signals import SignalReader as PaperSignalReader
 from .patterns.history import history_service
+from .lab.api import router as lab_router
+from .lab.service import Service as LabService
+from .lab.data import public_page as lab_public_page
 
 ROOT = Path(__file__).resolve().parent.parent
 PROVIDERS = {"BTCUSDT": BinanceProvider(), "XAUUSD": GoldProvider()}
@@ -47,6 +50,9 @@ async def lifespan(app):
         async def paper_history(symbol,timeframe):
             return await history_service.get(client,symbol,timeframe)
         app.state.paper = PaperService(PaperMarket(paper_fetch),signals=PaperSignalReader(paper_history))
+        async def lab_page(query):
+            return await lab_public_page(client,query)
+        app.state.lab = LabService(ROOT,lab_page)
         await app.state.paper.start(ROOT)
         try:
             yield
@@ -61,6 +67,7 @@ app.include_router(patterns_router)
 app.include_router(testnet_router)
 app.include_router(bybit_demo_router)
 app.include_router(paper_router)
+app.include_router(lab_router)
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 

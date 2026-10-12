@@ -116,3 +116,14 @@ findings and remaining risks; commit/push only within the authorized scope.
 
 Auto Paper architecture and tests: `docs/AUTO_PAPER_TRADING.md`; default OFF,
 closed-candle causal signals only, no Bybit dependency or regional bypass.
+
+## Strategy Lab isolation
+
+`app/lab/`, `static/lab.{js,css}` and `docs/STRATEGY_LAB.md` implement research
+only. Preserve independent snapshots/SQLite, BTCUSDT/common UTC coverage, causal
+closed-candle next-open execution, frozen configurations, Decimal accounting and
+validation ledger isolation. Never mutate Aura formulas or Auto Paper to make a
+comparison fit. Aura native semantics are currently INCOMPATIBLE with Lab; show
+this honestly. No activation, private client, real execution or exchange writer
+may be introduced. Run `tests/test_lab.py` and `node tests/test_lab_frontend.cjs`
+alongside every existing Python/Node suite after related changes.

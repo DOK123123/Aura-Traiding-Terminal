@@ -14,6 +14,8 @@
   <script defer src="/static/bybit_demo.js"></script>
   <link rel="stylesheet" href="/static/paper.css">
   <script defer src="/static/paper.js"></script>
+  <link rel="stylesheet" href="/static/lab.css">
+  <script defer src="/static/lab.js"></script>
 </head>
 <body>
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
@@ -150,6 +152,38 @@
       <p class="pattern-warning">SL/TP не гарантируют ограничение убытка при gap. Если одна свеча касается обоих уровней, приоритет SL. При устаревших данных, смене источника или пропуске истории операции/защитные exits блокируются; устаревшая equity показана как —.</p>
       <h3>OPEN POSITIONS</h3><div class="pattern-table-wrap"><table><thead><tr><th>Пара / Side</th><th>Entry</th><th>Size</th><th>SL</th><th>TP</th><th>Unrealized PnL</th><th>Data</th><th>Действие</th></tr></thead><tbody id="paper-positions"></tbody></table></div>
       <h3>CLOSED TRADES · ЖУРНАЛ</h3><p id="paper-journal-note" class="score-note"></p><div class="pattern-table-wrap"><table><thead><tr><th>Exit UTC</th><th>Пара / Side</th><th>Entry</th><th>Exit</th><th>Size</th><th>Fees</th><th>Net PnL</th><th>PnL %</th><th>Причина входа</th><th>Причина выхода</th><th>Source / TF</th><th>Entry type</th></tr></thead><tbody id="paper-trades"></tbody></table></div>
+    </div>
+  </section>
+  <section class="panel patterns lab" aria-labelledby="lab-title">
+    <div class="modules-heading"><div><p class="eyebrow">RESEARCH ONLY / NO ACTIVATION</p><h2 id="lab-title">STRATEGY LAB v1.1</h2></div><span class="tiny-badge">BTCUSDT · CLOSED HISTORY</span></div>
+    <p class="pattern-warning">REAL MONEY EXECUTION = DISABLED · No strategy activation. A numerical backtest ranking is not evidence of profitability, safety or production readiness.</p>
+    <p class="score-note">Identical snapshot for 15m / 1h / 4h. Aura Existing is shown honestly as incompatible: its fixed-horizon, 100% notional execution cannot use common ATR stops/risk sizing without changing Aura. Existing Aura remains unchanged.</p>
+    <details><summary>Frozen baseline and calendar coverage</summary>
+      <p class="score-note">Balance 10 000 USDT · risk 1% · max notional 2 000 USDT · one position · next-open entries · SL 2×ATR / TP 4×ATR. Fees/slippage below are research assumptions per fill, not exchange tariffs. Experimental parameters are fixed before validation.</p>
+      <div class="lab-controls">
+        <label>History days (all timeframes)<input id="lab-days" type="number" min="1" max="80" value="60"></label>
+        <label>Development %<input id="lab-development" inputmode="decimal" value="70"></label>
+        <label>Fee per side, bps<input id="lab-fee" inputmode="decimal" value="10"></label>
+        <label>Adverse slippage, bps<input id="lab-slippage" inputmode="decimal" value="5"></label>
+        <label>Optional start UTC (4h boundary)<input id="lab-start" type="datetime-local" step="14400"></label>
+        <label>Optional end UTC (4h boundary)<input id="lab-end" type="datetime-local" step="14400"></label>
+      </div>
+      <p class="score-note">Blank dates: last fully closed UTC 4h boundary minus selected days. 250 warm-up 4h candles precede the comparison. Maximum 12 000 base 15m candles; incomplete or gapped history is rejected, never filled or silently shortened. Split is rounded down to a common UTC 4h boundary.</p>
+    </details>
+    <div class="pattern-actions"><button id="lab-run">Run frozen comparison</button><button id="lab-list-refresh">Refresh saved studies</button><a id="lab-login" href="/api/lab/login" hidden>Owner login: aura</a></div>
+    <p id="lab-status" role="status" aria-live="polite">Research experiments load on request. No changes to Paper or Auto Paper.</p>
+    <div class="lab-controls"><label>Saved experiments (last 10)<select id="lab-experiments"><option value="">Select a saved study</option></select></label></div>
+    <div id="lab-result" hidden>
+      <p id="lab-meta" class="score-note"></p><p id="lab-coverage" class="score-note"></p>
+      <div class="pattern-actions"><button id="lab-replay">Verify snapshot replay</button><a id="lab-export" href="#">Download full snapshot / config / history</a></div>
+      <div class="lab-controls"><label>Timeframe<select id="lab-timeframe"><option value="15m">15m</option><option value="1h">1h</option><option value="4h">4h</option></select></label><label>Split<select id="lab-split"><option value="validation">Validation / out-of-sample</option><option value="development">Development / in-sample</option></select></label></div>
+      <p id="lab-ranking" class="pattern-warning"></p>
+      <div class="pattern-table-wrap"><table><thead><tr><th>Strategy / detail</th><th>Status</th><th>Net Profit</th><th>Return %</th><th>Trades</th><th>Win %</th><th>PF</th><th>Expectancy</th><th>Max DD %</th><th>Avg Win</th><th>Avg Loss</th><th>Realized R/R</th><th>Sharpe</th></tr></thead><tbody id="lab-comparison"></tbody></table></div>
+      <p class="score-note">Ranking: validation Return descending, lower drawdown breaks ties; ≥20 trades for eligibility. Inconclusive results may still have a highest numerical value. Sharpe needs ≥20 trades and ≥30 full UTC daily equity returns, nonzero variance; sqrt(365), zero risk-free rate. No out-of-sample parameter selection.</p>
+      <div id="lab-detail" hidden><h3 id="lab-detail-title">AUDITABLE RESEARCH RUN</h3><p id="lab-detail-note" class="score-note"></p><svg id="lab-curve" viewBox="0 0 600 160" role="img" aria-label="Research equity curve"></svg>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Side</th><th>Signal UTC</th><th>Entry UTC</th><th>Entry fill</th><th>Size</th><th>SL</th><th>TP</th><th>Exit fill</th><th>Fees</th><th>Net PnL</th><th>Exit reason</th></tr></thead><tbody id="lab-trades"></tbody></table></div>
+        <div class="pattern-actions"><button id="lab-more" hidden>Next trade page</button></div>
+      </div>
     </div>
   </section>
   <footer><span>Аналитический инструмент · без исполнения сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
