@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from decimal import Decimal
 import json
+import logging
 import uuid
 
 from .engine import precise
@@ -11,13 +12,16 @@ from .models import PaperError, Window, STEPS, decimal, text
 STRATEGY_VERSION = 'HISTORICAL_PATTERN_V1_DEFAULTS'
 AUDIT_LIMIT = 2000
 AUDIT_DAYS = 30
+SIGNAL_FAILURE_LIMIT = 3
+SIGNAL_RETRY_DELAY_MS = 15000
+logger = logging.getLogger(__name__)
 TRANSIENT = {'STALE_DATA','MARKET_GAP','SOURCE_MISMATCH','TIMEFRAME_MISMATCH','MARKET_TIMEOUT',
              'MARKET_UNAVAILABLE','SIGNAL_UNAVAILABLE','SNAPSHOT_MISMATCH','INVALID_MARKET_DATA'}
 REASONS = TRANSIENT | {'OFF','AUTO_OFF','NO_SIGNAL','DUPLICATE_SIGNAL','POSITION_ALREADY_OPEN',
  'RISK_LIMIT','POSITION_SIZE_LIMIT','POSITION_LIMIT','INSUFFICIENT_BALANCE','INVALID_SL','INVALID_TP',
  'STOPS_UNAVAILABLE','INVALID_STOPS','INVALID_DATA','QUOTE_CHANGED','ACTIVATION_BASELINE',
  'MISSED_CANDLE_NO_ENTRY','RESTART_REQUIRES_RESUME','OWNER_NOT_CONFIGURED','SIGNAL_ERROR','ERROR',
- 'WAITING_FOR_NEW_CANDLE','CONFIG_CHANGED'}
+ 'WAITING_FOR_NEW_CANDLE','CONFIG_CHANGED','SIGNAL_RETRY_EXHAUSTED'}
 
 
 @dataclass(frozen=True)
@@ -57,7 +61,7 @@ class Auto:
                 state = dict(status='OFF',enabled=False,configured=False,symbol='BTCUSDT',timeframe='15m',
                              source='Binance · Spot',fallback_policy='SKIP',generation=0,watermarks={},
                              last_processed_candle=None,last_signal=None,last_action='OFF',last_rejection_reason=None,
-                             manual_resume=False)
+                             manual_resume=False,signal_retry=None)
                 self._save(db,state)
             else:
                 try:
@@ -72,6 +76,15 @@ class Auto:
                             or not isinstance(state['source'],str) or not 1 <= len(state['source']) <= 120
                             or not isinstance(state['watermarks'],dict)
                             or any(k not in STEPS or type(v) is not int or v < 0 or v%STEPS[k] for k,v in state['watermarks'].items())):
+                        raise ValueError()
+                    retry=state.get('signal_retry')
+                    if retry is not None and (not isinstance(retry,dict)
+                            or set(retry)!={'candle_time','timeframe','source','failures','next_attempt_at'}
+                            or retry['timeframe']!=state['timeframe'] or retry['source']!=state['source']
+                            or type(retry['candle_time']) is not int or retry['candle_time']<0
+                            or retry['candle_time']%STEPS[state['timeframe']]
+                            or type(retry['failures']) is not int or not 1<=retry['failures']<=SIGNAL_FAILURE_LIMIT
+                            or type(retry['next_attempt_at']) is not int or retry['next_attempt_at']<0):
                         raise ValueError()
                 except (ValueError,TypeError,KeyError):
                     raise PaperError('CORRUPT_JOURNAL') from None
@@ -112,6 +125,9 @@ class Auto:
                   action='OPENED' if trade else 'SKIPPED',strategy_version=STRATEGY_VERSION,source=window.source)
         db.execute('INSERT OR IGNORE INTO auto_decisions VALUES (?,?,?,?)',(ident,self.engine.clock(),candle_time,json.dumps(data)))
         state['watermarks'][window.timeframe]=max(candle_time,state['watermarks'].get(window.timeframe,-1))
+        retry=state.get('signal_retry')
+        if retry and candle_time>=retry['candle_time']:
+            state['signal_retry']=None
         state.update(last_processed_candle=data['timestamp'],last_signal=data['signal_result'],
                      last_action=data['action'],last_rejection_reason=data['rejection_reason'])
         self._save(db,state);self._prune(db)
@@ -128,19 +144,26 @@ class Auto:
             if enabled:
                 require_preflight(self.engine._settings(db),fallback_policy,entry=window.bars[-1].close,opened=self.store.trades(db,opened=True))
             if not enabled:
-                state.update(enabled=False,status='OFF',manual_resume=False,generation=state['generation']+1,last_action='OFF')
+                state.update(enabled=False,status='OFF',manual_resume=False,generation=state['generation']+1,last_action='OFF',signal_retry=None)
                 self._save(db,state)
             elif state['status']=='ON' and (state['symbol'],state['timeframe'],state['source'],state['fallback_policy']) == (window.symbol,window.timeframe,window.source,fallback_policy):
                 pass # Idempotent UI retry must not continually skip subsequent candles.
             else:
                 state.update(enabled=True,status='ON',configured=True,manual_resume=False,symbol=window.symbol,
                              timeframe=window.timeframe,source=window.source,fallback_policy=fallback_policy,
-                             generation=state['generation']+1)
+                             generation=state['generation']+1,signal_retry=None)
                 self._record(db,state,window,window.bars[-1].time,'ACTIVATION_BASELINE')
         return self.state()
 
     def needs_signal(self,window):
         state=self.state()
+        retry=state.get('signal_retry')
+        if retry and window.bars[-1].time<retry['candle_time']:
+            return False
+        if retry and retry['failures']>=SIGNAL_FAILURE_LIMIT:
+            return False
+        if retry and window.bars[-1].time==retry['candle_time'] and self.engine.clock()<retry['next_attempt_at']:
+            return False
         return (state['enabled'] and not state['manual_resume'] and state['status']!='ERROR'
                 and state['timeframe']==window.timeframe and state['source']==window.source
                 and window.bars[-1].time>state['watermarks'].get(window.timeframe,-1))
@@ -152,8 +175,41 @@ class Auto:
             state=self._state(db)
             if generation is not None and state['generation'] != generation:
                 return state
+            if code=='SIGNAL_UNAVAILABLE':
+                if not state['enabled'] or state['manual_resume'] or state['status']=='ERROR':
+                    return state
+                if window is None:
+                    state.update(status='PAUSED',manual_resume=True,last_action='PAUSED',last_rejection_reason=code)
+                    self._save(db,state)
+                    return state
+                try:
+                    window.validate(self.engine.clock())
+                except PaperError:
+                    # No valid candle to retry; never mark an uncomputed signal consumed.
+                    state.update(status='PAUSED',last_action='PAUSED',last_rejection_reason=code)
+                    self._save(db,state)
+                    return state
+                bar=window.bars[-1]
+                if ((window.symbol,window.timeframe,window.source)!=(state['symbol'],state['timeframe'],state['source'])
+                        or bar.time<=state['watermarks'].get(window.timeframe,-1)):
+                    return state
+                retry=state.get('signal_retry')
+                if retry and bar.time<retry['candle_time']:
+                    return state
+                failures=retry['failures']+1 if retry else 1
+                failures=min(failures,SIGNAL_FAILURE_LIMIT)
+                exhausted=failures>=SIGNAL_FAILURE_LIMIT
+                state.update(status='PAUSED',manual_resume=exhausted,last_action='PAUSED',
+                             last_rejection_reason='SIGNAL_RETRY_EXHAUSTED' if exhausted else code,
+                             signal_retry=dict(candle_time=bar.time,timeframe=window.timeframe,source=window.source,
+                                               failures=failures,next_attempt_at=self.engine.clock()+SIGNAL_RETRY_DELAY_MS*failures))
+                # Persist retry metadata only: a failed read is not a final candle decision.
+                self._save(db,state)
+                logger.warning('Auto Paper signal read failed: candle=%s failures=%s/%s status=%s',
+                               bar.time,failures,SIGNAL_FAILURE_LIMIT,state['last_rejection_reason'])
+                return state
             if state['enabled']:
-                manual=code not in TRANSIENT
+                manual=code not in TRANSIENT or bool(state.get('signal_retry') and state['manual_resume'])
                 state.update(status='ERROR' if code=='SIGNAL_ERROR' else 'PAUSED',manual_resume=manual,
                              last_action='PAUSED',last_rejection_reason=code)
                 self._save(db,state)
@@ -163,7 +219,9 @@ class Auto:
                             and type(bar.time) is int and bar.time%STEPS[window.timeframe]==0
                             and (bar.time+STEPS[window.timeframe])*1000<=self.engine.clock()
                             and bar.time>state['watermarks'].get(window.timeframe,-1)):
-                        self._record(db,state,window,bar.time,code)
+                        retry=state.get('signal_retry')
+                        if not retry:
+                            self._record(db,state,window,bar.time,code)
         return self.state()
 
     @precise
@@ -182,6 +240,12 @@ class Auto:
                 return dict(state,duplicate=True) # Persistent watermark survives log rotation and old REST responses.
             if state['generation']!=generation:
                 return dict(state,obsolete=True) # OFF/ON/scope changed while server evaluation was in flight.
+            retry=state.get('signal_retry')
+            if retry and bar.time<retry['candle_time']:
+                return dict(state,obsolete=True) # An older REST snapshot cannot replace a pending newer signal.
+            if retry and signal is None and (bar.time==retry['candle_time'] or state['manual_resume']
+                                             or retry['failures']>=SIGNAL_FAILURE_LIMIT):
+                return state # Cooldown/exhaustion/restart must not consume the pending signal.
             if window.source!=state['source']:
                 state.update(status='PAUSED',last_rejection_reason='SOURCE_MISMATCH')
                 self._record(db,state,window,bar.time,'SOURCE_MISMATCH');return state

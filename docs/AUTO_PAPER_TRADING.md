@@ -118,6 +118,29 @@ Existing unique trade signal IDs/commands provide additional lifetime dedup.
 Resume treats the latest candle as baseline; previously consumed candles never
 become new trades just because audit rows were deleted.
 
+### Temporary signal-read failures
+
+`SIGNAL_UNAVAILABLE` is not a final decision and never advances the candle
+watermark or inserts a final audit row. Auto pauses while the original signal is
+pending. A fresh delivery of the same closed candle can be evaluated again after
+15 seconds following the first failed read, then 30 seconds following the second.
+Retry scope/candle, failure count and next-attempt time persist in the existing
+SQLite Auto metadata. Polls during cooldown neither evaluate nor consume it.
+Three consecutive failed reads (including failures on a newer candle) stop retries
+with `PAUSED`, `SIGNAL_RETRY_EXHAUSTED` and required explicit owner Resume. Safe
+fixed-category logs include candle timestamp and failure count, never credentials.
+
+Successful calculation and final decision retain the original atomic trade/audit/
+watermark transaction and clear pending retry metadata. Freshness, exact source/
+timeframe matching, generations and unique signal/command IDs still apply. If a
+newer coherent window arrives, old uncomputed candles are explicitly skipped as
+`MISSED_CANDLE_NO_ENTRY`; no delayed historical entry is fabricated. Protective
+exits keep running during cooldown/exhaustion. Restart stays PAUSED and does not
+reset the persisted budget or autonomously resume. Explicit Resume preserves the
+existing latest-candle activation-baseline policy; it does not backfill old trades.
+Legacy ledgers without retry metadata remain compatible. The existing Render
+ephemeral-filesystem limitations apply to retry metadata as well.
+
 Audit logs candle-close/recorded timestamps, scope/source, real signal result or
 null when not computed, confidence, ON/OFF/state, opened YES/NO, trade ID and fixed
 rejection/action. Reasons include NO_SIGNAL, AUTO_OFF, STALE_DATA, MARKET_GAP,
