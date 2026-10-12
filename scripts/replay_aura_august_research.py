@@ -18,6 +18,7 @@ from pathlib import Path
 import sys
 import tempfile
 import time
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -28,13 +29,17 @@ from app.models import Candle
 from app.patterns.config import PatternConfig
 from app.patterns.engine import evaluate
 from app.patterns.features import Features, build_features
-from app.paper.auto import Signal, Auto
+from app.paper.auto import Auto
 from app.paper.engine import Engine
 from app.paper.market import Market
 from app.paper.models import Settings
+from app.paper.signals import SignalReader
 from app.paper.storage import Store
+from app.patterns.history import Dataset
+import app.paper.signals as production_signals
 from scripts import backtest_aura_history as backtest
-from scripts import import_binance_csv as importer
+from scripts.audit_pattern_math import gates
+from scripts.replay_aura_csv import enable_sandbox_poll
 
 STEP = 900
 SOURCE = 'Binance · Spot'
@@ -58,15 +63,6 @@ def _causal_features(features: Features, n: int) -> Features:
     return Features(features.vectors[:n], features.facts[:n], features.valid_from)
 
 
-def _signal(candles, index, config, features):
-    n = index + 1
-    result = evaluate(candles[:n], STEP, 500, config, index,
-                      _causal_features(features, n), False)
-    signal = Signal('BTCUSDT', '15m', SOURCE, candles[index].time,
-                    result['signal'], Decimal(str(result['confidence'])))
-    return signal, result
-
-
 async def _run_one(candles, warmup, config, name, budget):
     prefix = list(candles[:warmup])
     clock = [START * 1000]
@@ -80,7 +76,39 @@ async def _run_one(candles, warmup, config, name, budget):
     market = Market(fetch, clock=lambda: clock[0])
     features = build_features(list(candles), config.lookback, 500)
     features.vectors.setflags(write=False)
+    verified_indices = sorted({warmup - 1, warmup, len(candles) - 1})
+    for index in verified_indices:
+        rows = candles[:index + 1]
+        direct = evaluate(rows, STEP, 500, config, index, None, False)
+        cached = evaluate(rows, STEP, 500, config, index,
+                          _causal_features(features, index + 1), False)
+        if direct != cached:
+            raise ValueError('Direct/cached production result mismatch')
+    latest_result = {}
+
+    async def history(symbol, timeframe, **_requirements):
+        return Dataset(list(prefix), SOURCE, clock[0] / 1000, len(prefix),
+                       'Frozen causal August research snapshot')
+
+    def cached_evaluate(rows, step, context, supplied_config, target=None,
+                        _unused_features=None, include_charts=False):
+        # SignalReader remains the production adapter/validator. Only its
+        # fixed PatternConfig construction and expensive feature rebuild are
+        # replaced inside this standalone process for the research matrix.
+        if (step != STEP or context != 500 or supplied_config != config
+                or _unused_features is not None or rows != candles[:len(rows)]
+                or target not in (None, len(rows) - 1)):
+            raise ValueError('Causal research cache scope mismatch')
+        result = evaluate(rows, step, context, supplied_config,
+                          len(rows) - 1 if target is None else target,
+                          _causal_features(features, len(rows)), include_charts)
+        latest_result.clear()
+        latest_result.update(result)
+        return result
+
+    reader = SignalReader(history)
     signals = Counter()
+    failures = Counter()
     decisions = Counter()
     first_signals = []
     started = time.monotonic()
@@ -98,7 +126,17 @@ async def _run_one(candles, warmup, config, name, budget):
             clock[0] = (candle.time + STEP) * 1000
             window = await market.window('BTCUSDT', '15m')
             engine.advance(window)
-            signal, evaluated = _signal(candles, index, config, features)
+            # The production reader has no configuration injection point. A
+            # process-local patch supplies the frozen research config only;
+            # validation, source/timeframe checks and error categories remain
+            # the unchanged production SignalReader implementation.
+            with patch.object(production_signals, 'PatternConfig', lambda: config), \
+                 patch.object(production_signals, 'evaluate', cached_evaluate):
+                signal = await reader.read(window)
+            evaluated = latest_result
+            failed, raw_confidence, candidate, directional = gates(
+                evaluated, evaluated['outcomes'], evaluated['historical_matches'], config)
+            failures.update(failed)
             signals[signal.direction] += 1
             if signal.direction in ('LONG', 'SHORT') and len(first_signals) < 5:
                 first_signals.append(dict(direction=signal.direction,
@@ -108,11 +146,12 @@ async def _run_one(candles, warmup, config, name, budget):
             decision = next(d for d in auto.state()['decisions'] if d['candle_time'] == candle.time)
             reason = decision['rejection_reason'] or 'OPENED'
             decisions[reason] += 1
-            audit.append(dict(candle_open_utc=utc(candle.time), signal=signal.direction,
+            audit.append(dict(decision, candle_open_utc=utc(candle.time), signal=signal.direction,
                                confidence=signal.confidence, decision=reason,
-                               trade_opened=decision['trade_opened'],
-                               rejection_reason=decision['rejection_reason'],
-                               evaluated_status=evaluated['status']))
+                               evaluated_status=evaluated['status'], failed_filters=failed,
+                               historical_matches=evaluated['historical_matches'],
+                               candidate_direction=candidate, directional_analogues=directional,
+                               confidence_raw=raw_confidence))
             if (index - warmup + 1) % 500 == 0:
                 print(f'{name}: {index - warmup + 1}/{len(candles) - warmup}', file=sys.stderr, flush=True)
         snapshot = engine.snapshot('ALL')
@@ -134,7 +173,13 @@ async def _run_one(candles, warmup, config, name, budget):
             expected += (gross - entry_fee - exit_fee).quantize(Decimal('0.00000001'), rounding=ROUND_HALF_EVEN)
     if expected != Decimal(snapshot['statistics']['net_pnl']):
         raise ValueError(f'{name}: Decimal PnL journal mismatch')
-    return dict(name=name, config=config.model_dump(), signals=dict(signals), decision_counts=dict(decisions),
+    if len(audit) != len(candles) - warmup or sum(signals.values()) != len(audit):
+        raise ValueError('Incomplete candle accounting')
+    return dict(name=name, config=config.model_dump(),
+                signals={side: signals[side] for side in ('LONG', 'SHORT', 'WAIT')},
+                decision_counts=dict(decisions), strategy_gate_failures=dict(failures),
+                signal_reader='UNCHANGED_PRODUCTION_WITH_PROCESS_LOCAL_RESEARCH_CONFIG',
+                direct_equivalence_verified_indices=verified_indices,
                 first_five_signals=first_signals, entries=sum(t['entry_type'] == 'AUTO_SIGNAL' for t in trades),
                 closed_trades=len(closed), net_realized_pnl=str(expected),
                 statistics=snapshot['statistics'], open_positions=[t for t in trades if t['status'] == 'OPEN'],
@@ -147,7 +192,8 @@ def _load(path: Path):
     bars, metadata = load_binance_csv(path)
     before = [bar for bar in bars if bar.time < START]
     test = [bar for bar in bars if START <= bar.time < END]
-    if not test or test[-1].time + STEP != END:
+    if (len(test) != (END - START) // STEP or test[0].time != START
+            or test[-1].time + STEP != END or not before or before[-1].time + STEP != START):
         raise ValueError('August coverage is incomplete')
     if len(before) < 500:
         raise ValueError('Fewer than 500 causal warm-up candles')
@@ -189,10 +235,15 @@ def main(argv=None):
     parser.add_argument('csv', type=Path)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--max-seconds-per-config', type=int, default=1800)
+    parser.add_argument('--sandbox-poll', action='store_true',
+                        help='Standalone diagnostic selector wakeup workaround')
     args = parser.parse_args(argv)
     if args.output.exists() or not 1 <= args.max_seconds_per_config <= 3600:
         parser.error('Output must be new and budget must be 1..3600 seconds')
+    if args.sandbox_poll:
+        enable_sandbox_poll()
     result = asyncio.run(run(args.csv, args.max_seconds_per_config))
+    result['sandbox_poll'] = args.sandbox_poll
     with args.output.open('x') as stream:
         json.dump(result, stream, ensure_ascii=False, indent=2, allow_nan=False, default=str)
     print('COMPLETE')

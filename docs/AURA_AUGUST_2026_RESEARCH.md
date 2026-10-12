@@ -20,7 +20,14 @@ CSV: `BTCUSDT-15m-2026-05_to_09.csv`, 14 688 свечей, диапазон `[20
 
 `LONG/SHORT/WAIT` — результат неизменённого production evaluator с исследовательским порогом similarity и minimum_sample. `PnL` — realized PnL закрытых сделок после комиссий; открытая позиция не считается реализованной. `Equity` включает её текущую виртуальную переоценку на последней свече.
 
-| Конфигурация | Параметры | LONG | SHORT | WAIT | Входы | Закрыто | Win rate | Net PnL, USDT | Return от 10k | Max DD | Комиссии | Итоговый equity | Открыто |
+Внутренний `strategy_version` в trade journal остаётся production-константой,
+требуемой существующим Auto. Исследовательскую конфигурацию нужно определять
+по внешнему `results[].name/config` в JSON, а не считать эту константу
+доказательством использования default 75/20 в вариантах B–E. Confidence threshold
+40 и его формула сохранены; изменение minimum_sample естественно меняет
+sample-компонент confidence согласно существующей формуле.
+
+| Конфигурация | Параметры | LONG | SHORT | WAIT | Входы | Закрыто | Win rate | Net PnL, USDT | Equity return | Max DD | Комиссии | Итоговый equity | Открыто |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | A | similarity 75 / sample 20 | 0 | 0 | 2 976 | 0 | 0 | не определён | 0 | 0% | 0% | 0 | 10 000 | 0 |
 | B | similarity 60 / sample 20 | 0 | 0 | 2 976 | 0 | 0 | не определён | 0 | 0% | 0% | 0 | 10 000 | 0 |
@@ -28,7 +35,43 @@ CSV: `BTCUSDT-15m-2026-05_to_09.csv`, 14 688 свечей, диапазон `[20
 | D | similarity 60 / sample 5 | 14 | 22 | 2 940 | 9 | 8 | 12,5% | -232,12 | -2,0468% | 2,9216% | 34,12 | 9 795,3177 | 1 |
 | E | similarity 65 / sample 5 | 7 | 20 | 2 949 | 7 | 6 | 33,3333% | -24,16 | -0,1832% | 1,3270% | 26,16 | 9 981,6844 | 1 |
 
+| Конфигурация | Realized PnL / starting balance | Profit factor | Конечный balance USDT |
+|---|---:|---:|---:|
+| A | 0% | не определён: нет сделок | 10000,00 |
+| B | 0% | не определён: нет сделок | 10000,00 |
+| C | -1,3204% | 0 | 9865,96 |
+| D | -2,3212% | 0,24646150 | 9765,88 |
+| E | -0,2416% | 0,86272727 | 9973,84 |
+
+Balance C–E отличается от starting balance + realized PnL на комиссию входа
+незакрытой позиции (2 USDT). Equity дополнительно учитывает unrealized PnL
+и оценочную комиссию выхода; его изменение нельзя подменять realized PnL.
+Комиссии в основной таблице — фактически начисленные, включая entry fee
+незакрытой позиции. Номинал практически 2000 USDT ограничивает sizing раньше
+бюджета 1%: риск при SL составляет около 44 USDT, а не обязательные 100 USDT.
+
 Варианты A и B не сформировали входов. Для C–E часть подтверждённых сигналов была отклонена действующим лимитом одной одновременной позиции: соответственно 12, 27 и 20 решений `POSITION_ALREADY_OPEN`. Остальные решения были `NO_SIGNAL`. Ошибок источника, stale/missing свечей, сетевых отказов и технических ошибок в этом offline-прогоне не было.
+
+### Точные причины стратегического WAIT
+
+| Невыполненный фильтр | A | B | C | D | E |
+|---|---:|---:|---:|---:|---:|
+| MINIMUM_SAMPLE | 2976 | 1826 | 1120 | 774 | 1988 |
+| CONFIDENCE | 2976 | 2976 | 2952 | 2909 | 2887 |
+| WILSON | 2976 | 2826 | 2826 | 2826 | 2908 |
+| DIRECTIONAL_RATE | 2948 | 1603 | 1603 | 1603 | 1679 |
+| EXPECTED_MOVE_COST | 2951 | 1198 | 1198 | 1198 | 1673 |
+| MEDIAN_DIRECTION | 2948 | 440 | 440 | 440 | 1292 |
+| HORIZON_CONSISTENCY | 2949 | 1029 | 1029 | 1029 | 1610 |
+
+Это пересекающиеся причины: их нельзя складывать как число независимых отказов.
+В A максимум один выбранный аналог; максимальный raw confidence 1,9159.
+В B максимум 47 аналогов, но maximum raw confidence **38,1733 < 40**:
+confidence блокирует все свечи, в 68 случаях являясь единственным failed gate.
+Следовательно, sample20 — не единственный объясняющий барьер после снижения
+similarity до60. C/D/E имеют 16/36/27 полностью прошедших стратегические
+фильтры сигналов; часть из них не исполнилась из-за уже открытой позиции.
+Это наблюдение, а не рекомендация менять confidence или risk limits.
 
 Незакрытые позиции не ликвидировались искусственно:
 
@@ -76,23 +119,98 @@ CSV: `BTCUSDT-15m-2026-05_to_09.csv`, 14 688 свечей, диапазон `[20
 
 Сохранённый production baseline сентября (`similarity 75 / minimum_sample 20`, ровно 10 000 свечей прогрева) дал 2 880 `WAIT`, 0 входов, 0 сделок и нулевой realized PnL. Августовская A имеет тот же результат, но её прогрев короче и поэтому сравнение не является строгим доказательством стабильности. Исследовательские C–E дали сделки и отрицательный realized PnL в августе; это один месяц и другие конфигурации, поэтому он не подтверждает преимущества ослабленных порогов.
 
+| Конфигурация | Август LONG/SHORT/WAIT | Сентябрь LONG/SHORT/WAIT |
+|---|---:|---:|
+| A | 0 / 0 / 2976 | 0 / 0 / 2880 |
+| B | 0 / 0 / 2976 | 1 / 0 / 2879 |
+| C | 3 / 13 / 2960 | 6 / 12 / 2862 |
+| D | 14 / 22 / 2940 | 7 / 16 / 2857 |
+| E | 7 / 20 / 2949 | 1 / 7 / 2872 |
+
+Сентябрьские B–E — ранее сохранённые **сигналы sensitivity-анализа**, без
+Paper execution и PnL; их нельзя сравнивать с августовским PnL как одинаковые
+бэктесты. Пять вариантов выбраны после знакомства с сентябрьским исследованием,
+а август входит в исторический архив сентябрьских аналогов. Поэтому это
+ретроспективная проверка, не независимая слепая out-of-sample валидация.
+
 ## Причинность и воспроизведение
 
-Адаптер [scripts/replay_aura_august_research.py](../scripts/replay_aura_august_research.py) заранее строит production features, но передаёт evaluator только prefix до текущей закрытой свечи. Paper Engine и Auto используются без изменений; конфигурация задаётся только в исследовательском процессе. Binance/Bybit private clients, order endpoints, API keys и сеть не используются.
+Адаптер [scripts/replay_aura_august_research.py](../scripts/replay_aura_august_research.py) заранее строит production features, но передаёт evaluator только prefix до текущей закрытой свечи. Production `SignalReader` проверяет cutoff, OHLCV-tail, source, timeframe и confidence. Поскольку у него нет параметра конфигурации, только на время offline read локально подменяется конструктор `PatternConfig` на исследовательский frozen config и evaluator — на тот же production evaluate с causal feature prefix. Все остальные фильтры, формулы и reader checks сохранены. Подмены восстанавливаются после read, отдельный standalone-процесс не обслуживает web-запросы. Paper Engine и Auto используются без изменений. Binance/Bybit private clients, order endpoints, API keys и сеть не используются.
 
 ```bash
 python -B scripts/replay_aura_august_research.py \
   /path/to/BTCUSDT-15m-2026-05_to_09.csv \
-  --max-seconds-per-config 1800 \
+  --sandbox-poll --max-seconds-per-config 600 \
   --output /tmp/aura-august-research.json
 ```
 
 Output должен быть новым файлом. Для точно сопоставимого 10 000-свечного прогрева нужен CSV с дополнительными 1 168 свечами до `2026-05-01` (ориентировочно с апреля).
 
+Минимальный warm-up start для августа: `2026-04-18 20:00 UTC`; подойдёт
+полный `BTCUSDT-15m-2026-04.csv` плюс уже имеющийся май–сентябрьский файл.
+`--sandbox-poll` — явный offline workaround selector wakeup для этой sandbox,
+переиспользованный из существующего диагностического скрипта; production
+event loop не меняется. История начинается с 8832 warm-up свечей и накопляется
+до 11808; это не фиксированное rolling-window сравнение с архивом Render.
+Если появится апрельский файл, отдельный строгий прогон должен выбрать ровно
+10000 свечей до августа: этот адаптер намеренно берёт весь доступный прогрев,
+а не автоматически обрезает расширенный архив до 10000.
+
+Каждая конфигурация проверяет полное равенство direct production evaluate и
+causal-cache result на индексах 8831, 8832 и 11807 выбранной истории. Дополнительно
+автоматические тесты всех пяти конфигураций изменяют future prices и подтверждают,
+что предыдущий сигнал не меняется. В полном журнале все 2976 свечей имеют
+успешный `evaluated_status=OK`; список `failed_filters` показывает пересекающиеся
+стратегические отказы отдельно от решения Auto и его `rejection_reason`.
+
+Базовая GitHub revision для завершённой проверки:
+`d4f3bf5b3927c6e6cfcbe38a2b54a6febc929f98`. Production-файлы идентичны
+предыдущему математическому аудиту; исправления касаются только диагностики.
+SHA256 диагностического адаптера записан в JSON. Финансовые результаты и
+времена воспроизводимы, но внутренние trade IDs создаются production Engine
+через UUID4: разные прогоны не обязаны давать byte-identical JSON.
+
+Первый diagnostic replay напрямую передавал результат production evaluator в
+Auto. Он полностью повторён через production SignalReader. Подтверждено
+совпадение решений **всех 14880 candle/config наблюдений**, всех финансовых
+полей сделок (кроме случайных UUID), statistics и полных equity curves.
+Опубликован именно повторный reader-validated JSON, дополненный gate evidence.
+Для компактности сохранённый JSON отформатирован через
+`python -m json.tool --compact`; содержание исходного результата не изменено.
+
+## Проверки и review
+
+- Полный Python suite: **735 passed**, одна существующая Starlette deprecation warning.
+- Целевые тесты адаптера: **10 passed**; future-data perturbation для каждой
+  конфигурации, реальные production SignalReader/Auto/Paper на тестовом ledger,
+  restoration локальных подмен, отказ неполному месяцу, сохранность остальных
+  production config полей и статическая изоляция от exchange clients.
+- Все JavaScript suites: **101 passed**, 0 failed.
+- Syntax/import и heuristic credential / exchange-write scans: PASS.
+- ECC architecture/security review: временные SQLite ledgers, explicit offline
+  CLI, неизменные application/strategy/private-client файлы и отсутствие ключей.
+- Trading-math review: production Decimal sizing/fees/stops сохранены;
+  закрытый PnL независимо проверен как signed price difference × quantity
+  минус ceiling-rounded entry/exit fees. Gross profits/losses для profit factor
+  состоят из уже fee-inclusive результатов отдельных сделок.
+- Независимая проверка на реальном CSV: entry соответствует close закрытой
+  signal candle, exit соответствует conservative SL/TP/gap policy на exit OHLC,
+  notional≤2000 и risk≤risk budget у каждой сделки. Balance/equity восстановлены
+  из закрытого журнала и открытых mark prices; peak-to-trough drawdown независимо
+  восстановлен из полной equity curve. Все проверки PASS.
+- Max drawdown измеряется по production mark-to-close/settlement equity curve,
+  не по внутрисвечному экстремуму equity. SL/TP проверяются по closed OHLC,
+  выходы предшествуют входам; entry candle не используется для retroactive exit.
+
+Фактическое окружение: Python3.12, FastAPI0.141.1, uvicorn0.52.1, httpx0.28.1,
+websockets16.0, NumPy2.3.5. Exact requirements-pinned environment не
+переустанавливался; optional ruff/mypy/bandit/coverage не запускались.
+Live Render, Android/browser и реальные account requests **не проверялись**.
+
 ## Ограничения и вывод
 
 Это воспроизводимый причинный replay на предоставленных данных, а не live Render проверка и не обещание доходности. Происхождение файла заявлено как Binance, но сетевой аутентификации не проводилось. Production defaults, Auto Paper, UI, реальные счета, риски и SL/TP не изменялись. Никаких реальных ордеров не отправлялось.
 
-Полный машиночитаемый журнал: [docs/AURA_AUGUST_2026_RESEARCH.json](AURA_AUGUST_2026_RESEARCH.json). Его SHA256: `8c2d599eaa6b4fa144ba46b0be3523def48cdda06352ff37131010c6a084f01d`.
+Полный машиночитаемый журнал: [docs/AURA_AUGUST_2026_RESEARCH.json](AURA_AUGUST_2026_RESEARCH.json). Его SHA256: `1e4058cf14b6dc4cf1daad5433d6ec28937937f4821037ea615e632ea760a07d`.
 
 Результат не даёт основания объявлять какую-либо конфигурацию прибыльной или готовой к production. Для следующего шага нужна история с полным прогревом и заранее выбранные периоды проверки, без оптимизации по августу.
