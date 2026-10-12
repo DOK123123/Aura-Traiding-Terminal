@@ -14,6 +14,7 @@ AUDIT_LIMIT = 2000
 AUDIT_DAYS = 30
 SIGNAL_FAILURE_LIMIT = 3
 SIGNAL_RETRY_DELAY_MS = 15000
+SIGNAL_RETRY_ERRORS = {'SIGNAL_UNAVAILABLE','SNAPSHOT_MISMATCH'}
 logger = logging.getLogger(__name__)
 TRANSIENT = {'STALE_DATA','MARKET_GAP','SOURCE_MISMATCH','TIMEFRAME_MISMATCH','MARKET_TIMEOUT',
              'MARKET_UNAVAILABLE','SIGNAL_UNAVAILABLE','SNAPSHOT_MISMATCH','INVALID_MARKET_DATA'}
@@ -175,7 +176,7 @@ class Auto:
             state=self._state(db)
             if generation is not None and state['generation'] != generation:
                 return state
-            if code=='SIGNAL_UNAVAILABLE':
+            if code in SIGNAL_RETRY_ERRORS:
                 if not state['enabled'] or state['manual_resume'] or state['status']=='ERROR':
                     return state
                 if window is None:
@@ -183,7 +184,12 @@ class Auto:
                     self._save(db,state)
                     return state
                 try:
-                    window.validate(self.engine.clock())
+                    # Validate the snapshot as received for failure accounting only.
+                    # A slow failed read must consume retry budget, not the watermark.
+                    # Every successful execution still validates against current time.
+                    now=self.engine.clock()
+                    snapshot_at=min(now,window.observed_at) if type(window.observed_at) is int else now
+                    window.validate(snapshot_at)
                 except PaperError:
                     # No valid candle to retry; never mark an uncomputed signal consumed.
                     state.update(status='PAUSED',last_action='PAUSED',last_rejection_reason=code)

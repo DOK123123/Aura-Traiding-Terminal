@@ -47,9 +47,9 @@ async def lifespan(app):
         app.state.bybit_demo = BybitDemoReader()
         async def paper_fetch(symbol, timeframe):
             return await market(symbol, timeframe, 500)
-        async def paper_history(symbol,timeframe):
-            return await history_service.get(client,symbol,timeframe)
-        app.state.paper = PaperService(PaperMarket(paper_fetch),signals=PaperSignalReader(paper_history))
+        async def paper_history(symbol,timeframe,**requirements):
+            return await history_service.get(client,symbol,timeframe,**requirements)
+        app.state.paper = PaperService(PaperMarket(paper_fetch),signals=PaperSignalReader(paper_history,synchronize=True))
         async def lab_page(query):
             return await lab_public_page(client,query)
         app.state.lab = LabService(ROOT,lab_page)

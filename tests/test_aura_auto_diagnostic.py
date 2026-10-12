@@ -232,8 +232,11 @@ def test_cached_archive_missing_new_close_is_snapshot_mismatch_not_no_signal(tmp
         await service.auto_tick()
         state=service.auto.state()
         assert state['last_rejection_reason']=='SNAPSHOT_MISMATCH'
-        assert state['last_signal'] is None and state['watermarks']['15m']==START
+        assert state['last_signal'] is None and state['watermarks']['15m']==START-900
         assert not service.engine.snapshot()['open_positions']
         await service.auto_tick()
-        assert history.call_count==1 # Current generic failure path consumes this candle.
+        assert history.call_count==1 # Cooldown leaves the pending candle unconsumed.
+        clock[0]+=15000
+        await service.auto_tick()
+        assert history.call_count==2 and service.auto.state()['watermarks']['15m']==START-900
     asyncio.run(run())

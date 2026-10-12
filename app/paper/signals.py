@@ -3,7 +3,7 @@ import asyncio
 from decimal import Decimal
 import math
 
-from ..models import validate_candles,INTERVALS
+from ..models import Candle,validate_candles,INTERVALS
 from ..patterns.config import PatternConfig
 from ..patterns.engine import evaluate
 from .auto import Signal
@@ -11,14 +11,21 @@ from .models import PaperError
 
 
 class SignalReader:
-    def __init__(self, history):
+    def __init__(self, history, *, synchronize=False):
         self.history=history
+        self.synchronize=synchronize
         self.slots=asyncio.Semaphore(1)
 
     async def read(self,window):
         try:
             async with asyncio.timeout(60):
-                data=await self.history(window.symbol,window.timeframe)
+                requirements={}
+                if self.synchronize:
+                    requirements=dict(required_candles=tuple(Candle(bar.time,
+                        *(float(getattr(bar,k)) for k in ('open','high','low','close')),
+                        None if bar.volume is None else float(bar.volume)) for bar in window.bars),
+                        required_source=window.source)
+                data=await self.history(window.symbol,window.timeframe,**requirements)
                 if data.source!=window.source:
                     raise PaperError('SOURCE_MISMATCH')
                 step=INTERVALS[window.timeframe]

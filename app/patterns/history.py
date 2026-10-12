@@ -79,12 +79,31 @@ class HistoryService:
                 break
         return sorted(rows.values(), key=lambda c:c.time)[-count:]
 
-    async def get(self, client, symbol, timeframe):
+    @staticmethod
+    def covers(data, required_candles, required_source):
+        """Cache eligibility only; never append chart candles to the archive."""
+        if required_candles is None:
+            return True
+        if required_source is not None and data.source != required_source:
+            return False
+        cutoff=required_candles[-1].time
+        tail=[c for c in data.candles if c.time<=cutoff][-len(required_candles):]
+        return tail==list(required_candles)
+
+    async def get(self, client, symbol, timeframe, *, required_candles=None, required_source=None):
+        if required_candles is not None:
+            if not 1<=len(required_candles)<=500:
+                raise ValueError('Invalid required history window')
+            validate_candles(required_candles,timeframe,now=time.time(),contiguous=True)
         key = symbol,timeframe
         async with self.locks.setdefault(key,asyncio.Lock()):
             cached = self.cache.get(key)
-            if cached and time.time()-cached.fetched_at < 60:
+            if (cached and time.time()-cached.fetched_at < 60
+                    and self.covers(cached,required_candles,required_source)):
                 return cached
+            if cached and required_candles is not None:
+                logger.info('Historical snapshot refresh required: %s/%s candle=%s',
+                            symbol,timeframe,required_candles[-1].time)
             requested = 10000 if symbol == 'BTCUSDT' else 5000
             note = ''
             async with asyncio.timeout(100):
