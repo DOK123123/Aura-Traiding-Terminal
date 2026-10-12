@@ -107,60 +107,71 @@
     </div>
   </section>
   <section class="panel patterns paper" aria-labelledby="paper-title">
-    <div class="modules-heading"><div><p class="eyebrow">VIRTUAL FUNDS / LOCAL SIMULATOR</p><h2 id="paper-title">PAPER TRADING</h2></div><span class="tiny-badge" id="paper-auto-badge">AUTO PAPER OFF</span></div>
-    <p class="score-note">REAL MONEY EXECUTION = DISABLED · REAL MONEY IS NOT USED. Ручные и явно включённые AUTO PAPER LONG/SHORT; комиссии — настройка симуляции, не тариф биржи. SL/TP проверяются по закрытым свечам. AUTO PAPER по умолчанию OFF; реальные ордера невозможны.</p>
-    <div class="pattern-actions"><button id="paper-refresh">Обновить Paper</button><a id="paper-login" href="/api/paper/login" hidden>Войти: пользователь aura</a><a href="/api/paper/export">Скачать резервную копию журнала</a></div>
-    <p id="paper-status" role="status" aria-live="polite">Загрузка виртуального счёта…</p>
-    <div class="pattern-actions"><button id="paper-retry" hidden>Повторить неподтверждённое действие</button></div>
+    <div class="modules-heading"><div><p class="eyebrow">ВИРТУАЛЬНЫЕ ДЕНЬГИ · ЛОКАЛЬНЫЙ СИМУЛЯТОР</p><h2 id="paper-title">Виртуальная торговля</h2></div><span class="tiny-badge" id="paper-auto-badge">Нет свежих данных</span></div>
+    <p class="paper-safety">Только виртуальные средства. REAL MONEY EXECUTION = DISABLED. Биржевые ордера не отправляются.</p>
+    <p class="score-note">Остановка отключает новые автоматические входы. Уже открытые виртуальные позиции остаются под защитой SL/TP при доступных свежих данных. Сон сервера и пропуски котировок задерживают обработку.</p>
+    <div class="pattern-actions"><button id="paper-refresh" type="button">Обновить данные</button><a id="paper-login" href="/api/paper/login" hidden>Войти: пользователь aura</a><a href="/api/paper/export">Скачать резервную копию</a></div>
+    <p id="paper-status" role="status" aria-live="polite">Нет свежих данных · получаем состояние сервера…</p>
+    <div class="pattern-actions"><button id="paper-retry" type="button" hidden>Повторить неподтверждённое действие</button></div>
+    <section class="paper-dashboard" aria-labelledby="paper-dashboard-title">
+      <div class="paper-dashboard-heading"><div><p class="eyebrow">АВТОМАТИЧЕСКАЯ ВИРТУАЛЬНАЯ ТОРГОВЛЯ</p><h3 id="paper-dashboard-title">Авто Paper</h3></div><p id="paper-auto-state" role="status" aria-live="polite">Нет свежих данных</p></div>
+      <p id="paper-dashboard-freshness" class="pattern-warning" role="status">Нет свежих данных</p>
+      <p id="paper-auto-last" class="score-note">Закрытая свеча ещё не подтверждена.</p>
+      <div id="paper-dashboard-metrics" class="paper-dashboard-grid"></div>
+      <div class="paper-decision"><p id="paper-dashboard-signal">Сигнал: нет данных</p><p id="paper-dashboard-action">Решение: нет данных</p><p id="paper-dashboard-rejection">Причина: нет данных</p></div>
+      <div class="paper-dashboard-actions"><button id="paper-auto-start" type="button" disabled>Запустить Авто Paper</button><button id="paper-auto-stop" type="button">Остановить Авто Paper</button></div>
+      <p id="paper-dashboard-policy" class="score-note">Сохранённая политика SL/TP: нет данных.</p>
+      <p id="paper-dashboard-draft" class="pattern-warning" role="status" aria-live="polite"></p>
+      <h4>Текущая автоматическая позиция</h4><div id="paper-auto-position" class="paper-position" aria-live="polite">Нет свежих данных</div>
+      <h4>Последние закрытые сделки · только AUTO</h4><div id="paper-auto-history" class="paper-history"></div><p id="paper-auto-history-note" class="score-note">Нет свежих данных</p>
+    </section>
     <div id="paper-data" hidden>
       <p id="paper-storage" class="pattern-warning"></p>
-      <section class="paper-settings-panel" aria-labelledby="paper-settings-title">
-        <h3 id="paper-settings-title">Paper Trading Settings</h3>
-        <p class="score-note">Authoritative backend configuration · VIRTUAL FUNDS ONLY · REAL MONEY EXECUTION = DISABLED. Values below are effective now; draft form values are not active until saved.</p>
-        <div id="paper-settings-effective" class="paper-settings-grid"></div>
-        <p id="paper-settings-source" class="score-note"></p>
-        <p id="paper-settings-preflight" class="pattern-warning" role="status" aria-live="polite">Safety audit unavailable; load current backend settings before activation.</p>
-        <p class="score-note">Editing uses the existing validated Paper settings endpoint. Initial balance is locked after the first trade. Existing positions retain their entry settings. Unsafe settings cannot be saved while Auto is armed; switch OFF first.</p>
-      <details><summary>Edit saved Paper settings</summary><div class="paper-settings-controls" id="paper-settings">
-        <label>Starting balance USDT<input data-paper-setting="starting_balance" inputmode="decimal"></label>
-        <label>Commission per side %<input data-paper-setting="commission_pct" inputmode="decimal"></label>
-        <label>Risk per trade %<input data-paper-setting="risk_per_trade_pct" inputmode="decimal"></label>
-        <label>Max notional USDT<input data-paper-setting="maximum_position_size_usdt" inputmode="decimal"></label>
-        <label>Max open positions<input data-paper-setting="maximum_simultaneous_positions" inputmode="numeric"></label>
-        <label>Default Stop Loss %<input data-paper-setting="stop_loss_pct" inputmode="decimal"></label>
-        <label>Default Take Profit %<input data-paper-setting="take_profit_pct" inputmode="decimal"></label>
-      </div><p class="score-note">Начальный баланс блокируется после первой сделки. Настройки комиссий/SL/TP применяются к новым позициям. Все позиции резервируют 1× notional; плечо, spread, funding и проскальзывание не моделируются.</p><div class="pattern-actions"><button id="paper-save">Сохранить настройки</button></div></details>
-      </section>
-      <h3>AUTO PAPER TRADING</h3>
-      <p class="pattern-warning">VIRTUAL FUNDS ONLY · REAL MONEY EXECUTION = DISABLED</p>
-      <p class="score-note">Подтверждённые Historical Pattern LONG/SHORT, закрытые свечи. Scope фиксируется при ON; первая свеча — baseline, торговля начинается со следующей. Auto risk ≤1%, всего не более одной открытой позиции. После restart требуется ручное возобновление.</p>
-      <div class="pattern-controls">
-        <label>Auto Paper mode<select id="paper-auto-mode"><option value="OFF">OFF</option><option value="ON">ON / RESUME</option></select></label>
-        <label>SL/TP policy<select id="paper-auto-policy"><option value="SKIP">Skip: стратегия без SL/TP</option><option value="PAPER_SETTINGS">Разрешить paper SL/TP из настроек</option></select></label>
-        <label>Statistics / Journal<select id="paper-scope"><option value="ALL">ALL</option><option value="MANUAL">MANUAL PAPER</option><option value="AUTO">AUTO PAPER</option></select></label>
-      </div>
-      <p class="score-note">Стратегия сейчас не выдаёт SL/TP. PAPER_SETTINGS — явный paper-only fallback с текущими процентами, не новые правила стратегии. ALL — общий счёт; MANUAL/AUTO — атрибуция результатов на одинаковом начальном baseline, не отдельные кошельки.</p>
-      <div class="pattern-actions"><button id="paper-auto-save">Применить AUTO OFF / ON</button></div>
-      <p id="paper-auto-state" role="status" aria-live="polite">OFF</p>
-      <p id="paper-auto-last" class="score-note"></p>
-      <div id="paper-auto-metrics" class="pattern-kpis"></div>
-      <details><summary>Signal decision audit · последние 100</summary><p class="score-note">До 2000 решений / 30 дней; watermark для защиты от дублей хранится отдельно. null signal означает, что сигнал не вычислялся, а не выдуманный WAIT.</p><div class="pattern-table-wrap"><table><thead><tr><th>Candle close UTC</th><th>Пара / TF</th><th>Signal</th><th>Auto state</th><th>Opened</th><th>Reason</th></tr></thead><tbody id="paper-auto-decisions"></tbody></table></div></details>
-
-      <div class="pattern-kpis" id="paper-metrics"></div>
-      <h3>EQUITY CURVE · USDT</h3><p id="paper-curve-note" class="score-note"></p><svg id="paper-curve" viewBox="0 0 600 160" role="img" aria-label="Кривая виртуального капитала"></svg>
-
-      <h3>MANUAL PAPER POSITION · BTCUSDT</h3><p class="score-note">Источник и timeframe — как на графике. Цена исполнения — close последней проверенной закрытой свечи, не live bid/ask. XAUUSD пока не поддерживается: нет конвертации USD/USDT.</p>
-      <div class="pattern-actions"><button id="paper-quote-refresh">Получить paper quote</button><span id="paper-quote" class="score-note">Сначала получите подтверждённую цену.</span></div>
-      <div class="pattern-controls">
-        <label>Direction<select id="paper-direction"><option value="LONG">LONG</option><option value="SHORT">SHORT</option></select></label>
-        <label>Size BTC (пусто = risk sizing)<input id="paper-size" inputmode="decimal" placeholder="Auto"></label>
-        <label>Stop Loss price (пусто = default)<input id="paper-stop" inputmode="decimal" placeholder="Default %"></label>
-        <label>Take Profit price (пусто = default)<input id="paper-target" inputmode="decimal" placeholder="Default %"></label>
-        <label>Причина входа<input id="paper-reason" maxlength="300" placeholder="Ручная проверка гипотезы"></label>
-      </div><div class="pattern-actions"><button id="paper-open" disabled>Open Paper Position</button></div>
-      <p class="pattern-warning">SL/TP не гарантируют ограничение убытка при gap. Если одна свеча касается обоих уровней, приоритет SL. При устаревших данных, смене источника или пропуске истории операции/защитные exits блокируются; устаревшая equity показана как —.</p>
-      <h3>OPEN POSITIONS</h3><div class="pattern-table-wrap"><table><thead><tr><th>Пара / Side</th><th>Entry</th><th>Size</th><th>SL</th><th>TP</th><th>Unrealized PnL</th><th>Data</th><th>Действие</th></tr></thead><tbody id="paper-positions"></tbody></table></div>
-      <h3>CLOSED TRADES · ЖУРНАЛ</h3><p id="paper-journal-note" class="score-note"></p><div class="pattern-table-wrap"><table><thead><tr><th>Exit UTC</th><th>Пара / Side</th><th>Entry</th><th>Exit</th><th>Size</th><th>Fees</th><th>Net PnL</th><th>PnL %</th><th>Причина входа</th><th>Причина выхода</th><th>Source / TF</th><th>Entry type</th></tr></thead><tbody id="paper-trades"></tbody></table></div>
+      <details class="paper-fold"><summary>Журнал и статистика · все / ручные / автоматические сделки</summary>
+        <label class="paper-scope-label" for="paper-scope">Показать журнал<select id="paper-scope"><option value="ALL">Все сделки · ALL</option><option value="MANUAL">Ручные сделки · MANUAL</option><option value="AUTO">Автоматические сделки · AUTO</option></select></label>
+        <p class="score-note">Фильтр меняет только журнал и статистику ниже. Панель Авто Paper всегда показывает общий счёт ALL и результат только AUTO раздельно. MANUAL/AUTO — атрибуция на одном начальном балансе, не отдельные кошельки.</p>
+        <div class="pattern-kpis" id="paper-metrics"></div>
+        <h3>Кривая виртуального капитала · USDT</h3><p id="paper-curve-note" class="score-note"></p><svg id="paper-curve" viewBox="0 0 600 160" role="img" aria-label="Кривая виртуального капитала"></svg>
+        <h3>Открытые позиции выбранного журнала</h3><div class="pattern-table-wrap" tabindex="0" role="region" aria-label="Открытые виртуальные позиции"><table><thead><tr><th>Пара / направление</th><th>Вход</th><th>Количество</th><th>SL</th><th>TP</th><th>Нереализованный PnL</th><th>Свежесть</th><th>Действие</th></tr></thead><tbody id="paper-positions"></tbody></table></div>
+        <h3>Закрытые сделки выбранного журнала</h3><p id="paper-journal-note" class="score-note"></p><div class="pattern-table-wrap" tabindex="0" role="region" aria-label="Полный журнал виртуальных сделок"><table><thead><tr><th>Выход UTC</th><th>Пара / направление</th><th>Вход</th><th>Выход</th><th>Количество</th><th>Комиссии</th><th>PnL</th><th>PnL %</th><th>Причина входа</th><th>Причина выхода</th><th>Источник / интервал</th><th>Режим</th></tr></thead><tbody id="paper-trades"></tbody></table></div>
+      </details>
+      <details class="paper-fold"><summary>Ручная виртуальная сделка · BTCUSDT</summary>
+        <p class="score-note">Источник и интервал — как на графике. Исполнение по close последней проверенной закрытой свечи, не по live bid/ask. XAUUSD не поддерживается. Ручные сделки не становятся AUTO.</p>
+        <div class="pattern-actions"><button id="paper-quote-refresh" type="button">Получить подтверждённую цену</button><span id="paper-quote" class="score-note">Сначала получите подтверждённую цену.</span></div>
+        <div class="paper-settings-controls">
+          <label>Направление<select id="paper-direction"><option value="LONG">LONG · покупка</option><option value="SHORT">SHORT · продажа</option></select></label>
+          <label>Количество BTC<input id="paper-size" inputmode="decimal" placeholder="Пусто — расчёт по риску"></label>
+          <label>Цена Stop Loss<input id="paper-stop" inputmode="decimal" placeholder="Пусто — процент из настроек"></label>
+          <label>Цена Take Profit<input id="paper-target" inputmode="decimal" placeholder="Пусто — процент из настроек"></label>
+          <label>Причина входа<input id="paper-reason" maxlength="300" placeholder="Объясните ручной вход"></label>
+        </div><p class="score-note">Дробные значения в формах вводите через точку: 0.5. Округление на карточках не меняет точные значения сервера.</p><div class="pattern-actions"><button id="paper-open" type="button" disabled>Открыть виртуальную позицию</button></div>
+      </details>
+      <details class="paper-fold"><summary>Настройки, политика SL/TP и проверка безопасности</summary>
+        <section class="paper-settings-panel" aria-labelledby="paper-settings-title">
+          <h3 id="paper-settings-title">Настройки виртуальной торговли</h3>
+          <p class="score-note">Значения ниже получены с сервера и уже действуют. Черновик формы не действует до сохранения. Баланс и средства с учётом позиций относятся ко всему счёту ALL.</p>
+          <div id="paper-settings-effective" class="paper-settings-grid"></div><p id="paper-settings-source" class="score-note"></p>
+          <p id="paper-settings-preflight" class="pattern-warning" role="status" aria-live="polite">Проверка безопасности недоступна; сначала обновите данные.</p>
+          <p class="score-note">Начальный баланс блокируется после первой сделки. Открытые позиции сохраняют настройки входа. Небезопасные изменения при включённом Auto отклоняются сервером.</p>
+          <details><summary>Редактировать сохранённые настройки</summary><div class="paper-settings-controls" id="paper-settings">
+            <label>Начальный баланс · USDT<input data-paper-setting="starting_balance" inputmode="decimal"></label>
+            <label>Комиссия за одну сторону · %<input data-paper-setting="commission_pct" inputmode="decimal"></label>
+            <label>Максимальный риск на сделку · %<input data-paper-setting="risk_per_trade_pct" inputmode="decimal"></label>
+            <label>Максимальный номинал позиции · USDT<input data-paper-setting="maximum_position_size_usdt" inputmode="decimal"></label>
+            <label>Максимум открытых позиций<input data-paper-setting="maximum_simultaneous_positions" inputmode="numeric"></label>
+            <label>Stop Loss по умолчанию · %<input data-paper-setting="stop_loss_pct" inputmode="decimal"></label>
+            <label>Take Profit по умолчанию · %<input data-paper-setting="take_profit_pct" inputmode="decimal"></label>
+          </div><div class="pattern-actions"><button id="paper-save" type="button">Сохранить настройки</button><button id="paper-settings-discard" type="button">Отменить черновик</button></div></details>
+        </section>
+        <div class="paper-settings-controls">
+          <label>Режим для явного применения<select id="paper-auto-mode"><option value="OFF">OFF · выключить</option><option value="ON">ON · включить / возобновить</option></select></label>
+          <label>Политика защиты SL/TP<select id="paper-auto-policy"><option value="SKIP">SKIP · пропускать сигналы без SL/TP</option><option value="PAPER_SETTINGS">PAPER_SETTINGS · использовать проценты Paper</option></select></label>
+        </div>
+        <p class="score-note">Это черновик. Изменение списка не активирует Auto. Стратегия сейчас не выдаёт SL/TP: SKIP пропускает такие сигналы. PAPER_SETTINGS — только явно выбранный виртуальный fallback, не новые правила стратегии. Политика сохраняется при подтверждённом включении через кнопку ниже. OFF не изменяет сохранённую политику.</p>
+        <div class="pattern-actions"><button id="paper-auto-save" type="button">Подтвердить выбранный режим и политику</button></div><div id="paper-auto-metrics" class="pattern-kpis"></div>
+      </details>
+      <details class="paper-fold"><summary>Журнал решений стратегии · последние 100</summary><p class="score-note">До 2000 решений / 30 дней; watermark от дублей хранится отдельно. Нет сигнала означает, что сигнал не вычислялся, а не выдуманный WAIT.</p><div class="pattern-table-wrap" tabindex="0" role="region" aria-label="Журнал решений стратегии"><table><thead><tr><th>Закрытие свечи UTC</th><th>Пара / интервал</th><th>Сигнал</th><th>Режим</th><th>Открыта сделка</th><th>Причина</th></tr></thead><tbody id="paper-auto-decisions"></tbody></table></div></details>
+      <details class="paper-fold"><summary>Как работает виртуальная торговля и её ограничения</summary><p>Только подтверждённые сигналы Historical Pattern по закрытым свечам. После включения первая свеча — исходная точка; входы возможны со следующей. После перезапуска сервер требует ручного возобновления. Риск Auto ≤1%, не более одной открытой позиции на всём счёте. Средства виртуальные; SL/TP обрабатываются по закрытым свечам, при одновременном касании выбирается SL. Комиссии — настройка симуляции, не тариф биржи. Резервируется 1× номинал; плечо, спред, funding и проскальзывание не моделируются. Доходность симуляции не доказывает прибыльность или безопасность стратегии.</p></details>
     </div>
   </section>
   <section class="panel patterns lab" aria-labelledby="lab-title">

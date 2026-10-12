@@ -45,7 +45,8 @@ def test_owner_required_even_when_exchange_not_configured(client):
     assert c.get('/api/paper/state',auth=('aura','incorrect-dummy')).status_code==401
     assert c.get('/api/bybit-demo/account').json()['status']=='Not configured'
     assert c.get('/api/health').json()=={'status':'ok'}
-    assert 'PAPER TRADING' in c.get('/').text
+    assert 'Виртуальная торговля' in c.get('/').text
+    assert 'paper-dashboard-title' in c.get('/').text
 
 
 def test_missing_owner_password_does_not_affect_markets(client,monkeypatch):
