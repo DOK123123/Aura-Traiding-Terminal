@@ -41,17 +41,19 @@ def utc(seconds):
     return datetime.fromtimestamp(seconds, timezone.utc).isoformat()
 
 
-def period(end_date=None):
+def period(end_date=None, days=30):
+    if type(days) is not int or days not in (30,90):
+        raise ValueError('Only fixed 30/90 day diagnostic periods are supported')
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     end = datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc) if end_date else today
     if end > today:
         raise ValueError('End date must be a complete UTC boundary, not in the future')
-    return int((end - timedelta(days=30)).timestamp()), int(end.timestamp())
+    return int((end - timedelta(days=days)).timestamp()), int(end.timestamp())
 
 
 def code_hashes():
     paths = sorted((ROOT / 'app' / 'patterns').glob('*.py')) + sorted((ROOT / 'app' / 'paper').glob('*.py'))
-    paths += [ROOT / 'app' / 'models.py']
+    paths += [ROOT / 'app' / name for name in ('models.py','indicators.py','main.py','providers.py')]
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 
@@ -143,7 +145,7 @@ async def fetch_snapshot(path, start, end, warmup):
     load_snapshot(path, start, end, warmup)
 
 
-async def replay(candles, start, end, *, max_seconds=600):
+async def replay(candles, start, end, *, max_seconds=600, settings=None, fallback_policy='PAPER_SETTINGS'):
     """Same ordered calls as Service.auto_tick, excluding owner/network lifecycle.
 
     Store lives in TemporaryDirectory; no import of app.main or private clients.
@@ -170,9 +172,9 @@ async def replay(candles, start, end, *, max_seconds=600):
     opened = 0
     began = time.monotonic()
     with tempfile.TemporaryDirectory(prefix='aura-auto-diagnostic-') as folder:
-        engine = Engine(Store(Path(folder)/'diagnostic.sqlite3'), Settings(), clock=lambda: clock[0])
+        engine = Engine(Store(Path(folder)/'diagnostic.sqlite3'), settings or Settings(), clock=lambda: clock[0])
         auto = Auto(engine)
-        auto.configure(True, await market.window('BTCUSDT', '15m'), fallback_policy='PAPER_SETTINGS')
+        auto.configure(True, await market.window('BTCUSDT', '15m'), fallback_policy=fallback_policy)
         generation = auto.state()['generation']
         processed = 0
         for candle in requested:
@@ -214,8 +216,9 @@ async def replay(candles, start, end, *, max_seconds=600):
                 entry, exit_price, size = map(Decimal, (trade['entry_price'], trade['exit_price'], trade['position_size']))
                 sign = 1 if trade['direction']=='LONG' else -1
                 gross = (sign*(exit_price-entry)*size).quantize(tick, rounding=ROUND_HALF_EVEN)
-                entry_fee = (entry*size*Decimal('0.001')).quantize(tick, rounding=ROUND_CEILING)
-                exit_fee = (exit_price*size*Decimal('0.001')).quantize(tick, rounding=ROUND_CEILING)
+                rate=Decimal(trade['commission_pct'])/100
+                entry_fee = (entry*size*rate).quantize(tick, rounding=ROUND_CEILING)
+                exit_fee = (exit_price*size*rate).quantize(tick, rounding=ROUND_CEILING)
                 reference = (gross-entry_fee-exit_fee).quantize(tick, rounding=ROUND_HALF_EVEN)
                 if reference != Decimal(trade['realized_pnl']):
                     raise ValueError('Independent LONG/SHORT fee-inclusive PnL mismatch')
