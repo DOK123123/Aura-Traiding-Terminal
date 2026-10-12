@@ -26,6 +26,8 @@ from tests.test_paper_engine import ledger,window,payload,manual_close
 @pytest.fixture
 def auto(ledger):
     engine,clock=ledger
+    config=engine.snapshot()['settings'];config.update(risk_per_trade_pct='1',maximum_simultaneous_positions=1)
+    engine.configure(config) # Activation now requires explicit safe settings, not silent caps.
     manager=Auto(engine)
     manager.configure(True,window(clock),fallback_policy='PAPER_SETTINGS')
     return manager,engine,clock

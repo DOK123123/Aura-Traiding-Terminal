@@ -215,3 +215,9 @@ Latest pre-Render audit and Android manual checklist: [AUDIT_RENDER_ANDROID.md](
 Auto Paper now supports separately opted-in server-owned signals, decision audit
 and ALL/MANUAL/AUTO attribution. Earlier audit reports describe their pinned
 pre-Auto snapshots. Generic arbitrary signal/exchange execution remains disabled.
+
+## Settings visibility
+
+Effective settings, account-wide balance/equity, provenance and activation safety
+are visible above Auto Paper. Existing validated editing is reused; no new mutation
+endpoint. [Settings audit and actual defaults](PAPER_SETTINGS_AUDIT.md).

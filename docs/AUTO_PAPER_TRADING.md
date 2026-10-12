@@ -183,3 +183,12 @@ ON, fixed scope/last candle, WAIT/rejection logs, one entry per candle, OFF halt
 entries, SL/TP journal, ALL/MANUAL/AUTO filters, background/reconnect UI and backup.
 Restart after backup: PAUSED and no new trade until resume. Never enable production
 permissions or try to bypass Bybit 403 for this experiment.
+
+## Effective settings and activation preflight
+
+The new Paper Trading Settings panel shows authoritative backend values above Auto.
+ON/RESUME rejects saved risk above 1%, saved position limit other than 1, invalid
+protective settings or a failed virtual-only boundary. Unsafe edits while armed
+are also rejected; settings are never silently adjusted. Existing defensive caps
+and entry/exits remain unchanged. SKIP remains safe and skips signals without stops.
+[Defaults, precedence, provenance and audit](PAPER_SETTINGS_AUDIT.md).

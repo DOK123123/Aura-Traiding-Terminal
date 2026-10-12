@@ -1,8 +1,8 @@
-// Owner-only LOCAL virtual ledger. No exchange API, keys or automatic signal execution.
+// Owner-only LOCAL virtual ledger; explicit virtual Auto opt-in only, no exchange API or keys.
 (() => {
   const el = id => document.getElementById('paper-' + id);
   const fields = () => Array.from(document.querySelectorAll('[data-paper-setting]'));
-  let quote = null, busy = false, loaded = false, pending = null, timer = null, lastState = 0, stopped = false, latestAuto = null, viewGeneration = 0, pendingView = false;
+  let quote = null, busy = false, loaded = false, pending = null, timer = null, lastState = 0, stopped = false, latestAuto = null, latestSettings = null, viewGeneration = 0, pendingView = false;
   const pendingKey = 'aura.paper.pending.v1';
   try {
     const stored = sessionStorage.getItem(pendingKey);
@@ -33,6 +33,7 @@
   function buttons() {
     el('open').disabled = !matched() || Boolean(pending);
     for (const id of ['refresh','save','quote-refresh','auto-save']) el(id).disabled = busy || Boolean(pending);
+    el('save').disabled = busy || Boolean(pending) || !loaded || latestSettings?.editable !== true;
     el('retry').hidden = !pending; el('retry').disabled = busy;
     for (const button of el('positions').querySelectorAll('button')) button.disabled = busy || Boolean(pending);
   }
@@ -49,6 +50,48 @@
       if (!response.ok) throw Object.assign(new Error(result.message || 'Paper запрос отклонён.'),{definitive:response.status >= 400 && response.status < 500});
       return result;
     } finally { clearTimeout(timeout); }
+  }
+  // Number is used only to format server Decimal strings; calculations stay server-side.
+  function rounded(value) {
+    if (value === null || value === undefined) return '— (unavailable)';
+    const number = Number(value);
+    if (!Number.isFinite(number)) throw new Error('Invalid effective settings value.');
+    if (number !== 0 && Math.abs(number) < 0.0001) return number.toPrecision(5);
+    return number.toLocaleString('en-US',{maximumFractionDigits:4});
+  }
+  function renderSettings(data) {
+    latestSettings = null;
+    const effective = data.effective_settings, container = el('settings-effective'); container.replaceChildren();
+    if (!effective) { el('settings-preflight').textContent = 'Safety audit unavailable; refresh current backend settings before activation.'; return; }
+    if (effective.account_scope !== 'ALL' || effective.real_money_execution !== 'DISABLED' || effective.exchange_order_placement !== false ||
+        typeof effective.editable !== 'boolean' || !effective.values || typeof effective.slippage_supported !== 'boolean') throw new Error('Invalid effective settings safety boundary.');
+    for (const field of fields()) {
+      const value = effective.values[field.dataset.paperSetting];
+      if (value === null || value === undefined || !Number.isFinite(Number(value)) || String(value) !== String(data.settings[field.dataset.paperSetting]))
+        throw new Error('Effective settings mismatch.');
+    }
+    const values = effective.values, auto = data.auto_paper;
+    const audit = auto && auto.safety_preflight;
+    const entries = [['Virtual Balance / USDT (ALL)',rounded(effective.virtual_balance)],['Equity / USDT (ALL)',rounded(effective.equity)],
+      ['Stop Loss / fallback %',rounded(values.stop_loss_pct)],['Take Profit / fallback %',rounded(values.take_profit_pct)],
+      ['Fee per side %',rounded(values.commission_pct)],['Slippage',effective.slippage_supported ? rounded(effective.slippage_pct)+'%' : 'Not supported / not modeled'],
+      ['Maximum risk per trade %',rounded(values.risk_per_trade_pct)],['Maximum position notional / USDT',rounded(values.maximum_position_size_usdt)],
+      ['Maximum concurrent open positions',rounded(values.maximum_simultaneous_positions)],['Auto defensive risk cap %',rounded(effective.auto_risk_cap_pct)],
+      ['Auto defensive open-position cap',rounded(effective.auto_maximum_open_positions)],['SL/TP policy',auto ? auto.fallback_policy : 'Unavailable'],
+      ['Auto Paper mode / market',auto ? auto.status+' · '+auto.symbol+' / '+auto.timeframe : 'Unavailable']];
+    for (const [name,value] of entries) {
+      const card = document.createElement('div'), label = document.createElement('span'), strong = document.createElement('strong');
+      label.textContent = name; strong.textContent = value; card.append(label,strong); container.append(card);
+    }
+    el('settings-source').textContent = 'Settings source: '+effective.settings_source+' · '+effective.precedence+' · '+
+      Object.entries(effective.initialization_sources || {}).map(([name,source])=>name+': '+source).join(' · ')+' · '+
+      (effective.editable ? 'Editable through the existing validated form below.' : 'Read-only: settings are not editable here.');
+    el('settings-preflight').textContent = !audit ? 'Safety audit unavailable; activation blocked.' :
+      (audit.passed ? 'Configuration preflight PASS. ' : 'Configuration preflight BLOCKED: '+(audit.errors || []).join(', ')+'. ')+audit.policy_note+' '+audit.scope;
+    if (audit && typeof audit.passed === 'boolean' && audit.virtual_only === true && audit.exchange_order_placement === false) latestSettings = effective;
+  }
+  function settingsDraftChanged() {
+    return !latestSettings || fields().some(input => String(input.value).trim() !== String(latestSettings.values[input.dataset.paperSetting]));
   }
   function safety(data) {
     if (data.paper !== true || data.real_money_execution !== 'DISABLED' || data.automatic_signal_execution !== false)
@@ -91,7 +134,7 @@
     }
     for (const input of fields()) if (document.activeElement !== input) {
       input.value = data.settings[input.dataset.paperSetting];
-      input.disabled = input.dataset.paperSetting === 'starting_balance' && (data.starting_balance_locked === true || s.total_trades+s.open_positions > 0);
+      input.disabled = data.effective_settings?.editable === false || input.dataset.paperSetting === 'starting_balance' && (data.starting_balance_locked === true || s.total_trades+s.open_positions > 0);
     }
     el('positions').replaceChildren();
     for (const trade of data.open_positions) {
@@ -104,7 +147,7 @@
     for (const t of data.closed_trades) cells(el('trades'),[new Date(t.exit_time).toISOString(),t.symbol+' / '+t.direction,t.entry_price,t.exit_price,t.position_size,t.commissions,t.realized_pnl,t.pnl_pct,t.entry_reason,t.exit_reason,t.source+' / '+t.timeframe,t.entry_type === 'AUTO_SIGNAL' ? 'AUTO PAPER' : 'MANUAL PAPER']);
     if (!data.closed_trades.length) cells(el('trades'),['Нет закрытых paper trades']);
     el('journal-note').textContent = `Показано ${data.closed_trades.length} из ${data.closed_trades_total}; полный архив — SQLite backup. Gross profit/loss агрегируют net исходы после комиссий. Profit Factor без убытков = —.`;
-    renderAuto(data); renderCurve(data); buttons();
+    renderAuto(data); renderSettings(data); renderCurve(data); buttons();
   }
   function statePath() {
     const mode = el('scope').value || 'ALL';
@@ -134,6 +177,8 @@
   async function saveAuto() {
     if (stopped || busy || pending) return;
     const enabled = el('auto-mode').value === 'ON', selected = scope();
+    if (enabled && (!loaded || !latestSettings || settingsDraftChanged())) { status('Load effective settings and save or discard draft edits before Auto activation.'); return; }
+    if (enabled && latestAuto?.safety_preflight?.passed !== true) { status('Auto activation blocked by backend configuration preflight: '+(latestAuto?.safety_preflight?.errors || ['AUDIT_UNAVAILABLE']).join(', ')); return; }
     if (enabled && (!selected.fresh || selected.symbol !== 'BTCUSDT')) { status('Для ON/RESUME нужен свежий BTCUSDT график.'); return; }
     busy = true; buttons();
     try {
@@ -143,7 +188,7 @@
     } catch (error) { status(error.message + ' Проверьте состояние: операция настройки могла иметь неизвестный исход.'); }
     finally { busy = false; buttons(); if (pendingView) { pendingView = false; refresh(); } }
   }
-  function fail(error) { status(error.message || 'Paper временно недоступен.'); loaded = false; el('data').hidden = true; invalidate(); }
+  function fail(error) { latestSettings = null; status(error.message || 'Paper временно недоступен.'); loaded = false; el('data').hidden = true; invalidate(); }
   async function refresh() {
     if (stopped || busy || pending) return;
     busy = true; buttons();
@@ -193,7 +238,7 @@
     retainPending(); execute();
   }
   async function save() {
-    if (stopped || busy || pending) return;
+    if (stopped || busy || pending || !loaded || latestSettings?.editable !== true) return;
     const values = Object.fromEntries(fields().map(i => [i.dataset.paperSetting,i.dataset.paperSetting === 'maximum_simultaneous_positions' ? Number(i.value) : i.value.trim()]));
     busy = true; buttons();
     try { await request('settings',values); render(await request(statePath())); status('Paper настройки сохранены. Открытые позиции не изменены.'); invalidate(); }

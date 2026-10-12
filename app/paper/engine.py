@@ -4,11 +4,13 @@ from functools import wraps
 from dataclasses import replace
 import hashlib
 import json
+import os
 import time
 import uuid
 
 from .models import Settings, Window, PaperError, STEPS, decimal, money, quantity, text, MONEY_TICK
 from .storage import Store
+from .safety import require_preflight
 
 D = Decimal
 
@@ -43,12 +45,15 @@ class Engine:
                 if (db.execute('SELECT COUNT(*) FROM meta').fetchone()[0] or store.trades(db)
                         or db.execute('SELECT COUNT(*) FROM curve').fetchone()[0]):
                     raise PaperError('CORRUPT_JOURNAL')
+                supplied = settings is not None
                 settings = settings or Settings.from_env()
                 settings.validate()
                 for key, value in [('version','1'), ('settings',json.dumps(settings.to_dict())),
                                    ('balance',text(settings.starting_balance)), ('peak',text(settings.starting_balance)),
                                    ('maximum_drawdown_pct','0'), ('maximum_drawdown_usdt','0'), ('close_sequence','0')]:
                     store.set(db, key, value)
+                sources = {name: ('supplied configuration' if supplied else 'environment variables' if os.getenv('PAPER_'+name.upper()) is not None else 'defaults') for name in settings.to_dict()}
+                store.set(db,'settings_sources',json.dumps(sources))
                 self._point(db, self.clock())
             elif version != '1':
                 raise PaperError('CORRUPT_JOURNAL')
@@ -311,6 +316,10 @@ class Engine:
         settings = Settings.from_dict(values)
         with self.store.transaction() as db:
             previous = self._settings(db)
+            auto_raw = self.store.get(db,'auto_paper')
+            auto_state = json.loads(auto_raw) if auto_raw else None
+            if auto_state and auto_state['enabled']:
+                require_preflight(settings,auto_state['fallback_policy'],opened=self.store.trades(db,opened=True))
             if settings.starting_balance != previous.starting_balance:
                 if self.store.trades(db):
                     raise PaperError('STARTING_BALANCE_LOCKED')
@@ -320,6 +329,7 @@ class Engine:
                 self.store.set(db,'maximum_drawdown_usdt','0')
                 db.execute('DELETE FROM curve')
             self.store.set(db,'settings',json.dumps(settings.to_dict()))
+            self.store.set(db,'settings_sources',json.dumps({name:'persisted configuration' for name in settings.to_dict()}))
             if not self.store.trades(db):
                 db.execute('DELETE FROM curve')
                 self._point(db,self.clock())
@@ -590,7 +600,21 @@ class Engine:
                          equity=text(equity),return_pct=text(money((equity/settings.starting_balance-1)*100)) if equity is not None else None,
                          consecutive_wins=streak_win,consecutive_losses=streak_loss,maximum_consecutive_wins=max_win,maximum_consecutive_losses=max_loss,
                          total_commissions=text(sum((D(t['commissions']) for t in trades),D(0))),open_positions=len(opened))
-            return dict(starting_balance_locked=bool(self.store.trades(db)),statistics_scope=entry_type,paper=True,real_money_execution='DISABLED',automatic_signal_execution=False,settings=settings.to_dict(),statistics=stats,
+            raw_sources = self.store.get(db,'settings_sources')
+            try:
+                sources = json.loads(raw_sources) if raw_sources else {}
+            except (ValueError,TypeError):
+                sources = {}
+            allowed_sources = {'defaults','environment variables','supplied configuration','persisted configuration'}
+            sources = {name:(sources.get(name) if isinstance(sources,dict) and isinstance(sources.get(name),str) and sources.get(name) in allowed_sources else 'persisted configuration (original source unknown)') for name in settings.to_dict()}
+            effective = dict(values=settings.to_dict(),virtual_balance=text(self._balance(db)),equity=text(self._equity(db,now)),
+                             account_scope='ALL',slippage_supported=False,slippage_pct=None,
+                             settings_source='persisted configuration',initialization_sources=sources,
+                             precedence='Existing persisted settings override environment variables; environment variables override defaults only on new-ledger initialization.',
+                             editable=True,starting_balance_locked=bool(self.store.trades(db)),
+                             auto_risk_cap_pct='1',auto_maximum_open_positions=1,
+                             real_money_execution='DISABLED',exchange_order_placement=False)
+            return dict(effective_settings=effective,starting_balance_locked=bool(self.store.trades(db)),statistics_scope=entry_type,paper=True,real_money_execution='DISABLED',automatic_signal_execution=False,settings=settings.to_dict(),statistics=stats,
                         open_positions=opened,closed_trades=closed[-100:][::-1],closed_trades_total=len(closed),journal_truncated=len(closed)>100,
                         equity_curve=curve,equity_curve_total=count,equity_curve_truncated=count>500,
                         persistence='SQLITE',persistence_warning='Render local filesystem is ephemeral unless PAPER_DB_PATH points to a persistent disk. Download backups.')

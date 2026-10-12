@@ -114,6 +114,23 @@
     <div class="pattern-actions"><button id="paper-retry" hidden>Повторить неподтверждённое действие</button></div>
     <div id="paper-data" hidden>
       <p id="paper-storage" class="pattern-warning"></p>
+      <section class="paper-settings-panel" aria-labelledby="paper-settings-title">
+        <h3 id="paper-settings-title">Paper Trading Settings</h3>
+        <p class="score-note">Authoritative backend configuration · VIRTUAL FUNDS ONLY · REAL MONEY EXECUTION = DISABLED. Values below are effective now; draft form values are not active until saved.</p>
+        <div id="paper-settings-effective" class="paper-settings-grid"></div>
+        <p id="paper-settings-source" class="score-note"></p>
+        <p id="paper-settings-preflight" class="pattern-warning" role="status" aria-live="polite">Safety audit unavailable; load current backend settings before activation.</p>
+        <p class="score-note">Editing uses the existing validated Paper settings endpoint. Initial balance is locked after the first trade. Existing positions retain their entry settings. Unsafe settings cannot be saved while Auto is armed; switch OFF first.</p>
+      <details><summary>Edit saved Paper settings</summary><div class="paper-settings-controls" id="paper-settings">
+        <label>Starting balance USDT<input data-paper-setting="starting_balance" inputmode="decimal"></label>
+        <label>Commission per side %<input data-paper-setting="commission_pct" inputmode="decimal"></label>
+        <label>Risk per trade %<input data-paper-setting="risk_per_trade_pct" inputmode="decimal"></label>
+        <label>Max notional USDT<input data-paper-setting="maximum_position_size_usdt" inputmode="decimal"></label>
+        <label>Max open positions<input data-paper-setting="maximum_simultaneous_positions" inputmode="numeric"></label>
+        <label>Default Stop Loss %<input data-paper-setting="stop_loss_pct" inputmode="decimal"></label>
+        <label>Default Take Profit %<input data-paper-setting="take_profit_pct" inputmode="decimal"></label>
+      </div><p class="score-note">Начальный баланс блокируется после первой сделки. Настройки комиссий/SL/TP применяются к новым позициям. Все позиции резервируют 1× notional; плечо, spread, funding и проскальзывание не моделируются.</p><div class="pattern-actions"><button id="paper-save">Сохранить настройки</button></div></details>
+      </section>
       <h3>AUTO PAPER TRADING</h3>
       <p class="pattern-warning">VIRTUAL FUNDS ONLY · REAL MONEY EXECUTION = DISABLED</p>
       <p class="score-note">Подтверждённые Historical Pattern LONG/SHORT, закрытые свечи. Scope фиксируется при ON; первая свеча — baseline, торговля начинается со следующей. Auto risk ≤1%, всего не более одной открытой позиции. После restart требуется ручное возобновление.</p>
@@ -131,15 +148,7 @@
 
       <div class="pattern-kpis" id="paper-metrics"></div>
       <h3>EQUITY CURVE · USDT</h3><p id="paper-curve-note" class="score-note"></p><svg id="paper-curve" viewBox="0 0 600 160" role="img" aria-label="Кривая виртуального капитала"></svg>
-      <details><summary>Paper risk settings</summary><div class="pattern-controls" id="paper-settings">
-        <label>Starting balance USDT<input data-paper-setting="starting_balance" inputmode="decimal" value="10000"></label>
-        <label>Commission per side %<input data-paper-setting="commission_pct" inputmode="decimal" value="0.10"></label>
-        <label>Risk per trade %<input data-paper-setting="risk_per_trade_pct" inputmode="decimal" value="1"></label>
-        <label>Max notional USDT<input data-paper-setting="maximum_position_size_usdt" inputmode="decimal" value="2000"></label>
-        <label>Max open positions<input data-paper-setting="maximum_simultaneous_positions" inputmode="numeric" value="1"></label>
-        <label>Default Stop Loss %<input data-paper-setting="stop_loss_pct" inputmode="decimal" value="2"></label>
-        <label>Default Take Profit %<input data-paper-setting="take_profit_pct" inputmode="decimal" value="4"></label>
-      </div><p class="score-note">Начальный баланс блокируется после первой сделки. Настройки комиссий/SL/TP применяются к новым позициям. Все позиции резервируют 1× notional; плечо, spread, funding и проскальзывание не моделируются.</p><div class="pattern-actions"><button id="paper-save">Сохранить настройки</button></div></details>
+
       <h3>MANUAL PAPER POSITION · BTCUSDT</h3><p class="score-note">Источник и timeframe — как на графике. Цена исполнения — close последней проверенной закрытой свечи, не live bid/ask. XAUUSD пока не поддерживается: нет конвертации USD/USDT.</p>
       <div class="pattern-actions"><button id="paper-quote-refresh">Получить paper quote</button><span id="paper-quote" class="score-note">Сначала получите подтверждённую цену.</span></div>
       <div class="pattern-controls">

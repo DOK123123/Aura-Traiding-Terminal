@@ -74,6 +74,11 @@ class Configuration(StrictModel):
 
 
 MESSAGES = {
+ 'AUTO_PREFLIGHT_RISK':'Auto Paper activation blocked: saved risk must be at most 1% per trade. Save safe settings explicitly.',
+ 'AUTO_PREFLIGHT_POSITIONS':'Auto Paper activation blocked: saved maximum open positions must be 1, with no more than one existing open position.',
+ 'AUTO_PREFLIGHT_STOPS':'Auto Paper activation blocked: finite positive protective SL/TP on the correct LONG/SHORT entry sides are required.',
+ 'AUTO_PREFLIGHT_POLICY':'Auto Paper activation blocked: select SKIP or explicit PAPER_SETTINGS protective policy.',
+ 'AUTO_PREFLIGHT_VIRTUAL':'Auto Paper activation blocked: virtual-only execution boundary failed.',
  'STALE_DATA':'Данные устарели. Операция заблокирована.',
  'SOURCE_MISMATCH':'Источник не совпадает с графиком/позицией.',
  'QUOTE_CHANGED':'Закрытая свеча изменилась. Запросите новую paper quote.',

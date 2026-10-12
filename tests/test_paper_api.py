@@ -195,6 +195,9 @@ def test_auto_route_owner_csrf_strict_scope_and_no_external_signal_injection(cli
     assert c.post('/api/paper/auto',auth=('aura',PASSWORD),json=body).status_code==403
     assert c.post('/api/paper/auto',auth=('aura',PASSWORD),headers=HEADERS,json=dict(body,signal='LONG')).status_code==422
     assert c.post('/api/paper/auto',auth=('aura',PASSWORD),headers=HEADERS,json=dict(body,enabled='true')).status_code==422
+    assert c.post('/api/paper/auto',auth=('aura',PASSWORD),headers=HEADERS,json=body).json()['code']=='AUTO_PREFLIGHT_RISK'
+    config=engine.snapshot()['settings'];config.update(risk_per_trade_pct='1',maximum_simultaneous_positions=1)
+    assert c.post('/api/paper/settings',auth=('aura',PASSWORD),headers=HEADERS,json=config).status_code==200
     assert c.post('/api/paper/auto',auth=('aura',PASSWORD),headers=HEADERS,json=body).json()['status']=='ON'
     state=c.get('/api/paper/state?scope=AUTO',auth=('aura',PASSWORD)).json()
     assert state['statistics_scope']=='AUTO' and state['auto_paper']['status']=='ON'

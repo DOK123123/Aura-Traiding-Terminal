@@ -5,6 +5,7 @@ import json
 import uuid
 
 from .engine import precise
+from .safety import require_preflight,preflight
 from .models import PaperError, Window, STEPS, decimal, text
 
 STRATEGY_VERSION = 'HISTORICAL_PATTERN_V1_DEFAULTS'
@@ -89,6 +90,7 @@ class Auto:
     def state(self):
         with self.store.transaction(write=False) as db:
             state=self._state(db)
+            state['safety_preflight']=preflight(self.engine._settings(db),state['fallback_policy'],opened=self.store.trades(db,opened=True))
             state['decisions']=[json.loads(r[0]) for r in db.execute('SELECT data FROM auto_decisions ORDER BY candle_time DESC,recorded_at DESC LIMIT 100')]
             state['decisions_retained']=db.execute('SELECT COUNT(*) FROM auto_decisions').fetchone()[0]
             return state
@@ -123,6 +125,8 @@ class Auto:
             window.validate(self.engine.clock())
         with self.store.transaction() as db:
             state=self._state(db)
+            if enabled:
+                require_preflight(self.engine._settings(db),fallback_policy,entry=window.bars[-1].close,opened=self.store.trades(db,opened=True))
             if not enabled:
                 state.update(enabled=False,status='OFF',manual_resume=False,generation=state['generation']+1,last_action='OFF')
                 self._save(db,state)
