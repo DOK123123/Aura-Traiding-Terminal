@@ -1,0 +1,39 @@
+{
+  "version": "AURA_INVERSE_RESEARCH_1",
+  "parent_protocol_sha256": "6eabecd3300e203d5418538be0b71bd2529d6424b71e89a6e10f5e59aa9cf5a3",
+  "original_results_sha256": "ad78010443829533570fa8e6c2570c7c96cee8ed72438c0365ec05532c09d7c6",
+  "csv_sha256": "cbe142f776e2ddebe66b5e33a601ac679cf1988ad9b16b52799bc336fac1cb07",
+  "periods": {
+    "development": "2026-05-06 05:00 UTC to 2026-08-01 exclusive; first500 warm-up",
+    "test": "2026-08-01 UTC to 2026-10-01 exclusive;8832 causal past bars; fresh ledger"
+  },
+  "blind_holdout": false,
+  "parameters": "Exact frozen A/B/C/D from parent protocol; no thresholds/indicator changes",
+  "variants": {
+    "ORIGINAL": "Unchanged decisions and exits; rerun equals original report",
+    "I": "Invert entry direction only. Retain original exit_long/exit_short associated with PHYSICAL position side. Stop/target ATR distances unchanged, centered on new direction at actual next-open fill. This can cause immediate strategy exits; explicit hypothesis, not guessed mirrored holding time.",
+    "II": "Invert entry direction and SWAP original exit_long/exit_short. Preserve original directional exit trajectory for inverted position. ATR distances unchanged, centered on new fill. No reflection of price history, RSI thresholds or trend regime."
+  },
+  "baseline": {
+    "starting_balance": "10000",
+    "risk_pct": "1",
+    "max_notional": "2000",
+    "positions": 1,
+    "fee_bps": "10",
+    "slippage_bps": "5"
+  },
+  "additional_scenarios": {
+    "ZERO_COST": {
+      "fee_bps": "0",
+      "slippage_bps": "0",
+      "purpose": "Actual independent simulations with fixed signals; gates, stops, fills and sizing can differ; not simple subtraction or optimized tariff"
+    }
+  },
+  "execution": "Unchanged app.lab.execution; next open, conservative SL first including ambiguous candles, adverse stop gaps, capped TP gaps, protective opening priority, final liquidation, ignored occupied entries, no same-open reversal",
+  "economics": "Net=filled-price gross-fees. Raw-path gross approximates filled gross+slippage (rounding residual explicit). Turnover=sum filled entry/exit notional. Fixed-realized-path break-even fee bps=gross filled PnL/turnover*10000; ceiling tick residual; negative means no nonnegative fee can make path profitable. Raw-path total-cost budget bps=raw gross/raw turnover*10000 is first-order attribution, not a tradable break-even quote. No fee/slippage fitting.",
+  "regimes": "Past ADX14 at signal candle; RANGE<=20, TREND>=25, otherwise TRANSITION; attribution only",
+  "reporting": "Full baseline trade journals. Full15m equity calculated/audited, JSON includes daily/start/end equity points only to bound storage; reproducing CLI can emit full curves using --full-curves. Zero-cost summaries only. Equal net samples do not imply matching positions.",
+  "limits": "Input existing16MiB/20000 rows; CPU default180s maximum600s; standalone offline only; no private clients, environment credentials or database writes",
+  "new_history_protocol": "If official archives available: fixed development2020-2022 and new retrospective validation2023-2025 before looking at outcomes;500 past warm-up, BTC15m. No claiming unviewed/blind holdout. Only complete authenticated intervals; otherwise blocked.",
+  "network": "Single official January2023 checksum probe8s returned ConnectError; no retry/bypass; no archives received."
+}
