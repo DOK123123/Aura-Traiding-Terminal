@@ -42,9 +42,13 @@ def metrics(trades,curve,baseline):
 
 
 @precise
-def simulate(bars,signals,begin,end,step,baseline:Baseline,deadline=None):
+def simulate(bars,signals,begin,end,step,baseline:Baseline,deadline=None,*,trailing_atr=None):
     baseline.validate()
     if not 0<=begin<end<=len(bars) or len(signals)!=len(bars):raise LabError('INVALID_RANGE')
+    # Optional research-only distances. Existing callers/output remain unchanged.
+    if trailing_atr is not None:
+        if len(trailing_atr)!=len(bars) or any(v is not None and (not isinstance(v,D) or not v.is_finite() or v<=0) for v in trailing_atr):
+            raise LabError('INVALID_TRAILING_STOP')
     balance=D(baseline.starting_balance);rate=D(baseline.fee_bps)/10000;slip=D(baseline.slippage_bps)/10000
     position=None;pending_entry=None;pending_exit=False;trades=[];rejected={};curve=[dict(time=bars[begin].time,balance=text(balance),equity=text(balance))]
 
@@ -92,6 +96,8 @@ def simulate(bars,signals,begin,end,step,baseline:Baseline,deadline=None):
                       entry_price=text(entry),size=text(size),notional=text(notional),stop_loss=text(stop),take_profit=text(target),
                       entry_fee=text(entry_fee),risk_usdt=text(risk),risk_budget_usdt=text(money(budget)),planned_risk_reward=text(money(reward/risk)),
                       entry_reason=decision.reason,status='OPEN')
+        if trailing_atr is not None:
+            position.update(initial_stop_loss=text(stop),trailing_extreme=text(entry),stop_history=[])
 
     for bar_index in range(begin,end):
         if deadline is not None and time.monotonic()>deadline:raise LabError('COMPUTE_TIMEOUT')
@@ -113,6 +119,17 @@ def simulate(bars,signals,begin,end,step,baseline:Baseline,deadline=None):
         if bar_index==end-1:
             if position is not None:close(b.close,b.time+step,'SEGMENT_END_CLOSE')
         else:
+            # Ratchet only after the CLOSED bar was executed with the old stop.
+            # Clamp to close: never retrospectively fill a newly computed stop.
+            if position is not None and trailing_atr is not None and trailing_atr[bar_index] is not None:
+                p=position;long=p['direction']=='LONG';old=D(p['stop_loss']);distance=trailing_atr[bar_index]
+                extreme=max(D(p['trailing_extreme']),b.high) if long else min(D(p['trailing_extreme']),b.low)
+                candidate=min(extreme-distance,b.close) if long else max(extreme+distance,b.close)
+                updated=max(old,candidate) if long else min(old,candidate)
+                p['trailing_extreme']=text(extreme)
+                if updated!=old:
+                    p['stop_loss']=text(updated)
+                    p['stop_history'].append(dict(effective_from=b.time+step,stop_loss=text(updated)))
             decision=signals[bar_index]
             if position is None and decision.direction is not None:pending_entry=decision
             elif position is not None:pending_exit=decision.exit_long if position['direction']=='LONG' else decision.exit_short

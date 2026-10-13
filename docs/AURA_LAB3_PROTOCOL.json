@@ -1,0 +1,59 @@
+{
+  "version": "AURA_STRATEGY_LAB_3.0",
+  "frozen_parameters": {
+    "A": {
+      "entry": "close breaks prior55 high/low",
+      "exit": "opposite prior20 channel; ratcheting3ATR14 trailing armed next candle, clamp to current close; never intrabar retroactive",
+      "stop_atr": 3,
+      "target_atr": 6,
+      "trailing_atr": 3
+    },
+    "B": {
+      "entry": "EMA50/200 alignment + price EMA50 + ADX14>=25 rising eligibility edge;64 candle global signal cooldown",
+      "exit": "EMA reversal/price loses EMA50 or ADX<20",
+      "stop_atr": 3,
+      "target_atr": 6
+    },
+    "C": {
+      "entry": "prior8 candles contain20-bar Bollinger width below0.5 times past120 width median; close breaks prior20 channel;32 signal cooldown",
+      "exit": "close crosses EMA20 against side",
+      "stop_atr": 3,
+      "target_atr": 6
+    },
+    "D": {
+      "entry": "RSI14 returns above30/below70; ADX14<=20 and abs(EMA50-EMA200)/ATR14<=1",
+      "exit": "RSI50 or ADX>=25",
+      "stop_atr": 3,
+      "target_atr": 6
+    },
+    "E": {
+      "entry": "EMA20/50 alignment agrees on15m and last COMPLETE1h/4h;15m price EMA20; eligibility rising edge;64 signal cooldown",
+      "exit": "any timeframe alignment lost or15m price loses EMA20",
+      "stop_atr": 3,
+      "target_atr": 6
+    }
+  },
+  "conditions": {
+    "balance": "10000",
+    "risk_pct": "1",
+    "notional_cap": "2000",
+    "positions": 1,
+    "fee_bps": "10",
+    "slippage_bps": "5"
+  },
+  "multi_year": {
+    "development": "2020-2022; first1000 bars warm-up",
+    "validation": "2023-2024",
+    "final_test": "2025"
+  },
+  "fallback": {
+    "development": "2026-05-01 to2026-08-01; first1000 warm-up",
+    "retrospective_test": "2026-08-01 to2026-10-01",
+    "blind": false
+  },
+  "regimes": "signal-close ADX14>=25 TREND <=20 RANGE else TRANSITION; ATR14/close >= median of prior500 normalized ATR HIGH otherwise LOW; insufficient history UNKNOWN",
+  "execution": "existing Decimal engine; next-open, SL-first ambiguity, adverse stop gaps, capped TP gaps, max1, forced final close; trailing optional only A; no risk formula changes",
+  "limits": "72 monthly ZIP/checksum pairs <=8MiB compressed/16MiB CSV each;<=211000 candles; no full long-history curves in artifacts; daily curve/complete ledger; bounded offline CPU default240s cap900s",
+  "network": "single8s official2020-01 checksum ConnectError; no archives downloaded",
+  "no_selection": "All fixed before new results; no optimization, no activation; retrospective prior-viewed2026 not independent proof"
+}
