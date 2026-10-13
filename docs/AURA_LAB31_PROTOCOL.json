@@ -1,0 +1,39 @@
+{
+  "version": "AURA_LAB_3.1",
+  "frozen_strategy_protocol_sha256": "0c3ca8474de2ceb6ec9228bc32c8d34dace2b353e449942f4cc19fee48f39221",
+  "archive_sha256": "61eeafddd5fd7d955a149030d08075959a47e4f66171c0f3fe0d6c08d496c50d",
+  "periods": {
+    "development": [
+      "2020-01-01",
+      "2023-01-01"
+    ],
+    "validation": [
+      "2023-01-01",
+      "2025-01-01"
+    ],
+    "final_2025": [
+      "2025-01-01",
+      "2026-01-01"
+    ]
+  },
+  "starting_balance": "10000",
+  "risk_pct": "1",
+  "max_notional": "2000",
+  "positions": 1,
+  "scenarios": {
+    "baseline": [
+      "10",
+      "5"
+    ],
+    "stress": [
+      "20",
+      "10"
+    ]
+  },
+  "warmup": 1000,
+  "gap_policy": "No fills through missing/quarantined bars. Reset all indicator/strategy state at each continuous segment; first1000 warmup. Open trade at gap: retain full unresolved position and known entry fee, no invented exit; exclude entire trade from conditional closed-trade ledger, restore its entry fee for conditional continuation, roll back its curve exposure. Not an investable full-period return; any censoring flagged. Terminal period liquidation only on valid observed close. No parameter selection.",
+  "historical_benchmark": "buyhold known endpoint PnL only; no stop-risk equivalence; full path drawdown unverified over gaps",
+  "comparisons": "previous A/B/C/D ORIGINAL,I,II with same dataset, segments, costs and risk; all run afresh, labels OLD_* distinct",
+  "outputs": "checkpoint summary percompleted strategy/period/scenario; complete journal gz and full daily curve checkpoints local outside git; small aggregate JSON committed; ledger SHA/version fingerprints; no raw prices archive commit",
+  "limits": "strict72 ZIPs, bound import; cooperative900s perjob; research-only no network/private clients/db; no selecting winners by final"
+}

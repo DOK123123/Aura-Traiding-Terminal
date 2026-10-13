@@ -42,7 +42,7 @@ def metrics(trades,curve,baseline):
 
 
 @precise
-def simulate(bars,signals,begin,end,step,baseline:Baseline,deadline=None,*,trailing_atr=None):
+def simulate(bars,signals,begin,end,step,baseline:Baseline,deadline=None,*,trailing_atr=None,close_at_end=True):
     baseline.validate()
     if not 0<=begin<end<=len(bars) or len(signals)!=len(bars):raise LabError('INVALID_RANGE')
     # Optional research-only distances. Existing callers/output remain unchanged.
@@ -117,7 +117,7 @@ def simulate(bars,signals,begin,end,step,baseline:Baseline,deadline=None,*,trail
             if stop_hit:close(stop,b.time+step,'STOP_LOSS_AMBIGUOUS' if target_hit else 'STOP_LOSS')
             elif target_hit:close(target,b.time+step,'TAKE_PROFIT')
         if bar_index==end-1:
-            if position is not None:close(b.close,b.time+step,'SEGMENT_END_CLOSE')
+            if position is not None and close_at_end:close(b.close,b.time+step,'SEGMENT_END_CLOSE')
         else:
             # Ratchet only after the CLOSED bar was executed with the old stop.
             # Clamp to close: never retrospectively fill a newly computed stop.
@@ -134,8 +134,11 @@ def simulate(bars,signals,begin,end,step,baseline:Baseline,deadline=None,*,trail
             if position is None and decision.direction is not None:pending_entry=decision
             elif position is not None:pending_exit=decision.exit_long if position['direction']=='LONG' else decision.exit_short
         curve.append(dict(time=b.time+step,balance=text(balance),equity=text(equity(b.close))))
-    if balance!=money(D(baseline.starting_balance)+sum((D(t['realized_pnl']) for t in trades),D(0))):raise LabError('ACCOUNTING_ERROR')
-    return dict(status='OK',metrics=metrics(trades,curve,baseline),trades=trades,equity_curve=curve,rejections=rejected,
+    unfinished_fee=D(position['entry_fee']) if position is not None else D(0)
+    if balance!=money(D(baseline.starting_balance)+sum((D(t['realized_pnl']) for t in trades),D(0))-unfinished_fee):raise LabError('ACCOUNTING_ERROR')
+    result=dict(status='OK',metrics=metrics(trades,curve,baseline),trades=trades,equity_curve=curve,rejections=rejected,
                 decision_start=bars[begin].time,decision_end_exclusive=bars[end-1].time+step,
                 entry_model='SIGNAL_AT_CLOSE_ENTRY_NEXT_OPEN',positions_max=1,
                 execution_scope='RESEARCH_ONLY',real_money_execution='DISABLED')
+    if not close_at_end:result['open_position']=position
+    return result

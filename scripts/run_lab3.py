@@ -32,17 +32,17 @@ def stamp(s):return int(datetime.fromisoformat(s).replace(tzinfo=timezone.utc).t
 @precise
 def audit_trailing(run,bars,distances,baseline):
     """Independent trail chronology, costs, initial risk, equity and drawdown."""
-    ix={b.time:i for i,b in enumerate(bars)};total=D(0);rate=D('.001');tick=D('.00000001')
+    ix={b.time:i for i,b in enumerate(bars)};total=D(0);rate=D(baseline.fee_bps)/10000;slip=D(baseline.slippage_bps)/10000;tick=D('.00000001')
     curve=run['equity_curve'];ci={p['time']:i for i,p in enumerate(curve)}
     events=[D(0)]*len(curve);marks=[None]*len(curve)
     for t in run['trades']:
         sign=1 if t['direction']=='LONG' else -1
         ep,xp,er,xr,q=[D(t[k]) for k in ('entry_price','exit_price','entry_raw_price','exit_raw_price','size')]
-        assert F(ep)==F(er)*(1+sign*F(1,2000)) and F(xp)==F(xr)*(1-sign*F(1,2000))
+        assert F(ep)==F(er)*(1+sign*F(slip)) and F(xp)==F(xr)*(1-sign*F(slip))
         ef=(ep*q*rate).quantize(tick,rounding=ROUND_CEILING);xf=(xp*q*rate).quantize(tick,rounding=ROUND_CEILING)
         pnl=money(money(sign*(xp-ep)*q)-ef-xf)
         assert pnl==D(t['realized_pnl']) and ef==D(t['entry_fee']) and xf==D(t['exit_fee'])
-        initial=D(t['initial_stop_loss']);planned=initial*(1-D(sign)*D('.0005'))
+        initial=D(t['initial_stop_loss']);planned=initial*(1-D(sign)*slip)
         risk=(abs(ep-planned)*q).quantize(tick,rounding=ROUND_CEILING)+ef+(planned*q*rate).quantize(tick,rounding=ROUND_CEILING)
         assert risk==D(t['risk_usdt']) and risk<=D(t['risk_budget_usdt']) and D(t['notional'])<=2000
         active=initial;extreme=ep;history=[]
@@ -65,15 +65,15 @@ def audit_trailing(run,bars,distances,baseline):
         events[a]-=ef;events[z]+=money(sign*(xp-ep)*q)-xf
         for index in range(a,z):assert marks[index] is None;marks[index]=(sign,ep,q)
         total+=pnl
-    cash=D(10000);peak=cash;dd=D(0)
+    cash=D(baseline.starting_balance);peak=cash;dd=D(0)
     for i,p in enumerate(curve):
         cash=money(cash+events[i]);eq=cash
         if marks[i] is not None:
-            sign,ep,q=marks[i];price=bars[ix[p['time']-900]].close*(1-D(sign)*D('.0005'))
+            sign,ep,q=marks[i];price=bars[ix[p['time']-900]].close*(1-D(sign)*slip)
             eq=money(cash+money(sign*(price-ep)*q)-(price*q*rate).quantize(tick,rounding=ROUND_CEILING))
         assert cash==D(p['balance']) and eq==D(p['equity'])
         peak=max(peak,eq);dd=max(dd,(peak-eq)/peak*100)
-    assert total==D(run['metrics']['net_profit']) and cash==10000+total and money(dd)==D(run['metrics']['max_drawdown_pct'])
+    assert total==D(run['metrics']['net_profit']) and cash==D(baseline.starting_balance)+total and money(dd)==D(run['metrics']['max_drawdown_pct'])
     return len(run['trades'])
 
 
