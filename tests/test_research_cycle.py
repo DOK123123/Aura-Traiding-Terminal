@@ -70,10 +70,19 @@ class ResearchCycleTests(unittest.TestCase):
             self.assertIsNone(row['trades']);self.assertIsNone(row['equity_curve'])
 
     def test_native_reference_serialized_config_and_source_guard(self):
-        reference=research.native_reference({'sha256':'cbe142f776e2ddebe66b5e33a601ac679cf1988ad9b16b52799bc336fac1cb07'})
-        self.assertEqual(reference['status'],'COMPLETE')
-        self.assertFalse(reference['ranked'])
-        self.assertIn('NOT REEXECUTED',reference['provenance'])
+        # A legitimate new API router changes app/main.py's source fingerprint.
+        # The frozen native replay must then be refused, not silently blessed.
+        import hashlib,json
+        stored=json.loads((research.ROOT/'docs/FIXED_STRATEGY_RESULTS.json').read_bytes())['historical_pattern']
+        changed=any(hashlib.sha256((research.ROOT/p).read_bytes()).hexdigest()!=h for p,h in stored['software_sha256'].items())
+        if changed:
+            with self.assertRaisesRegex(ValueError,'Native reference source version changed'):
+                research.native_reference({'sha256':'cbe142f776e2ddebe66b5e33a601ac679cf1988ad9b16b52799bc336fac1cb07'})
+        else:
+            reference=research.native_reference({'sha256':'cbe142f776e2ddebe66b5e33a601ac679cf1988ad9b16b52799bc336fac1cb07'})
+            self.assertEqual(reference['status'],'COMPLETE')
+            self.assertFalse(reference['ranked'])
+            self.assertIn('NOT REEXECUTED',reference['provenance'])
         with self.assertRaises(ValueError):research.native_reference({'sha256':'wrong'})
 
     def test_existing_output_is_not_overwritten(self):

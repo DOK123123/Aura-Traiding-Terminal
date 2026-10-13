@@ -14,6 +14,8 @@
   <script defer src="/static/bybit_demo.js"></script>
   <link rel="stylesheet" href="/static/paper.css">
   <script defer src="/static/paper.js"></script>
+  <link rel="stylesheet" href="/static/intelligence.css">
+  <script defer src="/static/intelligence.js"></script>
   <link rel="stylesheet" href="/static/lab.css">
   <script defer src="/static/lab.js"></script>
 </head>
@@ -206,6 +208,23 @@
       </div>
     </div>
   </section>
-  <footer><span>Аналитический инструмент · без исполнения сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
+  <section class="panel intelligence" aria-labelledby="ai-title">
+    <h2 id="ai-title">AURA INTELLIGENCE</h2>
+    <p class="ai-warning">VIRTUAL FUNDS ONLY · REAL MONEY EXECUTION = DISABLED. Все 17 прежних стратегий убыточны после издержек. Распознавание фигуры не означает прибыльность.</p>
+    <p>Исторический replay с отдельным портфелем. Live-анализ только для чтения: автоматическое исполнение недоступно.</p>
+    <div class="ai-actions"><button id="ai-load" type="button">Открыть вкладку / загрузить историю</button><a href="/api/paper/login">Вход владельца: aura</a><button id="ai-live" type="button">Проверить live · только анализ</button></div>
+    <p id="ai-source" class="ai-warning">История ещё не загружена.</p>
+    <div class="ai-grid"><label>Закрытая свеча, UTC<input id="ai-date" type="datetime-local" step="900"></label><label>Таймфрейм<select id="ai-timeframe"><option>15m</option><option>1h</option><option>4h</option></select></label></div>
+    <label><input id="ai-manual" type="checkbox">Явно разрешаю ручное исследование гипотезы при WAIT. Это не рекомендация и не доказанное преимущество.</label>
+    <div class="ai-actions"><button id="ai-create" type="button">Создать отдельный replay</button><button id="ai-next" type="button">Следующая свеча</button><button id="ai-fast" type="button">Вперёд на 32 свечи</button></div>
+    <p id="ai-status" role="status" aria-live="polite">Никакие позиции не создаются без подтверждения.</p>
+    <div class="ai-card"><h3>Контекст и решение</h3><p id="ai-context">Нет данных</p><p id="ai-decision">WAIT</p><p id="ai-evidence">Нет исторической оценки</p><ul id="ai-patterns"></ul></div>
+    <svg id="ai-chart" viewBox="0 0 600 220" role="img" aria-label="Закрытые свечи исторического replay и найденные паттерны"></svg>
+    <div class="ai-card"><h3>План виртуальной сделки</h3><p id="ai-plan">Нет предложения.</p><div class="ai-actions"><button id="ai-propose" type="button">Сформировать план / ручную гипотезу</button><button id="ai-confirm" type="button">ПОДТВЕРДИТЬ</button><button id="ai-reject" type="button">ПРОПУСТИТЬ</button></div></div>
+    <div class="ai-card"><h3>Отдельный replay-портфель</h3><p id="ai-portfolio">Не создан</p><p id="ai-position">Нет позиции</p><ul id="ai-history"></ul></div>
+    <details><summary>Каталог моделей — реализованные и запланированные</summary><div class="ai-grid"><label>Поиск<input id="ai-search" type="search"></label><label>Категория<select id="ai-category"><option value="">Все</option><option>Candlestick</option><option>Chart Patterns</option><option>Price Action</option><option>Market Structure</option><option>SMC</option><option>Volume</option><option>Indicators</option><option>Volatility</option></select></label></div><ul id="ai-catalogue"></ul></details>
+    <details><summary>Ограничения, безопасность и хранение</summary><p>Сессии SQLite отделены от Paper/Auto. Render Free может потерять их при замене инстанса. Компактная проверяемая история включена в приложение; шестилетний архив для replay не нужен. Даты только январь 2023 UTC, до 512 шагов и 20 сессий. 2025 не используется в индексе. Частоты исторических исходов не являются гарантией будущего результата. Коррелированные модели не считаются независимыми голосами. Без явного запроса и подтверждения пользователя вход запрещён. При WAIT разрешён только отдельно включённый ручной исследовательский тест; сам selector остаётся WAIT.</p></details>
+  </section>
+  <footer><span>Аналитический инструмент · без реальных сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
 </main>
 </body></html>
