@@ -16,6 +16,8 @@
   <script defer src="/static/paper.js"></script>
   <link rel="stylesheet" href="/static/intelligence.css">
   <script defer src="/static/intelligence.js"></script>
+  <link rel="stylesheet" href="/static/market_context.css">
+  <script defer src="/static/market_context.js"></script>
   <link rel="stylesheet" href="/static/lab.css">
   <script defer src="/static/lab.js"></script>
 </head>
@@ -211,6 +213,23 @@
   <section class="panel intelligence" aria-labelledby="ai-title">
     <h2 id="ai-title">AURA INTELLIGENCE</h2>
     <p class="ai-warning">VIRTUAL FUNDS ONLY · REAL MONEY EXECUTION = DISABLED. Все 17 прежних стратегий убыточны после издержек. Распознавание фигуры не означает прибыльность.</p>
+    <div class="mc-tabs" role="tablist" aria-label="Режим Aura Intelligence">
+      <button id="mc-tab-replay" type="button" role="tab" aria-selected="true" aria-controls="ai-replay-panel">ИСТОРИЧЕСКИЙ REPLAY</button>
+      <button id="mc-tab-market" type="button" role="tab" aria-selected="false" aria-controls="mc-panel" tabindex="-1">АНАЛИЗ РЫНКА</button>
+    </div>
+    <div id="mc-panel" class="market-context" role="tabpanel" aria-labelledby="mc-tab-market" hidden>
+      <h3 class="mc-title">АНАЛИЗ РЫНКА · BTCUSDT</h3>
+      <p class="mc-safety ai-warning">ТОЛЬКО ЧТЕНИЕ · WAIT · В ЭТОМ РЕЖИМЕ РЕАЛЬНОЕ И ВИРТУАЛЬНОЕ ИСПОЛНЕНИЕ ОТКЛЮЧЕНО. Найденная структура не означает преимущество или разрешение сделки.</p>
+      <div class="mc-controls"><label>Таймфрейм анализа<select id="mc-timeframe"><option>15m</option><option>1h</option><option>4h</option></select></label><button id="mc-refresh" type="button">Обновить анализ</button><a href="/api/paper/login">Вход владельца: aura</a></div>
+      <p id="mc-loading" role="status" aria-live="polite"></p><p id="mc-status" class="mc-status" role="status" aria-live="polite">Анализ ещё не загружен</p>
+      <p id="mc-source">Только реальные закрытые свечи публичного источника</p>
+      <div class="ai-card"><h3>Рыночный режим и структура</h3><p id="mc-regime" class="mc-regime">Не определено</p><p id="mc-structure">Нет данных</p><p id="mc-levels">Уровни не доступны</p><p id="mc-volatility">Нет данных</p><p id="mc-smc">Экспериментальные структуры не доступны</p><ul id="mc-mtf"></ul></div>
+      <div class="ai-card"><h3>Последние подтверждённые события</h3><ul id="mc-events"></ul></div>
+      <div class="ai-card"><h3>Исторические аналоги и решение</h3><p id="mc-analogs">Совместимый пакет аналогов ещё не доступен</p><p id="mc-research">Исследовательские результаты не разрешают сделку</p><p id="mc-decision" class="ai-warning">WAIT · Только чтение</p></div>
+      <details><summary>История, свежесть и ограничения</summary><p id="mc-history">Нет данных</p><p>Автообновление раз в минуту только при открытой вкладке; кэш сервера 30 секунд. Окно ограничено 4175 свечами 15m. Каждый таймфрейм требует 250 непрерывных закрытых свечей; пропуски сбрасывают прогрев, цены не заполняются. Источник недоступен — анализ не показывается как свежий. Состояние рынка не является состоянием Auto Paper.</p><p>Нет совместимых проверенных аналогов 3.0. Архив 2020–2025 не загружается на веб-сервер; replay 1.0 использует другие признаки. 2025 уже изучен. Нужен отдельный протокол и новая forward-проверка; гарантии доходности нет.</p></details>
+      <details><summary>Точные определения алгоритмов и момент подтверждения</summary><ul id="mc-definitions"></ul></details>
+    </div>
+    <div id="ai-replay-panel" role="tabpanel" aria-labelledby="mc-tab-replay">
     <p>Исторический replay с отдельным портфелем. Live-анализ только для чтения: автоматическое исполнение недоступно.</p>
     <div class="ai-actions"><button id="ai-load" type="button">Открыть вкладку / загрузить историю</button><a href="/api/paper/login">Вход владельца: aura</a><button id="ai-live" type="button">Проверить live · только анализ</button></div>
     <p id="ai-source" class="ai-warning">История ещё не загружена.</p>
@@ -224,6 +243,7 @@
     <div class="ai-card"><h3>Отдельный replay-портфель</h3><p id="ai-portfolio">Не создан</p><p id="ai-position">Нет позиции</p><ul id="ai-history"></ul></div>
     <details><summary>Каталог моделей — реализованные и запланированные</summary><div class="ai-grid"><label>Поиск<input id="ai-search" type="search"></label><label>Категория<select id="ai-category"><option value="">Все</option><option>Candlestick</option><option>Chart Patterns</option><option>Price Action</option><option>Market Structure</option><option>SMC</option><option>Volume</option><option>Indicators</option><option>Volatility</option></select></label></div><ul id="ai-catalogue"></ul></details>
     <details><summary>Ограничения, безопасность и хранение</summary><p>Сессии SQLite отделены от Paper/Auto. Render Free может потерять их при замене инстанса. Компактная проверяемая история включена в приложение; шестилетний архив для replay не нужен. Даты только январь 2023 UTC, до 512 шагов и 20 сессий. 2025 не используется в индексе. Частоты исторических исходов не являются гарантией будущего результата. Коррелированные модели не считаются независимыми голосами. Без явного запроса и подтверждения пользователя вход запрещён. При WAIT разрешён только отдельно включённый ручной исследовательский тест; сам selector остаётся WAIT.</p></details>
+    </div>
   </section>
   <footer><span>Аналитический инструмент · без реальных сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
 </main>

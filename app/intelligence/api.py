@@ -81,3 +81,12 @@ async def live(timeframe:Literal['15m','1h']='15m'):
         value.update(strategy='WAIT',reason='LIVE_VALIDATION_REQUIRED',source=data['source'],execution_enabled=False)
         return JSONResponse(value,headers=HEADERS)
     except (IntelligenceError,LabError,ValueError,OSError,KeyError,TimeoutError,HTTPException):return JSONResponse(dict(strategy='WAIT',reason='NO_FRESH_DATA',message='Нет свежих данных',execution_enabled=False),headers=HEADERS,status_code=503)
+
+
+@router.get('/market-context', dependencies=[Depends(owner)])
+async def market_context(request: Request, timeframe: Literal['15m','1h','4h']='15m'):
+    """GET analysis only; deliberately independent of Service/replay/SQLite."""
+    from .market_context import unavailable
+    adapter = getattr(request.app.state, 'market_context', None)
+    value = await adapter.snapshot(timeframe) if adapter else dict(unavailable(), timeframe=timeframe)
+    return JSONResponse(value, headers=HEADERS, status_code=200 if value['status'] in ('OK','INSUFFICIENT_HISTORY') else 503)

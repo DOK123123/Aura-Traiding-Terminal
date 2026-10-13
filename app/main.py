@@ -32,6 +32,7 @@ from .lab.api import router as lab_router
 from .lab.service import Service as LabService
 from .lab.data import public_page as lab_public_page
 from .intelligence.api import router as intelligence_router
+from .intelligence.market_context import MarketContext
 
 ROOT = Path(__file__).resolve().parent.parent
 PROVIDERS = {"BTCUSDT": BinanceProvider(), "XAUUSD": GoldProvider()}
@@ -44,6 +45,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app):
     async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
         app.state.client = client
+        app.state.market_context = MarketContext.from_client(client)
         app.state.testnet = TestnetReader()
         app.state.bybit_demo = BybitDemoReader()
         async def paper_fetch(symbol, timeframe):
@@ -58,6 +60,7 @@ async def lifespan(app):
         try:
             yield
         finally:
+            await app.state.market_context.close()
             await app.state.paper.close()
             await app.state.bybit_demo.close()
             await app.state.testnet.close()

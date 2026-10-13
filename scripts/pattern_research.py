@@ -54,12 +54,7 @@ def hypotheses(frozen):
             for tf in frozen['timeframes'] for pat in frozen['patterns'] for ctx in frozen['contexts'] for exit in frozen['exits'] if exit=='PCT_2_4' or ctx=='NONE']
 
 
-def split_parts(bars,step):
-    result=[];left=0
-    for i in range(1,len(bars)):
-        if bars[i].time-bars[i-1].time != step: result.append(bars[left:i]);left=i
-    if bars:result.append(bars[left:])
-    return result
+from app.lab.series import split_parts
 
 
 def prepare(bars,tf):

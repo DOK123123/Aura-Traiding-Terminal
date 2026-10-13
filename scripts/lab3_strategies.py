@@ -7,15 +7,7 @@ from app.lab.models import Bar,precise
 from app.lab.strategies import Decision
 
 
-def higher(bars,step):
-    result=[];group=[];key=None
-    for b in bars:
-        bucket=b.time//step*step
-        if key!=bucket:group=[];key=bucket
-        group.append(b)
-        if b.time+900==bucket+step and len(group)==step//900 and group[0].time==bucket:
-            result.append(Bar(bucket,group[0].open,max(x.high for x in group),min(x.low for x in group),b.close,sum((x.volume for x in group),D(0))))
-    return result
+from app.lab.series import higher
 
 
 def higher_alignment(bars,step):

@@ -2,11 +2,11 @@
 from bisect import bisect_right
 from decimal import Decimal as D
 from statistics import median
+import time
 from app.intelligence.patterns import detect
 from app.lab.indicators import ema, rsi, atr, adx
 from app.lab.models import validate_series
-from scripts.lab3_strategies import higher
-from scripts.pattern_research import split_parts
+from app.lab.series import higher, split_parts
 
 VERSION = 'CONTEXT_VECTOR_1.1'
 VECTOR_NAMES = ('trend', 'strength', 'volatility', 'volume', 'range_position',
@@ -26,13 +26,14 @@ def zones(pivots, tolerance):
         confirmed_at=max(p['confirmation_time'] for p in g)) for g in groups]
 
 
-def segment_states(bars, step=900):
+def segment_states(bars, step=900, *, deadline=None):
     if not bars:return []
     validate_series(bars,step,bars[-1].time+step)
     c=[float(b.close) for b in bars];f=ema(c,20);s=ema(c,50)
     a=atr(bars);ax=adx(bars)[0];rs=rsi(c);m12=ema(c,12);m26=ema(c,26)
     highs=[];lows=[];active=None;ob=None;fvg=None;result=[]
     for i,b in enumerate(bars):
+        if deadline is not None and time.monotonic()>deadline:raise TimeoutError("CONTEXT_COMPUTE_TIMEOUT")
         cutoff=b.time+step
         if i<249 or a[i] is None or a[i]<=0:
             if i>=4:
