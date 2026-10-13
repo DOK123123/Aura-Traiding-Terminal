@@ -1,0 +1,20 @@
+{
+  "version": "AURA_OFFLINE_RESEARCH_2",
+  "dataset": "BTCUSDT 15m user CSV May-September2026; SHA verified, origin not independently authenticated",
+  "development": "2026-05-01 to 2026-08-01 exclusive; first500 bars warm-up only",
+  "test": "2026-08-01 to 2026-10-01 exclusive; past8832 bars allowed for indicators; fresh ledger",
+  "blind_holdout": false,
+  "baseline": {"starting_balance":"10000","fee_bps":"10","slippage_bps":"5","risk_pct":"1","max_notional":"2000","max_positions":1},
+  "cost_scenarios": {"baseline":["10","5"],"lower_assumption":["5","2"],"stress":["20","10"]},
+  "A": {"name":"Donchian ATR","entry_channel":20,"exit_channel":10,"atr":14,"stop_atr":2,"target_atr":4,"entry":"close breaks prior20 highs/lows excluding current","exit":"opposite prior10 channel"},
+  "B": {"name":"EMA trend","ema_fast":20,"ema_slow":50,"atr":14,"stop_atr":2,"target_atr":4,"entry":"EMA20>EMA50 and close>EMA20 LONG; inverse SHORT; persistent alignment, not crossover-only","exit":"EMA alignment reverses or price loses EMA20"},
+  "C": {"name":"RSI regime reversion","rsi":14,"adx":14,"ema_fast":20,"ema_slow":50,"adx_entry_max":20,"adx_exit_min":25,"spread_atr_max":0.5,"rsi_low":30,"rsi_high":70,"rsi_exit":50,"atr":14,"stop_atr":2,"target_atr":4,"entry":"RSI returns above30 LONG or below70 SHORT; ADX<=20 and abs(EMA20-EMA50)/ATR<=0.5","exit":"RSI reaches50 or ADX>=25"},
+  "D": {"name":"Aura indicators alternative","ema_fast":20,"ema_slow":50,"rsi":14,"rsi_long":55,"rsi_short":45,"macd":[12,26,9],"volume_window":20,"atr":14,"stop_atr":2,"target_atr":4,"entry":"EMA alignment + RSI55/45 + MACD histogram sign + volume>=past20 mean; no Fibonacci or divergence claim","exit":"EMA reverses, RSI loses50 or MACD histogram sign changes"},
+  "regimes": "closed-candle ADX14<=20 RANGE, >=25 TREND, otherwise TRANSITION; entry-time attribution only, not future regimes",
+  "execution": "Unchanged Lab Decimal simulate. Closed signal, next open fills, fixed ATR distances from signal close centered on actual fill, stop-gap adverse, target-gap capped, both hits stop-first; max1; ignore occupied entries; no same-open reversal. Same initial/risk/notional/collateral rules. Fixed final segment liquidation; monthly positions carry.",
+  "buy_hold": "Reuse precommitted passive capped2000 and budget10000; same costs but no SL and not risk-equivalent",
+  "historical_pattern": "Reuse COMPLETE prior production-native replay only when CSV, all native software hashes, dates, default PatternConfig and paper settings match. Separate unranked close-fill/no-slippage reference, not substituted for next-open execution.",
+  "limits": "Existing CSV16MiB/20000 rows; standalone CPU180s. No paid services, no web/UI/API/production state changes. No parameter search. Sensitivity does not choose parameters.",
+  "network": "Official January2023 Binance checksum probe returned ConnectError. Additional-permission attempt aborted with no result. No archives received, no bypass or further retries. Multi-year evaluation blocked.",
+  "limitations": "August/September already viewed in previous tasks; retrospective descriptive comparison. No confirmed independent advantage may be claimed from these periods. Synthetic data only in unit tests. Research parameters frozen before these candidates' results."
+}
