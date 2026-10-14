@@ -1,0 +1,16 @@
+.auto42 { margin:16px 0; padding:14px; border:1px solid #294459; border-radius:12px; background:#0b1520; color:#d6e5ee; min-width:0; }
+.auto42 summary { min-height:44px; cursor:pointer; font-weight:bold; padding:8px; overflow-wrap:anywhere; }
+.auto42 .a42-warning { color:#ffd391; border-left:3px solid #e8b259; padding:8px 12px; }
+.a42-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:10px; }
+.a42-grid div { padding:10px; background:#112230; border-radius:8px; min-width:0; }
+.a42-grid dt { font-size:13px; color:#a5bdcf; }
+.a42-grid dd { margin:4px 0 0; overflow-wrap:anywhere; }
+.a42-controls { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; }
+.auto42 button,.auto42 a { min-height:44px; min-width:44px; padding:10px 12px; touch-action:manipulation; }
+.auto42 button { border:1px solid #497189; border-radius:8px; background:#173344; color:#e6f2f9; cursor:pointer; }
+.auto42 button:disabled { opacity:.45; cursor:default; }
+.auto42 button:focus-visible,.auto42 summary:focus-visible,.auto42 a:focus-visible { outline:3px solid #91d0fb; outline-offset:2px; }
+.auto42 #a42-emergency { border-color:#e87979; }
+.auto42 p,.auto42 li { overflow-wrap:anywhere; }
+.auto42 ul { padding-left:22px; }
+@media(max-width:430px) { .auto42 { padding:10px; } .a42-controls button { flex:1 1 140px; } .a42-grid { grid-template-columns:1fr; } }

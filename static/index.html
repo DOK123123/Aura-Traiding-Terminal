@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="/static/paper.css">
   <script defer src="/static/paper.js"></script>
   <link rel="stylesheet" href="/static/intelligence.css">
+  <link rel="stylesheet" href="/static/auto42.css">
   <script defer src="/static/intelligence.js"></script>
   <link rel="stylesheet" href="/static/market_context.css">
   <script defer src="/static/market_context.js"></script>
@@ -229,6 +230,39 @@
       <details><summary>История, свежесть и ограничения</summary><p id="mc-history">Нет данных</p><p>Автообновление раз в минуту только при открытой вкладке; кэш сервера 30 секунд. Окно ограничено 4175 свечами 15m. Каждый таймфрейм требует 250 непрерывных закрытых свечей; пропуски сбрасывают прогрев, цены не заполняются. Источник недоступен — анализ не показывается как свежий. Состояние рынка не является состоянием Auto Paper.</p><p>Аналоги 4.0 используют отдельный компактный проверяемый артефакт; при его отсутствии статистика недоступна. Полный архив 2020–2025 не загружается в веб-запросах; replay 1.0 использует другую модель и не подставляется вместо 4.0. 2025 уже изучен. Нужна новая forward-проверка; гарантии доходности нет.</p></details>
       <details><summary>Точные определения алгоритмов и момент подтверждения</summary><ul id="mc-definitions"></ul></details>
     </div>
+    <details id="auto42-panel" class="auto42">
+      <summary>АВТОМАТИЧЕСКАЯ ДЕМОТОРГОВЛЯ — 4.2</summary>
+      <p class="a42-warning">ТОЛЬКО ВИРТУАЛЬНЫЕ СРЕДСТВА. REAL MONEY EXECUTION = DISABLED.<br>EXPERIMENTAL / NO_EDGE_FOUND — преимущество не доказано. Отдельный портфель, обычный Paper и Replay не меняются.</p>
+      <a href="/api/paper/login">Вход владельца</a>
+      <p id="a42-status" role="status" aria-live="polite">НЕ РАБОТАЕТ — состояние ещё не загружено</p>
+      <dl class="a42-grid">
+        <div><dt>Режим владельца</dt><dd id="a42-mode">—</dd></div>
+        <div><dt>Виртуальный баланс, USDT</dt><dd id="a42-balance">—</dd></div>
+        <div><dt>Текущий equity, USDT</dt><dd id="a42-equity">Нет свежих данных</dd></div>
+        <div><dt>Реализованный PnL, USDT</dt><dd id="a42-realized">—</dd></div>
+        <div><dt>Нереализованный PnL с издержками выхода, USDT</dt><dd id="a42-unrealized">—</dd></div>
+        <div><dt>Закрытые сделки</dt><dd id="a42-trades">—</dd></div>
+        <div><dt>Win rate, %</dt><dd id="a42-win">—</dd></div>
+        <div><dt>Profit factor</dt><dd id="a42-pf">—</dd></div>
+        <div><dt>Максимальная просадка, %</dt><dd id="a42-drawdown">—</dd></div>
+        <div><dt>Последний успешный scheduler run</dt><dd id="a42-run">—</dd></div>
+        <div><dt>Обработанная закрытая свеча BTCUSDT 15m</dt><dd id="a42-candle">—</dd></div>
+      </dl>
+      <p>Пропущенные запуски: <span id="a42-missed">—</span></p>
+      <p id="a42-position">Состояние позиции ещё не загружено</p>
+      <p>Последнее решение: <span id="a42-last">—</span></p>
+      <div class="a42-controls" role="group" aria-label="Управление отдельным демопортфелем">
+        <button id="a42-start" type="button" disabled>START PAPER</button>
+        <button id="a42-stop" type="button" disabled>STOP PAPER</button>
+        <button id="a42-emergency" type="button" disabled>EMERGENCY STOP</button>
+        <button id="a42-reset" type="button" disabled>RESET DEMO</button>
+        <button id="a42-refresh" type="button">Обновить состояние</button>
+      </div>
+      <p id="a42-message" role="status" aria-live="polite"></p>
+      <p>Риск 0,5% · не более 1 позиции · дневной лимит 2% · просадка 10%. STOP запрещает новые входы; защитные выходы требуют проверенных данных и внешнего scheduler. RESET не закрывает позицию и не удаляет журнал.</p>
+      <details><summary>Последние закрытые виртуальные сделки</summary><ul id="a42-history"></ul></details>
+      <a href="/api/auto42/journal">Журнал событий (JSON, первая страница)</a>
+    </details>
     <details id="fv-panel" class="market-context">
       <summary>ПРОВЕРКА ПРОГНОЗОВ · только для владельца</summary>
       <p class="ai-warning">READ_ONLY · WAIT · REAL MONEY EXECUTION = DISABLED. Запись прогнозов не разрешает сделки.</p>
@@ -256,4 +290,5 @@
   <footer><span>Аналитический инструмент · без реальных сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
 </main>
 <script src="/static/forward_validation.js" defer></script>
+<script src="/static/auto42.js" defer></script>
 </body></html>

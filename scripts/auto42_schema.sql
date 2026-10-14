@@ -1,0 +1,87 @@
+-- Dedicated virtual portfolio. Execute manually in a Supabase SQL editor.
+-- No exchange endpoint, no access to existing Paper/Replay/Forward tables.
+create extension if not exists pgcrypto with schema extensions;
+create table if not exists public.aura_auto42_account (
+ id integer primary key check (id=1), revision bigint not null,
+ payload text not null, sha256 text not null
+);
+create table if not exists public.aura_auto42_events (
+ seq bigint generated always as identity primary key,id text unique not null,
+ epoch text not null,kind text not null,created_at bigint not null,
+ ingested_at timestamptz not null default clock_timestamp(),payload text not null,sha256 text not null
+);
+create index if not exists aura_auto42_epoch on public.aura_auto42_events(epoch,seq);
+alter table public.aura_auto42_account enable row level security;
+alter table public.aura_auto42_events enable row level security;
+revoke all on public.aura_auto42_account,public.aura_auto42_events from public,anon,authenticated;
+create or replace function public.aura_auto42_immutable() returns trigger language plpgsql as $$
+begin raise exception 'APPEND_ONLY'; end $$;
+drop trigger if exists aura_auto42_no_change on public.aura_auto42_events;
+create trigger aura_auto42_no_change before update or delete on public.aura_auto42_events
+ for each row execute function public.aura_auto42_immutable();
+
+create or replace function public.aura_auto42_load(seed jsonb) returns jsonb
+language plpgsql security definer set search_path=public,extensions,pg_temp as $$
+declare r public.aura_auto42_account; s jsonb;
+begin
+ s := (seed->>'payload')::jsonb;
+ if seed->>'sha256' <> encode(extensions.digest(convert_to(seed->>'payload','UTF8'),'sha256'),'hex')
+    or s->>'mode'<>'OFF' or s->>'balance'<>'10000' or s->>'equity'<>'10000'
+    or s->>'version'<>'AURA_AUTO_PAPER_4.2.0' or s->'position'<>'null'::jsonb then
+   return jsonb_build_object('error','CORRUPT_PORTFOLIO'); end if;
+ insert into public.aura_auto42_account values(1,1,seed->>'payload',seed->>'sha256') on conflict do nothing;
+ select * into r from public.aura_auto42_account where id=1;
+ return jsonb_build_object('revision',r.revision,'payload',r.payload,'sha256',r.sha256);
+end $$;
+
+create or replace function public.aura_auto42_commit(expected_revision bigint,new_state jsonb,new_events jsonb,operation_key text) returns jsonb
+language plpgsql security definer set search_path=public,extensions,pg_temp as $$
+declare r public.aura_auto42_account; e jsonb; p jsonb; s jsonb;
+begin
+ select * into r from public.aura_auto42_account where id=1 for update;
+ if not found then return jsonb_build_object('error','CORRUPT_PORTFOLIO'); end if;
+ if exists(select 1 from public.aura_auto42_events where id=operation_key) then
+   return jsonb_build_object('revision',r.revision,'payload',r.payload,'sha256',r.sha256,'duplicate',true); end if;
+ if r.revision<>expected_revision then return jsonb_build_object('error','CONCURRENT_UPDATE'); end if;
+ if jsonb_typeof(new_events)<>'array' or jsonb_array_length(new_events) not between 1 and 100
+    or octet_length(new_state->>'payload')>65536 then return jsonb_build_object('error','WRITE_LIMIT'); end if;
+ s := (new_state->>'payload')::jsonb;
+ if new_state->>'sha256' <> encode(extensions.digest(convert_to(new_state->>'payload','UTF8'),'sha256'),'hex')
+    or s->>'version'<>'AURA_AUTO_PAPER_4.2.0' or s->>'mode' not in ('OFF','ON','PAUSED','ERROR','EMERGENCY') then
+    return jsonb_build_object('error','CORRUPT_PORTFOLIO'); end if;
+ if not exists(select 1 from jsonb_array_elements(new_events) x where x->>'id'=operation_key) then
+   return jsonb_build_object('error','INVALID_EVENT'); end if;
+ for e in select * from jsonb_array_elements(new_events) loop
+   p := (e->>'payload')::jsonb;
+   if octet_length(e->>'payload')>65536 or length(e->>'id')>200 or e->>'epoch'<>s->>'epoch'
+      or p->'payload'->>'execution_mode'<>'PAPER_ONLY' or p->'payload'->>'real_money_execution'<>'DISABLED'
+      or e->>'sha256' <> encode(extensions.digest(convert_to(e->>'payload','UTF8'),'sha256'),'hex') then
+      raise exception 'INVALID_EVENT'; end if;
+   insert into public.aura_auto42_events(id,epoch,kind,created_at,payload,sha256)
+     values(e->>'id',e->>'epoch',e->>'kind',(e->>'created_at')::bigint,e->>'payload',e->>'sha256');
+ end loop;
+ update public.aura_auto42_account set revision=revision+1,payload=new_state->>'payload',sha256=new_state->>'sha256' where id=1;
+ return jsonb_build_object('revision',r.revision+1,'payload',new_state->>'payload','sha256',new_state->>'sha256','duplicate',false);
+end $$;
+
+create or replace function public.aura_auto42_history(selected_epoch text default null,after_seq bigint default null,row_limit integer default 50,event_id text default null) returns jsonb
+language plpgsql security definer set search_path=public,extensions,pg_temp as $$
+declare result jsonb;
+begin
+ if row_limit not between 1 and 200 then return jsonb_build_object('error','WRITE_LIMIT'); end if;
+ if event_id is not null then
+  select coalesce(jsonb_agg(to_jsonb(t)),'[]'::jsonb) into result from
+    (select seq,payload,sha256 from public.aura_auto42_events where id=event_id limit 1) t;
+ elsif after_seq is not null then
+  select coalesce(jsonb_agg(to_jsonb(t) order by seq),'[]'::jsonb) into result from
+    (select seq,payload,sha256 from public.aura_auto42_events where seq>after_seq order by seq limit row_limit) t;
+ else
+  select coalesce(jsonb_agg(to_jsonb(t) order by seq desc),'[]'::jsonb) into result from
+    (select seq,payload,sha256 from public.aura_auto42_events where selected_epoch is null or epoch=selected_epoch order by seq desc limit row_limit) t;
+ end if;return result;
+end $$;
+revoke all on function public.aura_auto42_immutable() from public,anon,authenticated;
+revoke all on function public.aura_auto42_load(jsonb) from public,anon,authenticated;
+revoke all on function public.aura_auto42_commit(bigint,jsonb,jsonb,text) from public,anon,authenticated;
+revoke all on function public.aura_auto42_history(text,bigint,integer,text) from public,anon,authenticated;
+grant execute on function public.aura_auto42_load(jsonb),public.aura_auto42_commit(bigint,jsonb,jsonb,text),public.aura_auto42_history(text,bigint,integer,text) to service_role;

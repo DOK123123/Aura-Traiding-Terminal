@@ -12,3 +12,10 @@ def isolate_forward_configuration(monkeypatch):
     for name in ('AURA_FORWARD_SQLITE_PATH','AURA_FORWARD_SUPABASE_URL',
                  'AURA_FORWARD_SUPABASE_SERVICE_KEY','AURA_FORWARD_SCHEDULER_SECRET'):
         monkeypatch.delenv(name,raising=False)
+
+
+@pytest.fixture(autouse=True)
+def isolate_auto42_configuration(monkeypatch):
+    for name in ('AURA_AUTO42_SQLITE_PATH','AURA_AUTO42_SUPABASE_URL',
+                 'AURA_AUTO42_SUPABASE_SERVICE_KEY','AURA_AUTO42_SCHEDULER_SECRET'):
+        monkeypatch.delenv(name,raising=False)

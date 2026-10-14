@@ -35,6 +35,8 @@ from .intelligence.api import router as intelligence_router
 from .intelligence.market_context import MarketContext
 from .forward.api import router as forward_router
 from .forward.service import configured as configured_forward
+from .automated.api import router as auto42_router
+from .automated.service import configured as configured_auto42
 
 ROOT = Path(__file__).resolve().parent.parent
 PROVIDERS = {"BTCUSDT": BinanceProvider(), "XAUUSD": GoldProvider()}
@@ -49,6 +51,7 @@ async def lifespan(app):
         app.state.client = client
         app.state.market_context = MarketContext.from_client(client)
         app.state.forward_validation = configured_forward(app.state.market_context)
+        app.state.auto42 = configured_auto42(app.state.market_context)
         app.state.testnet = TestnetReader()
         app.state.bybit_demo = BybitDemoReader()
         async def paper_fetch(symbol, timeframe):
@@ -63,6 +66,7 @@ async def lifespan(app):
         try:
             yield
         finally:
+            await app.state.auto42.close()
             await app.state.forward_validation.close()
             await app.state.market_context.close()
             await app.state.paper.close()
@@ -78,6 +82,7 @@ app.include_router(paper_router)
 app.include_router(lab_router)
 app.include_router(intelligence_router)
 app.include_router(forward_router)
+app.include_router(auto42_router)
 FRAME_HEADERS = {
     "X-Frame-Options": "DENY",
     "Content-Security-Policy": "frame-ancestors 'none'",
