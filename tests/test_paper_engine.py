@@ -206,7 +206,15 @@ def test_correction_out_of_order_gap_and_manual_gap_close(ledger):
     engine.advance(window(clock,'101'))
     assert engine.trade(trade['id'])['market_error']=='CANDLE_CORRECTION'
     assert engine.snapshot()['statistics']['equity'] is None
+    # A proven correction cannot become fresh merely because the next response
+    # has the old close. Keep the uncertain position paused (also after restart).
     engine.advance(window(clock))
+    assert engine.trade(trade['id'])['market_error']=='CANDLE_CORRECTION'
+    assert engine.snapshot()['statistics']['equity'] is None
+
+
+def test_out_of_order_gap_and_explicit_manual_gap_close(ledger):
+    engine,clock=ledger;trade=opened(ledger)
     earlier=Bar(clock[0]//1000-120,D(100),D(100),D(100),D(100))
     engine.advance(window(clock,bars=[earlier]))
     assert engine.trade(trade['id'])['market_error']=='OUT_OF_ORDER'

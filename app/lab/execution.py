@@ -99,17 +99,23 @@ def simulate(bars,signals,begin,end,step,baseline:Baseline,deadline=None,*,trail
         if trailing_atr is not None:
             position.update(initial_stop_loss=text(stop),trailing_extreme=text(entry),stop_history=[])
 
+    def protective_open(bar):
+        p=position;long=p['direction']=='LONG';stop=D(p['stop_loss']);target=D(p['take_profit'])
+        if (bar.open<=stop if long else bar.open>=stop):close(bar.open,bar.time,'STOP_GAP');return True
+        if (bar.open>=target if long else bar.open<=target):close(target,bar.time,'TAKE_PROFIT_GAP_CONSERVATIVE');return True
+        return False
+
     for bar_index in range(begin,end):
         if deadline is not None and time.monotonic()>deadline:raise LabError('COMPUTE_TIMEOUT')
         b=bars[bar_index]
         # A protective opening gap has priority over a scheduled strategy exit.
         if position is not None:
-            p=position;long=p['direction']=='LONG';stop=D(p['stop_loss']);target=D(p['take_profit'])
-            if (b.open<=stop if long else b.open>=stop):close(b.open,b.time,'STOP_GAP')
-            elif (b.open>=target if long else b.open<=target):close(target,b.time,'TAKE_PROFIT_GAP_CONSERVATIVE')
-            elif pending_exit:close(b.open,b.time,'STRATEGY_EXIT_NEXT_OPEN')
+            if not protective_open(b) and pending_exit:close(b.open,b.time,'STRATEGY_EXIT_NEXT_OPEN')
         pending_exit=False
-        if pending_entry is not None and position is None:open_position(pending_entry,b)
+        if pending_entry is not None and position is None:
+            open_position(pending_entry,b)
+            # Adverse entry slippage can put a tight stop beyond the raw open.
+            if position is not None:protective_open(b)
         pending_entry=None
         if position is not None:
             p=position;long=p['direction']=='LONG';stop=D(p['stop_loss']);target=D(p['take_profit'])

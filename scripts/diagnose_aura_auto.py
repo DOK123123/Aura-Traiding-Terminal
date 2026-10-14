@@ -53,7 +53,7 @@ def period(end_date=None, days=30):
 
 def code_hashes():
     paths = sorted((ROOT / 'app' / 'patterns').glob('*.py')) + sorted((ROOT / 'app' / 'paper').glob('*.py'))
-    paths += [ROOT / 'app' / name for name in ('models.py','indicators.py','main.py','providers.py')]
+    paths += [ROOT / 'app' / name for name in ('models.py','indicators.py','main.py','providers.py','async_workers.py')]
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 

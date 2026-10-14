@@ -24,7 +24,12 @@ class Service:
         raw=DATA.read_bytes()
         if len(raw)>3*1024*1024 or hashlib.sha256(raw).hexdigest()!=DATA_SHA:raise IntelligenceError('HISTORY_UNAVAILABLE')
         self.pack=json.loads(raw);self.bars=[Bar.restore(b) for b in self.pack['bars']]
-        self.software_sha=hashlib.sha256(Path(__file__).read_bytes()+(Path(__file__).parents[1]/'lab/execution.py').read_bytes()+Path(__file__).with_name('analysis.py').read_bytes()+Path(__file__).with_name('patterns.py').read_bytes()+canonical(CONFIG)).hexdigest()
+        # Old sessions remain stored, but require their original build to replay.
+        # Never reset records merely because a dependency fingerprint changed.
+        lab=Path(__file__).parents[1]/'lab'
+        sources=[Path(__file__),Path(__file__).with_name('analysis.py'),Path(__file__).with_name('patterns.py'),
+                 *(lab/name for name in ('execution.py','models.py','indicators.py','strategies.py'))]
+        self.software_sha=hashlib.sha256(b''.join(p.read_bytes() for p in sources)+canonical(CONFIG)).hexdigest()
         validate_series(self.bars,900,self.pack['replay_end'])
         if self.pack['config']!=CONFIG or any(r['resolved_at']>=self.pack['training_end'] for r in self.pack['index']):raise IntelligenceError('HISTORY_UNAVAILABLE')
         self.frames={'15m':self.bars}

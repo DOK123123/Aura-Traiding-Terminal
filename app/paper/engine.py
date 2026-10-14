@@ -8,7 +8,7 @@ import os
 import time
 import uuid
 
-from .models import Settings, Window, PaperError, STEPS, decimal, money, quantity, text, MONEY_TICK
+from .models import Bar, Settings, Window, PaperError, STEPS, decimal, money, quantity, text, MONEY_TICK
 from .storage import Store
 from .safety import require_preflight
 
@@ -32,6 +32,18 @@ def checked_label(value: str, maximum: int = 300) -> str:
     if not isinstance(value, str) or not 1 <= len(value.strip()) <= maximum or any(ord(c) < 32 for c in value):
         raise PaperError('INVALID_DATA')
     return value.strip()
+
+
+def candle_fingerprint(bar: Bar) -> str:
+    """Exact OHLC identity; equivalent Decimal scales have the same digest."""
+    values = {'time': bar.time}
+    for field in ('open', 'high', 'low', 'close'):
+        value = getattr(bar, field)
+        rendered = text(value)
+        if rendered is not None and '.' in rendered:
+            rendered = rendered.rstrip('0').rstrip('.')
+        values[field] = '0' if value == 0 else rendered
+    return hashlib.sha256(json.dumps(values, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
 class Engine:
@@ -173,6 +185,23 @@ class Engine:
 
     @staticmethod
     def _validate_trade(trade):
+        if 'last_candle_fingerprint' in trade:
+            fingerprint = trade['last_candle_fingerprint']
+            if (not isinstance(fingerprint, str) or len(fingerprint) != 64
+                    or any(c not in '0123456789abcdef' for c in fingerprint)):
+                raise ValueError()
+        if 'candle_correction_detected' in trade and type(trade['candle_correction_detected']) is not bool:
+            raise ValueError()
+        if 'last_candle_volume' in trade and trade['last_candle_volume'] is not None:
+            volume = trade['last_candle_volume']
+            if not isinstance(volume, str):
+                raise ValueError()
+            number = D(volume)
+            if not number.is_finite() or number < 0 or text(number) != volume:
+                raise ValueError()
+        if (trade.get('candle_correction_detected') and trade.get('status') == 'OPEN'
+                and trade.get('market_error') != 'CANDLE_CORRECTION'):
+            raise ValueError()
         if trade.get('entry_type','MANUAL') not in ('MANUAL','AUTO_SIGNAL') or trade.get('execution_mode','PAPER') != 'PAPER':
             raise ValueError()
         if trade.get('entry_type') == 'AUTO_SIGNAL':
@@ -339,6 +368,10 @@ class Engine:
     def open(self, payload: dict, window: Window) -> dict:
         now = self.clock()
         window.validate(now)
+        replay = self.replay(payload['request_id'],'open',payload)
+        if replay is not None:
+            return replay
+        self._observe_corrections(window)
         with self.store.transaction() as db:
             return self._open_in_transaction(db,payload,window)
 
@@ -420,6 +453,8 @@ class Engine:
                      reserved_notional=text(notional),risk_usdt=text(risk),risk_budget_usdt=text(money(budget)),
                      planned_risk_reward=text(money(reward/risk)),mark_price=text(price),mark_time=(bar.time+STEPS[window.timeframe])*1000,
                      last_candle_time=bar.time,observed_at=window.observed_at,market_error=None,
+                     last_candle_fingerprint=candle_fingerprint(bar),last_candle_volume=text(bar.volume),
+                     candle_correction_detected=False,
                      fill_model='VERIFIED_CLOSED_CANDLE',processed_at=now)
         trade.update(execution_mode='PAPER',entry_type='AUTO_SIGNAL' if auto_metadata is not None else 'MANUAL',
                      risk_pct=text(settings.risk_per_trade_pct),entry_candle=bar.time)
@@ -445,12 +480,33 @@ class Engine:
         self.store.save(db,trade)
         return trade
 
+    @staticmethod
+    def _candle_corrected(trade, bar):
+        previous_volume = trade.get('last_candle_volume')
+        return (bar.close != D(trade['mark_price']) or
+                ('last_candle_fingerprint' in trade and trade['last_candle_fingerprint'] != candle_fingerprint(bar)) or
+                (bar.volume is not None and previous_volume is not None and bar.volume != D(previous_volume)))
+
+    def _observe_corrections(self, window):
+        """Persist only a safety observation, independently of a rejected command."""
+        with self.store.transaction() as db:
+            for trade in self.store.trades(db,opened=True):
+                if (trade['symbol'],trade['timeframe'],trade['source']) != (window.symbol,window.timeframe,window.source):
+                    continue
+                same = next((bar for bar in window.bars if bar.time == trade['last_candle_time']),None)
+                if same is not None and self._candle_corrected(trade,same):
+                    trade.update(candle_correction_detected=True,market_error='CANDLE_CORRECTION')
+                    self.store.save(db,trade)
+
     def _advance(self, db, window, now):
         step = STEPS[window.timeframe]
         trades = [t for t in self.store.trades(db,opened=True) if (t['symbol'],t['timeframe']) == (window.symbol,window.timeframe)]
         eligible = []
         for trade in trades:
-            if trade['source'] != window.source:
+            if trade.get('candle_correction_detected') or trade.get('market_error') == 'CANDLE_CORRECTION':
+                # A later snapshot cannot reconcile already executed candle history.
+                trade.update(candle_correction_detected=True,market_error='CANDLE_CORRECTION')
+            elif trade['source'] != window.source:
                 trade['market_error'] = 'SOURCE_MISMATCH'
             elif window.bars[-1].time < trade['last_candle_time']:
                 trade['market_error'] = 'OUT_OF_ORDER'
@@ -458,9 +514,16 @@ class Engine:
                 trade['market_error'] = 'MARKET_GAP'
             else:
                 same = next((b for b in window.bars if b.time == trade['last_candle_time']),None)
-                if same is not None and same.close != D(trade['mark_price']):
-                    trade['market_error'] = 'CANDLE_CORRECTION'
+                fingerprint = candle_fingerprint(same) if same is not None else None
+                if same is not None and self._candle_corrected(trade,same):
+                    trade.update(candle_correction_detected=True,market_error='CANDLE_CORRECTION')
                 else:
+                    # Legacy trades have no recorded OHLCV: establish only the observed
+                    # identity, never reinterpret its highs/lows as historical execution.
+                    if same is not None:
+                        trade['last_candle_fingerprint'] = fingerprint
+                        if same.volume is not None:
+                            trade['last_candle_volume'] = text(same.volume)
                     trade.update(observed_at=window.observed_at,market_error=None)
                     eligible.append(trade)
             self.store.save(db,trade)
@@ -484,7 +547,9 @@ class Engine:
                     reason = 'STOP_LOSS_AMBIGUOUS' if target_hit else 'STOP_LOSS'
                 elif target_hit:
                     price,reason = (target if complete else bar.close),'TAKE_PROFIT'
-                trade.update(last_candle_time=bar.time,mark_price=text(bar.close),mark_time=(bar.time+step)*1000)
+                trade.update(last_candle_time=bar.time,last_candle_fingerprint=candle_fingerprint(bar),
+                             last_candle_volume=text(bar.volume),
+                             mark_price=text(bar.close),mark_time=(bar.time+step)*1000)
                 if price is not None:
                     self._settle(db,trade,price,(bar.time+step)*1000,reason,now)
                 else:
@@ -503,6 +568,10 @@ class Engine:
     def close(self, trade_id: str, payload: dict, window: Window) -> dict:
         now = self.clock()
         window.validate(now)
+        replay = self.replay(payload['request_id'],'close',dict(payload,trade_id=trade_id))
+        if replay is not None:
+            return replay
+        self._observe_corrections(window)
         with self.store.transaction() as db:
             replay = self._replay(db,payload['request_id'],'close',dict(payload,trade_id=trade_id))
             if replay is not None:
@@ -542,8 +611,10 @@ class Engine:
         with self.store.transaction() as db:
             changed = False
             for trade in self.store.trades(db,opened=True):
-                if (trade['symbol'],trade['timeframe']) == (symbol,timeframe) and trade.get('market_error') != code:
-                    trade['market_error'] = code
+                effective_code = 'CANDLE_CORRECTION' if (trade.get('candle_correction_detected') or
+                                                        trade.get('market_error') == 'CANDLE_CORRECTION') else code
+                if (trade['symbol'],trade['timeframe']) == (symbol,timeframe) and trade.get('market_error') != effective_code:
+                    trade['market_error'] = effective_code
                     self.store.save(db,trade)
                     changed = True
             if changed:

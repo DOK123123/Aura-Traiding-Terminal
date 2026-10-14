@@ -4,6 +4,7 @@ from decimal import Decimal
 import math
 
 from ..models import Candle,validate_candles,INTERVALS
+from ..async_workers import run_in_slot
 from ..patterns.config import PatternConfig
 from ..patterns.engine import evaluate
 from .auto import Signal
@@ -41,8 +42,7 @@ class SignalReader:
                         raise PaperError('SNAPSHOT_MISMATCH')
                     if bar.volume is not None and (candle.volume is None or Decimal(str(candle.volume))!=bar.volume):
                         raise PaperError('SNAPSHOT_MISMATCH')
-                async with self.slots:
-                    result=await asyncio.to_thread(evaluate,candles,step,500,PatternConfig(),len(candles)-1,None,False)
+                result=await run_in_slot(self.slots,evaluate,candles,step,500,PatternConfig(),len(candles)-1,None,False)
                 if result['status']!='OK' or result['as_of']!=cutoff:
                     raise PaperError('SIGNAL_ERROR')
                 confidence=result.get('confidence')

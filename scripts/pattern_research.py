@@ -26,7 +26,7 @@ def source_hash():
     paths = ['scripts/pattern_research.py','scripts/run_pattern_research.py',
              'scripts/lab3_history.py','app/intelligence/patterns.py',
              'app/lab/execution.py','app/lab/indicators.py','app/lab/models.py',
-             'app/lab/strategies.py','scripts/lab3_strategies.py',
+             'app/lab/strategies.py','app/lab/series.py','app/lab/local_csv.py','scripts/lab3_strategies.py',
              'scripts/research_inverse.py','scripts/run_lab3.py']
     root = Path(__file__).resolve().parents[1]
     return digest({p:hashlib.sha256((root/p).read_bytes()).hexdigest() for p in paths})
@@ -107,7 +107,14 @@ def streams(part,rows,h,step):
 def blocked_bootstrap(curve,seed=20261013,reps=19999,days=14):
     """Non-iid circular moving-block bootstrap of daily portfolio PnL."""
     daily={p['time']//86400:D(p['equity']) for p in curve}
-    keys=sorted(daily);returns=[float(daily[b]-daily[a]) for a,b in zip(keys,keys[1:]) if b-a==1]
+    keys=sorted(daily)
+    missing=sum(b-a-1 for a,b in zip(keys,keys[1:]))
+    if missing:
+        # Missing marks may represent unknown exposure or omitted cash periods.
+        # Neither can be inferred from endpoints alone; never compress time.
+        return dict(status='INCOMPLETE_CALENDAR',p_value=None,missing_days=missing,
+            block_days=days,notes='Daily observations are not contiguous; portfolio inference is undefined. No interpolation or blocks across missing dates.')
+    returns=[float(daily[b]-daily[a]) for a,b in zip(keys,keys[1:])]
     if len(returns)<days*4:return dict(status='INSUFFICIENT_DAYS',p_value=None,lower95_mean_daily=None)
     n=len(returns);rng=random.Random(seed);observed=mean(returns);draws=[]
     blocks=[sum(returns[(i+j)%n] for j in range(days)) for i in range(n)]
@@ -140,7 +147,12 @@ def period_run(prepared,h,start,end,baseline,step):
         detected+=sum(row is not None and h['pattern'] in row['patterns'] for row in rows[begin:right])
         count=sum(side_for(row,h) is not None for row in rows[begin:right]);signals+=count;used+=right-begin
         if not count:
-            curve.extend([dict(time=part[begin].time,balance=text(balance),equity=text(balance)),dict(time=part[right-1].time+step,balance=text(balance),equity=text(balance))]);continue
+            # This observed, continuous segment holds only cash. Retain UTC
+            # daily closes from actual bars so zero-PnL days enter inference.
+            marks=[part[begin].time]
+            marks.extend(b.time+step for b in part[begin:right] if (b.time+step)%86400==0)
+            if marks[-1]!=part[right-1].time+step:marks.append(part[right-1].time+step)
+            curve.extend(dict(time=t,balance=text(balance),equity=text(balance)) for t in marks);continue
         ds=streams(part,rows,h,step)
         # No prior-period pending order; validation starts with its own cash ledger.
         gap_end=right==len(part) and part[-1].time+step<end

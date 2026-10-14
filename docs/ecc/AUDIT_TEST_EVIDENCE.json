@@ -1,0 +1,139 @@
+{
+  "baseline": {
+    "tests": "907",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "43.611"
+  },
+  "pytest": {
+    "tests": "970",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "37.413"
+  },
+  "independent_pytest": {
+    "tests": "970",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "37.206"
+  },
+  "unittest": {
+    "run": 193,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "note": "Subset of pytest; totals not additive."
+  },
+  "javascript": [
+    {
+      "file": "tests/test_bybit_demo_frontend.cjs",
+      "exit": 0,
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/test_ecc_replay_frontend.cjs",
+      "exit": 0,
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/test_frontend_reliability.cjs",
+      "exit": 0,
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/test_intelligence_frontend.cjs",
+      "exit": 0,
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/test_lab_frontend.cjs",
+      "exit": 0,
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/test_market_context_frontend.cjs",
+      "exit": 0,
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/test_paper_frontend.cjs",
+      "exit": 0,
+      "tests": 57,
+      "pass": 57,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/test_testnet_frontend.cjs",
+      "exit": 0,
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "skipped": 0
+    }
+  ],
+  "versions": {
+    "fastapi": "0.115.12",
+    "starlette": "0.46.2",
+    "uvicorn": "0.34.2",
+    "httpx": "0.28.1",
+    "pytest": "8.3.5",
+    "websockets": "15.0.1",
+    "numpy": "2.2.6",
+    "pydantic": "2.14.1",
+    "anyio": "4.15.1"
+  },
+  "changed": [
+    "app/intelligence/service.py",
+    "app/lab/execution.py",
+    "app/main.py",
+    "app/paper/engine.py",
+    "app/paper/signals.py",
+    "app/patterns/api.py",
+    "app/testnet/client.py",
+    "docs/ecc/UPSTREAM.md",
+    "research/market_intelligence/pipeline.py",
+    "scripts/diagnose_aura_auto.py",
+    "scripts/pattern_research.py",
+    "scripts/run_pattern_research.py",
+    "static/intelligence.js",
+    "tests/test_paper_engine.py"
+  ],
+  "new": [
+    ".agents/skills/ecc-full-audit/SKILL.md",
+    "app/async_workers.py",
+    "docs/ecc/AUDIT_UPSTREAM_MANIFEST.json",
+    "tests/test_ecc_architecture.py",
+    "tests/test_ecc_logging.py",
+    "tests/test_ecc_quant.py",
+    "tests/test_ecc_replay_frontend.cjs",
+    "tests/test_ecc_security_headers.py",
+    "tests/test_ecc_service_safety.py",
+    "tests/test_ecc_trading_safety.py"
+  ],
+  "python_syntax": 131,
+  "js_syntax": "PASS",
+  "static_secret_findings": [],
+  "historical_reports_changed": []
+}

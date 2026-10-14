@@ -1,0 +1,218 @@
+{
+  "upstream": "https://github.com/affaan-m/ECC",
+  "requested_url": "https://github.com/affaan-m/everything-claude-code",
+  "commit": "b92f181b3b748d1abbc2afd94af6aa7d8c8fca29",
+  "verification": "Each fetched UTF-8 source matches upstream git blob SHA. Documentation and installer reviewed; installer never executed.",
+  "files": [
+    {
+      "path": "README.md",
+      "git_sha": "6583ca8c1320e559aa5b2f86250f2f09c1d577e9",
+      "bytes": 115595,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/README.md",
+      "sha256": "891c1db3e717d893e625c9a87194a2dda07185911019a6e0e8b4c4bfd5d3b92c"
+    },
+    {
+      "path": "AGENTS.md",
+      "git_sha": "f2f049297454806522722b3bbe2b7ebb10811a0b",
+      "bytes": 13204,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/AGENTS.md",
+      "sha256": "63f61dcfaa2c9ff64c563edc939e60bd0493d1ac337bd91c0d36d9e2ff724718"
+    },
+    {
+      "path": "LICENSE",
+      "git_sha": "b832b6f642312312367c07688dc7426db40a82ed",
+      "bytes": 1071,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/LICENSE",
+      "sha256": "326146379f01bb137c0a5d3c54770c1aa31076705c8b88a7f6b26a460f6221b2"
+    },
+    {
+      "path": "install.sh",
+      "git_sha": "8d6aaa9c5195a10437f3a88615614a7ec46c51eb",
+      "bytes": 1737,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/install.sh",
+      "sha256": "d34996035ca0fb0fa8bedb3926cf06aa7bd25b559f9a456d2d7b8a95ea3589cb"
+    },
+    {
+      "path": ".codex/AGENTS.md",
+      "git_sha": "9f6c5d28ab02645d10ac0aceaa47a8b1bf581b47",
+      "bytes": 5935,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/.codex/AGENTS.md",
+      "sha256": "fd6bcd91b734015ffac01d5e65d41421c84f941968f688c869c7997ca0cb4e30"
+    },
+    {
+      "path": ".codex/config.toml",
+      "git_sha": "c817791e4b2d40b3be8ec767121b84503cfcd7d6",
+      "bytes": 1990,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/.codex/config.toml",
+      "sha256": "5f5cbe3f3fa0bd33f3a826a96996780975636c85f1209e8dafe7cee8419bad56"
+    },
+    {
+      "path": ".codex/agents/reviewer.toml",
+      "git_sha": "24f1920f4a0ccef49f025f1e8dadfd57426dafa9",
+      "bytes": 298,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/.codex/agents/reviewer.toml",
+      "sha256": "787d50452f3095810ffcbde5c93cff09be3f374f9b1b82aed20f428fdc4948ab"
+    },
+    {
+      "path": "agents/architect.md",
+      "git_sha": "d65bea41b09b14faeb02f1dba606ce9f16933a33",
+      "bytes": 7276,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/agents/architect.md",
+      "sha256": "6b8e1e8bd274995f3949691731f4334820c061d3054eaea3be2ce163386d1f24"
+    },
+    {
+      "path": "agents/planner.md",
+      "git_sha": "e9e282f54d5ea8dbecae31d00c8647960c089f05",
+      "bytes": 8055,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/agents/planner.md",
+      "sha256": "63aba865206bac9cb5887542fb01b97656e7701faff98e091aa77057ba9860bc"
+    },
+    {
+      "path": "agents/python-reviewer.md",
+      "git_sha": "b1b3ee6f53dfb21f1d97b70f4ba5be17a142e11f",
+      "bytes": 4391,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/agents/python-reviewer.md",
+      "sha256": "d2180b115f5840383268c13d5d075b0541fe7ef2a1ac8ecd5d835266ca1b27ce"
+    },
+    {
+      "path": "agents/fastapi-reviewer.md",
+      "git_sha": "f4c79b95c238085e777fa10b154dd6e6c5cb2a10",
+      "bytes": 3514,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/agents/fastapi-reviewer.md",
+      "sha256": "d8704e52fda045fa72cfc51de7937aa4e313b2161279ff8e11d878f6ab8a0d81"
+    },
+    {
+      "path": "agents/code-reviewer.md",
+      "git_sha": "884d94ec2d45a51ba091519dbee416c7d563e3d6",
+      "bytes": 13877,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/agents/code-reviewer.md",
+      "sha256": "9dd23be23d65f18126e10f7680fc1eb2576ec54a427d076ff2f870bd0bafd5d2"
+    },
+    {
+      "path": "agents/security-reviewer.md",
+      "git_sha": "b5c5e38d2d8c389650162afe18cfe3ab24f353ad",
+      "bytes": 5446,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/agents/security-reviewer.md",
+      "sha256": "813e4062bed5f42ab25dd02a0070f682058ffe9508198fcfdbb2c31296f93b7b"
+    },
+    {
+      "path": "agents/tdd-guide.md",
+      "git_sha": "d4f6443b8fa3b7e31d469d9b557b658f612f6077",
+      "bytes": 3865,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/agents/tdd-guide.md",
+      "sha256": "979afbb40c42bfdd02fc308c130d7e257f5d6dd5f6531ef2562644862f6b7771"
+    },
+    {
+      "path": "agents/silent-failure-hunter.md",
+      "git_sha": "e38053453908f27687826db7b34ba5849971205b",
+      "bytes": 1989,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/agents/silent-failure-hunter.md",
+      "sha256": "e5e2094c6f50cc515a77376331c78e4955d5ff16c7a0e5d8f6edec692b7ebd8d"
+    },
+    {
+      "path": "skills/python-testing/SKILL.md",
+      "git_sha": "ddfcc0abc566994a35df68337476c2a401201e57",
+      "bytes": 18955,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/python-testing/SKILL.md",
+      "sha256": "b9f7a158dae3b6c06c9c75ffe84e27a1edc86092d2afdcb39e96fc2569902eb7"
+    },
+    {
+      "path": "skills/security-review/SKILL.md",
+      "git_sha": "3f26b0df65661425de4e5c40c295e04edcad7a83",
+      "bytes": 12955,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/security-review/SKILL.md",
+      "sha256": "b9eb6416eebc8dda046674f0a2dbb3be88aff526d182b60a0f55998d3d6d0d8d"
+    },
+    {
+      "path": "skills/verification-loop/SKILL.md",
+      "git_sha": "35cb4b7737ed2389a808b968aa360b00807eaffe",
+      "bytes": 3064,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/skills/verification-loop/SKILL.md",
+      "sha256": "5b06be54d4852f60e6cf1b04c6e9a4748554334eb3e41af6c0959b544e6464ae"
+    },
+    {
+      "path": "rules/common/security.md",
+      "git_sha": "49624c03a981a0e16e1cbfd22846936c2ebfc287",
+      "bytes": 862,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/rules/common/security.md",
+      "sha256": "58f0acc56331b8d554dd036b8a1d5b2305a908e3960ff1e2d7e55223d5918bc3"
+    },
+    {
+      "path": "rules/common/testing.md",
+      "git_sha": "416c1c28c7578d26fa7cfe4cccc672166aefc002",
+      "bytes": 1400,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/rules/common/testing.md",
+      "sha256": "09314a247342c12698deb308c2d0ffcf80b58341274bb8f9bba63fa03ce33323"
+    },
+    {
+      "path": "rules/common/development-workflow.md",
+      "git_sha": "ae070be2f0b0580a836498fdd75bf962e3eb74ec",
+      "bytes": 2252,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/rules/common/development-workflow.md",
+      "sha256": "54beaad49cd4cdde7ae6b8c730c4f7acf599d16f4b11e1cb7602ff1f0867c85d"
+    },
+    {
+      "path": "rules/common/code-review.md",
+      "git_sha": "9ca1454edbdce08bd33213279199becf37c7428d",
+      "bytes": 3663,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/rules/common/code-review.md",
+      "sha256": "275fcc2c05f51389cd0d050e704d45b1920210882eaab89d47f449bd3b2b6e98"
+    },
+    {
+      "path": "rules/python/coding-style.md",
+      "git_sha": "3a01ae3f96cdf0c88192bc0838618638ff93584a",
+      "bytes": 711,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/rules/python/coding-style.md",
+      "sha256": "f9d6d7a39c5f5ea809579fecac591f390fa9264c088c7e209d464d5244747003"
+    },
+    {
+      "path": "rules/python/security.md",
+      "git_sha": "e795baf73ffb7acc1b25642e062f4db8bc9bcfa0",
+      "bytes": 524,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/rules/python/security.md",
+      "sha256": "6bbbb6c800cdfef23c3f9a5055ce31096a7724b51f0d528935f6c32970639453"
+    },
+    {
+      "path": "rules/python/testing.md",
+      "git_sha": "49e3f085bf08bada09ff2e8a4de89e3cbaa37bff",
+      "bytes": 581,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/rules/python/testing.md",
+      "sha256": "92655aa5047ee456501ad6605c428680bac6433965f89ce531fe79627004e8c6"
+    },
+    {
+      "path": "rules/python/fastapi.md",
+      "git_sha": "6417b3a8b61bf902311df86f411c90e9a40a475f",
+      "bytes": 1736,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/rules/python/fastapi.md",
+      "sha256": "e796ecbe93c4d50de6ab34ab1d8fc35db5e6bac03144cbaef09939ae5c3b6e2a"
+    },
+    {
+      "path": "commands/code-review.md",
+      "git_sha": "9ec5c6dab062b0fc344fa843a946c6dd3ee7b03d",
+      "bytes": 8339,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/commands/code-review.md",
+      "sha256": "498f466567103f5466098a6e3b69b2794e380b76645440292667285801a70858"
+    },
+    {
+      "path": "commands/plan.md",
+      "git_sha": "f9ac7db6ecbb573d4e56fbd6cc7c7ef2e9ba7fa7",
+      "bytes": 7766,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/commands/plan.md",
+      "sha256": "8d0caa8380eba2f2550937553c9c8c8f253c627cff662f0c333e6ad982706e3e"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "git_sha": "575981b06f10b400901f44ff108229732d4c44a3",
+      "bytes": 14740,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/.github/workflows/ci.yml",
+      "sha256": "62ecad64f01af305529eaccc19a78eec6f8713837a80e1084cd4a4699705b74a"
+    },
+    {
+      "path": ".github/workflows/reusable-test.yml",
+      "git_sha": "f5b97787e9364f4c7340423bf7fe859d35b723e1",
+      "bytes": 3332,
+      "url": "https://github.com/affaan-m/ECC/blob/b92f181b3b748d1abbc2afd94af6aa7d8c8fca29/.github/workflows/reusable-test.yml",
+      "sha256": "c606041017b36238013498503a83225c44c3ba95c7550a61d3d030e905415ece"
+    }
+  ]
+}

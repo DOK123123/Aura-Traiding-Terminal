@@ -23,3 +23,14 @@ Root AGENTS.md explicitly points to every selected skill and review document. Sk
 No .codex configuration, native plugin, upstream .mcp.json, hooks, memory services, learning loops or integrations/aura package is enabled. That upstream Aura integration is unrelated to Aura Trading Terminal.
 
 Updates are manual: review a new pinned upstream revision, retain notices, inspect the diff, and run Aura verification before integration. These documents guide development; existing runtime safeguards remain responsible for enforcement.
+
+## Full audit source snapshot (2026-10-13)
+
+The full repository audit independently inspected upstream commit
+`b92f181b3b748d1abbc2afd94af6aa7d8c8fca29`. The original URL redirects to
+`affaan-m/ECC`. Thirty inspected source documents were verified against Git
+blob hashes; see `AUDIT_UPSTREAM_MANIFEST.json` and `../ECC_COMPATIBILITY_REPORT.md`.
+The previous six adapted skills retain their original snapshot provenance.
+A separate `.agents/skills/ecc-full-audit/SKILL.md` adapts the new audit workflow;
+no plugin, global installer, hooks or MCP configuration was enabled.
+The MIT notice is unchanged between the two source snapshots.

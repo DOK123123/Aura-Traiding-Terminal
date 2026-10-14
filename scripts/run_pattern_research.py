@@ -25,6 +25,7 @@ def compatible_protocol(saved,current):
     if digest(saved)==digest(current):return True
     paths=['scripts/pattern_research.py','scripts/lab3_history.py','app/intelligence/patterns.py',
         'app/lab/execution.py','app/lab/indicators.py','app/lab/models.py','app/lab/strategies.py',
+        'app/lab/series.py','app/lab/local_csv.py',
         'scripts/lab3_strategies.py','scripts/research_inverse.py','scripts/run_lab3.py']
     kernel=digest({p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in paths})
     a={k:v for k,v in saved.items() if k!='source_hash'}

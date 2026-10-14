@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..gold import FAILURES, failure_reason
 from ..models import INTERVALS, data_fresh
+from ..async_workers import run_in_slot
 from .config import PatternConfig
 from .history import history_service
 from .engine import evaluate
@@ -72,8 +73,7 @@ async def analyze_patterns(body: PatternRequest,request: Request):
             if body.as_of>data.candles[-1].time+step:
                 raise ValueError('Точка позже последней доступной закрытой свечи.')
             target=max((i for i,c in enumerate(data.candles) if c.time+step<=body.as_of),default=-1)
-        async with compute_slots:
-            result=await asyncio.to_thread(evaluate,data.candles,step,body.context,body.config,target)
+        result=await run_in_slot(compute_slots,evaluate,data.candles,step,body.context,body.config,target)
         result.update(metadata(data,body))
         result['mode']='POINT REPLAY' if body.as_of is not None else 'CURRENT MARKET'
         if body.as_of is not None:
@@ -99,9 +99,8 @@ async def analyze_patterns(body: PatternRequest,request: Request):
 async def backtest_patterns(body: BacktestRequest,request: Request):
     try:
         data=await history_service.get(request.app.state.client,body.symbol,body.timeframe)
-        async with compute_slots:
-            result=await asyncio.to_thread(replay,data.candles,INTERVALS[body.timeframe],body.context,
-                                           body.config,body.start_at,body.end_at,body.max_points)
+        result=await run_in_slot(compute_slots,replay,data.candles,INTERVALS[body.timeframe],body.context,
+                                body.config,body.start_at,body.end_at,body.max_points)
         return {**result,**metadata(data,body)}
     except ValueError as exc:
         return failure(exc,422)

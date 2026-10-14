@@ -113,6 +113,15 @@ class TestnetReader:
                 self._filtered_loggers.append(log)
         for log in self._filtered_loggers:
             log.addFilter(self._log_filter)
+        # Ancestor logger filters do not inspect propagated records from new
+        # transport children. Guard configured destinations and the fallback.
+        self._filtered_handlers = set(logging.getLogger().handlers)
+        for log in self._filtered_loggers:
+            self._filtered_handlers.update(log.handlers)
+        if logging.lastResort is not None:
+            self._filtered_handlers.add(logging.lastResort)
+        for handler in self._filtered_handlers:
+            handler.addFilter(self._log_filter)
         self._client = httpx.AsyncClient(timeout=8, follow_redirects=False, transport=transport)
         self._lock = asyncio.Lock()
         self._cache = {}
@@ -156,6 +165,8 @@ class TestnetReader:
         await self._client.aclose()
         for log in self._filtered_loggers:
             log.removeFilter(self._log_filter)
+        for handler in self._filtered_handlers:
+            handler.removeFilter(self._log_filter)
         for log, level in self._core_levels.items():
             log.setLevel(level)
 

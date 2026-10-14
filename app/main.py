@@ -73,12 +73,29 @@ app.include_router(bybit_demo_router)
 app.include_router(paper_router)
 app.include_router(lab_router)
 app.include_router(intelligence_router)
-app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
+FRAME_HEADERS = {
+    "X-Frame-Options": "DENY",
+    "Content-Security-Policy": "frame-ancestors 'none'",
+    "X-Content-Type-Options": "nosniff",
+}
+
+
+class ProtectedStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        # StaticFiles normalizes alternate paths (e.g. //index.html). Protect
+        # the actual document response, not only one spelling of its route.
+        if response.headers.get("content-type", "").split(";", 1)[0] == "text/html":
+            response.headers.update(FRAME_HEADERS)
+        return response
+
+
+app.mount("/static", ProtectedStaticFiles(directory=ROOT / "static"), name="static")
 
 
 @app.get("/")
 def index():
-    return FileResponse(ROOT / "static" / "index.html")
+    return FileResponse(ROOT / "static" / "index.html", headers=FRAME_HEADERS)
 
 
 @app.get("/api/health")

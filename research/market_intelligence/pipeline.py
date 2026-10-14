@@ -21,7 +21,8 @@ def protocol(root):
     paths=[*sorted((root/'research/market_intelligence').glob('*.py')),root/'scripts/run_market_intelligence.py',
         root/'scripts/lab3_history.py',root/'scripts/pattern_research.py',root/'scripts/run_pattern_research.py',root/'scripts/run_six_year.py',root/'scripts/research_inverse.py',
         root/'scripts/offline_fixed_strategies.py',root/'scripts/lab3_strategies.py',root/'scripts/run_lab3.py',
-        root/'app/intelligence/patterns.py',root/'app/lab/models.py',root/'app/lab/indicators.py',root/'app/lab/strategies.py',root/'app/lab/execution.py']
+        root/'app/intelligence/patterns.py',root/'app/lab/models.py',root/'app/lab/indicators.py',root/'app/lab/strategies.py',root/'app/lab/execution.py',
+        root/'app/lab/series.py',root/'app/lab/local_csv.py']
     return dict(version='AURA_MARKET_INTELLIGENCE_3.0',software={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},
         families=list(FAMILIES),rules=RULES,modes=['RULE','NEAREST','EDGE'],protect=['PCT_2_4','ATR_2_4'],
         search_budget=42,calibration=['2020-01-01','2020-04-01'],periods=PERIODS,
