@@ -45,3 +45,13 @@ test('a different timeframe cannot masquerade as a fresh response',async()=>{
  let last;const reader=ui.createReader(async()=>({status:200,json:async()=>({...view(),timeframe:'4h'})}),d=>last=d,()=>{});
  await reader.read('15m');assert.equal(last.status,'INVALID_DATA');assert.equal(ui.model(last).usable,false);reader.close();
 });
+
+test('historical analog panel reports actual calculated fields and honest uncertainty',()=>{
+ const v=view();v.analog_availability={status:'DESCRIPTIVE_ONLY',timeframe:'15m',current_regime:'TREND_UP',eligible_analogs:23,non_overlapping_samples:21,effective_independent_samples:null,historical_range:[1609459200,1672531200],mean_distance:.45,source:'Binance Spot BTCUSDT',model_version:'AURA_ANALOGS_4.0',artifact_updated_at:1767225600,horizons:{'4':{count:21,positive_frequency:.5,negative_frequency:.5,zero_frequency:0,median_return_pct:.1,mean_return_pct:.05}},baselines:{same_regime:{'4':{mean_return_pct:.02}}}};
+ const m=ui.model(v);assert.match(m.analogs,/23/);assert.match(m.analogs,/21/);assert.match(m.analogs,/неизвестно/);assert.match(m.analogs,/AURA_ANALOGS_4.0/);assert.match(m.analogs,/не гарантируют/);assert.match(m.analogs,/ПРЕИМУЩЕСТВО НЕ ПОДТВЕРЖДЕНО/);assert.match(ui.model(v,90001).analogs,/НЕАКТУАЛЬНО/);assert.match(m.decision,/WAIT/);
+});
+test('missing and insufficient historical artifacts never show illustrative success numbers',()=>{
+ assert.match(ui.analogText(null,true),/ИСТОРИЧЕСКИЕ АНАЛОГИ НЕДОСТУПНЫ/);
+ assert.match(ui.analogText({status:'INSUFFICIENT_ANALOG_DATA',eligible_analogs:0,non_overlapping_samples:0,horizons:{}},true),/НЕДОСТАТОЧНО ДАННЫХ/);
+ assert.doesNotMatch(ui.analogText(null,true),/143|42%|58%/);
+});

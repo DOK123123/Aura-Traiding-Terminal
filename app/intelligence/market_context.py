@@ -8,9 +8,11 @@ from bisect import bisect_right
 from copy import deepcopy
 import logging
 import time
+from pathlib import Path
 
 import httpx
 from app.lab.data import public_page
+from .analogs import AnalogIndex, absent as analog_absent
 from app.lab.models import Bar, LabError, number, validate_series, digest
 from app.lab.series import higher, split_parts
 from research.market_intelligence.structure import segment_states, VERSION, VECTOR_NAMES
@@ -230,6 +232,23 @@ def analyze_window(bars, now, provenance=None):
     return snapshots
 
 
+def analyze_with_analogs(bars, now, provenance, index, missing_reason):
+    """Same market algorithms; optional bounded memory lookup in the CPU worker."""
+    data = analyze_window(bars, now, provenance)
+    for tf,value in data.items():
+        if not value['state']:
+            value['analog_availability'] = analog_absent('MARKET_STATE_UNAVAILABLE')
+        elif index is None:
+            value['analog_availability'] = analog_absent(missing_reason or 'ARTIFACT_MISSING')
+        else:
+            try:
+                value['analog_availability'] = index.query(dict(value['state'], exchange='Binance', market_type='SPOT'), tf)
+            except (ValueError, KeyError, TypeError, IndexError, OverflowError):
+                # Historical statistics must not erase otherwise valid market data.
+                value['analog_availability'] = analog_absent('INVALID_QUERY_OR_ARTIFACT')
+    return data
+
+
 def error_code(exc):
     if isinstance(exc, (TimeoutError, httpx.TimeoutException)):
         return 'TIMEOUT'
@@ -248,7 +267,7 @@ def error_code(exc):
 
 class MarketContext:
     """One shared refresh task/cache across three frames, bounded request/CPU work."""
-    def __init__(self, page, clock=time.time, monotonic=time.monotonic):
+    def __init__(self, page, clock=time.time, monotonic=time.monotonic, *, analog_index=None, analog_reason=None):
         self.page, self.clock, self.monotonic = page, clock, monotonic
         self.cache = None
         self.at = None
@@ -258,12 +277,16 @@ class MarketContext:
         self.bars = []
         self.last_good = None
         self.failure = None
+        self.analog_index = analog_index
+        self.analog_reason = analog_reason
+        self.analog_loaded_at = self.clock() if analog_index is not None else None
 
     @classmethod
     def from_client(cls, client):
         async def page(query):
             return await public_page(client, query)
-        return cls(page)
+        index, reason = AnalogIndex.load(Path(__file__).parent / 'data/analogs-v4.json.gz')
+        return cls(page, analog_index=index, analog_reason=reason)
 
     async def refresh(self):
         started = self.monotonic()
@@ -276,7 +299,7 @@ class MarketContext:
             # Identical verified closed candles have identical analysis. Do not
             # repeatedly consume CPU between 15m closes.
             reused = bool(bars == self.bars and self.last_good)
-            data = deepcopy(self.last_good) if reused else await asyncio.to_thread(analyze_window, bars, self.clock(), provenance)
+            data = deepcopy(self.last_good) if reused else await asyncio.to_thread(analyze_with_analogs, bars, self.clock(), provenance, self.analog_index, self.analog_reason)
             self.bars = bars
             self.cache = data
             self.failure = None
@@ -285,6 +308,8 @@ class MarketContext:
             logger.info('Market context cache: reused_candles=%d fetch_pages=%d', provenance.get('reused_count',0), provenance.get('fetch_pages',0))
             for value in data.values():
                 value['fetched_at'] = fetched_at
+                if self.analog_loaded_at is not None:
+                    value['analog_availability']['artifact_loaded_at'] = self.analog_loaded_at
                 if not reused:
                     value['analyzed_at'] = self.clock()
                 if value.get('history') is not None:
@@ -305,7 +330,7 @@ class MarketContext:
                 retry = exc.response.headers.get('Retry-After','')
                 if retry.isdigit() and len(retry)<=8:
                     self.cooldown_until=self.monotonic()+int(retry)
-            self.cache = {tf: dict(unavailable(code), timeframe=tf) for tf in STEPS}
+            self.cache = {tf: dict(unavailable(code), timeframe=tf, analog_availability=analog_absent(code)) for tf in STEPS}
         finally:
             self.at = self.monotonic()
 
@@ -344,6 +369,7 @@ class MarketContext:
                 value.update(status='STALE', state=None, levels=None, structure_events=[], mtf=None, regime='UNKNOWN')
                 value['freshness']=dict(status='STALE',age_seconds=age,delivery_age_seconds=delivery_age,base_age_seconds=base_age)
                 value['decision']['reason']='STALE_DATA'
+                value['analog_availability']=analog_absent('STALE_MARKET_DATA')
             else:
                 value['freshness']=dict(status='FRESH' if value['status']=='OK' else 'INSUFFICIENT_HISTORY', age_seconds=age, delivery_age_seconds=delivery_age,base_age_seconds=base_age)
         return value

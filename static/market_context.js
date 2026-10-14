@@ -5,6 +5,22 @@
   const label=value=>labels[value]||'Не определено';
   const number=value=>value===null||value===undefined||value===''?'—':Number.isFinite(Number(value))?Number(value).toLocaleString('ru-RU',{maximumFractionDigits:3}):'—';
   const date=value=>Number.isFinite(value)?new Date(value*1000).toLocaleString('ru-RU',{timeZone:'UTC',hour12:false})+' UTC':'—';
+  function analogText(value, current){
+    if(!value||value.status==='ANALOG_DATA_UNAVAILABLE')return 'ИСТОРИЧЕСКИЕ АНАЛОГИ НЕДОСТУПНЫ. Статистика недоступна: совместимый проверенный артефакт не установлен либо анализ неактуален.';
+    const head=(current?'':'НЕАКТУАЛЬНО. ')+(value.status==='INSUFFICIENT_ANALOG_DATA'?'НЕДОСТАТОЧНО ДАННЫХ. ':'ПРЕИМУЩЕСТВО НЕ ПОДТВЕРЖДЕНО. ');
+    const parts=[head+'BTCUSDT / '+(value.timeframe||'—')+' · режим '+label(value.current_regime),
+      'Подходящих аналогов: '+number(value.eligible_analogs)+' · без пересечения исходов: '+number(value.non_overlapping_samples)+' · эффективное независимое N: неизвестно',
+      'История: '+(value.historical_range?date(value.historical_range[0])+' — '+date(value.historical_range[1]):'нет подходящих наблюдений')+' · средняя дистанция '+number(value.mean_distance)];
+    for(const h of ['4','8','16','32']){
+      const x=value.horizons?.[h];if(!x?.count)continue;
+      const b=value.baselines?.same_regime?.[h],u=value.baselines?.unconditional?.[h],t=value.baselines?.simple_trend?.[h];
+      parts.push('Горизонт '+h+' свечей: рост '+number(x.positive_frequency*100)+'% / снижение '+number(x.negative_frequency*100)+'% / без изменения '+number(x.zero_frequency*100)+'%; медиана '+number(x.median_return_pct)+'%, среднее '+number(x.mean_return_pct)+'%; базовый средний результат режима '+number(b?.mean_return_pct)+'%; безусловный '+number(u?.mean_return_pct)+'%; простой тренд '+number(t?.mean_return_pct)+'%. Неопределённость: неизвестна.');
+      parts.push('MFE / MAE (средние): '+number(x.favorable_excursion?.mean)+'% / '+number(x.adverse_excursion?.mean)+'%; верхняя оценка просадки '+number(x.drawdown_upper_bound?.mean)+'%. Отдельная гипотеза next-open/time-exit после расходов: LONG '+number(x.hypothetical_long_net_pct)+'%, SHORT '+number(x.hypothetical_short_net_pct)+'%. Это не результат торгового портфеля.');
+    }
+    parts.push('Источник: '+(value.source||'—')+' · модель '+(value.model_version||'—')+' · данные по '+date(value.artifact_updated_at)+' · артефакт загружен сервером '+date(value.artifact_loaded_at),
+      'Числа относятся только к ограниченному историческому индексу. Исторические частоты не гарантируют будущие вероятности. Это описание движения цены, не вероятность прибыльной сделки. WAIT · Только чтение.');
+    return parts.join('\n\n');
+  }
   function model(data,elapsed=0){
     const seconds=elapsed/1000,step={'15m':900,'1h':3600,'4h':14400}[data?.timeframe];
     const expired=elapsed>90000||Number.isFinite(data?.freshness?.age_seconds)&&data.freshness.age_seconds+seconds>=step||Number.isFinite(data?.freshness?.base_age_seconds)&&data.freshness.base_age_seconds+seconds>=900||Number.isFinite(data?.freshness?.delivery_age_seconds)&&data.freshness.delivery_age_seconds+seconds>90;
@@ -17,7 +33,7 @@
       regime:display?label(display.regime):'Не определено',levels:display?.levels||null,
       events:display?.structure_events||[],mtf:display?.mtf||null,
       decision:'WAIT — только чтение. '+(usable?'Подтверждённого преимущества нет; нужна независимая forward-проверка.':'Нет свежего доступного анализа. Сделки не предлагаются.'),
-      analogs:'Статистика аналогов недоступна: совместимый проверенный пакет версии 3.0 не установлен.',
+      analogs:analogText(display?.analog_availability||data?.analog_availability,Boolean(usable)),
       history:display?.history||data?.history,definitions:display?.definitions||data?.definitions,source:display?.source||data?.source||'Не доступен',closed:date(display?.last_closed_at??data?.last_closed_at),fetched:date(display?.fetched_at??data?.fetched_at)};
   }
   function createReader(fetcher,onValue,onPending){
@@ -51,7 +67,7 @@
       close(){this.invalidate();closed=true;}
     };
   }
-  if(typeof module!=='undefined')module.exports={model,createReader,labels,number,date};
+  if(typeof module!=='undefined')module.exports={model,createReader,labels,number,date,analogText};
   if(typeof document==='undefined')return;
   const $=id=>document.getElementById(id);if(!$('mc-panel'))return;
   let active=false,data=null,received=0;
@@ -67,7 +83,7 @@
     text('mc-volatility',s?'Волатильность: '+label(s.volatility)+' · ATR '+number(s.atr)+' USDT · относительный объём '+number(s.relative_volume)+(s.relative_volume===null?' — нет базы объёма':s.volume_confirmed?' · объём подтверждён':' · без подтверждения объёмом')+' · глубина отката '+number(s.pullback_depth_atr)+' ATR':'Волатильность и объём не доступны');
     list('mc-mtf',m.mtf?['h1','h4'].map(k=>k==='h1'?'1h: '+(m.mtf[k]?label(m.mtf[k].direction===1?'UP':m.mtf[k].direction===-1?'DOWN':'UNKNOWN')+' · '+date(m.mtf[k].closed_at):'Недостаточно непрерывной истории'):'4h: '+(m.mtf[k]?label(m.mtf[k].direction===1?'UP':m.mtf[k].direction===-1?'DOWN':'UNKNOWN')+' · '+date(m.mtf[k].closed_at):'Недостаточно непрерывной истории')).concat(m.mtf.known_mask===3?[m.mtf.alignment?'Направления совпадают':'Направления не совпадают']:['Полное согласование не определено']):['Межтаймфреймовое согласование не доступно']);
     list('mc-events',m.events.length?m.events.slice().reverse().map(e=>label(e.type)+' · '+label(e.value||e.kind)+' · подтверждено '+date(e.confirmed_at||e.confirmation_time)+(e.pivot_time!==undefined?' · экстремум '+date(e.pivot_time)+' · '+number(e.price)+' USDT':'')):['Нет обнаруженных событий в последних 32 доступных свечах / анализ недоступен']);
-    text('mc-analogs',m.analogs);text('mc-research','Исследование 3.0: 42 конфигурации, 0 прошедших кандидатов. Это не оценка доходности текущего сигнала. Пакет replay 1.0 несовместим и не применяется.');
+    text('mc-analogs',m.analogs);text('mc-research','Исследование 3.0: 42 конфигурации, 0 прошедших кандидатов. Аналоги 4.0 — отдельная описательная модель; прогнозное преимущество не подтверждено. Пакет replay 1.0 не применяется.');
     text('mc-history',m.history?'Окно: '+m.history.base_count+' свечей 15m; непрерывный хвост '+m.history.continuous_base_count+'; пропущено '+m.history.missing_candles+'; прогрев 250 свечей каждого таймфрейма.'+(m.history.complete===false?' Запрошенное окно получено не полностью.':'')+' SHA256 '+m.history.source_sha256:'История ещё не доступна');
     list('mc-definitions',m.definitions?Object.values(m.definitions):['Определения будут загружены вместе с анализом']);
   }
