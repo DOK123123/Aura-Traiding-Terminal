@@ -23,3 +23,25 @@ test('renderer stale, no-source body, keyboard tab and reload are read-only',asy
 test('accessibility/responsive 320-430 touch layout and no unsafe writes',()=>{const h=fs.readFileSync('static/index.html','utf8'),s=fs.readFileSync('static/market_context.js','utf8'),c=fs.readFileSync('static/market_context.css','utf8');assert.match(h,/role="tablist"/);assert.match(h,/aria-controls="mc-panel"/);assert.match(h,/id="mc-panel"[^>]+hidden/);assert.match(c,/min-height:44px/);assert.match(c,/max-width:320px/);assert.match(c,/max-width:430px/);assert.match(c,/overflow-wrap:anywhere/);assert.doesNotMatch(s,/innerHTML|method:'POST'|\/api\/paper\/(positions|auto)|create_order|cancel_order|amend_order|bybit|api-key|api_secret/);});
 
 test('server-reported candle age expires without browser clock trust',()=>{const v=view();v.freshness.age_seconds=890;v.freshness.base_age_seconds=890;v.freshness.delivery_age_seconds=0;assert.equal(ui.model(v,9000).usable,true);assert.equal(ui.model(v,10000).usable,false);v.timeframe='4h';v.freshness.age_seconds=300;assert.equal(ui.model(v,10000).usable,false);});
+
+
+test('failed refresh retains same-timeframe analysis explicitly stale with WAIT',async()=>{
+ let calls=0,last,pending=[];
+ const reader=ui.createReader(async()=>{if(++calls===1)return {status:200,json:async()=>view()};throw Error('PRIVATE_MARKER');},d=>last=d,p=>pending.push(p));
+ await reader.read('15m');await reader.read('15m');
+ const m=ui.model(last);assert.equal(m.usable,false);assert.equal(m.phase,'STALE_DATA');assert.match(m.status,/НЕАКТУАЛЬНО/);assert.equal(m.levels.support,'100');assert.match(m.decision,/WAIT/);assert.doesNotMatch(JSON.stringify(last),/PRIVATE_MARKER/);
+ assert.equal(reader.busy,false);assert.deepEqual(pending,[true,false,true,false]);
+ await reader.read('4h');assert.equal(ui.model(last).state,null);reader.close();
+});
+test('expired last success remains visible and never READY',()=>{const m=ui.model(view(),90001);assert.equal(m.phase,'STALE_DATA');assert.equal(m.usable,false);assert.match(m.status,/НЕАКТУАЛЬНО/);assert.equal(m.levels.support,'100');assert.match(m.decision,/WAIT/);});
+test('stage-specific error states distinguish upstream and analysis timeouts',()=>{for(const status of ['UPSTREAM_TIMEOUT','ANALYSIS_TIMEOUT'])assert.equal(ui.model({status}).phase,status);assert.equal(ui.model(null).phase,'DATA_UNAVAILABLE');assert.equal(ui.model({status:'ERROR'}).phase,'ERROR');assert.equal(ui.model(view()).phase,'READY');});
+
+
+test('authentication loss clears retained owner analysis and does not restore it',async()=>{
+ let n=0,last;const reader=ui.createReader(async()=>++n===1?{status:200,json:async()=>view()}:n===2?{status:401,json:async()=>({detail:'Not authenticated'})}:{status:503,json:async()=>({status:'UNAVAILABLE'})},d=>last=d,()=>{});
+ await reader.read('15m');await reader.read('15m');assert.equal(ui.model(last).state,null);await reader.read('15m');assert.equal(ui.model(last).state,null);reader.close();
+});
+test('a different timeframe cannot masquerade as a fresh response',async()=>{
+ let last;const reader=ui.createReader(async()=>({status:200,json:async()=>({...view(),timeframe:'4h'})}),d=>last=d,()=>{});
+ await reader.read('15m');assert.equal(last.status,'INVALID_DATA');assert.equal(ui.model(last).usable,false);reader.close();
+});

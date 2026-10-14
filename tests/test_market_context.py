@@ -202,7 +202,7 @@ class AsyncContextTests(unittest.IsolatedAsyncioTestCase):
             mono[0]=60;await svc.snapshot('4h');self.assertEqual(fetch.call_count,1)
         svc=MarketContext(None)
         with patch('app.intelligence.market_context.fetch_window',return_value=(fixture(),{})),patch('app.intelligence.market_context.analyze_window',side_effect=TimeoutError()):
-            self.assertEqual((await svc.snapshot('15m'))['status'],'TIMEOUT')
+            self.assertEqual((await svc.snapshot('15m'))['status'],'ANALYSIS_TIMEOUT')
 
     async def test_restart_without_data_and_close_never_resurrects_cache(self):
         svc=MarketContext(None)

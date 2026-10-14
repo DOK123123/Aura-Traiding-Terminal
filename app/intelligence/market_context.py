@@ -16,12 +16,13 @@ from app.lab.series import higher, split_parts
 from research.market_intelligence.structure import segment_states, VERSION, VECTOR_NAMES
 
 logger = logging.getLogger(__name__)
-ADAPTER_VERSION = 'MARKET_CONTEXT_ONLINE_3.1'
+ADAPTER_VERSION = 'MARKET_CONTEXT_ONLINE_3.2'
 SOURCE = 'Binance · Spot / data-api.binance.vision'
 STEPS = {'15m': 900, '1h': 3600, '4h': 14400}
 MAX_BARS = 4175  # 260 full 4h blocks plus at most 15 subsequent 15m bars
 CACHE_TTL = 30
 FETCH_SECONDS = 12
+PAGE_SECONDS = 4
 COMPUTE_SECONDS = 8
 RESEARCH_REPORT_SHA256 = '4333735fbd71e2d736cca0dd2f5b497bc0384fa32463262f319a6a58009225bf'
 RESEARCH_COMMIT = '7711696737630a69994eb37c81ac633874ad0fb4'
@@ -67,23 +68,48 @@ def unavailable(code='UNAVAILABLE', freshness='UNAVAILABLE'):
         model_version=VERSION, adapter_version=ADAPTER_VERSION)
 
 
-async def fetch_window(page, now):
+async def retry_page(page, query):
+    """Two public GET attempts; outer fetch budget also bounds backoff/body time."""
+    for attempt in range(2):
+        try:
+            async with asyncio.timeout(PAGE_SECONDS):
+                return await page(query)
+        except (httpx.RequestError, httpx.HTTPStatusError, TimeoutError) as exc:
+            transient = not isinstance(exc, httpx.HTTPStatusError) or exc.response.status_code in (500, 502, 503, 504)
+            if attempt or not transient:
+                raise
+            logger.info('Market context GET retry: attempt=2 code=%s', error_code(exc))
+            await asyncio.sleep(0.25 * 2**attempt)
+
+
+async def fetch_window(page, now, seed=()):
     """Reuse fixed public_page transport; <=5 bounded pages, no disk/history writes."""
     end = int(now) // 900 * 900
     start = end // 14400 * 14400 - 4160 * 900
-    cursor = start
-    bars = []
+    # Retain only the exact requested window, and re-read its last candle to
+    # detect upstream corrections. Long sleep or previous gaps force full fetch.
+    retained = [b for b in seed if start <= b.time < end]
+    if (not retained or retained[0].time != start or
+            any(b.time-a.time != 900 for a,b in zip(retained,retained[1:]))):
+        retained = []
+    overlap = retained[-1] if retained else None
+    cursor = overlap.time if overlap else start
+    bars = retained[:-1] if retained else []
     forming = 0
+    pages = 0
     async with asyncio.timeout(FETCH_SECONDS):
         for _ in range(5):
             if cursor >= end:
                 break
-            rows = await page(dict(symbol='BTCUSDT', interval='15m',
+            pages += 1
+            rows = await retry_page(page, dict(symbol='BTCUSDT', interval='15m',
                 startTime=cursor*1000, endTime=end*1000-1,
                 limit=min(1000, (end-cursor)//900)))
             if not isinstance(rows, list) or len(rows)>1000:
                 raise LabError('INVALID_DATA')
             if not rows:
+                if overlap is not None:
+                    raise LabError('PUBLIC_DATA_UNAVAILABLE')
                 break
             accepted = []
             previous = None
@@ -106,7 +132,13 @@ async def fetch_window(page, now):
                     raise LabError('DUPLICATE_OR_UNORDERED')
                 accepted.append(b)
             if not accepted:
+                if overlap is not None:
+                    raise LabError('PUBLIC_DATA_UNAVAILABLE')
                 break
+            if overlap is not None:
+                if accepted[0].time != overlap.time or accepted[0] != overlap:
+                    raise LabError('INVALID_DATA')
+                overlap = None
             bars.extend(accepted)
             if len(bars)>MAX_BARS:
                 raise LabError('DATA_LIMIT')
@@ -119,7 +151,8 @@ async def fetch_window(page, now):
         received_count=len(bars), forming_excluded=forming,
         complete=bool(bars) and bars[0].time==start and bars[-1].time+900==end
             and len(bars)==(end-start)//900,
-        max_bars=MAX_BARS, fetch_pages_limit=5)
+        max_bars=MAX_BARS, fetch_pages_limit=5, fetch_pages=pages,
+        reused_count=len(retained[:-1]) if retained else 0)
 
 
 def analyze_window(bars, now, provenance=None):
@@ -222,6 +255,9 @@ class MarketContext:
         self.task = None
         self.closed = False
         self.cooldown_until = 0
+        self.bars = []
+        self.last_good = None
+        self.failure = None
 
     @classmethod
     def from_client(cls, client):
@@ -230,19 +266,41 @@ class MarketContext:
         return cls(page)
 
     async def refresh(self):
+        started = self.monotonic()
+        stage = 'UPSTREAM'
         try:
-            bars, provenance = await fetch_window(self.page, self.clock())
-            data = await asyncio.to_thread(analyze_window, bars, self.clock(), provenance)
+            bars, provenance = await fetch_window(self.page, self.clock(), self.bars)
+            fetched = self.monotonic()
+            fetched_at = self.clock()
+            stage = 'ANALYSIS'
+            # Identical verified closed candles have identical analysis. Do not
+            # repeatedly consume CPU between 15m closes.
+            reused = bool(bars == self.bars and self.last_good)
+            data = deepcopy(self.last_good) if reused else await asyncio.to_thread(analyze_window, bars, self.clock(), provenance)
+            self.bars = bars
             self.cache = data
+            self.failure = None
+            logger.info('Market context refreshed: candles=%d fetch_ms=%d analysis_ms=%d',
+                len(bars), int((fetched-started)*1000), int((self.monotonic()-fetched)*1000))
+            logger.info('Market context cache: reused_candles=%d fetch_pages=%d', provenance.get('reused_count',0), provenance.get('fetch_pages',0))
             for value in data.values():
-                value['fetched_at'] = self.clock()
-                value['analyzed_at'] = self.clock()
+                value['fetched_at'] = fetched_at
+                if not reused:
+                    value['analyzed_at'] = self.clock()
+                if value.get('history') is not None:
+                    value['history'].update(provenance)
+            self.last_good = deepcopy(data)
         except asyncio.CancelledError:
             raise
         except (httpx.HTTPError, LabError, ValueError, TypeError, KeyError, IndexError, TimeoutError) as exc:
             code=error_code(exc)
+            if code == 'TIMEOUT':
+                code = 'UPSTREAM_TIMEOUT' if stage == 'UPSTREAM' else 'ANALYSIS_TIMEOUT'
+            self.failure = code
+            if isinstance(exc, LabError):
+                self.bars = []  # corrections require a coherent full resnapshot
             # Whitelisted code only: never exception body, URL, headers or credentials.
-            logger.warning('Market context public snapshot failed: code=%s', code)
+            logger.warning('Market context public snapshot failed: stage=%s code=%s http_status=%s elapsed_ms=%d', stage, code, exc.response.status_code if isinstance(exc, httpx.HTTPStatusError) else None, int((self.monotonic()-started)*1000))
             if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in (418,429):
                 retry = exc.response.headers.get('Retry-After','')
                 if retry.isdigit() and len(retry)<=8:
@@ -264,15 +322,25 @@ class MarketContext:
                 # Shield a single bounded refresh from disconnected HTTP clients.
                 await asyncio.wait_for(asyncio.shield(self.task), FETCH_SECONDS+COMPUTE_SECONDS+2)
             except TimeoutError:
-                return dict(unavailable('TIMEOUT'), timeframe=timeframe)
+                return dict(unavailable('ANALYSIS_TIMEOUT'), timeframe=timeframe)
         value = deepcopy(self.cache[timeframe]) if self.cache else dict(unavailable(), timeframe=timeframe)
         now = self.clock()
+        # Historical display only, separate from the current unavailable state.
+        # No execution caller can confuse retained display data with fresh state.
+        if self.failure and self.last_good:
+            value['last_successful_analysis'] = deepcopy(self.last_good[timeframe])
+            value['last_successful_analysis']['freshness']['status'] = 'STALE'
+            value['last_successful_analysis']['status'] = 'STALE'
+            value['last_successful_analysis']['decision']['reason'] = 'STALE_DATA'
         if value['last_closed_at'] is not None:
             age = max(0,now-value['last_closed_at'])
             delivery_age = max(0,now-value['fetched_at']) if value['fetched_at'] is not None else None
             base_closed_at = (value.get('history') or {}).get('window_end_exclusive')
             base_age = now-base_closed_at if base_closed_at is not None else None
             if now < value['last_closed_at'] or age>=STEPS[timeframe] or base_age is not None and (base_age<0 or base_age>=900) or delivery_age is not None and delivery_age>90:
+                value['last_successful_analysis'] = deepcopy(value)
+                value['last_successful_analysis']['status'] = 'STALE'
+                value['last_successful_analysis']['freshness']['status'] = 'STALE'
                 value.update(status='STALE', state=None, levels=None, structure_events=[], mtf=None, regime='UNKNOWN')
                 value['freshness']=dict(status='STALE',age_seconds=age,delivery_age_seconds=delivery_age,base_age_seconds=base_age)
                 value['decision']['reason']='STALE_DATA'
