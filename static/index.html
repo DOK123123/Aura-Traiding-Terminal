@@ -229,6 +229,14 @@
       <details><summary>История, свежесть и ограничения</summary><p id="mc-history">Нет данных</p><p>Автообновление раз в минуту только при открытой вкладке; кэш сервера 30 секунд. Окно ограничено 4175 свечами 15m. Каждый таймфрейм требует 250 непрерывных закрытых свечей; пропуски сбрасывают прогрев, цены не заполняются. Источник недоступен — анализ не показывается как свежий. Состояние рынка не является состоянием Auto Paper.</p><p>Аналоги 4.0 используют отдельный компактный проверяемый артефакт; при его отсутствии статистика недоступна. Полный архив 2020–2025 не загружается в веб-запросах; replay 1.0 использует другую модель и не подставляется вместо 4.0. 2025 уже изучен. Нужна новая forward-проверка; гарантии доходности нет.</p></details>
       <details><summary>Точные определения алгоритмов и момент подтверждения</summary><ul id="mc-definitions"></ul></details>
     </div>
+    <details id="fv-panel" class="market-context">
+      <summary>ПРОВЕРКА ПРОГНОЗОВ · только для владельца</summary>
+      <p class="ai-warning">READ_ONLY · WAIT · REAL MONEY EXECUTION = DISABLED. Запись прогнозов не разрешает сделки.</p>
+      <div class="mc-controls"><label>Таймфрейм<select id="fv-timeframe"><option>15m</option><option>1h</option><option>4h</option></select></label><label>Горизонт<select id="fv-horizon"><option>4</option><option>8</option><option>16</option><option>32</option></select></label><button id="fv-refresh" type="button">Обновить проверку</button><a href="/api/paper/login">Вход владельца</a></div>
+      <p id="fv-loading" role="status"></p><p id="fv-status" aria-live="polite">Журнал ещё не загружен</p><p id="fv-times"></p><p id="fv-counts"></p><p id="fv-model"></p><p id="fv-message" class="ai-warning"></p><p id="fv-scores" style="white-space:pre-line"></p>
+      <div class="fv-table-wrap"><table><caption>Журнал прогнозов · выбранный горизонт</caption><thead><tr><th scope="col">Дата UTC</th><th scope="col">TF</th><th scope="col">Режим</th><th scope="col">Прогноз</th><th scope="col">Исход</th><th scope="col">Результат</th><th scope="col">Статус</th></tr></thead><tbody id="fv-journal"></tbody></table></div>
+      <p>Scheduler и постоянное хранилище настраиваются отдельно владельцем. Render Free может спать; пропущенные свечи не восполняются прогнозами задним числом.</p><a href="/api/intelligence/forward/export">Экспорт JSON (страница журнала)</a>
+    </details>
     <div id="ai-replay-panel" role="tabpanel" aria-labelledby="mc-tab-replay">
     <p>Исторический replay с отдельным портфелем. Live-анализ только для чтения: автоматическое исполнение недоступно.</p>
     <div class="ai-actions"><button id="ai-load" type="button">Открыть вкладку / загрузить историю</button><a href="/api/paper/login">Вход владельца: aura</a><button id="ai-live" type="button">Проверить live · только анализ</button></div>
@@ -247,4 +255,5 @@
   </section>
   <footer><span>Аналитический инструмент · без реальных сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
 </main>
+<script src="/static/forward_validation.js" defer></script>
 </body></html>

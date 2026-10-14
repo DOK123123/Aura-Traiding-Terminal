@@ -1,0 +1,42 @@
+name: Aura forward validation (no trading)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+permissions: {}
+concurrency:
+  group: aura-forward-validation
+  cancel-in-progress: false
+jobs:
+  capture:
+    if: vars.AURA_FORWARD_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Authenticated scientific capture/evaluation only
+        env:
+          TICK_URL: ${{ secrets.AURA_FORWARD_TICK_URL }}
+          SCHEDULER_SECRET: ${{ secrets.AURA_FORWARD_SCHEDULER_SECRET }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os,time,json,urllib.request,urllib.parse
+          url=os.environ['TICK_URL'];token=os.environ['SCHEDULER_SECRET']
+          parsed=urllib.parse.urlsplit(url)
+          if parsed.scheme!='https' or parsed.hostname!='terminal.onrender.com' or parsed.port is not None or parsed.path!='/api/intelligence/forward/tick' or parsed.query or parsed.fragment or parsed.username or parsed.password or len(token)<32:
+              raise SystemExit('Invalid scheduler configuration')
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs):return None
+          client=urllib.request.build_opener(NoRedirect)
+          for attempt in range(3):
+              try:
+                  req=urllib.request.Request(url,method='POST',data=b'',headers={'X-Aura-Forward-Token':token})
+                  with client.open(req,timeout=75) as response:
+                      if response.status!=200:raise ValueError()
+                      body=json.loads(response.read(65536))
+                      if body.get('status')!='COMPLETED' or body.get('execution_enabled') is not False:raise ValueError()
+                  print('Forward journal tick completed (no trading)');break
+              except Exception:
+                  if attempt==2:raise SystemExit('Forward capture unavailable; inspect protected monitoring')
+                  time.sleep(2**attempt)
+          PY
