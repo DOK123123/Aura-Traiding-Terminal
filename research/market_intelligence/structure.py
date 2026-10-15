@@ -17,13 +17,16 @@ VECTOR_NAMES = ('trend', 'strength', 'volatility', 'volume', 'range_position',
 
 def zones(pivots, tolerance):
     """Bounded confirmed-pivot clustering; no outcome information."""
-    groups=[]
+    groups=[];totals=[]
     for pivot in sorted(pivots[-32:], key=lambda p: p['price']):
-        if groups and abs(pivot['price']-sum(p['price'] for p in groups[-1])/len(groups[-1]))<=tolerance:
-            groups[-1].append(pivot)
-        else:groups.append([pivot])
-    return [dict(price=sum(p['price'] for p in g)/len(g), touches=len(g),
-        confirmed_at=max(p['confirmation_time'] for p in g)) for g in groups]
+        # Same ordered Decimal additions as sum(...), computed once per prefix
+        # instead of re-summing a growing cluster for each new pivot.
+        if groups and abs(pivot['price']-totals[-1]/len(groups[-1]))<=tolerance:
+            groups[-1].append(pivot);totals[-1]+=pivot['price']
+        else:
+            groups.append([pivot]);totals.append(sum((pivot['price'],)))
+    return [dict(price=total/len(g), touches=len(g),
+        confirmed_at=max(p['confirmation_time'] for p in g)) for g,total in zip(groups,totals)]
 
 
 def segment_states(bars, step=900, *, deadline=None):
