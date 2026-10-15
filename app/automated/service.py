@@ -3,6 +3,8 @@ import asyncio,logging,os,time,sqlite3
 from copy import deepcopy
 from .engine import initial,validate,advance,event,mark,risk_reason,DemoError,VERSION,POLICY,STEP
 from .strategy import strategy,PARAMETERS
+from app.intelligence.market_context import SOURCE
+from .market_data import snapshot_for_auto
 from .storage import SQLiteStore,SupabaseStore
 from .diagnostics import configuration,error_category,connection_evidence
 from app.forward.models import scheduler_secret_valid
@@ -10,7 +12,7 @@ from app.lab.models import money,text,digest
 from decimal import Decimal as D
 
 logger=logging.getLogger(__name__)
-RETRYABLE_DATA={'STALE_DATA','UPSTREAM_TIMEOUT','ANALYSIS_TIMEOUT','MTF_UNAVAILABLE','MARKET_TIMEOUT','NETWORK_ERROR'}
+RETRYABLE_DATA={'STALE_DATA','UPSTREAM_TIMEOUT','ANALYSIS_TIMEOUT','MTF_UNAVAILABLE','MARKET_TIMEOUT','NETWORK_ERROR','RATE_LIMIT','UPSTREAM_HTTP_ERROR','PUBLIC_DATA_UNAVAILABLE'}
 
 
 def scheduler_configured():
@@ -21,6 +23,7 @@ def scheduler_configured():
 class Service:
     def __init__(self,market,store=None,clock=time.time,reason=None):
         self.market=market;self.store=store;self.clock=clock;self.reason=reason;self.task=None;self.closed=False
+        self.market_diagnostics=None
     def ready(self):
         if self.store is None:raise DemoError(self.reason or 'STORAGE_NOT_CONFIGURED')
     async def close(self):
@@ -28,7 +31,23 @@ class Service:
         if self.task and not self.task.done():self.task.cancel();await asyncio.gather(self.task,return_exceptions=True)
         if self.store:await self.store.close()
     async def snapshot(self):
-        value=await self.market.snapshot('15m');bars=list(self.market.bars);now=int(self.clock())
+        value=await snapshot_for_auto(self.market);bars=list(self.market.bars);now=int(self.clock())
+        allowed={'OK','STALE','UPSTREAM_TIMEOUT','ANALYSIS_TIMEOUT','NETWORK_ERROR','RATE_LIMIT',
+            'REGION_RESTRICTED','UPSTREAM_HTTP_ERROR','INVALID_DATA','INVALID_TIMESTAMPS',
+            'DUPLICATE_OR_UNORDERED','INVALID_CLOSE_TIME','INVALID_OHLCV','DATA_LIMIT',
+            'INSUFFICIENT_HISTORY','MISSING_CANDLES','PUBLIC_DATA_UNAVAILABLE','UNAVAILABLE'}
+        status=value.get('status') if value.get('status') in allowed else 'UNAVAILABLE'
+        def stamp(x):
+            return x if type(x) in (int,float) and 0<=x<10**12 else None
+        self.market_diagnostics=dict(source=SOURCE,checked_at=now,
+            last_closed_at=stamp(value.get('last_closed_at')),expected_closed_at=now//STEP*STEP,
+            fetched_at=stamp(value.get('fetched_at')),analyzed_at=stamp(value.get('analyzed_at')),
+            market_status=status,cache_requested_close=stamp((value.get('history') or {}).get('requested_end_exclusive')),
+            cache_state='UNAVAILABLE' if status not in ('OK','STALE') else status,
+            error_source='UPSTREAM' if status in {'UPSTREAM_TIMEOUT','NETWORK_ERROR','RATE_LIMIT','REGION_RESTRICTED','UPSTREAM_HTTP_ERROR','PUBLIC_DATA_UNAVAILABLE'} else 'ANALYSIS' if status=='ANALYSIS_TIMEOUT' else 'VALIDATION' if status not in ('OK','STALE') else 'FRESHNESS' if status=='STALE' else None)
+        logger.info('Auto42 market evidence: %s',self.market_diagnostics)
+        if status not in ('OK','STALE'):
+            raise DemoError(status)
         try:decision=strategy(value,bars,now)
         except DemoError as exc:
             if exc.code not in ('MTF_UNAVAILABLE','INVALID_ANALYSIS'):raise
@@ -101,12 +120,16 @@ class Service:
         for attempt in range(3):
             old=envelope['state'];s=deepcopy(old);events=[];now=int(self.clock())
             # Same data must still be fresh after storage latency/concurrent changes.
-            if bars and bars[-1].time+STEP!=now//STEP*STEP:error='STALE_DATA'
+            if bars and bars[-1].time+STEP!=now//STEP*STEP:
+                error='STALE_DATA'
+                if self.market_diagnostics is not None:
+                    self.market_diagnostics.update(checked_at=now,expected_closed_at=now//STEP*STEP,error_source='POST_STORAGE_FRESHNESS')
+                logger.warning('Auto42 freshness after storage: %s',self.market_diagnostics)
             if error:
                 s['data_recovery_armed']=error in RETRYABLE_DATA and not risk_reason(s) and (s['mode']=='ON' or s.get('data_recovery_armed',False))
                 s.update(pending=None,last_error=error,last_decision=error)
                 if s['mode']=='ON':s['mode']='PAUSED'
-                events.append(event(s,'ERROR',now//300,now,dict(reason=error)))
+                events.append(event(s,'ERROR',now//300,now,dict(reason=error,market=self.market_diagnostics)))
             elif bars is not None:
                 try:
                     if decision.get('error'):
@@ -168,7 +191,8 @@ class Service:
             last_processed_closed_at=state['watermark'] if state else None,
             last_decision=state['last_decision'] if state else None,last_error=error or (state['last_error'] if state else None),
             last_saved_at=last_saved_at,auto_paper=mode,protection=protection,block_reason=blocked,
-            recovery_pending=state.get('data_recovery_armed',False) if state else False)
+            recovery_pending=state.get('data_recovery_armed',False) if state else False,
+            market=self.market_diagnostics)
     async def dashboard(self):
         if self.store is None:return dict(status='NOT_OPERATIONAL',reason=self.reason or 'STORAGE_NOT_CONFIGURED',paper_only=True,exchange_execution=False,state=None,diagnostics=self.diagnostics(error=self.reason or 'STORAGE_NOT_CONFIGURED'))
         env=await self.store.load();s=env['state'];now=int(self.clock());recent=await self.store.history(epoch=s['epoch'],limit=60)
