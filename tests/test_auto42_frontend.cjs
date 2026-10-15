@@ -1,9 +1,10 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {view}=require('../static/auto42.js');
 function payload(mode='OFF',position=null){return {status:'RECENT_TICK_OBSERVED',revision:1,server_now:100000,fresh:true,scheduler_configured:true,paper_only:true,exchange_execution:false,current_equity:'10001',unrealized_pnl:position?'1':null,win_rate:'50',profit_factor:'1.1',profit_factor_status:'DEFINED',trades:[],state:{mode,position,emergency:mode==='EMERGENCY',balance:'10000',realized_pnl:'0',trades:2,max_drawdown_pct:'0.5',watermark:99900,last_mark_at:99900,last_success_at:99990,last_decision:'NO_CONFIRMED_SETUP'}};}
-function harness(fetcher,confirm=true){
+function harness(fetcher,confirm=true,initialOpen=false){
  const nodes=new Map();function node(id){if(!nodes.has(id))nodes.set(id,{textContent:'',disabled:false,open:true,children:[],handlers:{},addEventListener(k,f){this.handlers[k]=f;},replaceChildren(){this.children=[];},append(v){this.children.push(v);}});return nodes.get(id);}
  const doc={hidden:false,handlers:{},getElementById:node,createElement:()=>({textContent:''}),addEventListener(k,f){this.handlers[k]=f;}};
+ node('auto42-panel').open=initialOpen;
  const win={handlers:{},confirm:()=>confirm,addEventListener(k,f){this.handlers[k]=f;}};
  const context={document:doc,window:win,fetch:fetcher,AbortController,Date,Number,Error,JSON,crypto:{randomUUID:()=> 'a'.repeat(32)},setTimeout,clearTimeout,setInterval:()=>1,clearInterval};
  vm.runInNewContext(fs.readFileSync('static/auto42.js','utf8'),context);return {node,doc,win};
@@ -55,4 +56,44 @@ test('owner connection evidence shows validated active hostname and precise erro
  const d={diagnostics:{checked_at:100000,render_api:'ONLINE',storage:{status:'ERROR',error_code:'STORAGE_DNS',error_category:'DNS_ERROR',connection:{hostname:'abcdefghijklmnopqrst.supabase.co'}},protection:'BLOCKED'}};
  const v=system(d,true,'reply',100001);assert.equal(v.host,'abcdefghijklmnopqrst.supabase.co');assert.equal(v.category,'DNS_ERROR');assert.equal(v.api,'ONLINE');assert.equal(v.protection,'BLOCKED');
  d.diagnostics.storage.connection.hostname='https://dummy-secret@host';assert.equal(system(d,true,'reply',100001).host,'—');
+});
+test('main Auto42 panel precedes separate collapsed Historical Pattern account',()=>{
+ const h=fs.readFileSync('static/index.html','utf8');
+ assert.ok(h.indexOf('id="auto42-panel"')<h.indexOf('id="paper-legacy-panel"'));
+ assert.match(h,/<details id="auto42-panel"[^>]* open>/);
+ assert.match(h,/<details id="paper-legacy-panel"[^>]*>/);
+ assert.doesNotMatch(h,/<details id="paper-legacy-panel"[^>]*\bopen\b/);
+ assert.match(h,/Historical Pattern · прежний Auto Paper/);
+ assert.match(h,/Запустить Historical Pattern/);
+ assert.match(h,/Запустить Aura 4.2 · START PAPER/);
+ assert.equal((h.match(/id="auto42-panel"/g)||[]).length,1);
+ assert.equal((h.match(/id="paper-auto-start"/g)||[]).length,1);
+});
+test('open primary panel reads only Auto42 status on load and reload never activates',async()=>{
+ const calls=[];const h=harness(async(url,o)=>{calls.push({url,method:o.method||'GET'});return response(payload('OFF'));},true,true);
+ await new Promise(r=>setImmediate(r));
+ assert.deepEqual(calls,[{url:'/api/auto42/status',method:'GET'}]);
+ assert.match(h.node('a42-mode').textContent,/Выключено/);h.win.handlers.pagehide();
+ const second=harness(async(url,o)=>{assert.equal(url,'/api/auto42/status');assert.notEqual(o.method,'POST');return response(payload('ON'));},true,true);
+ await new Promise(r=>setImmediate(r));assert.match(second.node('a42-mode').textContent,/Включено/);second.win.handlers.pagehide();
+});
+test('Auto42 ON and owner OFF are read from same server snapshot without legacy calls',async()=>{
+ let mode='OFF';const calls=[];let saved;
+ const h=harness(async(url,o)=>{
+  calls.push(url);assert.match(url,/^\/api\/auto42\//);
+  if(o.method==='POST'){saved=JSON.parse(o.body);mode=saved.action==='START'?'ON':'OFF';return response({paper_only:true,exchange_execution:false});}
+  return response(payload(mode));
+ });
+ await h.node('a42-refresh').handlers.click();await h.node('a42-start').handlers.click();
+ assert.equal(saved.action,'START');assert.equal(saved.expected_revision,1);assert.equal(saved.confirmation,'START PAPER');
+ assert.match(h.node('a42-mode').textContent,/Включено/);
+ await h.node('a42-refresh').handlers.click();assert.match(h.node('a42-mode').textContent,/Включено/);
+ await h.node('a42-stop').handlers.click();assert.match(h.node('a42-mode').textContent,/Выключено/);
+ assert.ok(calls.every(p=>!p.startsWith('/api/paper/')));h.win.handlers.pagehide();
+});
+test('legacy mode remains visible on collapsed summary without becoming Auto42 status',()=>{
+ const h=fs.readFileSync('static/index.html','utf8');
+ const start=h.indexOf('id="paper-legacy-panel"'),end=h.indexOf('</summary>',start);
+ assert.ok(h.slice(start,end).includes('id="paper-auto-badge"'));
+ assert.equal((h.match(/id="paper-auto-badge"/g)||[]).length,1);
 });

@@ -66,7 +66,7 @@
  async function control(action){
   const urgent=action==='STOP'||action==='EMERGENCY';
   if(closed||(busy&&!urgent))return;
-  if((action==='START'||action==='RESET')&&!window.confirm(action==='START'?'Включить экспериментальную виртуальную торговлю? Преимущество не доказано. Только отдельный демобаланс.':'Создать новый демопортфель 10 000 USDT? Старый журнал сохранится.'))return;
+  if((action==='START'||action==='RESET')&&!window.confirm(action==='START'?'Включить Aura Auto Paper 4.2 — отдельный портфель Supabase, BTCUSDT 15m? Прежний Historical Pattern не изменится. Преимущество не доказано. Только виртуальные средства.':'Создать новый демопортфель 10 000 USDT? Старый журнал сохранится.'))return;
   if(action==='EMERGENCY'&&!window.confirm('Запретить все новые входы? Защитные виртуальные выходы продолжатся только по проверенным данным.'))return;
   if(urgent&&busy)controller?.abort();
   const run=++generation;busy=true;render();
@@ -87,4 +87,5 @@
  // Pure display adapter exported for offline fixture tests; never activates on load.
  if(typeof module!=='undefined')module.exports={view,system};
  render();
+ if(panel.open)refresh(); // Read-only owner status; never activates on page load.
 })();

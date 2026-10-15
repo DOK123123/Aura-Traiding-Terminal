@@ -68,8 +68,8 @@
     dashboardData=data; dashboardAt=observedAt;
     if (!dashboardFresh()) { unavailableDashboard(); return; }
     const state=data.auto_paper, account=data.effective_settings, stats=data.statistics;
-    el('auto-badge').textContent = state.status+' · '+modes[state.status];
-    el('auto-state').textContent = state.status+' · '+modes[state.status]+' · '+state.symbol+' / '+state.timeframe;
+    el('auto-badge').textContent = 'Historical Pattern · '+state.status+' · '+modes[state.status];
+    el('auto-state').textContent = 'Historical Pattern · '+state.status+' · '+modes[state.status]+' · '+state.symbol+' / '+state.timeframe;
     el('dashboard-freshness').textContent = 'Состояние получено с сервера. Это виртуальная симуляция, не подтверждение прибыльности.';
     el('auto-last').textContent = 'Последняя обработанная закрытая свеча: '+dateText(state.last_processed_candle);
     const metrics=el('dashboard-metrics'); metrics.replaceChildren();
@@ -82,7 +82,7 @@
     el('dashboard-action').textContent = 'Последнее решение: '+action;
     el('dashboard-rejection').textContent = 'Причина отказа: '+(state.last_rejection_reason ? reasonText(state.last_rejection_reason) : 'Отказ не записан');
     el('dashboard-policy').textContent = 'Сохранённая политика SL/TP: '+policyText(state.fallback_policy)+'. Запуск не изменяет эту политику.';
-    el('auto-start').textContent = ['PAUSED','ERROR'].includes(state.status) ? 'Возобновить Авто Paper' : 'Запустить Авто Paper';
+    el('auto-start').textContent = ['PAUSED','ERROR'].includes(state.status) ? 'Возобновить Historical Pattern' : 'Запустить Historical Pattern';
     const position=el('auto-position'); position.replaceChildren();position.textContent='';
     if (!data.open_positions.length) position.textContent='Открытых автоматических позиций нет.';
     for (const trade of data.open_positions) {
@@ -303,7 +303,7 @@
     if (enabled && quick && (!dashboardFresh() || policyDirty || !latestAuto || policy !== latestAuto.fallback_policy || el('auto-policy').value !== latestAuto.fallback_policy)) { status('Есть несохранённый черновик политики или нет свежих данных. Подтвердите изменения в расширенном разделе.'); return; }
     if (enabled && quick && ['PAUSED','ERROR'].includes(latestAuto.status) && (selected.timeframe !== latestAuto.timeframe || selected.source !== latestAuto.source)) { status('Для возобновления выберите свежий график сохранённого интервала и источника.'); return; }
     if (enabled && !['SKIP','PAPER_SETTINGS'].includes(policy)) { status('Политика SL/TP не подтверждена.'); return; }
-    if (enabled && !window.confirm('Включить только виртуальную торговлю BTCUSDT / '+selected.timeframe+'?\nПолитика: '+policyText(policy)+'\nРеальные деньги не используются. Сервер проверит безопасность.')) return;
+    if (enabled && !window.confirm('Включить прежний Historical Pattern (отдельный SQLite, не Aura 4.2) · BTCUSDT / '+selected.timeframe+'?\nПолитика: '+policyText(policy)+'\nРеальные деньги не используются. Сервер проверит безопасность.')) return;
     if (enabled) {
       const after=scope();
       if (!after.fresh || after.symbol !== selected.symbol || after.timeframe !== selected.timeframe || after.source !== selected.source || Date.now()-lastState > 30000) { status('Нет свежих данных или график изменился во время подтверждения. Обновите состояние.'); return; }

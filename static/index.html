@@ -111,20 +111,76 @@
       </div>
     </div>
   </section>
+    <details id="auto42-panel" class="auto42" open>
+      <summary>AURA AUTO PAPER 4.2 · АВТОМАТИЧЕСКАЯ ДЕМОТОРГОВЛЯ</summary>
+      <p class="a42-warning">ТОЛЬКО ВИРТУАЛЬНЫЕ СРЕДСТВА. REAL MONEY EXECUTION = DISABLED.<br>EXPERIMENTAL / NO_EDGE_FOUND — преимущество не доказано. Портфель Supabase · BTCUSDT 15m · Cloudflare/GitHub вызывают только этот режим. Его ON/OFF не связан с Historical Pattern ниже.</p>
+      <a href="/api/paper/login">Вход владельца</a>
+      <section aria-labelledby="a42-system-title">
+        <h3 id="a42-system-title">СОСТОЯНИЕ СИСТЕМЫ</h3>
+        <dl class="a42-grid">
+          <div><dt>Render API</dt><dd id="a42-sys-api">UNKNOWN</dd></div>
+          <div><dt>Supabase</dt><dd id="a42-sys-storage">UNKNOWN</dd></div>
+          <div><dt>Hostname активного подключения Supabase</dt><dd id="a42-sys-host">—</dd></div>
+          <div><dt>Категория ошибки БД</dt><dd id="a42-sys-category">—</dd></div>
+          <div><dt>Последний подтверждённый scheduler tick (сервер)</dt><dd id="a42-sys-scheduler">—</dd></div>
+          <div><dt>Обработанная закрытая свеча</dt><dd id="a42-sys-candle">—</dd></div>
+          <div><dt>Последнее решение стратегии</dt><dd id="a42-sys-decision">—</dd></div>
+          <div><dt>Последняя ошибка</dt><dd id="a42-sys-error">—</dd></div>
+          <div><dt>Последнее подтверждённое сохранение в БД</dt><dd id="a42-sys-saved">—</dd></div>
+          <div><dt>Режим Aura 4.2 (сервер)</dt><dd id="a42-sys-mode">UNKNOWN</dd></div>
+          <div><dt>Защита новых входов</dt><dd id="a42-sys-protection">UNKNOWN</dd></div>
+          <div><dt>Причина блокировки</dt><dd id="a42-sys-block">Нет свежей диагностики</dd></div>
+        </dl>
+        <p>Отсутствующие или некорректные переменные (только имена): <span id="a42-sys-config">—</span></p>
+        <p>ONLINE относится к ответу API; CONNECTED — к фактическому RPC. Отметка scheduler подтверждает приём сервером, но не доступность GitHub Actions 24/7. Старые времена не считаются свежими проверками.</p>
+      </section>
+      <p>Единственный источник режима этой панели — /api/auto42/status. ON в прежнем Historical Pattern не включает Aura 4.2. <a href="#paper-legacy-panel">Открыть прежний Paper / Historical Pattern</a></p>
+      <p id="a42-status" role="status" aria-live="polite">НЕ РАБОТАЕТ — состояние ещё не загружено</p>
+      <dl class="a42-grid">
+        <div><dt>Режим Aura 4.2 (Supabase)</dt><dd id="a42-mode">—</dd></div>
+        <div><dt>Виртуальный баланс, USDT</dt><dd id="a42-balance">—</dd></div>
+        <div><dt>Текущий equity, USDT</dt><dd id="a42-equity">Нет свежих данных</dd></div>
+        <div><dt>Реализованный PnL, USDT</dt><dd id="a42-realized">—</dd></div>
+        <div><dt>Нереализованный PnL с издержками выхода, USDT</dt><dd id="a42-unrealized">—</dd></div>
+        <div><dt>Закрытые сделки</dt><dd id="a42-trades">—</dd></div>
+        <div><dt>Win rate, %</dt><dd id="a42-win">—</dd></div>
+        <div><dt>Profit factor</dt><dd id="a42-pf">—</dd></div>
+        <div><dt>Максимальная просадка, %</dt><dd id="a42-drawdown">—</dd></div>
+        <div><dt>Последний успешный scheduler run</dt><dd id="a42-run">—</dd></div>
+        <div><dt>Обработанная закрытая свеча BTCUSDT 15m</dt><dd id="a42-candle">—</dd></div>
+      </dl>
+      <p>Пропущенные запуски: <span id="a42-missed">—</span></p>
+      <p id="a42-position">Состояние позиции ещё не загружено</p>
+      <p>Последнее решение: <span id="a42-last">—</span></p>
+      <div class="a42-controls" role="group" aria-label="Управление отдельным демопортфелем">
+        <button id="a42-start" type="button" disabled>Запустить Aura 4.2 · START PAPER</button>
+        <button id="a42-stop" type="button" disabled>Остановить Aura 4.2 · STOP PAPER</button>
+        <button id="a42-emergency" type="button" disabled>EMERGENCY STOP</button>
+        <button id="a42-reset" type="button" disabled>RESET DEMO</button>
+        <button id="a42-refresh" type="button">Обновить состояние</button>
+      </div>
+      <p id="a42-message" role="status" aria-live="polite"></p>
+      <p>Риск 0,5% · не более 1 позиции · дневной лимит 2% · просадка 10%. STOP запрещает новые входы; защитные выходы требуют проверенных данных и внешнего scheduler. RESET не закрывает позицию и не удаляет журнал.</p>
+      <details><summary>Последние закрытые виртуальные сделки</summary><ul id="a42-history"></ul></details>
+      <a href="/api/auto42/journal">Журнал событий (JSON, первая страница)</a>
+    </details>
+  <details id="paper-legacy-panel" class="panel paper-fold">
+    <summary>Дополнительно: прежний Paper / Historical Pattern · отдельные режим и история · <span class="tiny-badge" id="paper-auto-badge">Нет свежих данных</span></summary>
   <section class="panel patterns paper" aria-labelledby="paper-title">
-    <div class="modules-heading"><div><p class="eyebrow">ВИРТУАЛЬНЫЕ ДЕНЬГИ · ЛОКАЛЬНЫЙ СИМУЛЯТОР</p><h2 id="paper-title">Виртуальная торговля</h2></div><span class="tiny-badge" id="paper-auto-badge">Нет свежих данных</span></div>
+    <div class="modules-heading"><div><p class="eyebrow">ПРЕЖНИЙ PAPER · ОТДЕЛЬНЫЙ ЛОКАЛЬНЫЙ СЧЁТ SQLITE</p><h2 id="paper-title">Виртуальная торговля · Paper / Historical Pattern · отдельный счёт</h2></div></div>
+    <p class="pattern-warning">Это отдельный движок /api/paper и локальный SQLite, а не Aura 4.2 / Supabase. Его режим и баланс не управляют внешним scheduler. Запуск здесь не включает Aura 4.2. <a href="#auto42-panel">К основному управлению Aura 4.2</a></p>
     <p class="paper-safety">Только виртуальные средства. REAL MONEY EXECUTION = DISABLED. Биржевые ордера не отправляются.</p>
     <p class="score-note">Остановка отключает новые автоматические входы. Уже открытые виртуальные позиции остаются под защитой SL/TP при доступных свежих данных. Сон сервера и пропуски котировок задерживают обработку.</p>
     <div class="pattern-actions"><button id="paper-refresh" type="button">Обновить данные</button><a id="paper-login" href="/api/paper/login" hidden>Войти: пользователь aura</a><a href="/api/paper/export">Скачать резервную копию</a></div>
     <p id="paper-status" role="status" aria-live="polite">Нет свежих данных · получаем состояние сервера…</p>
     <div class="pattern-actions"><button id="paper-retry" type="button" hidden>Повторить неподтверждённое действие</button></div>
     <section class="paper-dashboard" aria-labelledby="paper-dashboard-title">
-      <div class="paper-dashboard-heading"><div><p class="eyebrow">АВТОМАТИЧЕСКАЯ ВИРТУАЛЬНАЯ ТОРГОВЛЯ</p><h3 id="paper-dashboard-title">Авто Paper</h3></div><p id="paper-auto-state" role="status" aria-live="polite">Нет свежих данных</p></div>
+      <div class="paper-dashboard-heading"><div><p class="eyebrow">ПРЕЖНЯЯ СТРАТЕГИЯ HISTORICAL PATTERN</p><h3 id="paper-dashboard-title">Historical Pattern · прежний Auto Paper</h3></div><p id="paper-auto-state" role="status" aria-live="polite">Нет свежих данных</p></div>
       <p id="paper-dashboard-freshness" class="pattern-warning" role="status">Нет свежих данных</p>
       <p id="paper-auto-last" class="score-note">Закрытая свеча ещё не подтверждена.</p>
       <div id="paper-dashboard-metrics" class="paper-dashboard-grid"></div>
       <div class="paper-decision"><p id="paper-dashboard-signal">Сигнал: нет данных</p><p id="paper-dashboard-action">Решение: нет данных</p><p id="paper-dashboard-rejection">Причина: нет данных</p></div>
-      <div class="paper-dashboard-actions"><button id="paper-auto-start" type="button" disabled>Запустить Авто Paper</button><button id="paper-auto-stop" type="button">Остановить Авто Paper</button></div>
+      <div class="paper-dashboard-actions"><button id="paper-auto-start" type="button" disabled>Запустить Historical Pattern</button><button id="paper-auto-stop" type="button">Остановить Historical Pattern</button></div>
       <p id="paper-dashboard-policy" class="score-note">Сохранённая политика SL/TP: нет данных.</p>
       <p id="paper-dashboard-draft" class="pattern-warning" role="status" aria-live="polite"></p>
       <h4>Текущая автоматическая позиция</h4><div id="paper-auto-position" class="paper-position" aria-live="polite">Нет свежих данных</div>
@@ -179,6 +235,7 @@
       <details class="paper-fold"><summary>Как работает виртуальная торговля и её ограничения</summary><p>Только подтверждённые сигналы Historical Pattern по закрытым свечам. После включения первая свеча — исходная точка; входы возможны со следующей. После перезапуска сервер требует ручного возобновления. Риск Auto ≤1%, не более одной открытой позиции на всём счёте. Средства виртуальные; SL/TP обрабатываются по закрытым свечам, при одновременном касании выбирается SL. Комиссии — настройка симуляции, не тариф биржи. Резервируется 1× номинал; плечо, спред, funding и проскальзывание не моделируются. Доходность симуляции не доказывает прибыльность или безопасность стратегии.</p></details>
     </div>
   </section>
+  </details>
   <section class="panel patterns lab" aria-labelledby="lab-title">
     <div class="modules-heading"><div><p class="eyebrow">RESEARCH ONLY / NO ACTIVATION</p><h2 id="lab-title">STRATEGY LAB v1.1</h2></div><span class="tiny-badge">BTCUSDT · CLOSED HISTORY</span></div>
     <p class="pattern-warning">REAL MONEY EXECUTION = DISABLED · No strategy activation. A numerical backtest ranking is not evidence of profitability, safety or production readiness.</p>
@@ -230,58 +287,6 @@
       <details><summary>История, свежесть и ограничения</summary><p id="mc-history">Нет данных</p><p>Автообновление раз в минуту только при открытой вкладке; кэш сервера 30 секунд. Окно ограничено 4175 свечами 15m. Каждый таймфрейм требует 250 непрерывных закрытых свечей; пропуски сбрасывают прогрев, цены не заполняются. Источник недоступен — анализ не показывается как свежий. Состояние рынка не является состоянием Auto Paper.</p><p>Аналоги 4.0 используют отдельный компактный проверяемый артефакт; при его отсутствии статистика недоступна. Полный архив 2020–2025 не загружается в веб-запросах; replay 1.0 использует другую модель и не подставляется вместо 4.0. 2025 уже изучен. Нужна новая forward-проверка; гарантии доходности нет.</p></details>
       <details><summary>Точные определения алгоритмов и момент подтверждения</summary><ul id="mc-definitions"></ul></details>
     </div>
-    <details id="auto42-panel" class="auto42">
-      <summary>АВТОМАТИЧЕСКАЯ ДЕМОТОРГОВЛЯ — 4.2</summary>
-      <p class="a42-warning">ТОЛЬКО ВИРТУАЛЬНЫЕ СРЕДСТВА. REAL MONEY EXECUTION = DISABLED.<br>EXPERIMENTAL / NO_EDGE_FOUND — преимущество не доказано. Отдельный портфель, обычный Paper и Replay не меняются.</p>
-      <a href="/api/paper/login">Вход владельца</a>
-      <section aria-labelledby="a42-system-title">
-        <h3 id="a42-system-title">СОСТОЯНИЕ СИСТЕМЫ</h3>
-        <dl class="a42-grid">
-          <div><dt>Render API</dt><dd id="a42-sys-api">UNKNOWN</dd></div>
-          <div><dt>Supabase</dt><dd id="a42-sys-storage">UNKNOWN</dd></div>
-          <div><dt>Hostname активного подключения Supabase</dt><dd id="a42-sys-host">—</dd></div>
-          <div><dt>Категория ошибки БД</dt><dd id="a42-sys-category">—</dd></div>
-          <div><dt>Последний подтверждённый scheduler tick (сервер)</dt><dd id="a42-sys-scheduler">—</dd></div>
-          <div><dt>Обработанная закрытая свеча</dt><dd id="a42-sys-candle">—</dd></div>
-          <div><dt>Последнее решение стратегии</dt><dd id="a42-sys-decision">—</dd></div>
-          <div><dt>Последняя ошибка</dt><dd id="a42-sys-error">—</dd></div>
-          <div><dt>Последнее подтверждённое сохранение в БД</dt><dd id="a42-sys-saved">—</dd></div>
-          <div><dt>Auto Paper</dt><dd id="a42-sys-mode">UNKNOWN</dd></div>
-          <div><dt>Защита новых входов</dt><dd id="a42-sys-protection">UNKNOWN</dd></div>
-          <div><dt>Причина блокировки</dt><dd id="a42-sys-block">Нет свежей диагностики</dd></div>
-        </dl>
-        <p>Отсутствующие или некорректные переменные (только имена): <span id="a42-sys-config">—</span></p>
-        <p>ONLINE относится к ответу API; CONNECTED — к фактическому RPC. Отметка scheduler подтверждает приём сервером, но не доступность GitHub Actions 24/7. Старые времена не считаются свежими проверками.</p>
-      </section>
-      <p id="a42-status" role="status" aria-live="polite">НЕ РАБОТАЕТ — состояние ещё не загружено</p>
-      <dl class="a42-grid">
-        <div><dt>Режим владельца</dt><dd id="a42-mode">—</dd></div>
-        <div><dt>Виртуальный баланс, USDT</dt><dd id="a42-balance">—</dd></div>
-        <div><dt>Текущий equity, USDT</dt><dd id="a42-equity">Нет свежих данных</dd></div>
-        <div><dt>Реализованный PnL, USDT</dt><dd id="a42-realized">—</dd></div>
-        <div><dt>Нереализованный PnL с издержками выхода, USDT</dt><dd id="a42-unrealized">—</dd></div>
-        <div><dt>Закрытые сделки</dt><dd id="a42-trades">—</dd></div>
-        <div><dt>Win rate, %</dt><dd id="a42-win">—</dd></div>
-        <div><dt>Profit factor</dt><dd id="a42-pf">—</dd></div>
-        <div><dt>Максимальная просадка, %</dt><dd id="a42-drawdown">—</dd></div>
-        <div><dt>Последний успешный scheduler run</dt><dd id="a42-run">—</dd></div>
-        <div><dt>Обработанная закрытая свеча BTCUSDT 15m</dt><dd id="a42-candle">—</dd></div>
-      </dl>
-      <p>Пропущенные запуски: <span id="a42-missed">—</span></p>
-      <p id="a42-position">Состояние позиции ещё не загружено</p>
-      <p>Последнее решение: <span id="a42-last">—</span></p>
-      <div class="a42-controls" role="group" aria-label="Управление отдельным демопортфелем">
-        <button id="a42-start" type="button" disabled>START PAPER</button>
-        <button id="a42-stop" type="button" disabled>STOP PAPER</button>
-        <button id="a42-emergency" type="button" disabled>EMERGENCY STOP</button>
-        <button id="a42-reset" type="button" disabled>RESET DEMO</button>
-        <button id="a42-refresh" type="button">Обновить состояние</button>
-      </div>
-      <p id="a42-message" role="status" aria-live="polite"></p>
-      <p>Риск 0,5% · не более 1 позиции · дневной лимит 2% · просадка 10%. STOP запрещает новые входы; защитные выходы требуют проверенных данных и внешнего scheduler. RESET не закрывает позицию и не удаляет журнал.</p>
-      <details><summary>Последние закрытые виртуальные сделки</summary><ul id="a42-history"></ul></details>
-      <a href="/api/auto42/journal">Журнал событий (JSON, первая страница)</a>
-    </details>
     <details id="fv-panel" class="market-context">
       <summary>ПРОВЕРКА ПРОГНОЗОВ · только для владельца</summary>
       <p class="ai-warning">READ_ONLY · WAIT · REAL MONEY EXECUTION = DISABLED. Запись прогнозов не разрешает сделки.</p>
