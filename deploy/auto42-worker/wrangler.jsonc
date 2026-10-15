@@ -1,0 +1,9 @@
+{
+  "name": "aura-auto42-scheduler",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-15",
+  "workers_dev": false,
+  "preview_urls": false,
+  "triggers": {"crons": ["2-59/5 * * * *"]},
+  "observability": {"enabled": true}
+}
