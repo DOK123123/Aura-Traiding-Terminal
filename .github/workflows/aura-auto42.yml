@@ -2,7 +2,9 @@ name: Aura 4.2 virtual-only scheduler
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'
+    # UTC: 02,07,...,57; avoid the start-of-hour scheduling peak.
+    # GitHub schedule is best-effort, not a five-minute delivery guarantee.
+    - cron: '2-59/5 * * * *'
 permissions:
   contents: read
 concurrency:
