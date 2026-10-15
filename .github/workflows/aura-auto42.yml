@@ -3,7 +3,8 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '*/5 * * * *'
-permissions: {}
+permissions:
+  contents: read
 concurrency:
   group: aura-auto42
   cancel-in-progress: false
@@ -11,30 +12,14 @@ jobs:
   virtual_tick:
     if: vars.AURA_AUTO42_ENABLED == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
+      - name: Checkout reviewed scheduler client
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - name: Authenticated internal virtual settlement
         env:
-          TICK_URL: ${{ secrets.AURA_AUTO42_TICK_URL }}
-          TOKEN: ${{ secrets.AURA_AUTO42_SCHEDULER_SECRET }}
-        shell: bash
-        run: |
-          python - <<'PY'
-          import os,time,json,urllib.request,urllib.parse
-          url=os.environ['TICK_URL'];token=os.environ['TOKEN'];u=urllib.parse.urlsplit(url)
-          if u.scheme!='https' or u.hostname!='terminal.onrender.com' or u.port is not None or u.path!='/api/auto42/tick' or u.query or u.fragment or u.username or u.password or not 32<=len(token)<=256 or not token.isascii() or not token.isprintable():
-              raise SystemExit('Invalid scheduler configuration')
-          class NoRedirect(urllib.request.HTTPRedirectHandler):
-              def redirect_request(self,*a,**k):return None
-          client=urllib.request.build_opener(NoRedirect)
-          for attempt in range(3):
-              try:
-                  req=urllib.request.Request(url,method='POST',data=b'',headers={'X-Aura-Auto42-Token':token})
-                  with client.open(req,timeout=75) as r:
-                      data=json.loads(r.read(65536))
-                      if r.status!=200 or data.get('status')!='COMPLETED' or data.get('paper_only') is not True or data.get('exchange_execution') is not False:raise ValueError()
-                  print('Internal virtual scheduler completed');break
-              except Exception:
-                  if attempt==2:raise SystemExit('Demo not operational; inspect owner dashboard')
-                  time.sleep(2**attempt)
-          PY
+          AURA_AUTO42_TICK_URL: ${{ secrets.AURA_AUTO42_TICK_URL }}
+          AURA_AUTO42_SCHEDULER_SECRET: ${{ secrets.AURA_AUTO42_SCHEDULER_SECRET }}
+        run: python scripts/auto42_scheduler.py

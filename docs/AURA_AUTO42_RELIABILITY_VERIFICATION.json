@@ -1,0 +1,46 @@
+{
+  "base_commit": "eaa83089b191c8a492a17bd95c584dc566e0f001",
+  "python": {
+    "passed": 1091,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "new_tests": 26,
+    "seconds": 76.24
+  },
+  "javascript": {
+    "passed": 154,
+    "files": 10,
+    "failed": 0,
+    "new_tests": 3
+  },
+  "checks": {
+    "syntax": "PASS",
+    "imports": "PASS",
+    "workflow_yaml": "PASS",
+    "checkout_pin": "VERIFIED_OFFICIAL_COMMIT",
+    "static_secret_exchange_scan": "NO_MATCHES",
+    "runtime_dependencies": "UNCHANGED",
+    "strategy_formulas": "UNCHANGED",
+    "artifact_4_0": "UNCHANGED_COMPATIBLE"
+  },
+  "public_render_get_checks": [
+    {
+      "path": "/api/health",
+      "http_status": 200,
+      "elapsed_seconds": 31.46,
+      "health_ok": true
+    },
+    {
+      "path": "/api/auto42/status",
+      "http_status": 401,
+      "elapsed_seconds": 31.46
+    }
+  ],
+  "production_private_checks": "NOT_RUN",
+  "supabase_root_cause": "UNRESOLVED_WITHOUT_PRIVATE_DIAGNOSTICS",
+  "sql_migration": "PREPARED_NOT_EXECUTED",
+  "workflow_execution": "NOT_RUN_BY_AGENT",
+  "activation": "NOT_CHANGED",
+  "real_money_execution": "DISABLED"
+}

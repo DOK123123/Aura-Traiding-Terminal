@@ -151,13 +151,31 @@ class SQLiteStore:
 
 class SecretFilter(logging.Filter):
     def __init__(self,secret):super().__init__();self.secret=secret
+    def redact(self,value,depth=0):
+        # Preserve LogRecord argument shape/types: Uvicorn AccessFormatter
+        # unpacks its five arguments instead of relying only on getMessage().
+        if depth>12:return '[REDACTED NESTED VALUE]'
+        if isinstance(value,str):return value.replace(self.secret,'[REDACTED]')
+        if isinstance(value,bytes):return value.replace(self.secret.encode(),'[REDACTED]'.encode())
+        if isinstance(value,tuple):return tuple(self.redact(v,depth+1) for v in value)
+        if isinstance(value,list):return [self.redact(v,depth+1) for v in value]
+        if isinstance(value,dict):return {self.redact(k,depth+1):self.redact(v,depth+1) for k,v in value.items()}
+        if value is None or isinstance(value,(int,float)):return value
+        # Preserve opaque/numeric objects unless str/repr actually reveals a key.
+        rendered=str(value);represented=repr(value)
+        if self.secret in rendered:return self.redact(rendered,depth+1)
+        if self.secret in represented:return self.redact(represented,depth+1)
+        return value
     def filter(self,r):
-        try:r.msg=r.getMessage().replace(self.secret,'[REDACTED]');r.args=()
-        except Exception:r.msg='[REDACTED LOG]';r.args=()
+        r.msg=self.redact(r.msg)
+        r.args=self.redact(r.args)
         if r.exc_info:
             import traceback
             r.exc_text=''.join(traceback.format_exception(*r.exc_info)).replace(self.secret,'[REDACTED]');r.exc_info=None
+        elif r.exc_text:r.exc_text=r.exc_text.replace(self.secret,'[REDACTED]')
+        if r.stack_info:r.stack_info=r.stack_info.replace(self.secret,'[REDACTED]')
         return True
+
 
 
 class SupabaseStore:

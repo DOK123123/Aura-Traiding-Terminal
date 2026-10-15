@@ -27,7 +27,7 @@ def dec(value):
 
 def initial(now,epoch=None):
     return dict(version=VERSION,policy_hash=digest(POLICY),epoch=epoch or uuid.uuid4().hex,
-        mode='OFF',emergency=False,balance='10000',equity='10000',peak='10000',
+        mode='OFF',emergency=False,data_recovery_armed=False,balance='10000',equity='10000',peak='10000',
         max_drawdown_pct='0',day=now//86400,day_start_equity='10000',day_low_equity='10000',
         position=None,pending=None,watermark=None,last_bar_hash=None,last_mark_at=None,
         last_run_at=None,last_success_at=None,last_decision='NOT_STARTED',last_error=None,
@@ -52,6 +52,7 @@ def _validate(s):
         if p['direction'] not in ('LONG','SHORT') or min(dec(p[k]) for k in ('entry_price','size','stop_loss','take_profit'))<=0:raise DemoError('CORRUPT_PORTFOLIO')
         long=p['direction']=='LONG'
         if not (dec(p['stop_loss'])<dec(p['entry_price'])<dec(p['take_profit']) if long else dec(p['take_profit'])<dec(p['entry_price'])<dec(p['stop_loss'])):raise DemoError('CORRUPT_PORTFOLIO')
+    if type(s.get('data_recovery_armed',False)) is not bool:raise DemoError('CORRUPT_PORTFOLIO')
     if type(s['emergency']) is not bool or not isinstance(s.get('epoch'),str):raise DemoError('CORRUPT_PORTFOLIO')
     if s['wins']+s['losses']>s['trades']:raise DemoError('CORRUPT_PORTFOLIO')
     if any(dec(s[k])<0 for k in ('gross_profit','gross_loss','fees','slippage','max_drawdown_pct')):raise DemoError('CORRUPT_PORTFOLIO')

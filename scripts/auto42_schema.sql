@@ -1,10 +1,14 @@
 -- Dedicated virtual portfolio. Execute manually in a Supabase SQL editor.
 -- No exchange endpoint, no access to existing Paper/Replay/Forward tables.
+BEGIN;
 create extension if not exists pgcrypto with schema extensions;
 create table if not exists public.aura_auto42_account (
  id integer primary key check (id=1), revision bigint not null,
- payload text not null, sha256 text not null
+ payload text not null, sha256 text not null,
+ saved_at timestamptz
 );
+-- Additive migration: historical save time remains UNKNOWN, never fabricated.
+alter table public.aura_auto42_account add column if not exists saved_at timestamptz;
 create table if not exists public.aura_auto42_events (
  seq bigint generated always as identity primary key,id text unique not null,
  epoch text not null,kind text not null,created_at bigint not null,
@@ -29,9 +33,9 @@ begin
     or s->>'mode'<>'OFF' or s->>'balance'<>'10000' or s->>'equity'<>'10000'
     or s->>'version'<>'AURA_AUTO_PAPER_4.2.0' or s->'position'<>'null'::jsonb then
    return jsonb_build_object('error','CORRUPT_PORTFOLIO'); end if;
- insert into public.aura_auto42_account values(1,1,seed->>'payload',seed->>'sha256') on conflict do nothing;
+ insert into public.aura_auto42_account(id,revision,payload,sha256,saved_at) values(1,1,seed->>'payload',seed->>'sha256',clock_timestamp()) on conflict do nothing;
  select * into r from public.aura_auto42_account where id=1;
- return jsonb_build_object('revision',r.revision,'payload',r.payload,'sha256',r.sha256);
+ return jsonb_build_object('revision',r.revision,'payload',r.payload,'sha256',r.sha256,'last_saved_at',floor(extract(epoch from r.saved_at))::bigint);
 end $$;
 
 create or replace function public.aura_auto42_commit(expected_revision bigint,new_state jsonb,new_events jsonb,operation_key text) returns jsonb
@@ -41,7 +45,7 @@ begin
  select * into r from public.aura_auto42_account where id=1 for update;
  if not found then return jsonb_build_object('error','CORRUPT_PORTFOLIO'); end if;
  if exists(select 1 from public.aura_auto42_events where id=operation_key) then
-   return jsonb_build_object('revision',r.revision,'payload',r.payload,'sha256',r.sha256,'duplicate',true); end if;
+   return jsonb_build_object('revision',r.revision,'payload',r.payload,'sha256',r.sha256,'last_saved_at',floor(extract(epoch from r.saved_at))::bigint,'duplicate',true); end if;
  if r.revision<>expected_revision then return jsonb_build_object('error','CONCURRENT_UPDATE'); end if;
  if jsonb_typeof(new_events)<>'array' or jsonb_array_length(new_events) not between 1 and 100
     or octet_length(new_state->>'payload')>65536 then return jsonb_build_object('error','WRITE_LIMIT'); end if;
@@ -60,8 +64,8 @@ begin
    insert into public.aura_auto42_events(id,epoch,kind,created_at,payload,sha256)
      values(e->>'id',e->>'epoch',e->>'kind',(e->>'created_at')::bigint,e->>'payload',e->>'sha256');
  end loop;
- update public.aura_auto42_account set revision=revision+1,payload=new_state->>'payload',sha256=new_state->>'sha256' where id=1;
- return jsonb_build_object('revision',r.revision+1,'payload',new_state->>'payload','sha256',new_state->>'sha256','duplicate',false);
+ update public.aura_auto42_account set revision=revision+1,payload=new_state->>'payload',sha256=new_state->>'sha256',saved_at=clock_timestamp() where id=1 returning * into r;
+ return jsonb_build_object('revision',r.revision,'payload',r.payload,'sha256',r.sha256,'last_saved_at',floor(extract(epoch from r.saved_at))::bigint,'duplicate',false);
 end $$;
 
 create or replace function public.aura_auto42_history(selected_epoch text default null,after_seq bigint default null,row_limit integer default 50,event_id text default null) returns jsonb
@@ -85,3 +89,6 @@ revoke all on function public.aura_auto42_load(jsonb) from public,anon,authentic
 revoke all on function public.aura_auto42_commit(bigint,jsonb,jsonb,text) from public,anon,authenticated;
 revoke all on function public.aura_auto42_history(text,bigint,integer,text) from public,anon,authenticated;
 grant execute on function public.aura_auto42_load(jsonb),public.aura_auto42_commit(bigint,jsonb,jsonb,text),public.aura_auto42_history(text,bigint,integer,text) to service_role;
+
+NOTIFY pgrst, 'reload schema';
+COMMIT;

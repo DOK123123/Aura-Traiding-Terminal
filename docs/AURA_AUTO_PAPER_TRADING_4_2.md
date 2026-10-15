@@ -1,3 +1,5 @@
+> Обновление надёжности: см. `docs/AURA_AUTO42_RELIABILITY_FIX.md`. Базовые результаты тестов ниже относятся к первоначальной поставке 4.2; новые проверки указаны отдельно.
+
 # Aura 4.2 — автоматическая виртуальная торговля
 
 ## Статус поставки
@@ -79,7 +81,7 @@ START не повторяется автоматически после конф
 
 1. В Supabase SQL Editor вручную выполните `scripts/auto42_schema.sql`. В sandbox PostgreSQL отсутствует: реальное SQL execution/RPC **NOT RUN**. До работы обязательно проверить load/commit/history, rollback, RLS, повтор tick и concurrency в выбранной БД. Доступ имеют только server service-role RPC; anon/authenticated запрещены.
 2. Render Environment: `AURA_AUTO42_SUPABASE_URL=https://<project-ref>.supabase.co`, `AURA_AUTO42_SUPABASE_SERVICE_KEY` (server-only), `AURA_AUTO42_SCHEDULER_SECRET` (ASCII 32–256 символов). Scheduler secret должен отличаться от owner password, DB key и forward scheduler secret. Существующий `AURA_TESTNET_VIEW_PASSWORD` остаётся owner authentication. Биржевые credentials для 4.2 не требуются и не читаются.
-3. GitHub Actions secrets: `AURA_AUTO42_TICK_URL=https://terminal.onrender.com/api/auto42/tick` и `AURA_AUTO42_SCHEDULER_SECRET`. DB key/owner password в Actions не нужны.
+3. GitHub Actions secrets: `AURA_AUTO42_TICK_URL=https://aura-traiding-terminal.onrender.com/api/auto42/tick` и `AURA_AUTO42_SCHEDULER_SECRET`. DB key/owner password в Actions не нужны.
 4. Установите repository variable `AURA_AUTO42_ENABLED=true` после schema/env проверки. Запустите workflow_dispatch при портфеле OFF. Убедитесь, что run подтверждён, state сохранился после restart, duplicate не создаёт новых events и secrets отсутствуют в логах.
 5. На Android откройте терминал → «АВТОМАТИЧЕСКАЯ ДЕМОТОРГОВЛЯ — 4.2» → «Вход владельца» → обновите состояние. Только после успешного smoke и fresh данных нажмите START PAPER и подтвердите. Наличие ON означает сохранённое разрешение, а не доказанную непрерывную работу.
 6. Проверьте следующие реальные scheduler runs, signal/pending/entry и SL/TP. Стратегия может долго возвращать WAIT. Не ослабляйте фильтры ради получения сделки. STOP прекращает входы; scheduler можно оставить для protective exits. Для emergency используйте отдельную кнопку.

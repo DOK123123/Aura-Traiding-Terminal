@@ -34,3 +34,19 @@ test('emergency remains available during pending Start and late response cannot 
  await h.node('a42-emergency').handlers.click();assert.equal(emergencies,1);assert.match(h.node('a42-mode').textContent,/Аварийная/);
  release();await start;assert.match(h.node('a42-mode').textContent,/Аварийная/);h.win.handlers.pagehide();
 });
+test('system evidence separates API online from Supabase failure and never invents checks',()=>{
+ const {system}=require('../static/auto42.js');const data={diagnostics:{checked_at:100000,render_api:'ONLINE',storage:{status:'ERROR',error_code:'STORAGE_DNS'},auto_paper:'ERROR',protection:'BLOCKED',block_reason:'STORAGE_DNS',last_error:'STORAGE_DNS',configuration:{missing_variables:['AURA_AUTO42_SUPABASE_URL']}}};
+ const d=system(data,true,'reply',100010);assert.equal(d.api,'ONLINE');assert.match(d.storage,/ERROR.*DNS/);assert.equal(d.protection,'BLOCKED');assert.equal(d.saved,'—');assert.match(d.config,/AURA_AUTO42_SUPABASE_URL/);
+ const stale=system(data,false,'reply',100200);assert.match(stale.api,/UNKNOWN/);assert.equal(stale.storage,'UNKNOWN');
+ const noReply=system(data,true,'unknown',100010);assert.match(noReply.api,/UNKNOWN/);assert.equal(noReply.storage,'UNKNOWN');
+});
+test('failed storage HTTP response is displayed as API available with safe diagnostics',async()=>{
+ const now=Math.floor(Date.now()/1000);const h=harness(async()=>response({code:'STORAGE_CONNECT',paper_only:true,exchange_execution:false,diagnostics:{checked_at:now,render_api:'ONLINE',storage:{status:'ERROR',error_code:'STORAGE_CONNECT'},auto_paper:'ERROR',protection:'BLOCKED',block_reason:'STORAGE_CONNECT'}},503));
+ await h.node('a42-refresh').handlers.click();assert.equal(h.node('a42-sys-api').textContent,'ONLINE');assert.match(h.node('a42-sys-storage').textContent,/ERROR/);
+ assert.match(h.node('a42-status').textContent,/API ответил/);assert.equal(h.node('a42-refresh').disabled,false);h.win.handlers.pagehide();
+});
+test('all ten system diagnostic items and timestamp timezone are available accessibly',()=>{
+ const html=fs.readFileSync('static/index.html','utf8');assert.match(html,/СОСТОЯНИЕ СИСТЕМЫ/);
+ for(const name of ['api','storage','scheduler','candle','decision','error','saved','mode','protection','block'])assert.match(html,new RegExp('id="a42-sys-'+name+'"'));
+ const {system}=require('../static/auto42.js');const m=system({diagnostics:{last_saved_at:100000}},false,'reply',100010);assert.match(m.saved,/UTC/);assert.equal(m.protection,'UNKNOWN');
+});

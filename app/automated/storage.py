@@ -1,13 +1,14 @@
 """Isolated transactional ledger; durable Supabase or explicitly local development."""
 import asyncio
 from contextlib import contextmanager
-import hashlib,json,sqlite3,time
+import hashlib,json,sqlite3,time,logging
 from pathlib import Path
 from app.async_workers import run_in_slot
 from app.lab.models import canonical
 from app.forward.storage import SupabaseStore as SafeTransport
 from app.forward.models import ForwardError
 from .engine import DemoError,initial,validate
+from .diagnostics import network_kind,http_error
 
 
 def packed(value):
@@ -26,7 +27,9 @@ def verify_envelope(result):
     try:
         if type(result['revision']) is not int or result['revision']<1:raise ValueError()
         state=unpack(result);validate(state)
-        return dict(state=state,revision=result['revision'])
+        saved=result.get('last_saved_at')
+        if saved is not None and (type(saved) is not int or saved<0):raise ValueError()
+        return dict(state=state,revision=result['revision'],last_saved_at=saved)
     except (KeyError,TypeError,ValueError,ArithmeticError):raise DemoError('CORRUPT_PORTFOLIO') from None
 
 
@@ -44,7 +47,7 @@ def validate_commit(state,events,key):
 
 
 SCHEMA='''
-CREATE TABLE IF NOT EXISTS auto42_account (id INTEGER PRIMARY KEY CHECK(id=1),revision INTEGER NOT NULL,payload TEXT NOT NULL,sha256 TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS auto42_account (id INTEGER PRIMARY KEY CHECK(id=1),revision INTEGER NOT NULL,payload TEXT NOT NULL,sha256 TEXT NOT NULL,saved_at INTEGER);
 CREATE TABLE IF NOT EXISTS auto42_events (seq INTEGER PRIMARY KEY AUTOINCREMENT,id TEXT UNIQUE NOT NULL,epoch TEXT NOT NULL,kind TEXT NOT NULL,created_at INTEGER NOT NULL,payload TEXT NOT NULL,sha256 TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS auto42_epoch ON auto42_events(epoch,seq);
 CREATE TRIGGER IF NOT EXISTS auto42_no_update BEFORE UPDATE ON auto42_events BEGIN SELECT RAISE(ABORT,'APPEND_ONLY'); END;
@@ -62,8 +65,9 @@ class SQLiteStore:
             tables={r[0] for r in c.execute("select name from sqlite_master where type='table'")}
             if tables-{'auto42_account','auto42_events','sqlite_sequence'}:raise DemoError('STORAGE_SCOPE_MISMATCH')
             c.execute('PRAGMA journal_mode=WAL');c.executescript(SCHEMA)
+            if 'saved_at' not in {r[1] for r in c.execute('pragma table_info(auto42_account)')}:c.execute('alter table auto42_account add column saved_at INTEGER')
             p=packed(initial(int(clock())))
-            c.execute('insert or ignore into auto42_account values(1,1,?,?)',(p['payload'],p['sha256']))
+            c.execute('insert or ignore into auto42_account(id,revision,payload,sha256,saved_at) values(1,1,?,?,?)',(p['payload'],p['sha256'],int(clock())))
     @contextmanager
     def connect(self):
         c=sqlite3.connect(self.path,timeout=5);c.row_factory=sqlite3.Row
@@ -74,22 +78,25 @@ class SQLiteStore:
         try:return await run_in_slot(self.slots,fn,*args)
         except (sqlite3.Error,OSError):raise DemoError('STORAGE_UNAVAILABLE') from None
     async def close(self):pass
+    @staticmethod
+    def envelope(row):
+        value=dict(row);value['last_saved_at']=value.pop('saved_at',None);return value
     async def load(self):return await self.call(self._load)
     def _load(self):
-        with self.connect() as c:return verify_envelope(dict(c.execute('select * from auto42_account where id=1').fetchone()))
+        with self.connect() as c:return verify_envelope(self.envelope(c.execute('select * from auto42_account where id=1').fetchone()))
     async def commit(self,revision,state,events,key):return await self.call(self._commit,revision,state,events,key)
     def _commit(self,revision,state,events,key):
         validate_commit(state,events,key)
         with self.connect() as c:
             c.execute('BEGIN IMMEDIATE')
-            old=dict(c.execute('select * from auto42_account where id=1').fetchone())
+            old=self.envelope(c.execute('select * from auto42_account where id=1').fetchone())
             if c.execute('select 1 from auto42_events where id=?',(key,)).fetchone():return dict(verify_envelope(old),duplicate=True)
             if old['revision']!=revision:raise DemoError('CONCURRENT_UPDATE')
             for e in events:
                 p=packed(e);c.execute('insert into auto42_events(id,epoch,kind,created_at,payload,sha256) values(?,?,?,?,?,?)',
                     (e['id'],e['epoch'],e['kind'],e['created_at'],p['payload'],p['sha256']))
-            p=packed(state);c.execute('update auto42_account set revision=revision+1,payload=?,sha256=? where id=1',(p['payload'],p['sha256']))
-            return dict(state=state,revision=revision+1,duplicate=False)
+            p=packed(state);saved=int(self.clock());c.execute('update auto42_account set revision=revision+1,payload=?,sha256=?,saved_at=? where id=1',(p['payload'],p['sha256'],saved))
+            return dict(state=state,revision=revision+1,last_saved_at=saved,duplicate=False)
     async def lookup(self,key):
         return await self.call(self._lookup,key)
     def _lookup(self,key):
@@ -108,31 +115,52 @@ class SQLiteStore:
 class SupabaseStore:
     backend='SUPABASE_POSTGRES';durable=True
     def __init__(self,url,key,transport=None):
+        self.diagnostics=dict(status='UNKNOWN',operation=None,checked_at=None,error_code=None,http_status=None,upstream_code=None,network_error=None)
         try:self.transport=SafeTransport(url,key,transport)
         except ForwardError as exc:raise DemoError(exc.code) from None
     async def close(self):await self.transport.close()
+    def diagnostic(self,operation,status,started,*,code=None,http_status=None,upstream=None,network=None):
+        self.diagnostics=dict(status=status,operation=operation,checked_at=int(time.time()),
+            error_code=code,http_status=http_status,upstream_code=upstream,network_error=network,
+            elapsed_ms=int((time.monotonic()-started)*1000))
+        if code:logging.getLogger(__name__).warning('Auto42 storage: operation=%s code=%s http_status=%s upstream_code=%s network=%s elapsed_ms=%d',operation,code,http_status,upstream,network,self.diagnostics['elapsed_ms'])
     async def rpc(self,name,args):
         if name not in ('aura_auto42_load','aura_auto42_commit','aura_auto42_history'):raise DemoError('INVALID_STORAGE_ACTION')
         import httpx
+        started=time.monotonic();status=None;upstream=None;network=None
         try:
             async with asyncio.timeout(12):
                 async with self.transport.slots:
                     async with self.transport.client.stream('POST',self.transport.base+'/rest/v1/rpc/'+name,json=args) as response:
-                        if response.status_code!=200:
-                            code='STORAGE_AUTH' if response.status_code in (401,403) else 'STORAGE_RATE_LIMIT' if response.status_code==429 else 'STORAGE_HTTP_ERROR'
-                            raise DemoError(code)
-                        raw=bytearray()
+                        status=response.status_code;raw=bytearray();limit=2*1024*1024 if status==200 else 65536
                         async for chunk in response.aiter_bytes():
-                            if len(raw)+len(chunk)>2*1024*1024:raise DemoError('STORAGE_RESPONSE_LIMIT')
+                            if len(raw)+len(chunk)>limit:
+                                if status!=200:break
+                                raise DemoError('STORAGE_RESPONSE_LIMIT')
                             raw.extend(chunk)
+                        if status!=200:
+                            try:body=json.loads(raw)
+                            except ValueError:body={}
+                            code,upstream=http_error(status,body);raise DemoError(code)
                         value=json.loads(raw)
                         if isinstance(value,dict) and value.get('error'):
                             allowed={'CONCURRENT_UPDATE','CORRUPT_PORTFOLIO','INVALID_EVENT','WRITE_LIMIT'}
                             raise DemoError(value['error'] if value['error'] in allowed else 'STORAGE_UNAVAILABLE')
+                        self.diagnostic(name,'CONNECTED',started,http_status=status)
                         return value
-        except (TimeoutError,httpx.TimeoutException):raise DemoError('STORAGE_TIMEOUT') from None
-        except httpx.HTTPError:raise DemoError('STORAGE_NETWORK') from None
-        except (ValueError,TypeError):raise DemoError('STORAGE_INVALID_RESPONSE') from None
+        except (TimeoutError,httpx.TimeoutException):
+            self.diagnostic(name,'ERROR',started,code='STORAGE_TIMEOUT',http_status=status)
+            raise DemoError('STORAGE_TIMEOUT') from None
+        except httpx.HTTPError as exc:
+            network=network_kind(exc);code='STORAGE_'+network
+            self.diagnostic(name,'ERROR',started,code=code,http_status=status,network=network)
+            raise DemoError(code) from None
+        except (ValueError,TypeError):
+            self.diagnostic(name,'ERROR',started,code='STORAGE_INVALID_RESPONSE',http_status=status)
+            raise DemoError('STORAGE_INVALID_RESPONSE') from None
+        except DemoError as exc:
+            self.diagnostic(name,'ERROR',started,code=exc.code,http_status=status,upstream=upstream)
+            raise
     async def load(self):
         seed=packed(initial(int(time.time())))
         return verify_envelope(await self.rpc('aura_auto42_load',dict(seed=seed)))

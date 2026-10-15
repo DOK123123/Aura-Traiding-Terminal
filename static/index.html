@@ -234,6 +234,23 @@
       <summary>АВТОМАТИЧЕСКАЯ ДЕМОТОРГОВЛЯ — 4.2</summary>
       <p class="a42-warning">ТОЛЬКО ВИРТУАЛЬНЫЕ СРЕДСТВА. REAL MONEY EXECUTION = DISABLED.<br>EXPERIMENTAL / NO_EDGE_FOUND — преимущество не доказано. Отдельный портфель, обычный Paper и Replay не меняются.</p>
       <a href="/api/paper/login">Вход владельца</a>
+      <section aria-labelledby="a42-system-title">
+        <h3 id="a42-system-title">СОСТОЯНИЕ СИСТЕМЫ</h3>
+        <dl class="a42-grid">
+          <div><dt>Render API</dt><dd id="a42-sys-api">UNKNOWN</dd></div>
+          <div><dt>Supabase</dt><dd id="a42-sys-storage">UNKNOWN</dd></div>
+          <div><dt>Последний подтверждённый scheduler tick (сервер)</dt><dd id="a42-sys-scheduler">—</dd></div>
+          <div><dt>Обработанная закрытая свеча</dt><dd id="a42-sys-candle">—</dd></div>
+          <div><dt>Последнее решение стратегии</dt><dd id="a42-sys-decision">—</dd></div>
+          <div><dt>Последняя ошибка</dt><dd id="a42-sys-error">—</dd></div>
+          <div><dt>Последнее подтверждённое сохранение в БД</dt><dd id="a42-sys-saved">—</dd></div>
+          <div><dt>Auto Paper</dt><dd id="a42-sys-mode">UNKNOWN</dd></div>
+          <div><dt>Защита новых входов</dt><dd id="a42-sys-protection">UNKNOWN</dd></div>
+          <div><dt>Причина блокировки</dt><dd id="a42-sys-block">Нет свежей диагностики</dd></div>
+        </dl>
+        <p>Отсутствующие или некорректные переменные (только имена): <span id="a42-sys-config">—</span></p>
+        <p>ONLINE относится к ответу API; CONNECTED — к фактическому RPC. Отметка scheduler подтверждает приём сервером, но не доступность GitHub Actions 24/7. Старые времена не считаются свежими проверками.</p>
+      </section>
       <p id="a42-status" role="status" aria-live="polite">НЕ РАБОТАЕТ — состояние ещё не загружено</p>
       <dl class="a42-grid">
         <div><dt>Режим владельца</dt><dd id="a42-mode">—</dd></div>
