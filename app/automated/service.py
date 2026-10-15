@@ -4,7 +4,7 @@ from copy import deepcopy
 from .engine import initial,validate,advance,event,mark,risk_reason,DemoError,VERSION,POLICY,STEP
 from .strategy import strategy,PARAMETERS
 from .storage import SQLiteStore,SupabaseStore
-from .diagnostics import configuration
+from .diagnostics import configuration,error_category,connection_evidence
 from app.forward.models import scheduler_secret_valid
 from app.lab.models import money,text,digest
 from decimal import Decimal as D
@@ -151,6 +151,8 @@ class Service:
         storage['backend']=self.store.backend if self.store else 'NOT_CONFIGURED'
         if error and error.startswith(('STORAGE_','CORRUPT_','INVALID_STORAGE')):storage.update(status='ERROR',error_code=error)
         if self.store is None:storage.update(status='ERROR',error_code=error or self.reason or 'STORAGE_NOT_CONFIGURED')
+        storage['error_category']=error_category(storage.get('error_code'))
+        storage['connection']=connection_evidence(self.store)
         blocked=error or (risk_reason(state) if state else None)
         if state:
             if not blocked and state['mode']!='ON':blocked=state['last_error'] or ('EMERGENCY_STOP' if state['emergency'] else 'AUTO_OFF')

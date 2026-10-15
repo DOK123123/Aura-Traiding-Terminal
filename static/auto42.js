@@ -22,6 +22,8 @@
   const available=recent&&transport==='reply';const st=d?.storage;
   return {api:available&&d.render_api==='ONLINE'?'ONLINE':'UNKNOWN — нет подтверждённого ответа',
    storage:available&&['CONNECTED','ERROR'].includes(st?.status)?st.status+(st.error_code?' · '+label(st.error_code):''):'UNKNOWN',
+   host:typeof st?.connection?.hostname==='string'&&/^[a-z0-9]{12,40}\.supabase\.co$/.test(st.connection.hostname)?st.connection.hostname:'—',
+   category:st?.error_category||'—',
    scheduler:date(d?.scheduler_last_confirmed_at),candle:date(d?.last_processed_closed_at),
    decision:label(d?.last_decision),error:label(d?.last_error||st?.error_code),saved:date(d?.last_saved_at),
    mode:available?d.auto_paper||'UNKNOWN':'UNKNOWN',

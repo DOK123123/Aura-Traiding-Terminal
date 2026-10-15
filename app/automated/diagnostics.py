@@ -20,7 +20,8 @@ def configuration():
     if local and (url or key):invalid.append('AURA_AUTO42_SQLITE_PATH')
     if local and os.getenv('RENDER','').lower() in ('1','true'):invalid.append('AURA_AUTO42_SQLITE_PATH')
     return dict(missing_variables=missing,invalid_variables=sorted(set(invalid)),
-        scheduler_secret_present=bool(os.getenv('AURA_AUTO42_SCHEDULER_SECRET','')))
+        scheduler_secret_present=bool(os.getenv('AURA_AUTO42_SCHEDULER_SECRET','')),
+        ignored_generic_variables=[name for name in ('SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY','SUPABASE_SERVICE_KEY') if os.getenv(name)])
 
 
 def network_kind(exc):
@@ -44,7 +45,7 @@ def network_kind(exc):
 
 def http_error(status,body):
     upstream=body.get('code') if isinstance(body,dict) else None
-    if upstream not in UPSTREAM_CODES:upstream=None
+    if not isinstance(upstream,str) or upstream not in UPSTREAM_CODES:upstream=None
     if upstream in {'42P01','42883','PGRST202','PGRST205'}:code='STORAGE_SCHEMA_MISSING'
     elif upstream=='42501':code='STORAGE_PERMISSION_DENIED'
     elif upstream in {'PGRST000','PGRST001','PGRST002'}:code='STORAGE_DATABASE_UNAVAILABLE'
@@ -53,3 +54,22 @@ def http_error(status,body):
     elif 300<=status<400:code='STORAGE_REDIRECT_BLOCKED'
     else:code='STORAGE_HTTP_ERROR'
     return code,upstream
+
+
+def error_category(code):
+    """Stable categories for owner diagnosis, retaining the specific error code."""
+    if not code:return None
+    if code=='STORAGE_DNS':return 'DNS_ERROR'
+    if code in {'STORAGE_AUTH','STORAGE_PERMISSION_DENIED'}:return 'AUTH_ERROR'
+    if code=='STORAGE_SCHEMA_MISSING':return 'SCHEMA_ERROR'
+    if code in {'STORAGE_NOT_CONFIGURED','INVALID_STORAGE_CONFIGURATION','AMBIGUOUS_STORAGE','RENDER_REQUIRES_DURABLE_STORAGE'}:return 'CONFIG_ERROR'
+    if code in {'STORAGE_DATABASE_UNAVAILABLE','CORRUPT_PORTFOLIO','STORAGE_INVALID_RESPONSE'}:return 'DATABASE_ERROR'
+    if code in {'STORAGE_NETWORK','STORAGE_CONNECT','STORAGE_READ','STORAGE_WRITE','STORAGE_PROTOCOL','STORAGE_PROXY','STORAGE_TLS','STORAGE_TIMEOUT'}:return 'NETWORK_ERROR'
+    return 'STORAGE_ERROR'
+
+
+def connection_evidence(store):
+    """Only validated public host from the instantiated client, never raw env/URL."""
+    base=getattr(getattr(store,'transport',None),'base',None)
+    host=urlsplit(base).hostname if isinstance(base,str) and re.fullmatch(r'https://[a-z0-9]{12,40}\.supabase\.co',base) else None
+    return dict(hostname=host,url_variable=URL_ENV,protocol='HTTPS_REST_RPC' if host else None)

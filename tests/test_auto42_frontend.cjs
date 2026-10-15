@@ -50,3 +50,9 @@ test('all ten system diagnostic items and timestamp timezone are available acces
  for(const name of ['api','storage','scheduler','candle','decision','error','saved','mode','protection','block'])assert.match(html,new RegExp('id="a42-sys-'+name+'"'));
  const {system}=require('../static/auto42.js');const m=system({diagnostics:{last_saved_at:100000}},false,'reply',100010);assert.match(m.saved,/UTC/);assert.equal(m.protection,'UNKNOWN');
 });
+test('owner connection evidence shows validated active hostname and precise error category',()=>{
+ const {system}=require('../static/auto42.js');
+ const d={diagnostics:{checked_at:100000,render_api:'ONLINE',storage:{status:'ERROR',error_code:'STORAGE_DNS',error_category:'DNS_ERROR',connection:{hostname:'abcdefghijklmnopqrst.supabase.co'}},protection:'BLOCKED'}};
+ const v=system(d,true,'reply',100001);assert.equal(v.host,'abcdefghijklmnopqrst.supabase.co');assert.equal(v.category,'DNS_ERROR');assert.equal(v.api,'ONLINE');assert.equal(v.protection,'BLOCKED');
+ d.diagnostics.storage.connection.hostname='https://dummy-secret@host';assert.equal(system(d,true,'reply',100001).host,'—');
+});
