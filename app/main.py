@@ -39,6 +39,7 @@ from .automated.api import router as auto42_router
 from .automated.service import configured as configured_auto42
 from .bybit_linear.api import router as bybit_linear_router,configured as configured_linear
 from .exchange_diagnostics.api import router as diagnostics_router, configured as configured_diagnostics
+from .execution_verification import router as verification_router
 
 ROOT = Path(__file__).resolve().parent.parent
 PROVIDERS = {"BTCUSDT": BinanceProvider(), "XAUUSD": GoldProvider()}
@@ -91,6 +92,7 @@ app.include_router(forward_router)
 app.include_router(auto42_router)
 app.include_router(bybit_linear_router)
 app.include_router(diagnostics_router)
+app.include_router(verification_router)
 FRAME_HEADERS = {
     "X-Frame-Options": "DENY",
     "Content-Security-Policy": "frame-ancestors 'none'",

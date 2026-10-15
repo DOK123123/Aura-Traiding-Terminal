@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="/static/lab.css">
   <script defer src="/static/lab.js"></script>
 <link rel="stylesheet" href="/static/exchange_diagnostics.css">
+<link rel="stylesheet" href="/static/execution_verification.css">
 </head>
 <body>
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
@@ -328,10 +329,19 @@
     <p id="ed-status" role="status" aria-live="polite">Проверка ещё не запускалась.</p>
     <div id="ed-results"></div>
   </details>
+  <details id="execution-verification">
+    <summary>PAPER EXECUTION VERIFICATION · только для владельца</summary>
+    <p><strong>TEST ONLY · НИКАКИХ СДЕЛОК В ПОРТФЕЛЕ ВЛАДЕЛЬЦА</strong></p>
+    <p>Технический тест, историческая стратегия и живая автономная торговля проверяются отдельно. Это статусы проверки, не режим ON/OFF. PASS теста не доказывает прибыльность или работу Render.</p>
+    <a href="/api/paper/login">Вход владельца: aura</a>
+    <button id="ev-refresh" type="button" hidden>Обновить сохранённые доказательства</button>
+    <p id="ev-status" role="status" aria-live="polite">Результат ещё не загружен.</p><div id="ev-results"></div>
+  </details>
   <footer><span>Аналитический инструмент · без реальных сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
 </main>
 <script src="/static/forward_validation.js" defer></script>
 <script src="/static/auto42.js" defer></script>
 <script src="/static/bybit_linear.js" defer></script>
 <script src="/static/exchange_diagnostics.js" defer></script>
+<script src="/static/execution_verification.js" defer></script>
 </body></html>

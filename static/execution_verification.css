@@ -1,0 +1,6 @@
+#execution-verification {margin:1rem 0;padding:1rem;border:1px solid #40506b;border-radius:12px;overflow-wrap:anywhere;min-width:0}
+#execution-verification summary,#execution-verification button {min-height:44px;cursor:pointer}
+#execution-verification button {padding:.65rem 1rem}
+#ev-results {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:1rem}
+#ev-results section {min-width:0;border:1px solid #40506b;border-radius:10px;padding:.75rem}
+#ev-results pre {white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;font-size:.8rem}
