@@ -1,0 +1,170 @@
+{
+  "environment": "LOCAL_CODEX_NOT_RENDER",
+  "read_only": true,
+  "trading_enabled": false,
+  "exchanges": {
+    "BINGX": {
+      "identity": {
+        "exchange": "BINGX",
+        "market_type": "USDT_PERPETUAL",
+        "symbol": "BTC-USDT",
+        "settlement": "USDT"
+      },
+      "tested_at_ms": 1792096168107,
+      "candles": {
+        "15m": {
+          "status": "AVAILABLE",
+          "http_status": 200,
+          "api_code": "0",
+          "count": 4,
+          "forming_excluded": 1,
+          "last_closed_open_ms": 1792094400000,
+          "last_closed_end_ms": 1792095300000,
+          "freshness": "FRESH",
+          "latency_ms": 285
+        },
+        "1h": {
+          "status": "AVAILABLE",
+          "http_status": 200,
+          "api_code": "0",
+          "count": 4,
+          "forming_excluded": 1,
+          "last_closed_open_ms": 1792090800000,
+          "last_closed_end_ms": 1792094400000,
+          "freshness": "FRESH",
+          "latency_ms": 227
+        },
+        "4h": {
+          "status": "AVAILABLE",
+          "http_status": 200,
+          "api_code": "0",
+          "count": 4,
+          "forming_excluded": 1,
+          "last_closed_open_ms": 1792080000000,
+          "last_closed_end_ms": 1792094400000,
+          "freshness": "FRESH",
+          "latency_ms": 230
+        }
+      },
+      "contract": {
+        "status": "AVAILABLE",
+        "http_status": 200,
+        "api_code": "0",
+        "exchange": "BINGX",
+        "market_type": "USDT_PERPETUAL",
+        "symbol": "BTC-USDT",
+        "settlement": "USDT",
+        "latency_ms": 520
+      },
+      "rest": {
+        "status": "PARTIALLY_AVAILABLE",
+        "http_status": 200,
+        "api_code": "0",
+        "last_price": "82330.7",
+        "mark_price": "82334.3",
+        "server_at_ms": 1792096168000,
+        "freshness": "FRESH",
+        "latency_ms": 293,
+        "mark_freshness": "UNVERIFIED",
+        "mark_at_ms": 1792080000000,
+        "code": "MARK_FRESHNESS_UNVERIFIED"
+      },
+      "mark": {
+        "status": "AVAILABLE",
+        "http_status": 200,
+        "api_code": "0",
+        "mark_price": "82334.3",
+        "mark_freshness": "UNVERIFIED",
+        "mark_at_ms": 1792080000000,
+        "latency_ms": 312
+      },
+      "websocket": {
+        "status": "AVAILABLE",
+        "first_message_ms": 1283,
+        "server_at_ms": 1792096171815,
+        "last_price": "82330.7",
+        "mark_price": "82334.2",
+        "attempts": 1,
+        "reconnect_test": "NOT_TESTED",
+        "transport_pong": true,
+        "application_heartbeat": false
+      }
+    },
+    "BITGET": {
+      "identity": {
+        "exchange": "BITGET",
+        "market_type": "USDT_PERPETUAL",
+        "symbol": "BTCUSDT",
+        "settlement": "USDT"
+      },
+      "tested_at_ms": 1792096168193,
+      "candles": {
+        "15m": {
+          "status": "AVAILABLE",
+          "http_status": 200,
+          "api_code": "00000",
+          "count": 4,
+          "forming_excluded": 1,
+          "last_closed_open_ms": 1792094400000,
+          "last_closed_end_ms": 1792095300000,
+          "freshness": "FRESH",
+          "latency_ms": 272
+        },
+        "1h": {
+          "status": "AVAILABLE",
+          "http_status": 200,
+          "api_code": "00000",
+          "count": 4,
+          "forming_excluded": 1,
+          "last_closed_open_ms": 1792090800000,
+          "last_closed_end_ms": 1792094400000,
+          "freshness": "FRESH",
+          "latency_ms": 224
+        },
+        "4h": {
+          "status": "AVAILABLE",
+          "http_status": 200,
+          "api_code": "00000",
+          "count": 4,
+          "forming_excluded": 1,
+          "last_closed_open_ms": 1792080000000,
+          "last_closed_end_ms": 1792094400000,
+          "freshness": "FRESH",
+          "latency_ms": 253
+        }
+      },
+      "contract": {
+        "status": "AVAILABLE",
+        "http_status": 200,
+        "api_code": "00000",
+        "exchange": "BITGET",
+        "market_type": "USDT_PERPETUAL",
+        "symbol": "BTCUSDT",
+        "settlement": "USDT",
+        "latency_ms": 404
+      },
+      "rest": {
+        "status": "AVAILABLE",
+        "http_status": 200,
+        "api_code": "00000",
+        "last_price": "82329.8",
+        "mark_price": "82329.8",
+        "server_at_ms": 1792096168744,
+        "freshness": "FRESH",
+        "latency_ms": 215
+      },
+      "websocket": {
+        "status": "AVAILABLE",
+        "first_message_ms": 943,
+        "last_price": "82329.8",
+        "mark_price": "82329.8",
+        "server_at_ms": 1792096170432,
+        "freshness": "FRESH",
+        "attempts": 1,
+        "reconnect_test": "NOT_TESTED",
+        "transport_pong": true,
+        "application_heartbeat": true
+      }
+    }
+  }
+}

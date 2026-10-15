@@ -1,0 +1,5 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+const {rows,safe,price}=require('../static/exchange_diagnostics.js');
+test('only authoritative readonly report accepted',()=>{assert.deepEqual(rows({}),[]);assert.deepEqual(rows({read_only:true,trading_enabled:true}),[])});
+test('states, missing prices, no hardcoded success',()=>{const r=rows({read_only:true,trading_enabled:false,exchanges:{BINGX:{rest:{status:'BLOCKED_451'}}}});assert.equal(r[0].rest,'BLOCKED_451');assert.equal(r[1].rest,'NOT_TESTED');assert.equal(r[0].last,'—');assert.equal(safe('fake'),'NOT_TESTED');assert.equal(price('NaN'),'—')});
+test('no portfolio calls, auth and pending guard',()=>{const s=fs.readFileSync('static/exchange_diagnostics.js','utf8');assert.ok(s.includes('if(busy)return'));assert.ok(s.includes("'X-Aura-Paper':'local-only'"));assert.ok(s.includes('button.disabled=false'));assert.ok(s.includes('response.status===401'));assert.ok(!/innerHTML|\/positions|\/auto42/.test(s))});

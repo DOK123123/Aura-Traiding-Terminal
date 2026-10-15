@@ -21,6 +21,7 @@
   <script defer src="/static/market_context.js"></script>
   <link rel="stylesheet" href="/static/lab.css">
   <script defer src="/static/lab.js"></script>
+<link rel="stylesheet" href="/static/exchange_diagnostics.css">
 </head>
 <body>
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
@@ -318,9 +319,19 @@
     <details><summary>Ограничения, безопасность и хранение</summary><p>Сессии SQLite отделены от Paper/Auto. Render Free может потерять их при замене инстанса. Компактная проверяемая история включена в приложение; шестилетний архив для replay не нужен. Даты только январь 2023 UTC, до 512 шагов и 20 сессий. 2025 не используется в индексе. Частоты исторических исходов не являются гарантией будущего результата. Коррелированные модели не считаются независимыми голосами. Без явного запроса и подтверждения пользователя вход запрещён. При WAIT разрешён только отдельно включённый ручной исследовательский тест; сам selector остаётся WAIT.</p></details>
     </div>
   </section>
+  <details id="exchange-diagnostics">
+    <summary>Exchange Connectivity Diagnostics · только для владельца</summary>
+    <p><strong>READ ONLY — NO TRADING</strong> · Binance и Auto Paper не переключаются.</p>
+    <p>Разовые проверки BingX / Bitget на сервере Render. Bybit — состояние существующего WS preview без новых запросов. Отчёт не подтверждает долгосрочную доступность.</p>
+    <a href="/api/paper/login">Вход владельца: aura</a>
+    <button id="ed-run" type="button" hidden>Run connectivity test</button>
+    <p id="ed-status" role="status" aria-live="polite">Проверка ещё не запускалась.</p>
+    <div id="ed-results"></div>
+  </details>
   <footer><span>Аналитический инструмент · без реальных сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
 </main>
 <script src="/static/forward_validation.js" defer></script>
 <script src="/static/auto42.js" defer></script>
 <script src="/static/bybit_linear.js" defer></script>
+<script src="/static/exchange_diagnostics.js" defer></script>
 </body></html>
