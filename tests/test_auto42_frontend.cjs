@@ -97,3 +97,21 @@ test('legacy mode remains visible on collapsed summary without becoming Auto42 s
  assert.ok(h.slice(start,end).includes('id="paper-auto-badge"'));
  assert.equal((h.match(/id="paper-auto-badge"/g)||[]).length,1);
 });
+test('failed START preserves authoritative OFF balance and diagnostic error through refresh',async()=>{
+ const now=Math.floor(Date.now()/1000);const initial=payload('OFF');initial.server_now=now;
+ const d={checked_at:now,render_api:'ONLINE',storage:{status:'CONNECTED'},owner_mode:'OFF',auto_paper:'ERROR',protection:'BLOCKED',activation_error:{code:'ANALYSIS_TIMEOUT',mode:'OFF'}};
+ const h=harness(async(url,o)=>{
+  if(o.method==='POST')return response({...initial,code:'ANALYSIS_TIMEOUT',fresh:false,diagnostics:d},503);
+  return response({...initial,diagnostics:d});
+ });
+ await h.node('a42-refresh').handlers.click();await h.node('a42-start').handlers.click();
+ assert.match(h.node('a42-mode').textContent,/Выключено/);assert.match(h.node('a42-balance').textContent,/10/);
+ assert.match(h.node('a42-message').textContent,/режим остался OFF/);
+ await h.node('a42-refresh').handlers.click();assert.match(h.node('a42-message').textContent,/Последний START отклонён/);assert.match(h.node('a42-mode').textContent,/Выключено/);h.win.handlers.pagehide();
+});
+test('unknown control timeout with cached OFF never claims activation definitively rejected',async()=>{
+ const h=harness(async(url,o)=>o.method==='POST'?response({...payload('OFF'),code:'REQUEST_TIMEOUT',diagnostics:{activation_error:null}},503):response(payload('OFF')));
+ await h.node('a42-refresh').handlers.click();await h.node('a42-start').handlers.click();
+ assert.doesNotMatch(h.node('a42-message').textContent,/режим остался OFF/);
+ assert.match(h.node('a42-message').textContent,/обновите состояние/);h.win.handlers.pagehide();
+});

@@ -24,6 +24,8 @@ class Service:
     def __init__(self,market,store=None,clock=time.time,reason=None):
         self.market=market;self.store=store;self.clock=clock;self.reason=reason;self.task=None;self.closed=False
         self.market_diagnostics=None
+        self.last_confirmed=None
+        self.activation_error=None
     def ready(self):
         if self.store is None:raise DemoError(self.reason or 'STORAGE_NOT_CONFIGURED')
     async def close(self):
@@ -45,6 +47,10 @@ class Service:
             market_status=status,cache_requested_close=stamp((value.get('history') or {}).get('requested_end_exclusive')),
             cache_state='UNAVAILABLE' if status not in ('OK','STALE') else status,
             error_source='UPSTREAM' if status in {'UPSTREAM_TIMEOUT','NETWORK_ERROR','RATE_LIMIT','REGION_RESTRICTED','UPSTREAM_HTTP_ERROR','PUBLIC_DATA_UNAVAILABLE'} else 'ANALYSIS' if status=='ANALYSIS_TIMEOUT' else 'VALIDATION' if status not in ('OK','STALE') else 'FRESHNESS' if status=='STALE' else None)
+        task=getattr(self.market,'task',None)
+        self.market_diagnostics['analysis_task']='RUNNING' if task is not None and not task.done() else 'IDLE'
+        if status=='ANALYSIS_TIMEOUT':
+            self.market_diagnostics['error_source']='ANALYSIS_WAIT' if task is not None and not task.done() else 'ANALYSIS_COMPUTE' if getattr(self.market,'failure',None)=='ANALYSIS_TIMEOUT' else 'ANALYSIS_UNCLASSIFIED'
         logger.info('Auto42 market evidence: %s',self.market_diagnostics)
         if status not in ('OK','STALE'):
             raise DemoError(status)
@@ -59,7 +65,7 @@ class Service:
         if self.closed:raise DemoError('SERVICE_CLOSED')
         async with asyncio.timeout(45):
             for attempt in range(3):
-                envelope=await self.store.load();s=deepcopy(envelope['state']);now=int(self.clock());validate(s)
+                envelope=await self.store.load();self.last_confirmed=deepcopy(envelope);s=deepcopy(envelope['state']);now=int(self.clock());validate(s)
                 key='command:'+request_id
                 prior=await self.store.lookup(key)
                 if prior:
@@ -71,7 +77,11 @@ class Service:
                     if s['emergency']:raise DemoError('EMERGENCY_RESET_REQUIRED')
                     if expected_revision is not None and envelope['revision']!=expected_revision:raise DemoError('CONCURRENT_UPDATE')
                     if s['mode']=='ON':raise DemoError('ALREADY_ON')
-                    bars,decision,now=await self.snapshot()
+                    try:
+                        bars,decision,now=await self.snapshot()
+                    except DemoError as exc:
+                        self.activation_error=dict(code=exc.code,checked_at=int(self.clock()),mode=s['mode'])
+                        raise
                     if decision.get('error'):raise DemoError(decision['error'])
                     if s['position']:
                         # Catch-up protective settlement must precede resuming entries.
@@ -95,6 +105,7 @@ class Service:
                     if result['duplicate']:
                         existing=await self.store.lookup(key)
                         if existing['payload'].get('action')!=action:raise DemoError('IDEMPOTENCY_CONFLICT')
+                    self.last_confirmed=deepcopy(result);self.activation_error=None
                     return dict(result,paper_only=True,exchange_execution=False)
                 except DemoError as exc:
                     if exc.code!='CONCURRENT_UPDATE' or attempt==2 or action=='START':raise
@@ -170,6 +181,8 @@ class Service:
             opened_positions=sum(e['kind']=='OPEN' for e in events),closed_positions=sum(e['kind']=='CLOSE' for e in events))
     def diagnostics(self,state=None,*,error=None,last_saved_at=None,fresh=False):
         now=int(self.clock());config=configuration();storage=deepcopy(getattr(self.store,'diagnostics',{}))
+        if state is None and error and self.last_confirmed is not None:state=self.last_confirmed['state']
+        if last_saved_at is None and self.last_confirmed is not None:last_saved_at=self.last_confirmed.get('last_saved_at')
         if not storage:storage=dict(status='ERROR' if error else 'UNKNOWN',checked_at=now if state or error else None,error_code=error)
         storage['backend']=self.store.backend if self.store else 'NOT_CONFIGURED'
         if error and error.startswith(('STORAGE_','CORRUPT_','INVALID_STORAGE')):storage.update(status='ERROR',error_code=error)
@@ -192,10 +205,15 @@ class Service:
             last_decision=state['last_decision'] if state else None,last_error=error or (state['last_error'] if state else None),
             last_saved_at=last_saved_at,auto_paper=mode,protection=protection,block_reason=blocked,
             recovery_pending=state.get('data_recovery_armed',False) if state else False,
-            market=self.market_diagnostics)
+            market=self.market_diagnostics,owner_mode=state['mode'] if state else None,
+            activation_error=self.activation_error)
+    def operation_snapshot(self):
+        if self.last_confirmed is None:return {}
+        return dict(state=deepcopy(self.last_confirmed['state']),revision=self.last_confirmed['revision'],
+            server_now=int(self.clock()),fresh=False,scheduler_configured=scheduler_configured())
     async def dashboard(self):
         if self.store is None:return dict(status='NOT_OPERATIONAL',reason=self.reason or 'STORAGE_NOT_CONFIGURED',paper_only=True,exchange_execution=False,state=None,diagnostics=self.diagnostics(error=self.reason or 'STORAGE_NOT_CONFIGURED'))
-        env=await self.store.load();s=env['state'];now=int(self.clock());recent=await self.store.history(epoch=s['epoch'],limit=60)
+        env=await self.store.load();self.last_confirmed=deepcopy(env);s=env['state'];now=int(self.clock());recent=await self.store.history(epoch=s['epoch'],limit=60)
         fresh=s['last_mark_at'] is not None and 0<=now-s['last_mark_at']<900 and s['last_success_at'] is not None and 0<=now-s['last_success_at']<=360 and s['last_error'] is None
         operational=self.store.durable and scheduler_configured() and s['last_success_at'] is not None and 0<=now-s['last_success_at']<=360 and s['last_error'] is None
         trades=[e['payload'] for e in recent if e['kind']=='CLOSE']

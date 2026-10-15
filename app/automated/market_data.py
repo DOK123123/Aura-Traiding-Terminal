@@ -17,4 +17,16 @@ async def snapshot_for_auto(market):
                 and market.monotonic()>=market.cooldown_until):
             market.auto_refresh_close=expected
             market.task=asyncio.create_task(market.refresh())
-    return await market.snapshot('15m')
+    value=await market.snapshot('15m')
+    # MarketContext's HTTP waiter can expire before its shared CPU task. Do not
+    # start a second analysis or cancel work needed by other callers. START's
+    # outer 45s budget and this single extra wait keep the preflight bounded.
+    task=getattr(market,'task',None)
+    if (isinstance(market,MarketContext) and value.get('status')=='ANALYSIS_TIMEOUT'
+            and task is not None and not task.done()):
+        try:
+            await asyncio.wait_for(asyncio.shield(task),12)
+        except TimeoutError:
+            return value
+        value=await market.snapshot('15m')
+    return value

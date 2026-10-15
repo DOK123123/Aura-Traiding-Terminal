@@ -31,13 +31,13 @@ def service(request):
     return value
 
 
-async def respond(operation,diagnostic=None):
+async def respond(operation,diagnostic=None,snapshot=None):
     import asyncio,logging
     try:return JSONResponse(await operation,headers=HEADERS)
     except (DemoError,TimeoutError) as exc:
         code=exc.code if isinstance(exc,DemoError) else 'REQUEST_TIMEOUT'
         logging.getLogger(__name__).warning('Auto42 action rejected: code=%s',code)
-        return JSONResponse(dict(status='NOT_OPERATIONAL',code=code,message='Деморежим: '+code,paper_only=True,exchange_execution=False,diagnostics=diagnostic(error=code) if diagnostic else None),status_code=409 if code in ('RESET_BLOCKED_OPEN_POSITION','STOP_BEFORE_RESET','IDEMPOTENCY_CONFLICT','ALREADY_ON','DAILY_LOSS_LIMIT','DRAWDOWN_LIMIT','EMERGENCY_RESET_REQUIRED','OPEN_POSITION_RESUME_REQUIRES_TICK') else 503,headers=HEADERS)
+        return JSONResponse(dict(**(snapshot() if snapshot else {}),status='NOT_OPERATIONAL',code=code,message='Деморежим: '+code,paper_only=True,exchange_execution=False,diagnostics=diagnostic(error=code) if diagnostic else None),status_code=409 if code in ('RESET_BLOCKED_OPEN_POSITION','STOP_BEFORE_RESET','IDEMPOTENCY_CONFLICT','ALREADY_ON','DAILY_LOSS_LIMIT','DRAWDOWN_LIMIT','EMERGENCY_RESET_REQUIRED','OPEN_POSITION_RESUME_REQUIRES_TICK') else 503,headers=HEADERS)
 
 
 @router.get('/status',dependencies=[Depends(owner)])
@@ -52,7 +52,7 @@ async def control(request:Request,body:Control):
     if body.action=='START' and body.expected_revision is None:raise HTTPException(409,'REFRESH_BEFORE_START',headers=HEADERS)
     if required and body.confirmation!=required:raise HTTPException(409,'EXPLICIT_CONFIRMATION_REQUIRED',headers=HEADERS)
     svc=service(request)
-    return await respond(svc.control(body.action,body.request_id,body.expected_revision),svc.diagnostics)
+    return await respond(svc.control(body.action,body.request_id,body.expected_revision),svc.diagnostics,svc.operation_snapshot)
 
 
 @router.post('/tick',dependencies=[Depends(scheduler)])
