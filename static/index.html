@@ -164,6 +164,13 @@
       <details><summary>Последние закрытые виртуальные сделки</summary><ul id="a42-history"></ul></details>
       <a href="/api/auto42/journal">Журнал событий (JSON, первая страница)</a>
     </details>
+  <details id="bybit-linear-preview" class="auto42">
+    <summary>Bybit BTCUSDT · USDT Perpetual · отдельный READ ONLY preview</summary>
+    <p class="a42-warning">PREVIEW ONLY · НЕ ИСТОЧНИК AUTO PAPER 4.2. Основной график и портфель пока используют Binance Spot. Переход источника и виртуальное исполнение Bybit ещё не подключены.</p>
+    <dl class="a42-grid"><div><dt>Статус котировки Bybit linear</dt><dd id="bl-status">Нет данных</dd></div><div><dt>Last Price · Bybit Futures</dt><dd id="bl-last">—</dd></div><div><dt>Mark Price · Bybit Futures</dt><dd id="bl-mark">—</dd></div><div><dt>Время ответа / сообщения источника UTC (не время последней сделки)</dt><dd id="bl-time">—</dd></div><div><dt>Транспорт</dt><dd id="bl-transport">—</dd></div></dl>
+    <button id="bl-refresh" type="button">Обновить Bybit preview</button><a href="/api/paper/login">Вход владельца</a>
+    <p>Feature flag по умолчанию выключен. Нет account API, funding, ордеров или связи с исполнением. Цены свечей не подставляются вместо Last/Mark.</p>
+  </details>
   <details id="paper-legacy-panel" class="panel paper-fold">
     <summary>Дополнительно: прежний Paper / Historical Pattern · отдельные режим и история · <span class="tiny-badge" id="paper-auto-badge">Нет свежих данных</span></summary>
   <section class="panel patterns paper" aria-labelledby="paper-title">
@@ -315,4 +322,5 @@
 </main>
 <script src="/static/forward_validation.js" defer></script>
 <script src="/static/auto42.js" defer></script>
+<script src="/static/bybit_linear.js" defer></script>
 </body></html>
