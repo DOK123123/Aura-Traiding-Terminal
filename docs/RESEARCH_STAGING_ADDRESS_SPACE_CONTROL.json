@@ -1,0 +1,17 @@
+{
+  "scope": "UNMODIFIED_MAIN_CONTROL_NO_RESEARCH_ROUTES",
+  "source": "c50fd0bb2402bd261089142c96d4e9981f4594ab",
+  "address_space_cap_mib": 512,
+  "status_counts": {
+    "200": 11,
+    "500": 13
+  },
+  "metrics": {
+    "rss_mib": 106.48828125,
+    "high_water_rss_mib": 119.45703125,
+    "virtual_mib": 506.50390625,
+    "cpu_seconds": 0.78
+  },
+  "thread_error": true,
+  "render_plan_not_inspected": true
+}

@@ -1,0 +1,132 @@
+{
+  "release_ready": false,
+  "render_staging_verified": false,
+  "runtime_source": "bf29a04c715fcf3ef93a87a4e6a676376d052440",
+  "python": {
+    "passed": 1316,
+    "failed": 0,
+    "xfail": 0,
+    "warnings": 1,
+    "seconds": 109.74,
+    "command": "python -c \"from scripts.replay_aura_csv import enable_sandbox_poll; enable_sandbox_poll(); import pytest; raise SystemExit(pytest.main(['-q','-p','no:cacheprovider','--tb=short']))\"",
+    "warning": "Existing Starlette/AnyIO deprecation"
+  },
+  "javascript": {
+    "suites": 20,
+    "failed": 0,
+    "results": [
+      {
+        "suite": "tests/test_adaptive43_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_adaptive43_profiles_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_ai_research_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_alignment_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_auto42_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_auto42_worker.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_bybit_demo_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_bybit_linear_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_ecc_replay_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_exchange_diagnostics_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_execution_verification_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_forward_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_frontend_reliability.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_intelligence_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_lab_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_lab_v2_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_live_paper_monitor_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_market_context_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_paper_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_testnet_frontend.cjs",
+        "passed": true
+      }
+    ]
+  },
+  "new_staging_tool_tests": 11,
+  "real_chromium": "PASS",
+  "tcp_lifespan_restart_storage_load": "PASS",
+  "external_reproducibility": {
+    "hypotheses": 4,
+    "runs": 28,
+    "status": "PASS",
+    "independent_data": false
+  },
+  "syntax": "PASS",
+  "app_main_import": "PASS",
+  "javascript_syntax": "PASS",
+  "credential_pattern_scan": "NO_MATCHES_IN_REVIEWED_NEW_SOURCE; NOT_A_GENERAL_SECRET_CERTIFICATION",
+  "code_review": "NO_KNOWN_CRITICAL_HIGH_FINDING; TEST_TOOLING_ONLY",
+  "security_review": "PASS_WITH_DOCUMENTED_LOCAL_ENVIRONMENT_LIMITATIONS",
+  "runtime_changes": false,
+  "production_access": false,
+  "merge": false,
+  "deploy": false,
+  "paid_api": false,
+  "paid_resources_created": false,
+  "tool_sha256": {
+    "scripts/verify_research_staging.py": "ce8f01f154eb8ad44caa3ee63d51ff65d9f2427e2973d8c06396fc93917cbb50",
+    "scripts/staging/web_child.py": "bb0d2a15d67b7d7442bb84321ca41f385224583eb358f3eb9244822efd069955",
+    "tests/test_research_staging_tooling.py": "69003e9474120ad6d2892d2c67715a13797c5beea9b869afe00e30b001d0d86e"
+  },
+  "versions": {
+    "python": "3.12.14",
+    "pytest": "8.3.5",
+    "fastapi": "0.115.12",
+    "node": "v24.19.0"
+  }
+}

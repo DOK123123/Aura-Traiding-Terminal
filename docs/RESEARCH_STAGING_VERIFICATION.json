@@ -1,0 +1,107 @@
+{
+  "status": "PASS",
+  "release_ready": false,
+  "render_staging_verified": false,
+  "location": "LOCAL_LINUX_SANDBOX_NOT_RENDER",
+  "source_head": "bf29a04c715fcf3ef93a87a4e6a676376d052440",
+  "actual_start_web": true,
+  "actual_lifespan": true,
+  "actual_tcp_http": true,
+  "render_environment_simulated": true,
+  "main_profile_auto42": "FAIL_CLOSED_NO_SUPABASE_CONFIGURED",
+  "secondary_profile_monitor": "WAITING_FOR_REAL_SIGNAL",
+  "environment_allowlisted": true,
+  "production_supabase_access": false,
+  "trading_api_credentials": false,
+  "external_network_denied": true,
+  "web_address_space_cap_mib": 1536,
+  "browser": {
+    "status": "PASS",
+    "engine": "ACTUAL_LOCAL_CHROMIUM_HEADLESS",
+    "research_page": true,
+    "authenticated_refresh": true,
+    "experiment_history": true,
+    "seven_run_metrics": true,
+    "auditor_rejected": true,
+    "large_records_page": true,
+    "mutations_disabled": true,
+    "llm_status": "AI_NOT_CONFIGURED",
+    "sandbox_note": "Disposable browser profile; Chromium --no-sandbox required by container; not a browser security certification"
+  },
+  "performance": {
+    "requests": 240,
+    "p50_ms": 31.183576000330504,
+    "p95_ms": 236.731270000746,
+    "max_ms": 305.08252999788965,
+    "concurrency": 12,
+    "elapsed_seconds": 1.2852376010014268,
+    "cpu_seconds": 0.9799999999999998,
+    "mean_one_core_cpu_percent": 76.25049245652374,
+    "baseline_rss_mib": 139.90625,
+    "peak_sampled_rss_mib": 143.33203125,
+    "end_rss_mib": 143.30078125,
+    "process_high_water_rss_mib": 143.30078125,
+    "end_virtual_mib": 1513.515625,
+    "per_route": {
+      "/api/health": {
+        "requests": 60,
+        "p50_ms": 10.099802999320673,
+        "p95_ms": 32.76476499740966,
+        "max_ms": 44.222931002877885
+      },
+      "/api/research": {
+        "requests": 60,
+        "p50_ms": 28.120514001784613,
+        "p95_ms": 107.38261499864166,
+        "max_ms": 160.02636600023834
+      },
+      "/api/research/experiments/96c6ff73a2004dbf95973aa09eda7dc5/records?run_key=0&kind=decisions&limit=100": {
+        "requests": 60,
+        "p50_ms": 30.475514999125153,
+        "p95_ms": 89.86790500057396,
+        "max_ms": 146.97042199986754
+      },
+      "/api/paper/state": {
+        "requests": 60,
+        "p50_ms": 164.29467900161399,
+        "p95_ms": 280.3655690004234,
+        "max_ms": 305.08252999788965
+      }
+    },
+    "http_errors": 0
+  },
+  "git_transfer": {
+    "status": "PASS",
+    "local_commit": "1e9495806ef6f947783c0bb9e933c78ed09e2072",
+    "files": 390,
+    "hashes_equal": true,
+    "remote_configured": false,
+    "remote_publication": false
+  },
+  "storage": {
+    "source_report_bytes": 36461574,
+    "snapshot_checksum": "325de3dca53ac42eb73788249ff95500a7858525bfe29b78a08e93971ec92abc",
+    "restart": true,
+    "backup_restore": true,
+    "duplicate_rejected": true,
+    "corrupt_chunk_503": true,
+    "corrupt_index_503": true,
+    "error_recovery": true,
+    "git_snapshot_checked_out": true,
+    "actual_git_publication": false,
+    "private_data_published": false,
+    "physical_disk_durability_attested": false
+  },
+  "paper_state_unchanged": true,
+  "research_http_mutations_forbidden": true,
+  "no_http_import": true,
+  "paid_resources_created": false,
+  "paid_api": false,
+  "limitations": [
+    "Local VM is not Render hardware/plan, TLS/proxy or persistent-disk verification; address-space cap is not RSS/cgroup RAM",
+    "External market/Supabase unavailable by design; configured production autonomous flow not exercised",
+    "No full browser penetration test; disposable Chromium container mode",
+    "Bounded local load is not a sustained production capacity guarantee",
+    "Git checkout snapshot remains durable only when reviewed source/backup is retained"
+  ]
+}
