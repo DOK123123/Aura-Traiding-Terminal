@@ -1,0 +1,86 @@
+{
+  "python": {
+    "tests": 1222,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": "166.898",
+    "warning": "Upstream Starlette/AnyIO BlockingPortal deprecation"
+  },
+  "javascript": [
+    {
+      "file": "tests/test_adaptive43_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_adaptive43_profiles_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_alignment_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_auto42_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_auto42_worker.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_bybit_demo_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_bybit_linear_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_ecc_replay_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_exchange_diagnostics_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_execution_verification_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_forward_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_frontend_reliability.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_intelligence_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_lab_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_live_paper_monitor_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_market_context_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_paper_frontend.cjs",
+      "passed": true
+    },
+    {
+      "file": "tests/test_testnet_frontend.cjs",
+      "passed": true
+    }
+  ],
+  "production_mutations": false,
+  "real_orders": false
+}
