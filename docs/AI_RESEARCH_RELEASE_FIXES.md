@@ -1,3 +1,5 @@
+> Final integration adds an optional owner-reviewed Git snapshot transfer. See [AURA_RESEARCH_LAB_RELEASE_READINESS.md](AURA_RESEARCH_LAB_RELEASE_READINESS.md). Earlier operational limitations below describe the PR #9 baseline.
+
 # Research Lab release-blocker fixes
 
 Status: **ISOLATED_RUNNER_VERIFIED / PRODUCTION_DEPLOY_NOT_VERIFIED**.

@@ -17,7 +17,12 @@ Id=Annotated[str,ApiPath(pattern='^[0-9a-f]{32}$')]
 def service() -> Service:
     # Embedded terminal facade is always read-only, regardless of environment role.
     from .persistence import configured_store
-    return Service(Path(__file__).resolve().parents[2],store=configured_store(writable=False))
+    root=Path(__file__).resolve().parents[2]
+    store=configured_store(writable=False)
+    from .snapshot import SnapshotStore,APPROVED
+    if store is not None and APPROVED.exists():raise LabError('RESEARCH_STORAGE_CONFLICT')
+    if APPROVED.exists():store=SnapshotStore(APPROVED)
+    return Service(root,store=store)
 
 class Enqueue(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True)

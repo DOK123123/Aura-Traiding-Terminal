@@ -4,6 +4,7 @@ import gzip
 import hashlib
 import json
 import re
+import zlib
 from app.lab.models import LabError,canonical,digest
 
 FORMAT='AURA_RESEARCH_CHUNKED_2'
@@ -97,4 +98,4 @@ def unpack_chunk(blob,descriptor):
         values=[decode(line) for line in raw.splitlines()]
         if len(values)!=descriptor['count'] or any(type(v) is not dict for v in values):bad()
         return values
-    except (OSError,EOFError,TypeError):bad()
+    except (OSError,EOFError,TypeError,zlib.error):bad()

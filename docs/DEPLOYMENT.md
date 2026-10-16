@@ -1,3 +1,5 @@
+> Final integration adds an optional owner-reviewed Git snapshot transfer. See [AURA_RESEARCH_LAB_RELEASE_READINESS.md](AURA_RESEARCH_LAB_RELEASE_READINESS.md). Earlier operational limitations below describe the PR #9 baseline.
+
 # Веб-развёртывание Aura Trading Terminal
 
 Проект предназначен для Python-хостинга с постоянно работающим процессом,

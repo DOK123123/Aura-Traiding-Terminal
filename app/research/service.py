@@ -27,7 +27,7 @@ class Service:
              dict(id='BACKTESTER',state='EXTERNAL_WORKER_RUNNING' if active else 'IDLE',capabilities=['external manual resource-limited runner'],can_trade=False),
              dict(id='AUDITOR',state='EXTERNAL_WORKER_ONLY' if active else 'IDLE',capabilities=['independent deterministic audit'],can_trade=False)],
             registry=hypotheses,published=await asyncio.to_thread(published_summary),sources=SOURCES,dataset=available(),protocol=PROTOCOL,queue=queue,llm_calls=calls,
-            persistence='EXTERNAL_DURABLE_SQLITE_CONFIGURED' if self.store else 'RESEARCH_STORAGE_NOT_CONFIGURED; PUBLISHED_RESULTS_ONLY')
+            persistence=('OWNER_REVIEWED_GIT_SNAPSHOT' if hasattr(self.store,'index') else 'EXTERNAL_DURABLE_SQLITE_CONFIGURED') if self.store else 'RESEARCH_STORAGE_NOT_CONFIGURED; PUBLISHED_RESULTS_ONLY')
 
     async def enqueue(self,name:str) -> dict:
         self.require_write();config=frozen_config(name,available());ident=await asyncio.to_thread(self.store.enqueue,config)

@@ -1,0 +1,53 @@
+{
+  "release_ready": false,
+  "scope": "LOCAL_OFFLINE_INTEGRATION_ACCEPTANCE_NOT_RENDER",
+  "python": {
+    "passed": 1305,
+    "failed": 0,
+    "xfail": 0,
+    "warnings": 1,
+    "warning": "Existing Starlette anyio.abc.BlockingPortal deprecation",
+    "seconds": 107.46,
+    "command": "python -c \"from scripts.replay_aura_csv import enable_sandbox_poll; enable_sandbox_poll(); import pytest; raise SystemExit(pytest.main(['-q','-p','no:cacheprovider','--tb=short']))\"",
+    "sandbox_accommodation": "TEST_PROCESS_ONLY"
+  },
+  "javascript": {
+    "suites": 20,
+    "failed": 0,
+    "command": "node tests/*.cjs (each suite executed separately)"
+  },
+  "new_tests": {
+    "snapshot_transport": 20,
+    "paper_research_coexistence": 1
+  },
+  "syntax": "PASS",
+  "app_main_import": "PASS",
+  "javascript_syntax": "PASS",
+  "diff_whitespace": "PASS",
+  "credential_pattern_scan": "NO_MATCHES_IN_REVIEWED_SOURCE; NOT_PROOF_FOR_ARBITRARY_TEXT",
+  "code_review": "PASS_NO_KNOWN_CRITICAL_HIGH_FINDING",
+  "security_review": "PASS_NO_KNOWN_CRITICAL_HIGH_FINDING",
+  "additional_fix": "Malformed gzip deflate maps zlib.error to RESEARCH_INTEGRITY/503",
+  "reproducibility": {
+    "hypotheses": 4,
+    "runs": 28,
+    "financial_records_equal": true,
+    "independent_holdout": false
+  },
+  "production_access": false,
+  "merge": false,
+  "deploy": false,
+  "paid_api": false,
+  "versions": {
+    "python": "3.12.14",
+    "pytest": "8.3.5",
+    "fastapi": "0.115.12",
+    "starlette": "0.46.2"
+  },
+  "not_verified": [
+    "Actual Render staging/resource acceptance",
+    "Operator hardware persistence/off-device restore",
+    "Privacy approval and Git publication of any real snapshot",
+    "Production release/deploy approval"
+  ]
+}
