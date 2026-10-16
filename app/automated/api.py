@@ -51,6 +51,25 @@ async def alignment(request:Request):
     return await respond(service(request).alignment_dashboard())
 
 
+@router.get('/live-monitor',dependencies=[Depends(owner)])
+async def live_monitor(request:Request):
+    try:
+        return JSONResponse(await service(request).live_monitor(),headers=HEADERS)
+    except (DemoError,TimeoutError) as exc:
+        return JSONResponse(dict(status='FAILED',reason=exc.code if isinstance(exc,DemoError) else 'REQUEST_TIMEOUT',
+            read_only=True,paper_only=True,exchange_execution=False,live_cycle_verified=False),status_code=503,headers=HEADERS)
+
+
+@router.get('/live-monitor/events',dependencies=[Depends(owner)])
+async def live_monitor_events(request:Request,after:int=Query(0,ge=0),limit:int=Query(100,ge=1,le=200)):
+    async def read():
+        svc=service(request);svc.ready();rows=await svc.store.history(after=after,limit=limit)
+        return dict(events=[dict(e['payload'],event_id=e['id'],sequence=e['seq'],epoch=e['epoch'])
+            for e in rows if e['kind']=='LIVE_MONITOR'],next_cursor=rows[-1]['seq'] if rows else after,
+            read_only=True,paper_only=True,exchange_execution=False,page_may_have_more=len(rows)==limit)
+    return await respond(read())
+
+
 @router.post('/control',dependencies=[Depends(mutation)])
 async def control(request:Request,body:Control):
     required={'START':'START PAPER','RESET':'RESET DEMO'}.get(body.action)

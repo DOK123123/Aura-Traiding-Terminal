@@ -1,5 +1,5 @@
 """Externally triggered controller. Public market reads, isolated virtual writes."""
-import asyncio,logging,os,time,sqlite3
+import asyncio,logging,os,time,sqlite3,uuid
 from copy import deepcopy
 from .engine import initial,validate,advance,event,mark,risk_reason,DemoError,VERSION,POLICY,STEP
 from .strategy import strategy,PARAMETERS
@@ -26,6 +26,9 @@ class Service:
         self.market_diagnostics=None
         self.last_confirmed=None
         self.activation_error=None
+        self.monitor_instance=uuid.uuid4().hex
+        self.monitor_capture_error=False
+        self.monitor_write_error=None
     def ready(self):
         if self.store is None:raise DemoError(self.reason or 'STORAGE_NOT_CONFIGURED')
     async def close(self):
@@ -172,10 +175,22 @@ class Service:
             outcome='DATA_BLOCKED' if s['last_error'] else 'RISK_BLOCKED' if risk_reason(s) and s['mode']=='PAUSED' else 'CANDLE_PROCESSED' if processed else 'HEARTBEAT_OFF' if s['mode'] in ('OFF','EMERGENCY') and not s['position'] else 'NO_NEW_CANDLE'
             events.append(event(s,'TICK',now//300,now,dict(reason=s['last_decision'],mode=s['mode'],missed_slots=missed,success=s['last_error'] is None,tick_outcome=outcome,processed=processed)))
             events[-1]['id']=key
+            # Observability is isolated from execution: do not re-run strategy,
+            # change settlement or let a monitor failure skip protective exits.
+            try:
+                from .live_monitor import observe_tick,origin
+                s,events=observe_tick(old,s,events,key,now,
+                    origin(self.store.backend,self.store.durable,self.monitor_instance))
+                self.monitor_capture_error=False
+            except Exception:
+                self.monitor_capture_error=True
+                logger.warning('Auto42 monitor capture failed: code=MONITOR_CAPTURE_FAILED')
             try:
                 result=await self.store.commit(envelope['revision'],s,events,key)
+                self.monitor_write_error=None
                 return self.tick_result(result['state'],result['duplicate'],'NO_NEW_WORK' if result['duplicate'] else outcome,processed and not result['duplicate'],[] if result['duplicate'] else events)
             except DemoError as exc:
+                if exc.code!='CONCURRENT_UPDATE':self.monitor_write_error=exc.code
                 if exc.code!='CONCURRENT_UPDATE' or attempt==2:raise
                 envelope=await self.store.load()
                 if envelope['state']['epoch']!=old['epoch']:raise DemoError('PORTFOLIO_RESET_DURING_TICK')
@@ -245,6 +260,15 @@ class Service:
             paper_only=True,exchange_execution=False,live_autonomy='NOT_TESTED',
             portfolio_last_decision=s['last_decision'],portfolio_last_error=s['last_error'],
             last_processed_closed_at=s['watermark'],revision=envelope['revision'],server_now=now)
+
+    async def live_monitor(self):
+        from .live_monitor import monitor_view
+        from .live_evidence import evidence
+        self.ready()
+        envelope=await self.store.load()
+        rows=await self.store.history(epoch=envelope['state']['epoch'],limit=200)
+        return dict(monitor_view(envelope,rows,now=int(self.clock()),backend=self.store.backend,
+            durable=self.store.durable,capture_error=self.monitor_capture_error,storage_error=self.monitor_write_error),technical_test=evidence())
 
 
 def configured(market):

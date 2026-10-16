@@ -1,0 +1,6 @@
+#live-paper-monitor {margin:1rem 0;padding:1rem;border:1px solid #40506b;border-radius:12px}
+#live-paper-monitor summary {cursor:pointer;font-weight:700}
+#lpm-status {font-weight:700}
+#lpm-results {overflow-wrap:anywhere}
+#lpm-results pre {white-space:pre-wrap;overflow-wrap:anywhere}
+#lpm-refresh {padding:.65rem 1rem}
