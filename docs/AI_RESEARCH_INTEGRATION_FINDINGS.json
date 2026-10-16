@@ -1,0 +1,31 @@
+{
+  "verdict": "NOT_READY_FOR_DEPLOY",
+  "store_raw_limit_bytes": 33554432,
+  "artifact_sizes": {
+    "MEAN_REVERSION": {
+      "raw_bytes": 21124121,
+      "compressed_bytes": 599912,
+      "fits_current_store": true
+    },
+    "LIQUIDITY_SWEEP": {
+      "raw_bytes": 27608368,
+      "compressed_bytes": 836896,
+      "fits_current_store": true
+    },
+    "REGIME_SWITCHING": {
+      "raw_bytes": 31958803,
+      "compressed_bytes": 1042433,
+      "fits_current_store": true
+    },
+    "VOLATILITY_BREAKOUT": {
+      "raw_bytes": 36461574,
+      "compressed_bytes": 1039976,
+      "fits_current_store": false
+    }
+  },
+  "confirmed_report_save_failure": "RESULT_LIMIT",
+  "wrong_type_report_http": 500,
+  "wrong_type_expected_http": 503,
+  "fixes_applied_to_runtime": false,
+  "production_changed": false
+}

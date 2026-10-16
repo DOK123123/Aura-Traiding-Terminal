@@ -1,0 +1,66 @@
+{
+  "observed_at": "2026-10-16",
+  "main": "c50fd0bb2402bd261089142c96d4e9981f4594ab",
+  "prs": [
+    {
+      "number": 3,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "base": "main",
+      "base_sha": "c50fd0bb2402bd261089142c96d4e9981f4594ab",
+      "head": "codex/aura43-adaptive-lab",
+      "head_sha": "f0ae5b04dca0cea5c0c4c2f39dafbc62a3df2446",
+      "url": "https://github.com/DOK123123/Aura-Traiding-Terminal/pull/3"
+    },
+    {
+      "number": 4,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "base": "codex/aura43-adaptive-lab",
+      "base_sha": "f0ae5b04dca0cea5c0c4c2f39dafbc62a3df2446",
+      "head": "codex/aura43-frequency-research",
+      "head_sha": "7f5516a15944414d0b70491f68234e1f84a95a46",
+      "url": "https://github.com/DOK123123/Aura-Traiding-Terminal/pull/4"
+    },
+    {
+      "number": 5,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "base": "codex/aura43-frequency-research",
+      "base_sha": "7f5516a15944414d0b70491f68234e1f84a95a46",
+      "head": "codex/strategy-lab-v2",
+      "head_sha": "758ffb48a14ab1ad852b7bf431c29c0262e9cc9d",
+      "url": "https://github.com/DOK123123/Aura-Traiding-Terminal/pull/5"
+    },
+    {
+      "number": 6,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "base": "main",
+      "base_sha": "c50fd0bb2402bd261089142c96d4e9981f4594ab",
+      "head": "codex/paper-execution-e2e",
+      "head_sha": "d7ae130f863cab243600930bd54dc50e927ee04a",
+      "url": "https://github.com/DOK123123/Aura-Traiding-Terminal/pull/6"
+    },
+    {
+      "number": 7,
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "mergeable": true,
+      "base": "codex/strategy-lab-v2",
+      "base_sha": "758ffb48a14ab1ad852b7bf431c29c0262e9cc9d",
+      "head": "codex/ai-research-lab-v1",
+      "head_sha": "4415383b680d404f8eb9f25df11a6e346ad76bd6",
+      "url": "https://github.com/DOK123123/Aura-Traiding-Terminal/pull/7"
+    }
+  ]
+}

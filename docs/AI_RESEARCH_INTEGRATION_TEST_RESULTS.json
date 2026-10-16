@@ -1,0 +1,30 @@
+{
+  "verdict": "NOT_READY_FOR_INTEGRATION_OR_DEPLOY_OF_PR7",
+  "python": {
+    "passed": 1272,
+    "xfailed": 2,
+    "failed": 0,
+    "warnings": 1,
+    "seconds": 93.47,
+    "scope": "DETACHED_PR7_PLUS_FIVE_DISJOINT_PR6_FILES_PLUS_AUDIT_TEST"
+  },
+  "new_audit_tests": {
+    "passed": 8,
+    "xfailed": 2
+  },
+  "node_suites_passed": 20,
+  "expected_failures": [
+    "F1_REAL_VOLATILITY_REPORT_EXCEEDS_STORE_LIMIT",
+    "F3_WRONG_TYPE_REPORT_RETURNS_HTTP500"
+  ],
+  "real_reproduced_hypothesis": "REGIME_SWITCHING",
+  "real_replayed_runs": 7,
+  "real_report_checksum_identical": true,
+  "render": "NOT_ACCESSED_PLAN_MEMORY_DISK_UNKNOWN",
+  "production_supabase": "NOT_ACCESSED",
+  "paid_llm": "NOT_CALLED",
+  "merge": false,
+  "deploy": false,
+  "production_changes": false,
+  "runtime_fixes_applied": false
+}
