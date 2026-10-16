@@ -1,0 +1,234 @@
+{
+  "sha256": "e9bdc4c401c51ed07f509a7db9a2b20668e954565c5a3dfa2f14796aaa4e6ec9",
+  "count": 21728,
+  "start": 1772553600,
+  "end_exclusive": 1792108800,
+  "source_claim": "Binance public REST; see bundled acquisition provenance",
+  "endpoint": "https://data-api.binance.vision/api/v3/klines",
+  "symbol": "BTCUSDT",
+  "interval": "15m",
+  "acquired_at_utc": "2026-10-16T17:26:01.364169+00:00",
+  "pages": [
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1772553600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "3dbc06ba558b952644ef418c8ab5c82f14d8ad83ac52d29118c23a24e86a03db"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1773453600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "3da91a9cd599987572014d6aadbd15b080980d75a8bb2b2913e413b965302c33"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1774353600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "a8e472a0d476b68b03cc557977b4eaa8cc15994047e4e8685a95d571c4f7864e"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1775253600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "aa799b48e0bedfa21089dba30fa45a9575aa16cf420a6062a9ce77b1812b9e21"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1776153600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "f27d9bf991d60711cb2f82e79eca30486aabad8306b9661571847402e05c6e40"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1777053600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "0ef7b783a953d1f5a132c51278eec733e557a0fe19844254def25e9af5a5813c"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1777953600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "d252dbea69535836736e089b242ef599caa887acea879492410ed979d4dab8a0"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1778853600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "a52203f52985cfbd2c1573a439e3398de4de9506aee6d5ea8e44bfb096fc8de7"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1779753600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "6ca802dae0ce58e4bfd24b09d68ec7afdc3a2a37cf9fd85d20a04518aeaa0a1f"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1780653600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "e995917191f73d3ec138877a62636817f3c64485bdba183d0782f29c1396244a"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1781553600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "e286780ba0c5c50743a9cb489d4766fa7bf321118f8365b5ce3e8f76a0f53ddc"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1782453600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "d03dd2a41156caf16a3dfaa057d6b02692cca7792810eea178017eeaeb68dee0"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1783353600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "268b7f39d9760120df8103a5fac88e4904f744335ab0404b02d764b03f19871a"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1784253600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "1e7905dd42fdcc4190e1eccb99701e1c86c2f7e728b523eb0d2bfb4c768f8eb9"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1785153600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "aa64954d0666c17741ab97b1a262b692f35108dd8d0b9717a4183bcb18901090"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1786053600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "056b84238f16d32c5f61e661612a05543b45cf809837ffcb3b58a4164c5187af"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1786953600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "029c3f72649855f3c7a3b084ae2e18a2ba30908eaf152c90de4ad09ff62b0c09"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1787853600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "ae5b640dcd8379eace03c4861c730a8b4d183e2d9f29b4289acf72a5fd76b930"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1788753600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "099de46e348a1261c9d9b47fa9b2204d58cd5057a0f8a16d57cac342e26e31ee"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1789653600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "6f3eb2e17cc805b0ea5304070d19a297d9523fb6f310aa899c2a1247b6e0b9dc"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1790553600000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "467ed29bf1b28050961522105ee0ad4bb0e48871d64e59ef24e3907dffbf1db9"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1791453600000,
+        "endTime": 1792108799999,
+        "limit": 728
+      },
+      "sha256": "0d00df08f2de8003c58b6b0b706129fe7250ac7981a95842de898ef85dfe57ab"
+    }
+  ],
+  "source": "REAL_BINANCE_PUBLIC_REST_NO_SYNTHETIC_DATA"
+}

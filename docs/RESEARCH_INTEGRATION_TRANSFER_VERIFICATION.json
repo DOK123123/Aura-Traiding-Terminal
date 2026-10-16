@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "scope": "REAL_ANNUAL_REPORT_OFFLINE_EXPORT_AND_FRESH_READER",
+  "original_report_bytes": 36461574,
+  "files": 390,
+  "packed_bytes": 1246582,
+  "manifest_bytes": 86412,
+  "checksum": "3845d135908e6d95be99cd9a57ce7c08352903192aa290f4720b574a7380d23b",
+  "elapsed_seconds": 23.633909432999644,
+  "no_sqlite_export": true,
+  "no_llm_logs_exported": true,
+  "no_production_access": true,
+  "publication_performed": false
+}

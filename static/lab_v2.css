@@ -1,0 +1,5 @@
+#lv2-panel {margin:1rem 0;padding:1rem;border:1px solid #40506b;border-radius:10px}
+#lv2-panel summary {cursor:pointer;font-weight:700}
+#lv2-panel pre {white-space:pre-wrap;overflow-wrap:anywhere}
+#lv2-curve {width:100%;max-height:220px;border:1px solid #40506b}
+#lv2-panel select,#lv2-panel button {margin:.4rem;padding:.5rem}
