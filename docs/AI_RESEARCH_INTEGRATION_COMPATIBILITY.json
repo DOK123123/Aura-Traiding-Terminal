@@ -1,0 +1,37 @@
+{
+  "parent_ancestry": [
+    [
+      "origin/main",
+      "origin/codex/aura43-adaptive-lab"
+    ],
+    [
+      "origin/codex/aura43-adaptive-lab",
+      "origin/codex/aura43-frequency-research"
+    ],
+    [
+      "origin/codex/aura43-frequency-research",
+      "origin/codex/strategy-lab-v2"
+    ],
+    [
+      "origin/codex/strategy-lab-v2",
+      "origin/codex/ai-research-lab-v1"
+    ]
+  ],
+  "pr6_research_changed_file_overlap": [],
+  "pr6_added_files": [
+    "docs/PAPER_EXECUTION_TECHNICAL_VERIFICATION.json",
+    "docs/PAPER_EXECUTION_TECHNICAL_VERIFICATION.md",
+    "scripts/paper_e2e_oracle.py",
+    "scripts/verify_paper_e2e.py",
+    "tests/test_paper_execution_e2e.py"
+  ],
+  "pr6_test_overlay": "FIVE_DISJOINT_ADDED_FILES_ONLY_NO_MERGE_COMMIT_OR_REF",
+  "main_sha": "c50fd0bb2402bd261089142c96d4e9981f4594ab",
+  "git_tracked_blob_bytes": {
+    "origin/main": 79080238,
+    "origin/codex/aura43-adaptive-lab": 80216854,
+    "origin/codex/aura43-frequency-research": 81824028,
+    "origin/codex/strategy-lab-v2": 91359474,
+    "origin/codex/ai-research-lab-v1": 95027222
+  }
+}
