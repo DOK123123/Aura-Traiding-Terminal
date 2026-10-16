@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="/static/execution_verification.css">
 <link rel="stylesheet" href="/static/alignment.css">
 <link rel="stylesheet" href="/static/live_paper_monitor.css">
+<link rel="stylesheet" href="/static/adaptive43.css">
 </head>
 <body>
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
@@ -250,6 +251,25 @@
   <section class="panel patterns lab" aria-labelledby="lab-title">
     <div class="modules-heading"><div><p class="eyebrow">RESEARCH ONLY / NO ACTIVATION</p><h2 id="lab-title">STRATEGY LAB v1.1</h2></div><span class="tiny-badge">BTCUSDT · CLOSED HISTORY</span></div>
     <p class="pattern-warning">REAL MONEY EXECUTION = DISABLED · No strategy activation. A numerical backtest ranking is not evidence of profitability, safety or production readiness.</p>
+    <details id="a43-panel">
+      <summary>Aura 4.2 ↔ Aura 4.3 Adaptive · 90-day research</summary>
+      <p>Новая отдельная проверка с прежним Auto42 risk/execution engine: риск ≤0,5%, дневной лимит 2%, drawdown 10%, одна позиция, комиссии 10 bps и slippage 5 bps на сторону. Production не меняется.</p>
+      <p>15m — вход, 1h — тренд, 4h — контекст. Pullback / Breakout / Reversal. Legacy Aura Existing ниже — другая стратегия, её прежняя несовместимость не относится к этому сравнению Auto Paper 4.2.</p>
+      <a href="/api/lab/login">Вход владельца: aura</a><button id="a43-refresh" type="button">Показать сохранённое исследование</button>
+      <p id="a43-status" role="status" aria-live="polite">Отчёт ещё не запрошен. Сигналы и сделки production не запускаются.</p>
+      <div id="a43-result" hidden>
+        <p id="a43-meta"></p>
+        <label>Выборка<select id="a43-split"><option value="validation">Независимая проверка · 30 дней</option><option value="development">Разработка · 60 дней</option><option value="full_90d">Все 90 дней · описательно</option></select></label>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Стратегия</th><th>Сделки</th><th>Net profit</th><th>Return %</th><th>Win %</th><th>PF</th><th>Max DD %</th><th>Avg Win</th><th>Avg Loss</th><th>Expectancy</th><th>Sharpe</th><th>Fees</th><th>Статус выборки</th></tr></thead><tbody id="a43-comparison"></tbody></table></div>
+        <p>Net profit включает конечную liquidation equity незакрытой позиции. PF/Win Rate/Expectancy — по закрытым сделкам. Sharpe не определён при &lt;20 сделках или &lt;30 дневных returns. Ни одна строка не является разрешением активации.</p>
+        <label>Детали<select id="a43-variant"><option value="AURA43_ADAPTIVE">Aura 4.3 Adaptive</option><option value="AURA42">Aura 4.2</option><option value="AURA43_TREND_PULLBACK">Trend Pullback</option><option value="AURA43_BREAKOUT">Breakout</option><option value="AURA43_REVERSAL">Reversal</option></select></label>
+        <p id="a43-note"></p><p>Equity: синий — Aura 4.2; зелёный — выбранная стратегия. PnL после модельных издержек.</p>
+        <svg id="a43-curve" viewBox="0 0 600 160" role="img" aria-label="Aura 4.2 and selected adaptive strategy equity comparison"></svg>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Side</th><th>Signal UTC</th><th>Entry UTC</th><th>Entry</th><th>SL</th><th>TP</th><th>Exit UTC</th><th>Exit</th><th>Fees</th><th>PnL</th><th>Entry reason</th><th>Exit reason</th></tr></thead><tbody id="a43-trades"></tbody></table></div>
+        <details><summary>Причины входов и отказов</summary><pre id="a43-counts"></pre><div class="pattern-table-wrap"><table><thead><tr><th>Close UTC</th><th>Signal</th><th>Scenario</th><th>Regime</th><th>Strategy reason</th><th>Portfolio reason</th></tr></thead><tbody id="a43-decisions"></tbody></table></div></details>
+        <button id="a43-more" type="button" hidden>Следующая страница сделок и решений</button>
+      </div>
+    </details>
     <p class="score-note">Identical snapshot for 15m / 1h / 4h. Aura Existing is shown honestly as incompatible: its fixed-horizon, 100% notional execution cannot use common ATR stops/risk sizing without changing Aura. Existing Aura remains unchanged.</p>
     <details><summary>Frozen baseline and calendar coverage</summary>
       <p class="score-note">Balance 10 000 USDT · risk 1% · max notional 2 000 USDT · one position · next-open entries · SL 2×ATR / TP 4×ATR. Fees/slippage below are research assumptions per fill, not exchange tariffs. Experimental parameters are fixed before validation.</p>
@@ -365,4 +385,5 @@
 <script src="/static/execution_verification.js" defer></script>
 <script src="/static/alignment.js" defer></script>
 <script src="/static/live_paper_monitor.js" defer></script>
+<script src="/static/adaptive43.js" defer></script>
 </body></html>
