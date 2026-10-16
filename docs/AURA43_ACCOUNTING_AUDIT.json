@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "runs": 15,
+  "trade_records_checked": 22,
+  "dataset_sha256": "f38de999503bfa7f5b8bc8857752a04c6d08b271be9e5025cdf60d74a2c6569b",
+  "calendar_and_trade_boundaries_valid": true,
+  "fee_slippage_balance_pnl_oracle": "INDEPENDENT_DECIMAL_64",
+  "production_access": false,
+  "proves_live_execution": false
+}

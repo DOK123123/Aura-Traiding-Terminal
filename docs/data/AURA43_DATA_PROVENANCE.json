@@ -1,0 +1,146 @@
+{
+  "endpoint": "https://data-api.binance.vision/api/v3/klines",
+  "symbol": "BTCUSDT",
+  "interval": "15m",
+  "acquired_at_utc": "2026-10-16T16:55:21.460377+00:00",
+  "count": 12800,
+  "start": 1780588800,
+  "end_exclusive": 1792108800,
+  "sha256": "f38de999503bfa7f5b8bc8857752a04c6d08b271be9e5025cdf60d74a2c6569b",
+  "pages": [
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1780588800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "e3e2352c6ac38b8baf171186780a5824256b9fd204e775c73e15bcffbc41cbb9"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1781488800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "b33a1ed53e3024636b103ec41ffd21a8443e9a99a1d8aecaa3b6d1b5cae94a42"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1782388800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "703656d3c441ff43c54a9b95eda325089c184f73505b62bcb7bdddf80628e09d"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1783288800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "891dd20d7eaac776ac42a1c62419429628d6181340aadf11a3d0dd615385dc9d"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1784188800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "367907f5fb5a220d3cd45e96974a539c45f9b64607d7ef8f82e0de702139fece"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1785088800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "22263486ac52ec86aed74133874825f9c0607e7d7f51c2b68d908cf0fe83f5dc"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1785988800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "27cb91df74344bc24cc447e7653cb31cacb84c7c18d030f5639fb16938351617"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1786888800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "355d74d3188453864ed7786aa33c2eded336dc9742b1b0a428a24fc434596fbf"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1787788800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "e1e8f3c4380b9ee52b1c2c48d961989ded9d7981c7b6cd9e499688af180dbcf3"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1788688800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "f7ef91cf450de43cc2dfde770a6b5e4f177b938ed540ee4bc9bf125cb3c50c23"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1789588800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "36fc76572450be914685a50d590768e480a9bda4d2a29d331ef0369e41f8671f"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1790488800000,
+        "endTime": 1792108799999,
+        "limit": 1000
+      },
+      "sha256": "3f24e32ddbf03b80e3359326c799f29c72e8e11eb339ed0efd42dfde7479cef4"
+    },
+    {
+      "query": {
+        "symbol": "BTCUSDT",
+        "interval": "15m",
+        "startTime": 1791388800000,
+        "endTime": 1792108799999,
+        "limit": 800
+      },
+      "sha256": "5fcdc3846d22b3ad101b8a16f4c914ac513b061fca2292ff55e6f120742644ef"
+    }
+  ],
+  "source": "BINANCE_PUBLIC_REST_NOT_SYNTHETIC",
+  "limitations": [
+    "REST response hashes and strict OHLCV validation; no archive checksum attestation."
+  ]
+}
