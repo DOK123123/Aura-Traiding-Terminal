@@ -115,6 +115,7 @@ def segment_states(bars, step=900, *, deadline=None):
             1 if ob and ob['side']=='LONG' else -1 if ob else 0,int(is_range),0,0,0]
         result.append(dict(version=VERSION,timestamp=cutoff,pivot_timestamp=None,symbol='BTCUSDT',timeframe={900:'15m',3600:'1h',14400:'4h'}[step],
             segment_start=bars[0].time,vector=vector,trend_direction=direction,trend_strength=ax[i],regime=regime,
+            trend_indicators=dict(ema20=f[i],ema50=s[i],adx14=ax[i],atr14=av,rsi14=rs[i],sample_count=i+1),
             high_leg=new_high_leg,low_leg=new_low_leg,structure_known_mask=structure_mask,confirmed_pivots=[dict(p,price=str(p['price'])) for p in new_pivots],
             support=str(support),resistance=str(resistance),support_source='CONFIRMED_PIVOT' if supp else 'ROLLING50_FALLBACK',resistance_source='CONFIRMED_PIVOT' if res else 'ROLLING50_FALLBACK',
             support_zones=[dict(max(supp,key=lambda z:z['price']),price=str(support))] if supp else [],resistance_zones=[dict(min(res,key=lambda z:z['price']),price=str(resistance))] if res else [],support_zone_count=len(support_z),resistance_zone_count=len(resistance_z),

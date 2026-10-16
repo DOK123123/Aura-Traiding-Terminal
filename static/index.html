@@ -23,6 +23,7 @@
   <script defer src="/static/lab.js"></script>
 <link rel="stylesheet" href="/static/exchange_diagnostics.css">
 <link rel="stylesheet" href="/static/execution_verification.css">
+<link rel="stylesheet" href="/static/alignment.css">
 </head>
 <body>
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
@@ -337,6 +338,14 @@
     <button id="ev-refresh" type="button" hidden>Обновить сохранённые доказательства</button>
     <p id="ev-status" role="status" aria-live="polite">Результат ещё не загружен.</p><div id="ev-results"></div>
   </details>
+  <details id="timeframe-alignment">
+    <summary>TIMEFRAME ALIGNMENT DIAGNOSTICS · только для владельца</summary>
+    <p>Только чтение снимка фактической оценки стратегии. Проверка alignment не доказывает live autonomous open/close.</p>
+    <p>Направление: EMA20 &gt; EMA50 → UP; EMA20 &lt; EMA50 → DOWN; равенство → FLAT. ADX≥25 — отдельный фильтр после alignment.</p>
+    <a href="/api/paper/login">Вход владельца: aura</a>
+    <button id="ta-refresh" type="button" hidden>Обновить сохранённую диагностику</button>
+    <p id="ta-status" role="status" aria-live="polite">Снимок ещё не загружен.</p><div id="ta-results"></div>
+  </details>
   <footer><span>Аналитический инструмент · без реальных сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
 </main>
 <script src="/static/forward_validation.js" defer></script>
@@ -344,4 +353,5 @@
 <script src="/static/bybit_linear.js" defer></script>
 <script src="/static/exchange_diagnostics.js" defer></script>
 <script src="/static/execution_verification.js" defer></script>
+<script src="/static/alignment.js" defer></script>
 </body></html>

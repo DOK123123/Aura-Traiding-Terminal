@@ -46,6 +46,11 @@ async def status(request:Request):
     return await respond(svc.dashboard(),svc.diagnostics)
 
 
+@router.get('/alignment',dependencies=[Depends(owner)])
+async def alignment(request:Request):
+    return await respond(service(request).alignment_dashboard())
+
+
 @router.post('/control',dependencies=[Depends(mutation)])
 async def control(request:Request,body:Control):
     required={'START':'START PAPER','RESET':'RESET DEMO'}.get(body.action)

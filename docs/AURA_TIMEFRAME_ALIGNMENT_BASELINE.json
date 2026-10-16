@@ -1,0 +1,45 @@
+{
+  "status": "PASS",
+  "baseline_commit": "04438674acf9a795a0666f8e1f2718221e7a9ed8",
+  "source_sha256": "2b9121b9ccf7d33d0b129713f902e5d0ca0846e96a1c4b7a6c18a6acaf3a95f5",
+  "cases": [
+    {
+      "closed_at": 1792101600,
+      "reason": "MTF_NOT_ALIGNED",
+      "sha256": "51832a2bdb1b53922277b0dacf958396f8129a5ff73d21ac3f791a57ac3a485f"
+    },
+    {
+      "closed_at": 1792087200,
+      "reason": "MTF_NOT_ALIGNED",
+      "sha256": "b51079287ab1b24d23fa030bcb87abbf6dc6db57424d5b8e8999e021459fd7aa"
+    },
+    {
+      "closed_at": 1792072800,
+      "reason": "TREND_TOO_WEAK",
+      "sha256": "f9e3de4b77237433106f84c2fe8b13cf9e70f8cf681349417907aedb353ce1b9"
+    },
+    {
+      "closed_at": 1792058400,
+      "reason": "NO_CONFIRMED_SETUP",
+      "sha256": "03f9f2b31f291882713c41f1ff60899a5de1777f4f4a340fc041ecabdd1a8653"
+    },
+    {
+      "closed_at": 1792044000,
+      "reason": "NO_CONFIRMED_SETUP",
+      "sha256": "f6025874ffc81d3a46f858ec74def58bb65e620ee0fa8b90db811d144ef4aebe"
+    },
+    {
+      "closed_at": 1792029600,
+      "reason": "NO_CONFIRMED_SETUP",
+      "sha256": "e759a49da8e60925143ae80df642566f23e8c0d783fdefd628da331985a49c24"
+    },
+    {
+      "closed_at": 1792015200,
+      "reason": "NO_CONFIRMED_SETUP",
+      "sha256": "1e5f3ca968c47bc70e15a0ffafd7d24a2e4be385d5e5b4a9aa047e4a8a0e8df5"
+    }
+  ],
+  "compared": "ALL_ORIGINAL_SNAPSHOT_AND_STRATEGY_FIELDS_EXCLUDING_ONLY_ADDITIVE_DIAGNOSTICS",
+  "orders_submitted": 0,
+  "live_autonomy": "NOT_TESTED"
+}

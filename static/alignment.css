@@ -1,0 +1,6 @@
+#timeframe-alignment {margin:1rem 0;padding:1rem;border:1px solid #40506b;border-radius:12px}
+#timeframe-alignment summary {cursor:pointer;font-weight:700}
+#ta-results {overflow-wrap:anywhere}
+#ta-results section {display:inline-block;vertical-align:top;margin:.5rem;padding:.75rem;border:1px solid #40506b;border-radius:8px;max-width:100%;box-sizing:border-box}
+#ta-results pre {white-space:pre-wrap;overflow-wrap:anywhere}
+#ta-refresh {padding:.65rem 1rem}
