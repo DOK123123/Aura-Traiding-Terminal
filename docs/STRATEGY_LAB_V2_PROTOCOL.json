@@ -1,0 +1,88 @@
+{
+  "version": "AURA_STRATEGY_LAB_2.0",
+  "start_utc": "2025-10-16T00:00:00Z",
+  "end_exclusive_utc": "2026-10-16T00:00:00Z",
+  "days": 365,
+  "split": "floor(15m_count*7/10); no position/pending carry",
+  "source": "Binance Spot public data-api.binance.vision /api/v3/klines BTCUSDT; 1h/4h aggregated exclusively from complete UTC 15m blocks",
+  "timeframes": {
+    "15m": 900,
+    "1h": 3600,
+    "4h": 14400
+  },
+  "starting_balance": "10000",
+  "risk_pct": ".5",
+  "daily_loss_pct": "2",
+  "max_drawdown_pct": "10",
+  "max_positions": 1,
+  "max_notional": "2000",
+  "fee_bps_per_side": 10,
+  "slippage_bps_per_side": 5,
+  "latency_validation_sensitivity_15m_bars": 1,
+  "strategies": {
+    "DONCHIAN": {
+      "lookback": 20,
+      "breakout_buffer_atr": ".1",
+      "min_volume": "1.25",
+      "min_adx": 20,
+      "ema": [
+        20,
+        50
+      ],
+      "sl_atr": 2,
+      "tp_atr": 4,
+      "confirmation": "directed close beyond prior20 range; prior close not beyond range; trend EMA20/50"
+    },
+    "TREND_ATR": {
+      "ema": [
+        20,
+        50,
+        200
+      ],
+      "min_adx": 20,
+      "rsi_long": [
+        50,
+        75
+      ],
+      "rsi_short": [
+        25,
+        50
+      ],
+      "min_volume": ".8",
+      "sl_atr": 3,
+      "tp_atr": 6,
+      "trailing_atr": 3,
+      "confirmation": "EMA50/200 trend and EMA50 slope; directed close crosses EMA20 after previous close on opposite side"
+    },
+    "EMA_RSI_ADX": {
+      "ema": [
+        20,
+        50
+      ],
+      "rsi_cross_long": 55,
+      "rsi_cross_short": 45,
+      "min_adx": 20,
+      "min_volume": ".8",
+      "sl_atr": 2,
+      "tp_atr": 4,
+      "confirmation": "RSI threshold cross, EMA20/50 direction and close beyond EMA20; +DI/-DI agrees"
+    }
+  },
+  "entry": "Signal closed at T; ideal next available 15m open T; fees/slip each side. Additional validation only delays dispatch one 15m bar for ALL candidates; no refitting.",
+  "trailing": "Lab-only ratchet after each completed strategy-TF bar, effective next 15m open. Chandelier since-entry extremes minus/plus 3*ATR, clamp to closed price, never loosen. TP fixed. No retrospectively applying a new stop to the candle that computed it.",
+  "selection": "Development only among all eleven candidates (two native baselines and nine new strategy/TF variants): >=30 closed trades, net>0, PF>=1.1, DD<10%, positive >=half complete development months; rank expectancy, then predeclared variant order. Freeze before validation metrics. No substitute winner using validation.",
+  "validation_gate": "Selected candidate >=20 closed trades, net>0, PF>=1.1, DD<10%, >=half full validation months positive AND latency sensitivity net>0/PF>=1.1. Descriptive gate, not statistical proof.",
+  "limitations": [
+    "Chronological 30% overlaps previously examined history; not pristine blind holdout.",
+    "Nine preregistered strategy/timeframe candidates; multiple comparisons, no parameter search.",
+    "Crypto Spot OHLC directional SHORT simulation, not actual spot short/borrow or Bybit Futures.",
+    "No funding/borrow/market impact; fixed fee/slip are assumptions, not live execution proof.",
+    "Risk halt PAUSED remains latched, no automatic resume in research.",
+    "Annual history is one cycle, insufficient to prove tail safety."
+  ],
+  "common_new_entry_protections": {
+    "min_net_rr": "1.2",
+    "shock_bar_range_atr": 3,
+    "warmup_closed_tf_bars": 250
+  }
+}

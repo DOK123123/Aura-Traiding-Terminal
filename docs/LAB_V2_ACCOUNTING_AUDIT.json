@@ -1,0 +1,14 @@
+{
+  "first_touch_raw_candle_execution_oracle": true,
+  "all_bar_open_close_equity_and_max_drawdown_oracle": true,
+  "independent_fee_inclusive_risk": true,
+  "trailing_initial_risk_and_first_touch_verified": true,
+  "status": "PASS",
+  "runs": 44,
+  "trade_records_checked": 1840,
+  "dataset_sha256": "da31330b7d5df5bf9560171372e6f4157d3215ef236ef528a529089f6a823810",
+  "calendar_and_trade_boundaries_valid": true,
+  "fee_slippage_balance_pnl_oracle": "INDEPENDENT_DECIMAL_64",
+  "production_access": false,
+  "proves_live_execution": false
+}
