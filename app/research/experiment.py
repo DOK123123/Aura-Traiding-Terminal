@@ -4,10 +4,7 @@ from pathlib import Path
 import time
 from app.lab.models import digest,LabError
 from app.automated.engine import POLICY
-from scripts.research_lab_v2 import replay
 from .registry import PROTOCOL,HYPOTHESES
-from .strategies import HypothesisDecisions
-from .auditor import audit_run,conclusion
 
 ROOT=Path(__file__).resolve().parents[2]
 FILES=('app/research/registry.py','app/research/strategies.py','app/research/experiment.py','app/research/auditor.py',
@@ -24,6 +21,9 @@ def frozen_config(name:str,source:dict) -> dict:
 
 
 def execute(config:dict,bars,source:dict) -> dict:
+    from scripts.research_lab_v2 import replay
+    from .strategies import HypothesisDecisions
+    from .auditor import audit_run,conclusion
     if not __debug__:raise LabError('AUDIT_REQUIRES_ASSERTIONS')
     if digest(config)!=digest(frozen_config(config['hypothesis'],source)):raise LabError('SOFTWARE_MISMATCH')
     start=PROTOCOL['start'];end=PROTOCOL['end_exclusive'];n=(end-start)//900
