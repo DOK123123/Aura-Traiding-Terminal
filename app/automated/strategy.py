@@ -13,6 +13,17 @@ PARAMETERS=dict(atr_stop_multiple='1.5',reward_multiple='2',minimum_adx=25,
 
 
 def strategy(snapshot,bars,now):
+    """Attach evidence from the very same evaluation; never re-run analysis."""
+    from .alignment import capture
+    try:
+        result=_evaluate(snapshot,bars,now)
+    except DemoError as exc:
+        exc.alignment_snapshot=capture(snapshot,now,dict(reason=exc.code),error=True)
+        raise
+    return dict(result,timeframe_alignment=capture(snapshot,now,result))
+
+
+def _evaluate(snapshot,bars,now):
     result=dict(direction=None,reason='NO_CONFIRMED_SETUP',version=VERSION,parameters_hash=digest(PARAMETERS),
         classification='EXPERIMENTAL / NO_EDGE_FOUND',source=SOURCE)
     if snapshot.get('status')!='OK' or snapshot.get('freshness',{}).get('status')!='FRESH':raise DemoError('STALE_DATA')

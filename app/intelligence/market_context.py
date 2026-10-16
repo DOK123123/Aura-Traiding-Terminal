@@ -199,6 +199,7 @@ def analyze_window(bars, now, provenance=None):
             continue
         state = deepcopy(state)
         mask = 0
+        alignment_inputs = {}
         for j, key in enumerate(('1h','4h')):
             other_step = STEPS[key]
             times = sorted(maps[key])
@@ -208,6 +209,7 @@ def analyze_window(bars, now, provenance=None):
                     and state['timestamp']-other['timestamp']<other_step):
                 mask |= 1<<j
                 state['mtf']['h1' if j==0 else 'h4'] = dict(direction=other['trend_direction'], closed_at=other['timestamp'])
+                alignment_inputs[key] = dict(trend_indicators=deepcopy(other['trend_indicators']),segment_start=other['segment_start'])
         state['mtf']['known_mask'] = mask
         directions=[state['mtf'][key]['direction'] if state['mtf'][key] else 0 for key in ('h1','h4')]
         state['mtf']['alignment']=mask==3 and directions[0]==directions[1]==state['trend_direction']!=0
@@ -222,7 +224,7 @@ def analyze_window(bars, now, provenance=None):
             for pivot in row['confirmed_pivots']:
                 events.append(dict(type='swing', **pivot))
         # Research setups deliberately omitted: no unvalidated BUY/SELL plan.
-        value.update(status='OK', state=state, regime=state['regime'],
+        value.update(status='OK', state=state, regime=state['regime'], alignment_inputs=alignment_inputs,
             structure_events=events[-32:], mtf=state['mtf'],
             levels=dict(support=state['support'], resistance=state['resistance'],
                 support_source=state['support_source'], resistance_source=state['resistance_source'],

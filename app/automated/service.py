@@ -57,7 +57,8 @@ class Service:
         try:decision=strategy(value,bars,now)
         except DemoError as exc:
             if exc.code not in ('MTF_UNAVAILABLE','INVALID_ANALYSIS'):raise
-            decision=dict(direction=None,reason=exc.code,error=exc.code)
+            decision=dict(direction=None,reason=exc.code,error=exc.code,
+                timeframe_alignment=getattr(exc,'alignment_snapshot',None))
         
         return bars,decision,now
     async def control(self,action,request_id,expected_revision=None):
@@ -123,11 +124,12 @@ class Service:
     async def _tick(self):
         envelope=await self.store.load();s=envelope['state'];now=int(self.clock());key=s['epoch']+':tick:'+str(now//300)
         if await self.store.lookup(key):return self.tick_result(s,True,'NO_NEW_WORK',False,[])
-        bars=None;decision=None;error=None
+        bars=None;decision=None;error=None;alignment_error=None
         try:
             if s['mode']=='ON' or s['position'] or s.get('data_recovery_armed',False):bars,decision,now=await self.snapshot()
         except (DemoError,ValueError,KeyError,TypeError) as exc:
             error=exc.code if isinstance(exc,DemoError) else 'INVALID_ANALYSIS';logger.warning('Auto42 market: code=%s',error)
+            alignment_error=getattr(exc,'alignment_snapshot',None)
         for attempt in range(3):
             old=envelope['state'];s=deepcopy(old);events=[];now=int(self.clock())
             # Same data must still be fresh after storage latency/concurrent changes.
@@ -141,6 +143,9 @@ class Service:
                 s.update(pending=None,last_error=error,last_decision=error)
                 if s['mode']=='ON':s['mode']='PAUSED'
                 events.append(event(s,'ERROR',now//300,now,dict(reason=error,market=self.market_diagnostics)))
+                if alignment_error:
+                    s['last_alignment_evaluation']=deepcopy(alignment_error)
+                    events[-1]['payload']['timeframe_alignment']=deepcopy(alignment_error)
             elif bars is not None:
                 try:
                     if decision.get('error'):
@@ -150,6 +155,8 @@ class Service:
                     if not decision.get('error') and s.get('data_recovery_armed',False) and s['mode']=='PAUSED' and not risk_reason(s):
                         s.update(mode='ON',data_recovery_armed=False)
                     s,events=advance(s,bars,decision,now)
+                    if (decision.get('error') or any(e['kind']=='DECISION' for e in events)) and decision.get('timeframe_alignment'):
+                        s['last_alignment_evaluation']=deepcopy(decision['timeframe_alignment'])
                     if risk_reason(s):s['data_recovery_armed']=False
                     s['last_error']=decision.get('error');s['last_success_at']=now
                 except DemoError as exc:
@@ -225,6 +232,19 @@ class Service:
             missed_scheduler_slots=max(0,now//300-s['last_run_at']//300-1) if s['last_run_at'] is not None else None,
             diagnostics=self.diagnostics(s,last_saved_at=env.get('last_saved_at'),fresh=fresh),server_now=now,backend=self.store.backend,durable=self.store.durable,scheduler_configured=scheduler_configured(),
             policy=POLICY,strategy=PARAMETERS,trades=trades,events=recent,paper_only=True,exchange_execution=False)
+
+    async def alignment_dashboard(self):
+        from .alignment import present
+        self.ready()
+        envelope=await self.store.load()
+        s=envelope['state'];now=int(self.clock())
+        evidence=present(s.get('last_alignment_evaluation'),now)
+        if (s['last_error'] or s['last_success_at'] is None or not 0<=now-s['last_success_at']<=360):
+            evidence['current_data_fresh']=False
+        return dict(evidence,read_only=True,
+            paper_only=True,exchange_execution=False,live_autonomy='NOT_TESTED',
+            portfolio_last_decision=s['last_decision'],portfolio_last_error=s['last_error'],
+            last_processed_closed_at=s['watermark'],revision=envelope['revision'],server_now=now)
 
 
 def configured(market):
