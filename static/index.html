@@ -26,6 +26,7 @@
 <link rel="stylesheet" href="/static/alignment.css">
 <link rel="stylesheet" href="/static/live_paper_monitor.css">
 <link rel="stylesheet" href="/static/adaptive43.css">
+<link rel="stylesheet" href="/static/adaptive43_profiles.css">
 </head>
 <body>
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
@@ -251,6 +252,25 @@
   <section class="panel patterns lab" aria-labelledby="lab-title">
     <div class="modules-heading"><div><p class="eyebrow">RESEARCH ONLY / NO ACTIVATION</p><h2 id="lab-title">STRATEGY LAB v1.1</h2></div><span class="tiny-badge">BTCUSDT · CLOSED HISTORY</span></div>
     <p class="pattern-warning">REAL MONEY EXECUTION = DISABLED · No strategy activation. A numerical backtest ranking is not evidence of profitability, safety or production readiness.</p>
+    <details id="a43p-panel">
+      <summary>Aura 4.3 · Conservative / Balanced / Active · 6 месяцев, 70/30</summary>
+      <p>Сохранённое исследование частоты входов. Последние 30% не применяются для настройки новых профилей; период частично изучался ранее и не является слепым holdout. Отбор только на development. Новая отдельная проверка с прежним Auto42 risk/execution engine: риск ≤0,5%, дневной лимит 2%, drawdown 10%, одна позиция, комиссии 10 bps и slippage 5 bps на сторону. Production не меняется.</p>
+      <p>15m — вход, 1h — тренд, 4h — контекст. Pullback / Breakout / Reversal. Legacy Aura Existing ниже — другая стратегия, её прежняя несовместимость не относится к этому сравнению Auto Paper 4.2.</p>
+      <a href="/api/lab/login">Вход владельца: aura</a><button id="a43p-refresh" type="button">Показать сохранённое исследование</button>
+      <p id="a43p-status" role="status" aria-live="polite">Отчёт ещё не запрошен. Сигналы и сделки production не запускаются.</p>
+      <div id="a43p-result" hidden>
+        <p id="a43p-meta"></p><p id="a43p-selection"></p><details><summary>Частота блокирующих фильтров</summary><p>Счётчики по всем 6 месяцам, раздельно по стороне и сценарию. failed — пересекающиеся отказы; first — первый отказ в фиксированном порядке; only_blocker — остальные setup-условия выполнены. Это не дополнительный backtest и не подсказка снять защиту. План SL/RR проверяется после setup.</p><pre id="a43p-filters"></pre></details>
+        <label>Выборка<select id="a43p-split"><option value="validation">Проверка · последние 30%</option><option value="development">Разработка · первые 70%</option><option value="full_6m">Все 6 месяцев · описательно</option></select></label>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Стратегия</th><th>Сделки</th><th>Сделок / 30 дней</th><th>Сигналы</th><th>Net profit</th><th>Return %</th><th>Win %</th><th>PF</th><th>Max DD %</th><th>Avg Win</th><th>Avg Loss</th><th>Expectancy</th><th>Sharpe</th><th>Fees</th><th>Slippage USDT</th><th>Engine mode</th><th>Статус выборки</th></tr></thead><tbody id="a43p-comparison"></tbody></table></div>
+        <p>Net profit включает конечную liquidation equity незакрытой позиции. PF/Win Rate/Expectancy — по закрытым сделкам. Sharpe не определён при &lt;20 сделках или &lt;30 дневных returns. Ни одна строка не является разрешением активации.</p>
+        <label>Детали<select id="a43p-variant"><option value="AURA42">Aura 4.2</option><option value="AURA43_ORIGINAL">Aura 4.3 Original</option><option value="Conservative">Conservative</option><option value="Conservative_TREND_PULLBACK">Conservative · TREND_PULLBACK</option><option value="Conservative_BREAKOUT">Conservative · BREAKOUT</option><option value="Conservative_REVERSAL">Conservative · REVERSAL</option><option value="Balanced" selected>Balanced</option><option value="Balanced_TREND_PULLBACK">Balanced · TREND_PULLBACK</option><option value="Balanced_BREAKOUT">Balanced · BREAKOUT</option><option value="Balanced_REVERSAL">Balanced · REVERSAL</option><option value="Active">Active</option><option value="Active_TREND_PULLBACK">Active · TREND_PULLBACK</option><option value="Active_BREAKOUT">Active · BREAKOUT</option><option value="Active_REVERSAL">Active · REVERSAL</option></select></label>
+        <p id="a43p-note"></p><details><summary>Стабильность по месяцам</summary><pre id="a43p-monthly"></pre></details><p>Equity: синий — Aura 4.2; зелёный — выбранная стратегия. PnL после модельных издержек.</p>
+        <svg id="a43p-curve" viewBox="0 0 600 160" role="img" aria-label="Aura 4.2 and selected adaptive strategy equity comparison"></svg>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Side</th><th>Signal UTC</th><th>Entry UTC</th><th>Entry</th><th>SL</th><th>TP</th><th>Exit UTC</th><th>Exit</th><th>Fees</th><th>PnL</th><th>Entry reason</th><th>Exit reason</th></tr></thead><tbody id="a43p-trades"></tbody></table></div>
+        <details><summary>Все решения с сигналом и дневная выборка отказов; полные счётчики</summary><pre id="a43p-counts"></pre><div class="pattern-table-wrap"><table><thead><tr><th>Close UTC</th><th>Signal</th><th>Scenario</th><th>Regime</th><th>Strategy reason</th><th>Portfolio reason</th></tr></thead><tbody id="a43p-decisions"></tbody></table></div></details>
+        <button id="a43p-more" type="button" hidden>Следующая страница сделок и решений</button>
+      </div>
+    </details>
     <details id="a43-panel">
       <summary>Aura 4.2 ↔ Aura 4.3 Adaptive · 90-day research</summary>
       <p>Новая отдельная проверка с прежним Auto42 risk/execution engine: риск ≤0,5%, дневной лимит 2%, drawdown 10%, одна позиция, комиссии 10 bps и slippage 5 bps на сторону. Production не меняется.</p>
@@ -386,4 +406,5 @@
 <script src="/static/alignment.js" defer></script>
 <script src="/static/live_paper_monitor.js" defer></script>
 <script src="/static/adaptive43.js" defer></script>
+<script src="/static/adaptive43_profiles.js" defer></script>
 </body></html>
