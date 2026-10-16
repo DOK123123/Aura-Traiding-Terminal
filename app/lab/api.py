@@ -72,6 +72,21 @@ async def respond(call):
 def login():return RedirectResponse('/',status_code=303,headers=HEADERS)
 
 
+@router.get('/profiles43',dependencies=[Depends(owner)])
+async def profiles43_summary():
+    import asyncio
+    from .adaptive43_profiles_report import summary
+    return await respond(asyncio.to_thread(summary))
+
+
+@router.get('/profiles43/detail',dependencies=[Depends(owner)])
+async def profiles43_detail(variant:str=Query('Balanced',pattern=r'^(AURA42|AURA43_ORIGINAL|(Conservative|Balanced|Active)(_(TREND_PULLBACK|BREAKOUT|REVERSAL))?)$'),
+    split:Literal['full_6m','development','validation']='validation',offset:int=Query(0,ge=0),limit:int=Query(100,ge=1,le=200)):
+    import asyncio
+    from .adaptive43_profiles_report import detail
+    return await respond(asyncio.to_thread(detail,variant,split,offset,limit))
+
+
 @router.get('/adaptive43',dependencies=[Depends(owner)])
 async def adaptive43_summary():
     import asyncio
