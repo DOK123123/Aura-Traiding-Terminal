@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "source_sha256": "da31330b7d5df5bf9560171372e6f4157d3215ef236ef528a529089f6a823810",
+  "native_closed_decisions": 35040,
+  "native_execution_portfolios_equal": 8,
+  "independent_decimal_indicator_values_checked": 411600,
+  "causal_trailing_updates_checked": 6750,
+  "native_real_snapshot_cutoffs_checked": 32,
+  "all_decision_artifact_hashes_verified": true,
+  "future_perturbation_invariant": true,
+  "selection_development_only": true,
+  "production_access": false,
+  "proves_live_execution": false
+}
