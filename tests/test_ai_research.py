@@ -174,7 +174,7 @@ class LLM(unittest.IsolatedAsyncioTestCase):
 class API(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         from app.research.api import router,instance
-        self.folder=tempfile.TemporaryDirectory();self.root=Path(self.folder.name);self.s=Service(self.root,advisor=None)
+        self.folder=tempfile.TemporaryDirectory();self.root=Path(self.folder.name);self.s=Service(self.root,store=Store(self.root),writable=True)
         self.app=FastAPI();self.app.include_router(router);self.app.dependency_overrides[instance]=lambda:self.s
         self.client=httpx.AsyncClient(transport=httpx.ASGITransport(app=self.app),base_url='https://aura.invalid')
         self.auth=patch.dict('os.environ',AURA_TESTNET_VIEW_PASSWORD='DUMMY_OWNER_PASSWORD',AURA_RESEARCH_LLM_ENABLED='false');self.auth.start()
@@ -195,12 +195,13 @@ class API(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((await self.client.post('/api/research/queue/not-id/run',headers=self.headers,**args)).status_code,422)
         for forbidden in ('/activate','/orders','/deploy','/scheduler'):self.assertEqual((await self.client.post('/api/research'+forbidden,**args)).status_code,404)
 
-    async def test_worker_failure_persisted_no_fake_audit_pass(self):
+    async def test_http_never_executes_or_spawns_worker(self):
         ident=(await self.s.enqueue('MEAN_REVERSION'))['id']
-        with patch('app.research.service.load_dataset',side_effect=ValueError('DUMMY_SECRET')):
-            with self.assertRaisesRegex(LabError,'RESEARCH_RUN_FAILED'):await self.s.run(ident)
-        row=await self.s.get(ident);self.assertEqual(row['state'],'ERROR');self.assertIsNone(row['report']);self.assertNotIn('DUMMY_SECRET',json.dumps(row))
-        with self.assertRaises(LabError):await self.s.run(ident)
+        with patch('app.research.experiment.execute',side_effect=AssertionError('HTTP_EXECUTION_FORBIDDEN')) as execute_mock,patch('subprocess.Popen',side_effect=AssertionError('HTTP_SPAWN_FORBIDDEN')) as spawn:
+            result=await self.s.run(ident)
+        self.assertFalse(result['executed']);self.assertEqual(result['status'],'EXTERNAL_RUNNER_REQUIRED')
+        execute_mock.assert_not_called();spawn.assert_not_called()
+        self.assertEqual((await self.s.get(ident))['state'],'QUEUED')
 
 class AdditionalSafety(unittest.TestCase):
     def test_configured_paper_or_lab_path_conflict_prevents_creation(self):
@@ -239,19 +240,22 @@ class AnonymousConstruction(unittest.IsolatedAsyncioTestCase):
             factory.assert_not_called()
 
 class SuccessfulManualCycle(unittest.IsolatedAsyncioTestCase):
-    async def test_owner_http_run_persists_full_result_reopens_and_rejects_duplicate(self):
+    async def test_http_enqueues_and_reads_only_external_result_pages(self):
         from app.research.api import router,instance
         bs=bars(1500);source=dict(available(),sha256='SYNTHETIC_SUCCESS_TEST_ONLY')
         with tempfile.TemporaryDirectory() as folder:
-            svc=Service(Path(folder));app=FastAPI();app.include_router(router);app.dependency_overrides[instance]=lambda:svc
-            with patch.dict('os.environ',AURA_TESTNET_VIEW_PASSWORD='DUMMY_OWNER_PASSWORD'),patch.dict(PROTOCOL,start=bs[1200].time,end_exclusive=bs[-1].time+900),patch('app.research.service.available',return_value=source),patch('app.research.service.load_dataset',return_value=(bs,source)):
+            store=Store(Path(folder));svc=Service(Path(folder),store=store,writable=True);app=FastAPI();app.include_router(router);app.dependency_overrides[instance]=lambda:svc
+            with patch.dict('os.environ',AURA_TESTNET_VIEW_PASSWORD='DUMMY_OWNER_PASSWORD'),patch.dict(PROTOCOL,start=bs[1200].time,end_exclusive=bs[-1].time+900),patch('app.research.service.available',return_value=source):
                 async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='https://aura.invalid',auth=('aura','DUMMY_OWNER_PASSWORD'),headers={'X-Aura-Lab':'research-only'}) as c:
                     ident=(await c.post('/api/research/queue',json={'hypothesis':'MEAN_REVERSION'})).json()['id']
-                    response=await c.post('/api/research/queue/'+ident+'/run',json={});self.assertEqual(response.status_code,200)
-                    row=response.json();self.assertIn(row['state'],('REJECTED','NEEDS_VALIDATION'));self.assertEqual(len(row['report']['runs']),7)
+                    response=await c.post('/api/research/queue/'+ident+'/run',json={});self.assertEqual(response.status_code,200);self.assertFalse(response.json()['executed'])
+                    self.assertEqual(store.get(ident)['state'],'QUEUED')
+                    # Test-only simulation of an external caller; HTTP did not execute it.
+                    claim=store.claim(ident);r=execute(claim['config'],bs,source);store.finish(ident,r,attempt=claim['attempt'])
                     self.assertEqual((await c.post('/api/research/queue/'+ident+'/run',json={})).status_code,409)
                     self.assertEqual((await c.post('/api/research/queue/'+ident+'/retry',json={})).status_code,409)
-                    export=(await c.get('/api/research/experiments/'+ident+'/export')).json();self.assertIn('decisions',export['report']['runs'][0])
+                    export=(await c.get('/api/research/experiments/'+ident+'/export')).json();self.assertNotIn('decisions',export['report']['runs'][0]);self.assertIn('artifacts',export['report']['runs'][0])
+                    page=await c.get('/api/research/experiments/'+ident+'/records?run_key=0&kind=decisions');self.assertEqual(page.status_code,200)
                     self.assertEqual(Store(Path(folder)).get(ident)['report']['checksum'],export['report']['checksum'])
 
 class LLMUnknownOutcome(unittest.IsolatedAsyncioTestCase):
