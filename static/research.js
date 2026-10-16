@@ -1,11 +1,11 @@
 // Manual owner-only research; no trading/account/scheduler requests or polling.
 (() => {
   const el=id=>document.getElementById('research-'+id);
-  let busy=false,configured=false;
+  let busy=false,configured=false,writable=false,selected=null,nextOffset=null;
   const text=value=>value==null?'—':String(value);
-  function controls(){for(const b of document.querySelectorAll('button'))b.disabled=busy || (b.id==='research-idea'&&!configured);}
+  function controls(){for(const b of document.querySelectorAll('button'))b.disabled=busy || (b.id==='research-idea'&&(!configured||!writable)) || (['research-enqueue','research-recover'].includes(b.id)&&!writable) || (['research-load-records','research-more-records'].includes(b.id)&&!selected);}
   async function request(path='',body){
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),240000);
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
     try{
       const options={credentials:'same-origin',cache:'no-store',signal:controller.signal};
       if(body!==undefined){options.method='POST';options.headers={'Content-Type':'application/json','X-Aura-Lab':'research-only'};options.body=JSON.stringify(body);}
@@ -20,7 +20,8 @@
   function result(data){
     const r=data.report;el('result').hidden=true;if(!r){el('status').textContent=data.state;return;}
     if(r.research_only!==true||r.activation_available!==false||r.final_test_is_independent!==false)throw new Error('Invalid research boundary');
-    el('result').hidden=false;
+    el('result').hidden=false;selected=data.id;
+    el('run').replaceChildren();for(const run of r.runs){const o=document.createElement('option');o.value=run.run_key;o.textContent=run.split+' / '+run.scale;el('run').append(o);}el('records').textContent='';nextOffset=null;
     el('audit').textContent=`${r.auditor.status} · ${r.auditor.reasons.join(' ')} · config ${r.config_hash}`;
     el('export').href='/api/research/experiments/'+encodeURIComponent(data.id)+'/export';
     el('metrics').replaceChildren();for(const run of r.runs){const row=document.createElement('tr');cell(row,run.split);cell(row,run.scale);for(const key of ['trades','net_profit','return_pct','profit_factor','win_rate','expectancy','max_drawdown_pct','sharpe','fees'])cell(row,run.metrics[key]);el('metrics').append(row);}
@@ -29,11 +30,11 @@
   }
   async function refresh(){
     const data=await request();if(data.research_only!==true||data.activation_available!==false||data.manual_only!==true)throw new Error('Invalid research identity');
-    configured=data.llm.enabled===true;el('ai').textContent=data.llm.status+' · deterministic backtest/audit available';el('agents').replaceChildren();for(const a of data.agents)card(el('agents'),a.id+' · '+a.state,a.capabilities.join('; '));
+    writable=data.writable===true;configured=data.llm.enabled===true;el('ai').textContent=data.llm.status+' · deterministic backtest/audit available';el('agents').replaceChildren();for(const a of data.agents)card(el('agents'),a.id+' · '+a.state,a.capabilities.join('; '));
     el('data').textContent=`${data.dataset.source} · ${data.dataset.total_candles} closed candles incl warmup · ${new Date(data.dataset.start*1000).toISOString()} → ${new Date(data.dataset.end_exclusive*1000).toISOString()} · SHA256 ${data.dataset.sha256}`;
     el('registry').replaceChildren();for(const h of Object.values(data.registry))card(el('registry'),h.title,h.rationale+' '+h.rules);
     el('sources').replaceChildren();for(const [id,s] of Object.entries(data.sources)){const p=document.createElement('p'),a=document.createElement('a');a.textContent=id+': '+s.title+' ('+s.year+')';if(s.url.startsWith('https://doi.org/'))a.href=s.url;a.rel='noopener noreferrer';a.target='_blank';p.append(a,document.createTextNode(' — '+s.scope));el('sources').append(p);}
-    el('queue').replaceChildren();for(const q of data.queue){const row=document.createElement('tr');for(const k of ['id','hypothesis','state'])cell(row,q[k]);const td=document.createElement('td'),b=document.createElement('button');b.textContent=q.state==='QUEUED'?'Запустить вручную':'Результат';b.addEventListener('click',()=>action(async()=>{if(q.state==='QUEUED'){el('status').textContent='TESTING: изолированный backtest и аудит…';result(await request('/queue/'+encodeURIComponent(q.id)+'/run',{}));}else result(await request('/experiments/'+encodeURIComponent(q.id)));await refresh();}));td.append(b);if(q.state==='ERROR'){const retry=document.createElement('button');retry.textContent='Повторить тот же конфиг';retry.addEventListener('click',()=>action(async()=>{await request('/queue/'+encodeURIComponent(q.id)+'/retry',{});await refresh();el('status').textContent='Тот же конфиг снова в очереди. Запуск — отдельной кнопкой.';}));td.append(retry);}row.append(td);el('queue').append(row);}
+    el('queue').replaceChildren();for(const q of data.queue){const row=document.createElement('tr');for(const k of ['id','hypothesis','state'])cell(row,q[k]);const td=document.createElement('td'),b=document.createElement('button');b.textContent=q.state==='QUEUED'?'Инструкция runner':'Результат';b.addEventListener('click',()=>action(async()=>{if(q.state==='QUEUED'){el('status').textContent='EXTERNAL_RUNNER_REQUIRED: на отдельном Linux/WSL хосте: python -m scripts.research_runner run --state-dir <durable-directory> --job-id '+q.id+' --isolated-host';}else result(await request('/experiments/'+encodeURIComponent(q.id)));}));td.append(b);if(q.state==='ERROR'&&writable){const retry=document.createElement('button');retry.textContent='Повторить тот же конфиг';retry.addEventListener('click',()=>action(async()=>{await request('/queue/'+encodeURIComponent(q.id)+'/retry',{});await refresh();el('status').textContent='Тот же конфиг снова в очереди. Запуск — внешним CLI-runner.';}));td.append(retry);}row.append(td);el('queue').append(row);}
     el('calls').textContent=JSON.stringify(data.llm_calls,null,2);
     el('published').textContent=data.published?data.published.experiments.map(e=>e.hypothesis+' — '+e.status+'\n'+e.runs.filter(r=>r.scale==='1').map(r=>r.split+': '+r.metrics.trades+' trades; net '+r.metrics.net_profit+' USDT; DD '+r.metrics.max_drawdown_pct+'%').join('\n')).join('\n\n'):'Опубликованных результатов нет.';
   }
@@ -41,5 +42,9 @@
   el('enqueue').addEventListener('click',()=>action(async()=>{const r=await request('/queue',{hypothesis:el('hypothesis').value});await refresh();el('status').textContent='Конфиг зафиксирован: '+r.id+'. Для вычисления нажмите «Запустить вручную».';}));
   el('recover').addEventListener('click',()=>action(async()=>{const r=await request('/recover-interrupted',{});await refresh();el('status').textContent='Прерванных задач отмечено: '+r.interrupted+'. Автоповтора нет.';}));
   el('idea').addEventListener('click',()=>action(async()=>{const r=await request('/ideas',{});el('proposal').textContent=JSON.stringify(r,null,2);await refresh();el('status').textContent='ADVISORY_ONLY_UNVERIFIED: идея не добавлена в исполняемый реестр.';}));
+  async function records(offset){if(!selected)return;const query='?run_key='+encodeURIComponent(el('run').value)+'&kind='+encodeURIComponent(el('kind').value)+'&offset='+offset+'&limit=100';const p=await request('/experiments/'+encodeURIComponent(selected)+'/records'+query);el('records').textContent=JSON.stringify(p.records,null,2);nextOffset=p.next_offset;el('status').textContent='Записи '+p.offset+' / '+p.total+'. Полный backtest в веб-процессе не запускается.';}
+  el('load-records').addEventListener('click',()=>action(()=>records(0)));
+  el('more-records').addEventListener('click',()=>action(async()=>{if(nextOffset!==null)await records(nextOffset);}));
+  controls();
   // No initial fetch, timer, automatic job or LLM call.
 })();

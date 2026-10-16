@@ -57,7 +57,7 @@ function environment(answer) {
 }
 function state(overrides = {}) {
   return {
-    research_only: true, activation_available: false, manual_only: true,
+    research_only: true, activation_available: false, manual_only: true, writable: true,
     llm: {enabled: false, status: 'AI_NOT_CONFIGURED'},
     agents: ['RESEARCHER', 'BACKTESTER', 'AUDITOR'].map(id => ({id, state: 'IDLE', capabilities: ['research only']})),
     dataset: {source: 'Binance Spot public archive', total_candles: 960, start: 1700000000, end_exclusive: 1700086400, sha256: 'fixture-hash'},
@@ -71,7 +71,7 @@ function experiment(overrides = {}) {
     id: 'experiment/with space', state: 'NEEDS_VALIDATION', report: {
       research_only: true, activation_available: false, final_test_is_independent: false,
       config_hash: 'frozen-hash', auditor: {status: 'NEEDS_VALIDATION', reasons: ['Reused exploratory test.']},
-      runs: [{split: 'test', scale: '1.0', metrics: {trades: 0, net_profit: '0', return_pct: '0', profit_factor: null, win_rate: null, expectancy: null, max_drawdown_pct: '0', sharpe: null, fees: '0'}}],
+      runs: [{run_key:'0',split: 'test', scale: '1.0', metrics: {trades: 0, net_profit: '0', return_pct: '0', profit_factor: null, win_rate: null, expectancy: null, max_drawdown_pct: '0', sharpe: null, fees: '0'}}],
       audits: [{split: 'test', scale: '1.0', status: 'PASS', closed_trades_checked: 0, independent_math: 'PASS'}], ...overrides,
     },
   };
@@ -102,23 +102,17 @@ test('owner manually refreshes status without starting queued work or LLM', asyn
 });
 test('enqueue is an explicit protected POST and does not execute the experiment', async () => {
   const e = environment((url) => url === '/api/research/queue' ? {id: 'fixed-config'} : state());
-  e.el('hypothesis').value = 'LIQUIDITY_SWEEP'; await e.click('enqueue');
-  assert.deepEqual(e.requests.map(r => r.url), ['/api/research/queue', '/api/research']);
-  assert.equal(e.requests[0].options.method, 'POST');
-  assert.deepEqual(JSON.parse(e.requests[0].options.body), {hypothesis: 'LIQUIDITY_SWEEP'});
+  await e.click('refresh');e.el('hypothesis').value = 'LIQUIDITY_SWEEP'; await e.click('enqueue');
+  assert.deepEqual(e.requests.map(r => r.url), ['/api/research', '/api/research/queue', '/api/research']);
+  assert.equal(e.requests[1].options.method, 'POST');
+  assert.deepEqual(JSON.parse(e.requests[1].options.body), {hypothesis: 'LIQUIDITY_SWEEP'});
   assert.match(e.el('status').textContent, /fixed-config/); assertResearchRequests(e);
 });
-test('queued run requires a separate click and encodes the experiment ID', async () => {
-  const e = environment(state({queue: [{id: 'queued/id with space', hypothesis: 'MEAN_REVERSION', state: 'QUEUED'}]}));
-  await e.click('refresh');
-  e.setResponse(url => url.endsWith('/run') ? experiment() : state());
-  await e.click(e.el('queue').children[0].children.at(-1).children[0]);
-  assert.equal(e.requests[1].url, '/api/research/queue/queued%2Fid%20with%20space/run');
-  assert.equal(e.requests[1].options.method, 'POST'); assert.equal(e.requests[1].options.body, '{}');
-  assert.equal(e.el('result').hidden, false); assert.match(e.el('audit').textContent, /NEEDS_VALIDATION/);
-  assert.equal(e.el('export').href, '/api/research/experiments/experiment%2Fwith%20space/export');
-  assert.equal(e.el('metrics').children[0].children[3].textContent, '0');
-  assert.equal(e.el('metrics').children[0].children[5].textContent, '—'); assertResearchRequests(e);
+test('queued task only shows CLI instructions and never dispatches HTTP or a worker', async () => {
+  const e=environment(state({queue:[{id:'queued/id with space',hypothesis:'MEAN_REVERSION',state:'QUEUED'}]}));
+  await e.click('refresh');await e.click(e.el('queue').children[0].children.at(-1).children[0]);
+  assert.equal(e.requests.length,1);assert.match(e.el('status').textContent,/EXTERNAL_RUNNER_REQUIRED/);
+  assert.match(e.el('status').textContent,/queued\/id with space/);assert.equal(e.el('result').hidden,true);assertResearchRequests(e);
 });
 test('saved experiment is read with GET and never rerun automatically', async () => {
   const e = environment(state({queue: [{id: 'saved', hypothesis: 'MEAN_REVERSION', state: 'NEEDS_VALIDATION'}]}));
@@ -139,8 +133,8 @@ test('LLM remains disabled without configuration; configured call is explicit ad
 });
 test('interrupted work recovery is manual, protected and never starts a retry', async () => {
   const e = environment(url => url.endsWith('/recover-interrupted') ? {interrupted: 2} : state());
-  await e.click('recover'); assert.deepEqual(e.requests.map(r => r.url), ['/api/research/recover-interrupted', '/api/research']);
-  assert.equal(e.requests[0].options.method, 'POST'); assert.match(e.el('status').textContent, /2/);
+  await e.click('refresh');await e.click('recover'); assert.deepEqual(e.requests.map(r => r.url), ['/api/research', '/api/research/recover-interrupted', '/api/research']);
+  assert.equal(e.requests[1].options.method, 'POST'); assert.match(e.el('status').textContent, /2/);
   assertResearchRequests(e);
 });
 test('401 and 403 show owner authentication error without fabricated results', async () => {
@@ -186,10 +180,26 @@ test('pending request disables controls and suppresses duplicate execution taps'
   assert.equal(e.el('enqueue').disabled, false); assert.equal(e.requests.length, 2); assertResearchRequests(e);
 });
 test('backend and aborted requests show errors without automatic retry or execution requests', async () => {
-  const e = environment({status: 422, body: {code: '<script>bad</script>'}}); await e.click('enqueue');
+  const e = environment({status: 422, body: {code: '<script>bad</script>'}}); await e.click('refresh');
   assert.equal(e.el('status').textContent, '<script>bad</script>'); assert.equal(e.requests.length, 1);
   const abort = Object.assign(new Error('aborted'), {name: 'AbortError'});
   e.setResponse(abort); await e.click('refresh'); assert.match(e.el('status').textContent, /Ответ потерян/);
   assert.equal(e.requests.length, 2); assert.equal(e.timers.size, 0); assert.equal(e.innerHTMLWrites(), 0);
   assertResearchRequests(e);
+});
+
+test('terminal viewer disables all mutation controls even if LLM metadata says configured',async()=>{
+ const e=environment(state({writable:false,llm:{enabled:true,status:'READY'}}));await e.click('refresh');
+ for(const id of ['enqueue','recover','idea']){assert.equal(e.el(id).disabled,true);await e.click(id);}
+ assert.equal(e.requests.length,1);
+});
+test('manifest arrays are fetched one bounded page per explicit click with safe text',async()=>{
+ const e=environment(state({queue:[{id:'saved',state:'REJECTED',hypothesis:'MEAN_REVERSION'}]}));await e.click('refresh');
+ e.setResponse(experiment());await e.click(e.el('queue').children[0].children.at(-1).children[0]);
+ assert.equal(e.el('result').hidden,false);assert.equal(e.el('export').href,'/api/research/experiments/experiment%2Fwith%20space/export');
+ e.el('run').value='0';e.el('kind').value='decisions';e.setResponse({records:[{reason:'<script>untrusted</script>'}],next_offset:100,total:201,offset:0});
+ await e.click('load-records');assert.match(e.requests.at(-1).url,/records\?run_key=0&kind=decisions&offset=0&limit=100/);
+ assert.match(e.el('records').textContent,/<script>/);assert.equal(e.innerHTMLWrites(),0);
+ e.setResponse({records:[],next_offset:null,total:201,offset:100});await e.click('more-records');
+ assert.match(e.requests.at(-1).url,/offset=100/);assert.equal(e.requests.length,4);assertResearchRequests(e);
 });

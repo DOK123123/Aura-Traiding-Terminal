@@ -1,5 +1,7 @@
 # AURA AI RESEARCH LAB v1
 
+> Historical PR7 design/results. The in-web execution and monolithic export instructions below are superseded by `docs/AI_RESEARCH_RELEASE_FIXES.md`: terminal viewer is read-only; use isolated external runner and chunked durable storage. Frozen hypotheses/financial evidence remain unchanged.
+
 Isolated manual research, not an autonomous trading system. No strategy is promoted or activated. No production portfolio, Supabase, scheduler, risk rules or exchange integration was changed. No merge or deploy was performed.
 
 ## Architecture inspected before implementation
