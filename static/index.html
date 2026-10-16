@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="/static/exchange_diagnostics.css">
 <link rel="stylesheet" href="/static/execution_verification.css">
 <link rel="stylesheet" href="/static/alignment.css">
+<link rel="stylesheet" href="/static/live_paper_monitor.css">
 </head>
 <body>
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
@@ -346,6 +347,15 @@
     <button id="ta-refresh" type="button" hidden>Обновить сохранённую диагностику</button>
     <p id="ta-status" role="status" aria-live="polite">Снимок ещё не загружен.</p><div id="ta-results"></div>
   </details>
+  <details id="live-paper-monitor">
+    <summary>LIVE PAPER TRADING MONITOR · только для владельца</summary>
+    <p>Только виртуальные сделки. VERIFIED требует сохранённую production-цепочку SIGNAL → OPEN → CLOSE на Render/Supabase. Replay и TEST ONLY не подтверждают live execution.</p>
+    <p>Панель читает данные каждые 30 секунд, пока открыта и видима. Торговлю выполняет существующий scheduler независимо от браузера. PnL обновляется по закрытым свечам.</p>
+    <a href="/api/paper/login">Вход владельца: aura</a>
+    <button id="lpm-refresh" type="button" hidden>Обновить монитор</button>
+    <p id="lpm-status" role="status" aria-live="polite">WAITING_FOR_REAL_SIGNAL · production-цикл ещё не проверен.</p>
+    <div id="lpm-results"></div>
+  </details>
   <footer><span>Аналитический инструмент · без реальных сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
 </main>
 <script src="/static/forward_validation.js" defer></script>
@@ -354,4 +364,5 @@
 <script src="/static/exchange_diagnostics.js" defer></script>
 <script src="/static/execution_verification.js" defer></script>
 <script src="/static/alignment.js" defer></script>
+<script src="/static/live_paper_monitor.js" defer></script>
 </body></html>
