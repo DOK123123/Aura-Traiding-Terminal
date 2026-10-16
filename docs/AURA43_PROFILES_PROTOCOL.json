@@ -1,0 +1,159 @@
+{
+  "version": "AURA43_PROFILES_1",
+  "frozen_before_new_data_and_validation": true,
+  "start_utc": "2026-04-16T00:00:00Z",
+  "end_exclusive_utc": "2026-10-16T00:00:00Z",
+  "calendar_months": 6,
+  "days": 183,
+  "development_fraction": "0.70",
+  "split_policy": "floor(total_15m_bars*7/10); independent fresh account; no boundary positions carried",
+  "profiles": {
+    "Conservative": {
+      "h1_adx": 25,
+      "entry_adx": 20,
+      "touch": 0.25,
+      "resume": 0.05,
+      "pullback_confirmation": "WICK",
+      "pullback_volume": 0.8,
+      "pullback_rsi": [
+        45,
+        68,
+        32,
+        55
+      ],
+      "breakout_lookback": 20,
+      "range_atr": 6,
+      "breakout_volume": 1.5,
+      "breakout_buffer": 0.1,
+      "breakout_rsi": [
+        55,
+        75,
+        25,
+        45
+      ],
+      "reversal_extreme": [
+        35,
+        65
+      ],
+      "reversal_rsi": [
+        40,
+        60
+      ],
+      "reversal_lookback": 8,
+      "reversal_confirmation": "RETEST",
+      "reversal_volume": 1
+    },
+    "Balanced": {
+      "h1_adx": 22,
+      "entry_adx": 18,
+      "touch": 0.4,
+      "resume": 0.03,
+      "pullback_confirmation": "BODY",
+      "pullback_volume": 0.8,
+      "pullback_rsi": [
+        42,
+        72,
+        28,
+        58
+      ],
+      "breakout_lookback": 16,
+      "range_atr": 8,
+      "breakout_volume": 1.25,
+      "breakout_buffer": 0.08,
+      "breakout_rsi": [
+        52,
+        78,
+        22,
+        48
+      ],
+      "reversal_extreme": [
+        40,
+        60
+      ],
+      "reversal_rsi": [
+        38,
+        62
+      ],
+      "reversal_lookback": 8,
+      "reversal_confirmation": "RETEST_OR_BREAK",
+      "reversal_volume": 1
+    },
+    "Active": {
+      "h1_adx": 20,
+      "entry_adx": 15,
+      "touch": 0.5,
+      "resume": 0.02,
+      "pullback_confirmation": "BODY",
+      "pullback_volume": 0.7,
+      "pullback_rsi": [
+        40,
+        75,
+        25,
+        60
+      ],
+      "breakout_lookback": 12,
+      "range_atr": 10,
+      "breakout_volume": 1.1,
+      "breakout_buffer": 0.05,
+      "breakout_rsi": [
+        50,
+        80,
+        20,
+        50
+      ],
+      "reversal_extreme": [
+        40,
+        60
+      ],
+      "reversal_rsi": [
+        38,
+        62
+      ],
+      "reversal_lookback": 12,
+      "reversal_confirmation": "RETEST_OR_BREAK",
+      "reversal_volume": 0.9
+    }
+  },
+  "ema_periods": [
+    20,
+    50
+  ],
+  "h4_role": "RR context only; no mandatory alignment",
+  "high_volatility": {
+    "ratio": 1.5,
+    "scenarios": [
+      "BREAKOUT"
+    ],
+    "min_volume": 2,
+    "buffer_atr": 0.2
+  },
+  "risk": {
+    "risk_pct": ".5",
+    "daily_loss_pct": 2,
+    "max_drawdown_pct": 10,
+    "max_positions": 1,
+    "fee_bps_per_side": 10,
+    "slippage_bps_per_side": 5
+  },
+  "unchanged_protections": {
+    "shock_atr": 3,
+    "stop_min_atr": 1.2,
+    "stop_buffer_atr": 0.25,
+    "stop_max_atr": 3,
+    "rr": 2,
+    "opposing_h4_rr": 1.75,
+    "min_net_rr": 1.2
+  },
+  "priority": [
+    "TREND_PULLBACK",
+    "BREAKOUT",
+    "REVERSAL"
+  ],
+  "selection": "Development only: >=20 closed trades, positive net, PF>=1.1, DD<10 and at least half complete development calendar months positive; rank expectancy. Freeze winner before validation metrics; never switch winner using validation.",
+  "validation_success": "Frozen winner positive net, PF>=1.1, >=20 closed trades, at least half complete validation months positive; failure means NO_ROBUST_ADVANTAGE. Descriptive, not statistical significance.",
+  "limitations": [
+    "Last 30% overlaps already examined historical periods; not blind holdout.",
+    "No parameter optimization/search; three preregistered profiles imply multiple comparisons.",
+    "Six months insufficient for multi-cycle/tail risk assurance."
+  ]
+}
