@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="/static/live_paper_monitor.css">
 <link rel="stylesheet" href="/static/adaptive43.css">
 <link rel="stylesheet" href="/static/adaptive43_profiles.css">
+<link rel="stylesheet" href="/static/lab_v2.css">
 </head>
 <body>
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
@@ -252,6 +253,26 @@
   <section class="panel patterns lab" aria-labelledby="lab-title">
     <div class="modules-heading"><div><p class="eyebrow">RESEARCH ONLY / NO ACTIVATION</p><h2 id="lab-title">STRATEGY LAB v1.1</h2></div><span class="tiny-badge">BTCUSDT · CLOSED HISTORY</span></div>
     <p class="pattern-warning">REAL MONEY EXECUTION = DISABLED · No strategy activation. A numerical backtest ranking is not evidence of profitability, safety or production readiness.</p>
+    <details id="lv2-panel">
+      <summary>Strategy Lab v2 · Aura / Donchian / Trend ATR / EMA RSI ADX · 12 месяцев</summary>
+      <p>ИССЛЕДОВАНИЕ / НЕТ АКТИВАЦИИ. BTCUSDT Binance Spot, 15m / 1h / 4h. SHORT — условная виртуальная экспозиция, не Spot borrow и не Bybit Futures.</p>
+      <p>Одинаковый старт 10 000 USDT, риск ≤0,5%, daily loss 2%, drawdown 10%, одна позиция, fees 10 bps + slippage 5 bps на сторону. Первые 70% — разработка, последние 30% — проверка без подбора. Период пересекается с прежними исследованиями и не является blind holdout.</p>
+      <p>Новые семейства проверяются на каждом TF; Aura 4.2/4.3 сохраняют свой native 15m вход и 1h/4h context. Trend ATR использует причинный ratchet стоп только в Lab. Отдельная задержанная validation проверяет исполнение на один 15m бар позже.</p>
+      <a href="/api/lab/login">Вход владельца: aura</a><button id="lv2-refresh" type="button">Показать сохранённое исследование</button>
+      <p id="lv2-status" role="status" aria-live="polite">Отчёт ещё не запрошен. Сигналы и сделки production не запускаются.</p>
+      <div id="lv2-result" hidden>
+        <p id="lv2-meta"></p><p id="lv2-selection"></p>
+        <label>Выборка<select id="lv2-split"><option value="validation">Проверка · последние 30%</option><option value="development">Разработка · первые 70%</option><option value="full_12m">Все 12 месяцев · описательно</option><option value="validation_delayed">Проверка · задержка исполнения +15m</option></select></label>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Стратегия</th><th>Сделки</th><th>Сделок / 30 дней</th><th>Сигналы</th><th>Net profit</th><th>Return %</th><th>Win %</th><th>PF</th><th>Max DD %</th><th>Avg Win</th><th>Avg Loss</th><th>Expectancy</th><th>Sharpe</th><th>Fees</th><th>Slippage USDT</th><th>Engine mode</th><th>Статус выборки</th></tr></thead><tbody id="lv2-comparison"></tbody></table></div>
+        <p>Net profit включает конечную liquidation equity незакрытой позиции. PF/Win Rate/Expectancy — по закрытым сделкам. Sharpe не определён при &lt;20 сделках или &lt;30 дневных returns. Ни одна строка не является разрешением активации. Исторический next-open — модель; цена после реальной задержки сети не гарантирована.</p>
+        <label>Детали<select id="lv2-variant"><option value="AURA42">Aura 4.2 native</option><option value="AURA43">Aura 4.3 original</option><option value="DONCHIAN_15m">DONCHIAN · 15m</option><option value="DONCHIAN_1h">DONCHIAN · 1h</option><option value="DONCHIAN_4h">DONCHIAN · 4h</option><option value="TREND_ATR_15m">TREND_ATR · 15m</option><option value="TREND_ATR_1h">TREND_ATR · 1h</option><option value="TREND_ATR_4h">TREND_ATR · 4h</option><option value="EMA_RSI_ADX_15m">EMA_RSI_ADX · 15m</option><option value="EMA_RSI_ADX_1h">EMA_RSI_ADX · 1h</option><option value="EMA_RSI_ADX_4h">EMA_RSI_ADX · 4h</option></select></label>
+        <label>Сторона истории сделок<select id="lv2-side"><option value="ALL">LONG + SHORT</option><option value="LONG">LONG</option><option value="SHORT">SHORT</option></select></label><p>Разбивка сторон — вклад в общий портфель, не отдельный LONG/SHORT backtest. Причины отказов показываются для обеих сторон.</p><pre id="lv2-sides"></pre><p id="lv2-note"></p><details><summary>Позиция или ожидающий сигнал в конце выборки</summary><pre id="lv2-open"></pre></details><details><summary>Стабильность по месяцам</summary><pre id="lv2-monthly"></pre></details><p>Equity: синий — Aura 4.2; зелёный — выбранная стратегия. PnL после модельных издержек.</p>
+        <svg id="lv2-curve" viewBox="0 0 600 160" role="img" aria-label="Aura 4.2 and selected adaptive strategy equity comparison"></svg>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Side</th><th>Signal UTC</th><th>Dispatch UTC</th><th>Entry UTC</th><th>Entry</th><th>Initial SL</th><th>Final SL</th><th>TP</th><th>Exit UTC</th><th>Exit</th><th>Fees</th><th>PnL</th><th>Entry reason</th><th>Exit reason</th><th>ATR stop history (effective UTC seconds)</th></tr></thead><tbody id="lv2-trades"></tbody></table></div>
+        <details><summary>Все решения на закрытии TF (пагинация) и счётчики отказов исполнения</summary><pre id="lv2-counts"></pre><div class="pattern-table-wrap"><table><thead><tr><th>Original TF close UTC</th><th>Dispatch UTC</th><th>Signal</th><th>Failed gates LONG / SHORT</th><th>Strategy reason</th><th>Portfolio reason</th><th>Entry context</th></tr></thead><tbody id="lv2-decisions"></tbody></table></div></details>
+        <button id="lv2-more" type="button" hidden>Следующая страница сделок и решений</button>
+      </div>
+    </details>
     <details id="a43p-panel">
       <summary>Aura 4.3 · Conservative / Balanced / Active · 6 месяцев, 70/30</summary>
       <p>Сохранённое исследование частоты входов. Последние 30% не применяются для настройки новых профилей; период частично изучался ранее и не является слепым holdout. Отбор только на development. Новая отдельная проверка с прежним Auto42 risk/execution engine: риск ≤0,5%, дневной лимит 2%, drawdown 10%, одна позиция, комиссии 10 bps и slippage 5 bps на сторону. Production не меняется.</p>
@@ -407,4 +428,5 @@
 <script src="/static/live_paper_monitor.js" defer></script>
 <script src="/static/adaptive43.js" defer></script>
 <script src="/static/adaptive43_profiles.js" defer></script>
+<script src="/static/lab_v2.js" defer></script>
 </body></html>
