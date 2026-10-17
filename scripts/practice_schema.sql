@@ -17,7 +17,10 @@ create table if not exists public.aura_practice_events (
 create index if not exists aura_practice_epoch on public.aura_practice_events(epoch,seq);
 alter table public.aura_practice_account enable row level security;
 alter table public.aura_practice_events enable row level security;
-revoke all on public.aura_practice_account,public.aura_practice_events from public,anon,authenticated;
+-- Supabase default privileges may grant new tables/sequences to all API roles.
+-- Even service_role uses SECURITY DEFINER RPCs, never direct ledger writes.
+revoke all on public.aura_practice_account,public.aura_practice_events from public,anon,authenticated,service_role;
+revoke all on sequence public.aura_practice_events_seq_seq from public,anon,authenticated,service_role;
 create or replace function public.aura_practice_immutable() returns trigger language plpgsql as $$
 begin raise exception 'APPEND_ONLY'; end $$;
 drop trigger if exists aura_practice_no_change on public.aura_practice_events;

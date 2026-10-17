@@ -11,6 +11,12 @@ This Draft PR is based directly on main `c50fd0bb2402bd261089142c96d4e9981f4594a
 Follow-up first-trade audit, exact signal/execution paths and current Render
 route availability: [AURA_FIRST_PAPER_TRADE_AUDIT.md](AURA_FIRST_PAPER_TRADE_AUDIT.md).
 
+Subsequent **real local PostgreSQL** verification (not SQLite/mock RPC):
+[PAPER_PRACTICE_POSTGRESQL_VERIFICATION.json](PAPER_PRACTICE_POSTGRESQL_VERIFICATION.json).
+Use the [Russian shared-Supabase-Free deployment runbook](PAPER_PRACTICE_SUPABASE_DEPLOY_RU.md).
+The original test reports below describe the earlier implementation checks;
+the PostgreSQL report identifies the current migration by SHA256.
+
 - Owner-only `/api/practice/login` and `/static/practice.html`, with OPEN LONG, OPEN SHORT, CLOSE POSITION and explicit retry of an uncertain command.
 - Dedicated live-quote chart with Entry / SL / TP lines, size, entry fee, total fees, liquidation-cost-aware current PnL, available cash, durable revision/save time and recent OPEN / UPDATE / CLOSE history.
 - Fixed Binance Spot public GET `/api/v3/trades?symbol=BTCUSDT&limit=1`, using the same public market-data host already used by the terminal. No exchange key, provider switch, signed request or exchange writer. Missing, malformed, regressing, more than 10-second-old or more than 2-second-future quotations block execution. Public API errors/region restrictions fail closed; no invented quote fallback.
@@ -33,7 +39,7 @@ The browser displays only database-backed state. The journal keeps command IDs, 
 
 ## Limits that must remain visible
 
-- No real Render or Supabase was connected in this task. The PostgreSQL migration was reviewed but **not executed against PostgreSQL/Supabase** here. Offline tests simulate RPC/transactions with SQLite; they are not a PostgreSQL or durability certification. This is a release acceptance blocker until tested in an isolated Supabase environment.
+- No real Render or hosted Supabase was connected. The migration was subsequently executed on **real local PostgreSQL**, including RLS, RPCs, concurrency, transaction rollback and server restarts. See the separate PostgreSQL report: those checks use actual PostgreSQL, an SQL RPC adapter and offline quotes. They do not verify hosted PostgREST/JWT, Render networking or the owner's Supabase configuration. Those hosted acceptance checks remain release blockers.
 - Protective exits are simulated market closes at the next observed fresh quote with costs; they are not exchange-native stop/limit orders. Touches between samples or while Render sleeps/restarts/network/database is unavailable can be missed. On restart only current fresh observed price is used; no retroactive/artificial fill is invented. Practice needs an awake web process; a sleeping free instance cannot guarantee monitoring. Do not disable the flag or stop the service with an open practice position without understanding this limitation.
 - Slippage and fees are fixed existing-engine assumptions, not a measured bid/ask/depth execution guarantee. SHORT is virtual; no assets are borrowed and no funding/borrow charges are modeled. A large adverse gap can exceed the planned risk. Existing engine losses are recorded honestly without clipping: ledger balance can become negative, available spendable balance is floored at zero and new entries are blocked. No negative available cash or fictitious replenishment is shown.
 - UI chart contains observed quote points during the page session, not invented historical candles. Existing terminal charts/positions are not altered. Current PnL is hidden when the saved mark is stale or monitoring failed; saved ledger values remain explicitly last known.
@@ -49,13 +55,13 @@ Coverage includes LONG/SHORT, manual/TP/SL closes, exact independent Decimal fee
 
 Real local Chromium exercises the actual page, local HTTP API, unchanged execution functions, mock RPC receipt confirmation, chart, OPEN → UPDATE → manual CLOSE and an identical state after server restart. Its fixture server is guarded OFFLINE-only, temporary, and not mounted in `app.main`. No public test-price or synthetic-signal endpoint is added. This is never LIVE VERIFIED or real Supabase proof.
 
-Code review and a separate security review inspected transitions, fee/PnL accounting, quote freshness, raw/slipped stop validation, namespace isolation, SQL row-lock/CAS/idempotency, uncertainty/read-back behavior, server-only credentials, fixed GET/RPC allowlists, owner/CSRF and textContent rendering. Review fixes included preserving pending commands on corrupt database responses (503 rather than a definitive client error), exact raw-quote stop guards recovery of a transient monitor error, definitive 422 validation handling, and a strict frontend request-path allowlist so a tampered saved retry cannot target another portfolio. No production engine, strategy, risk parameters or Aura scheduler files changed. Remaining unverified PostgreSQL/Render behavior blocks a readiness claim.
+Code review and a separate security review inspected transitions, fee/PnL accounting, quote freshness, raw/slipped stop validation, namespace isolation, SQL row-lock/CAS/idempotency, uncertainty/read-back behavior, server-only credentials, fixed GET/RPC allowlists, owner/CSRF and textContent rendering. Review fixes included preserving pending commands on corrupt database responses (503 rather than a definitive client error), exact raw-quote stop guards recovery of a transient monitor error, definitive 422 validation handling, and a strict frontend request-path allowlist so a tampered saved retry cannot target another portfolio. The PostgreSQL follow-up also revokes inherited sequence and direct table grants on practice objects. No production engine, strategy, risk parameters or Aura scheduler files changed. Remaining hosted Supabase/PostgREST and Render checks block a readiness claim.
 
 ## Safe future deployment — owner action only
 
 1. Review this standalone main-based Draft PR and SQL. Do not merge any Research Lab PR for this feature. Arrange deployment/Auto Deploy controls so a merge cannot start an unapproved rollout.
-2. In a separate isolated Supabase environment first, inspect/apply `scripts/practice_schema.sql` and verify RPC grants/RLS, atomicity, duplicate UUID and stale revision behavior. `pgcrypto` must be available in schema `extensions`. Do not test against existing Auto42 tables or import production positions.
-3. Once authorized, apply the reviewed additive SQL to the chosen PRACTICE project. Retain database backups. No reset, existing-table migration or production ledger edit is required.
+2. Reproduce the isolated local PostgreSQL verification if needed using `python -m scripts.verify_practice_postgres --output /tmp/new-practice-pg-result.json`. `pgcrypto` must be available in schema `extensions`. Do not import production positions. This requires no additional paid Supabase project.
+3. Once authorized, apply only the reviewed additive Practice SQL to the existing Supabase project, following the Russian runbook's preflight/privilege checks. Retain protected database backups. No reset, existing-table migration or production ledger edit is required. Separate namespaces share the Free project's storage/compute quotas; monitor usage and disable Practice after the first short test.
 4. Configure only on the server:
 
 ```text
