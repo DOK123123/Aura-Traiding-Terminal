@@ -57,17 +57,27 @@ def observe_tick(old: dict, state: dict, events: list, run_id: str, now: int, pr
         p=ev['payload'];kind=ev['kind']
         if kind=='DECISION':
             signal=p.get('signal') or {};at=p.get('closed_at')
+            summary['last_check']=dict(utc_timestamp=now,scheduler_run_id=run_id,
+                closed_candle_at=at,candle_id='BTCUSDT:15m:close:'+str(at),
+                reason=p.get('reason'),strategy_reason=signal.get('reason'),
+                direction=signal.get('direction'),source=SOURCE)
             if signal.get('direction') in ('LONG','SHORT'):
                 candidate=s['epoch']+':position:'+str(at)
                 summary['last_signal']=add('SIGNAL',at,signal['reason'],candidate,
                     details=dict(direction=signal['direction'],signal_at=at,
                         stop_loss=signal.get('stop_loss'),take_profit=signal.get('take_profit')))
             if p.get('reason')!='SIGNAL_QUEUED_NEXT_OPEN':
-                summary['last_rejection']=add('REJECTED',at,p.get('reason'),
-                    s['position']['id'] if s['position'] else None)
+                rejected=add('REJECTED',at,p.get('reason'),
+                    s['position']['id'] if s['position'] else None,details=dict(stage='DECISION'))
+                summary['last_strategy_rejection']=rejected
+                if not summary.get('last_execution_rejection'):
+                    summary['last_rejection']=rejected
         elif kind=='REJECT':
-            summary['last_rejection']=add('REJECTED',int(ev['id'].rsplit(':',1)[-1])+900,p.get('reason'),
-                (old.get('pending') or {}).get('signal_at') and s['epoch']+':position:'+str(old['pending']['signal_at']))
+            rejected=add('REJECTED',int(ev['id'].rsplit(':',1)[-1])+900,p.get('reason'),
+                (old.get('pending') or {}).get('signal_at') and s['epoch']+':position:'+str(old['pending']['signal_at']),
+                details=dict(stage='EXECUTION'))
+            summary['last_execution_rejection']=rejected
+            summary['last_rejection']=rejected
         elif kind=='OPEN':
             summary['last_open']=add('OPEN',p['entry_time']+900,p['reason'],p['id'],
                 details={k:p.get(k) for k in ('entry_time','signal_at','entry_price','size','notional','stop_loss','take_profit',
@@ -138,7 +148,10 @@ def monitor_view(envelope: dict, events: list, *, now: int, backend: str, durabl
         server_now=now,mode=s['mode'],last_scheduler_tick=s['last_run_at'],last_successful_tick=s['last_success_at'],
         scheduler_recent=s['last_run_at'] is not None and 0<=now-s['last_run_at']<=360,
         last_processed_closed_at=s['watermark'],last_signal=summary.get('last_signal'),
-        entry_rejection=summary.get('last_rejection'),last_decision=s['last_decision'],last_error=error,
+        entry_rejection=summary.get('last_execution_rejection') or summary.get('last_rejection'),
+        execution_rejection=summary.get('last_execution_rejection'),
+        strategy_rejection=summary.get('last_strategy_rejection'),latest_check=summary.get('last_check'),
+        last_decision=s['last_decision'],last_error=error,
         position=position,position_mark_fresh=fresh,pending_signal_at=(s['pending'] or {}).get('signal_at'),
         last_open=summary.get('last_open'),last_close=summary.get('last_close'),verified_cycle=cycle if qualified else None,
         balance=s['balance'],equity=s['equity'] if fresh else None,realized_pnl=s['realized_pnl'],fees=s['fees'],

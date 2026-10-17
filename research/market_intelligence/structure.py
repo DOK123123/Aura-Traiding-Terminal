@@ -57,20 +57,26 @@ def segment_states(bars, step=900, *, deadline=None):
         old_structure='UP' if high_leg=='HH' and low_leg=='HL' else 'DOWN' if high_leg=='LH' and low_leg=='LL' else 'UNKNOWN'
         direction=1 if f[i]>s[i] else -1 if f[i]<s[i] else 0
         breakout='LONG' if b.close>prior_h+buffer and bars[i-1].close<=prior_h else 'SHORT' if b.close<prior_l-buffer and bars[i-1].close>=prior_l else None
-        failed=retest=None
+        failed=retest=None;retest_origin=None
         if active and 0<i-active['index']<=8:
             level=active['level'];long=active['side']=='LONG'
             if (b.close<level-buffer if long else b.close>level+buffer):
                 failed='SHORT' if long else 'LONG';active=None
             elif not active['retested'] and (b.low<=level+tol and b.close>level+buffer and b.close>b.open if long else b.high>=level-tol and b.close<level-buffer and b.close<b.open):
                 retest=active['side'];active['retested']=True
+                # A later breakout on this SAME closed bar is a different setup.
+                retest_origin=dict(direction=active['side'],level=str(level),
+                    breakout_closed_at=active['confirmation_time'])
         if active and i-active['index']>8:active=None
         structure_event=None
         if breakout:
             confirmed_level=bool(highs) if breakout=='LONG' else bool(lows)
             against=(old_structure=='UP' and breakout=='SHORT') or (old_structure=='DOWN' and breakout=='LONG')
             structure_event=('CHoCH' if against else 'BOS') if confirmed_level else None
-            active=dict(level=prior_h if breakout=='LONG' else prior_l, side=breakout,index=i,retested=False,confirmation_time=cutoff)
+            # Keep an unresolved setup's original level and eight-bar deadline.
+            # New breakouts remain visible but cannot replace it until settled.
+            if active is None or active['retested']:
+                active=dict(level=prior_h if breakout=='LONG' else prior_l, side=breakout,index=i,retested=False,confirmation_time=cutoff)
             opposing=[x for x in bars[max(0,i-8):i] if (x.close<x.open if breakout=='LONG' else x.close>x.open)]
             if opposing and confirmed_level:
                 origin=opposing[-1];ob=dict(side=breakout,origin_time=origin.time,confirmation_time=cutoff,
@@ -119,7 +125,9 @@ def segment_states(bars, step=900, *, deadline=None):
             high_leg=new_high_leg,low_leg=new_low_leg,structure_known_mask=structure_mask,confirmed_pivots=[dict(p,price=str(p['price'])) for p in new_pivots],
             support=str(support),resistance=str(resistance),support_source='CONFIRMED_PIVOT' if supp else 'ROLLING50_FALLBACK',resistance_source='CONFIRMED_PIVOT' if res else 'ROLLING50_FALLBACK',
             support_zones=[dict(max(supp,key=lambda z:z['price']),price=str(support))] if supp else [],resistance_zones=[dict(min(res,key=lambda z:z['price']),price=str(resistance))] if res else [],support_zone_count=len(support_z),resistance_zone_count=len(resistance_z),
-            breakout=breakout,failed_breakout=failed,retest=retest,breakout_level=str(active['level']) if active else None,
+            breakout=breakout,failed_breakout=failed,retest=retest,
+            breakout_level=retest_origin['level'] if retest_origin else str(active['level']) if active else None,
+            retest_origin=retest_origin,
             structure_event=structure_event,liquidity_sweep=sweep,equal_highs=leg(highs,'HH','LH')=='EQUAL',equal_lows=leg(lows,'HL','LL')=='EQUAL',
             fvg=fvg,order_block=ob,atr=av,volatility_ratio=vol_ratio,volatility='EXPANSION' if vol_ratio>=1.5 else 'COMPRESSION' if vol_ratio<=.65 else 'NORMAL',
             relative_volume=relative_volume,volume_confirmed=relative_volume is not None and relative_volume>=1.5,

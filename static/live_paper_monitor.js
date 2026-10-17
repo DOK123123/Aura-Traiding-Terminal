@@ -27,7 +27,11 @@
    line(output,'Auto Paper',data.mode);line(output,'Последний scheduler tick',utc(data.last_scheduler_tick));
    line(output,'Последний обработанный 15m close',utc(data.last_processed_closed_at));
    line(output,'Последний сигнал',data.last_signal?utc(data.last_signal.utc_timestamp)+' · '+text(data.last_signal.details?.direction)+' · '+text(data.last_signal.scheduler_run_id):'Сохранённый сигнал пока отсутствует');
-   line(output,'Последний отказ во входе',data.entry_rejection?utc(data.entry_rejection.utc_timestamp)+' · '+text(data.entry_rejection.reason):data.last_decision);
+   const rejection=e=>e?utc(e.utc_timestamp)+' · '+text(e.reason)+' · run '+text(e.scheduler_run_id)+' · '+text(e.candle_id):'Не зафиксировано';
+   line(output,'Исходный отказ исполнения (последняя отклонённая попытка)',rejection(data.execution_rejection));
+   line(output,'Последняя проверка входа',data.latest_check?rejection(data.latest_check)+' · стратегия '+text(data.latest_check.strategy_reason):data.last_decision);
+   line(output,'Последний отказ проверки стратегии / состояния',rejection(data.strategy_rejection));
+   if(!data.execution_rejection&&!data.strategy_rejection&&data.entry_rejection)line(output,'Ранее сохранённый отказ (этап не записан)',rejection(data.entry_rejection));
    line(output,'Текущая ошибка',data.last_error);
    const p=data.position;
    line(output,'Открытая виртуальная позиция',p?text(p.id)+' · '+text(p.direction):'Нет');
