@@ -8,6 +8,9 @@ This Draft PR is based directly on main `c50fd0bb2402bd261089142c96d4e9981f4594a
 
 ## Implemented
 
+Follow-up first-trade audit, exact signal/execution paths and current Render
+route availability: [AURA_FIRST_PAPER_TRADE_AUDIT.md](AURA_FIRST_PAPER_TRADE_AUDIT.md).
+
 - Owner-only `/api/practice/login` and `/static/practice.html`, with OPEN LONG, OPEN SHORT, CLOSE POSITION and explicit retry of an uncertain command.
 - Dedicated live-quote chart with Entry / SL / TP lines, size, entry fee, total fees, liquidation-cost-aware current PnL, available cash, durable revision/save time and recent OPEN / UPDATE / CLOSE history.
 - Fixed Binance Spot public GET `/api/v3/trades?symbol=BTCUSDT&limit=1`, using the same public market-data host already used by the terminal. No exchange key, provider switch, signed request or exchange writer. Missing, malformed, regressing, more than 10-second-old or more than 2-second-future quotations block execution. Public API errors/region restrictions fail closed; no invented quote fallback.
