@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "scope": "OFFLINE_FAKE_QUOTES_MOCK_SUPABASE_ONLY",
+  "real_chromium": true,
+  "real_http_api": true,
+  "existing_execution_engine": true,
+  "open_update_manual_close": true,
+  "confirmed_receipt_displayed": true,
+  "chart_position": true,
+  "open_count": 1,
+  "close_count": 1,
+  "persisted_balance": "10013.96302849",
+  "restart_same_state": true,
+  "real_render_verified": false,
+  "real_supabase_verified": false,
+  "paid_api": false,
+  "production_access": false
+}

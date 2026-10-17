@@ -1,0 +1,264 @@
+{
+  "checks": [
+    {
+      "name": "migration_and_reapply",
+      "status": "PASS",
+      "evidence": "Both executions succeeded; Auto42 table/data/DDL/function dump hash unchanged"
+    },
+    {
+      "name": "objects",
+      "status": "PASS",
+      "evidence": "2 tables, 3 RPC functions, 1 trigger function created"
+    },
+    {
+      "name": "service_role_rpc",
+      "status": "PASS",
+      "evidence": "Non-superuser BYPASSRLS role executed load/history through SECURITY DEFINER RPCs"
+    },
+    {
+      "name": "anon_authenticated_denied",
+      "status": "PASS",
+      "evidence": "Actual SELECT and all 3 RPC executions denied for both roles despite broad defaults"
+    },
+    {
+      "name": "rpc_only_privileges",
+      "status": "PASS",
+      "evidence": "Explicit sequence/table revocations override broad Supabase-like default grants; service role executes only the intended RPCs"
+    },
+    {
+      "name": "rls_independent_of_grants",
+      "status": "PASS",
+      "evidence": "With temporary test grants, both roles see 0 rows, update 0 rows and INSERT violates RLS; grants revoked"
+    },
+    {
+      "name": "migration_preserves_open_account",
+      "status": "PASS",
+      "evidence": "Reapplying SQL with a persisted open position leaves account and journal identical"
+    },
+    {
+      "name": "restart_open_position",
+      "status": "PASS",
+      "evidence": "Actual PostgreSQL container restart; new Service read identical persisted open state"
+    },
+    {
+      "name": "restart_closed_position",
+      "status": "PASS",
+      "evidence": "Actual PostgreSQL restart preserved final balance/fees/closed state"
+    },
+    {
+      "name": "LONG_MANUAL",
+      "status": "PASS",
+      "evidence": "Real PostgreSQL OPEN/UPDATE/CLOSE; original engine; independent Decimal fees/PnL/slippage; durable duplicate receipt"
+    },
+    {
+      "name": "LONG_TP",
+      "status": "PASS",
+      "evidence": "Real PostgreSQL OPEN/UPDATE/CLOSE; original engine; independent Decimal fees/PnL/slippage; durable duplicate receipt"
+    },
+    {
+      "name": "LONG_SL",
+      "status": "PASS",
+      "evidence": "Real PostgreSQL OPEN/UPDATE/CLOSE; original engine; independent Decimal fees/PnL/slippage; durable duplicate receipt"
+    },
+    {
+      "name": "SHORT_MANUAL",
+      "status": "PASS",
+      "evidence": "Real PostgreSQL OPEN/UPDATE/CLOSE; original engine; independent Decimal fees/PnL/slippage; durable duplicate receipt"
+    },
+    {
+      "name": "SHORT_TP",
+      "status": "PASS",
+      "evidence": "Real PostgreSQL OPEN/UPDATE/CLOSE; original engine; independent Decimal fees/PnL/slippage; durable duplicate receipt"
+    },
+    {
+      "name": "SHORT_SL",
+      "status": "PASS",
+      "evidence": "Real PostgreSQL OPEN/UPDATE/CLOSE; original engine; independent Decimal fees/PnL/slippage; durable duplicate receipt"
+    },
+    {
+      "name": "append_only_events",
+      "status": "PASS",
+      "evidence": "Actual trigger rejects UPDATE and DELETE, including owner attempts"
+    },
+    {
+      "name": "journal_rls_with_rows",
+      "status": "PASS",
+      "evidence": "Both browser roles see zero persisted events even with a temporary SELECT grant; grants revoked"
+    },
+    {
+      "name": "atomic_invalid_second_event",
+      "status": "PASS",
+      "evidence": "First INSERT rolled back when second event failed; account revision/state unchanged"
+    },
+    {
+      "name": "atomic_database_failure_and_recovery",
+      "status": "PASS",
+      "evidence": "Real account UPDATE failure rolled back inserted OPEN and fees; same UUID succeeded after trigger removal"
+    },
+    {
+      "name": "concurrent_open_and_bound_duplicate",
+      "status": "PASS",
+      "evidence": "Two independent psql connections, same revision: one OPEN, one CONCURRENT_UPDATE; duplicate UUID no second fee; changed hash rejected"
+    },
+    {
+      "name": "concurrent_close",
+      "status": "PASS",
+      "evidence": "Two independent close transactions: one CLOSE, one CONCURRENT_UPDATE; duplicate CLOSE does not charge a second fee"
+    },
+    {
+      "name": "database_clock_quote_freshness",
+      "status": "PASS",
+      "evidence": "20-second-old quote rejected at SQL commit; no OPEN persisted"
+    },
+    {
+      "name": "auto42_unchanged_entire_run",
+      "status": "PASS",
+      "evidence": "Auto42 table/data/DDL/ACL/sequence/trigger dump and function definitions unchanged through all Practice tests and PostgreSQL restarts"
+    }
+  ],
+  "trades": [
+    {
+      "scenario": "LONG_MANUAL",
+      "initial_balance": "10000",
+      "direction": "LONG",
+      "entry": "100.0500",
+      "size": "19.990004997501",
+      "sl": "98",
+      "tp": "104",
+      "raw_exit": "101",
+      "exit": "100.9495",
+      "entry_fee": "2.00000000",
+      "exit_fee": "2.01798101",
+      "fees": "4.01798101",
+      "slippage": "2.00899550",
+      "net_pnl": "13.96302849",
+      "final_balance": "10013.96302849",
+      "open_count": 1,
+      "update_count": 1,
+      "close_count": 1
+    },
+    {
+      "scenario": "LONG_TP",
+      "initial_balance": "10000",
+      "direction": "LONG",
+      "entry": "100.0500",
+      "size": "19.990004997501",
+      "sl": "98",
+      "tp": "104",
+      "raw_exit": "105",
+      "exit": "104.9475",
+      "entry_fee": "2.00000000",
+      "exit_fee": "2.09790105",
+      "fees": "4.09790105",
+      "slippage": "2.04897551",
+      "net_pnl": "93.80314843",
+      "final_balance": "10093.80314843",
+      "open_count": 1,
+      "update_count": 1,
+      "close_count": 1
+    },
+    {
+      "scenario": "LONG_SL",
+      "initial_balance": "10000",
+      "direction": "LONG",
+      "entry": "100.0500",
+      "size": "19.990004997501",
+      "sl": "98",
+      "tp": "104",
+      "raw_exit": "97",
+      "exit": "96.9515",
+      "entry_fee": "2.00000000",
+      "exit_fee": "1.93806097",
+      "fees": "3.93806097",
+      "slippage": "1.96901549",
+      "net_pnl": "-65.87709145",
+      "final_balance": "9934.12290855",
+      "open_count": 1,
+      "update_count": 1,
+      "close_count": 1
+    },
+    {
+      "scenario": "SHORT_MANUAL",
+      "initial_balance": "10000",
+      "direction": "SHORT",
+      "entry": "99.9500",
+      "size": "20.010005002501",
+      "sl": "102",
+      "tp": "96",
+      "raw_exit": "99",
+      "exit": "99.0495",
+      "entry_fee": "2.00000000",
+      "exit_fee": "1.98198100",
+      "fees": "3.98198100",
+      "slippage": "1.99099550",
+      "net_pnl": "14.03702850",
+      "final_balance": "10014.03702850",
+      "open_count": 1,
+      "update_count": 1,
+      "close_count": 1
+    },
+    {
+      "scenario": "SHORT_TP",
+      "initial_balance": "10000",
+      "direction": "SHORT",
+      "entry": "99.9500",
+      "size": "20.010005002501",
+      "sl": "102",
+      "tp": "96",
+      "raw_exit": "95",
+      "exit": "95.0475",
+      "entry_fee": "2.00000000",
+      "exit_fee": "1.90190096",
+      "fees": "3.90190096",
+      "slippage": "1.95097549",
+      "net_pnl": "94.19714856",
+      "final_balance": "10094.19714856",
+      "open_count": 1,
+      "update_count": 1,
+      "close_count": 1
+    },
+    {
+      "scenario": "SHORT_SL",
+      "initial_balance": "10000",
+      "direction": "SHORT",
+      "entry": "99.9500",
+      "size": "20.010005002501",
+      "sl": "102",
+      "tp": "96",
+      "raw_exit": "103",
+      "exit": "103.0515",
+      "entry_fee": "2.00000000",
+      "exit_fee": "2.06206104",
+      "fees": "4.06206104",
+      "slippage": "2.03101551",
+      "net_pnl": "-66.12309156",
+      "final_balance": "9933.87690844",
+      "open_count": 1,
+      "update_count": 1,
+      "close_count": 1
+    }
+  ],
+  "auto42_before_sha256": "fa7c1a7bb4b14763f41d00dbdc89bda5d5eebb392ba14341e21e6cb7e1415bf4",
+  "auto42_after_sha256": "fa7c1a7bb4b14763f41d00dbdc89bda5d5eebb392ba14341e21e6cb7e1415bf4",
+  "POSTGRESQL_VERIFIED": true,
+  "RLS_VERIFIED": true,
+  "OPEN_CLOSE_VERIFIED": true,
+  "PRODUCTION_READY": false,
+  "RENDER_STAGING_VERIFIED": false,
+  "REAL_SUPABASE_CYCLE_VERIFIED": false,
+  "scope": "REAL_LOCAL_POSTGRESQL_OFFLINE_QUOTES_SQL_RPC_ADAPTER_NOT_POSTGREST_OR_RENDER",
+  "checked_at": "2026-10-17T13:07:04.120665+00:00",
+  "postgres_version": "PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+  "docker_image": "postgres:16-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4",
+  "migration_sha256": "25fcbdf995e13d4749b79900be6b76821f06ca90191235579048d950588eb1b8",
+  "production_supabase_access": false,
+  "production_writes": false,
+  "real_orders": false,
+  "limits": {
+    "memory": "512 MiB",
+    "cpus": 1,
+    "network": "none",
+    "published_ports": 0
+  },
+  "adapter_limitation": "Existing Service, Store envelope/commit/history validation and engine; SQL RPC adapter over psql. No mocked database. HTTP/PostgREST/auth gateway not exercised."
+}

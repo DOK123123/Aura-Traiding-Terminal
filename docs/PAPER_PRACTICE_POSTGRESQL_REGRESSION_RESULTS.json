@@ -1,0 +1,128 @@
+{
+  "checked_at": "2026-10-17T13:08:07.363757+00:00",
+  "base_main": "c50fd0bb2402bd261089142c96d4e9981f4594ab",
+  "followup_base": "f60588cc65d88ee3772e8d0747080d19911130b5",
+  "python": {
+    "passed": 1234,
+    "failed": 0,
+    "skipped": 0,
+    "warnings": 1,
+    "seconds": 113.6,
+    "warning": "Existing Starlette/AnyIO BlockingPortal alias deprecation",
+    "command": "AURA_PRACTICE_VERIFY_POSTGRES=true python -c \"from scripts.replay_aura_csv import enable_sandbox_poll; enable_sandbox_poll(); import pytest; raise SystemExit(pytest.main(['-q','-p','no:cacheprovider','--tb=short']))\""
+  },
+  "javascript": [
+    {
+      "suite": "tests/test_alignment_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_auto42_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_auto42_worker.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_bybit_demo_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_bybit_linear_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_ecc_replay_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_exchange_diagnostics_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_execution_verification_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_forward_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_frontend_reliability.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_intelligence_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_lab_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_live_paper_monitor_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_market_context_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_paper_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_practice_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_testnet_frontend.cjs",
+      "passed": true
+    }
+  ],
+  "real_postgresql": {
+    "passed_checks": 23,
+    "trade_cycles": 6,
+    "version": "PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+    "image": "postgres:16-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4",
+    "scope": "REAL_LOCAL_POSTGRESQL_OFFLINE_QUOTES_SQL_RPC_ADAPTER_NOT_POSTGREST_OR_RENDER",
+    "database_mock": false,
+    "http_postgrest_gateway_verified": false,
+    "report": "docs/PAPER_PRACTICE_POSTGRESQL_VERIFICATION.json"
+  },
+  "regression_before_fix": "Real PostgreSQL with broad Supabase-like default privileges failed: anon: inherited sequence grant remains",
+  "fix": "Revoke direct practice table and identity sequence grants from API roles; grant only intended RPC EXECUTE to service_role",
+  "syntax": {
+    "python_files": 199,
+    "app_main_import": "PASS",
+    "practice_js": "PASS",
+    "diff_whitespace": "PASS"
+  },
+  "protected_runtime_diff": "EMPTY versus main: automated engine/strategy/risk/storage/schema, scheduler, paper/forward/intelligence/lab/providers/indicators/dependencies",
+  "review": {
+    "code": "PASS; only practice object ACLs change at runtime; test runner is CLI-only",
+    "security": "PASS; actual denied role/sequence calls, RLS separate from ACL, local socket/networkless container, no DSN, Render refusal before Docker, no key/token patterns found"
+  },
+  "production": {
+    "supabase_access": false,
+    "configuration_changes": false,
+    "balance_or_position_changes": false,
+    "exchange_orders": false,
+    "merge": false,
+    "deploy": false,
+    "research_prs_included": false
+  },
+  "POSTGRESQL_VERIFIED": true,
+  "RLS_VERIFIED": true,
+  "OPEN_CLOSE_VERIFIED": true,
+  "PRODUCTION_READY": false,
+  "sha256": {
+    "scripts/practice_schema.sql": "25fcbdf995e13d4749b79900be6b76821f06ca90191235579048d950588eb1b8",
+    "scripts/verify_practice_postgres.py": "efd4fc15c9b493593ff8936dd5d5552b80ee1eff80d410f147d235a9d751110b",
+    "tests/test_practice_postgres.py": "ca82e3a6b82aa234a0be5697472501723fd50e7be32b23ca04118e1fb9f9fb1f",
+    "docs/PAPER_PRACTICE_SUPABASE_DEPLOY_RU.md": "ae4326cfd78d92a632c4acbee00f830cc13f339f1f0dd43a6992a81f56b671d8",
+    "docs/PAPER_PRACTICE_POSTGRESQL_VERIFICATION.md": "4e3554c5deabd7408b99243ce8dfff7bf6f31c63dfdc8d0d37eeda97ce6940d9",
+    "docs/PAPER_PRACTICE_POSTGRESQL_VERIFICATION.json": "b78982b69f2274c144d661053f4f6dce1b80ca4f9539e8a1fb3b48c40fcd442f"
+  }
+}

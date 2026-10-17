@@ -1,0 +1,34 @@
+{
+  "checked_at": "2026-10-17T12:27:25.075434+00:00",
+  "method": "GET",
+  "host": "https://aura-traiding-terminal.onrender.com",
+  "credentials_sent": false,
+  "production_writes": false,
+  "results": [
+    {
+      "path": "/api/health",
+      "http_status": 200,
+      "owner_challenge": false,
+      "body_not_collected": true
+    },
+    {
+      "path": "/api/auto42/status",
+      "http_status": 401,
+      "owner_challenge": true,
+      "body_not_collected": true
+    },
+    {
+      "path": "/api/auto42/alignment",
+      "http_status": 401,
+      "owner_challenge": true,
+      "body_not_collected": true
+    },
+    {
+      "path": "/api/practice/state",
+      "http_status": 404,
+      "owner_challenge": false,
+      "body_not_collected": true
+    }
+  ],
+  "limitation": "Unauthenticated route availability only; no private state or live execution verified"
+}

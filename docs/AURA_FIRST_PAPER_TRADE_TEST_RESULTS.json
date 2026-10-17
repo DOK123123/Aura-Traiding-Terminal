@@ -1,0 +1,131 @@
+{
+  "checked_at": "2026-10-17T12:30:05.631342+00:00",
+  "base_main": "c50fd0bb2402bd261089142c96d4e9981f4594ab",
+  "feature_commit": "1cbc674a42d40acb9ea5426882625db90008d75e",
+  "python": {
+    "passed": 1232,
+    "failed": 0,
+    "warnings": 1,
+    "seconds": 87.87,
+    "warning": "Existing Starlette/AnyIO deprecation",
+    "command": "python -c \"from scripts.replay_aura_csv import enable_sandbox_poll; enable_sandbox_poll(); import pytest; raise SystemExit(pytest.main(['-q','-p','no:cacheprovider','--tb=short']))\""
+  },
+  "javascript": [
+    {
+      "suite": "tests/test_alignment_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_auto42_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_auto42_worker.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_bybit_demo_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_bybit_linear_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_ecc_replay_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_exchange_diagnostics_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_execution_verification_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_forward_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_frontend_reliability.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_intelligence_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_lab_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_live_paper_monitor_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_market_context_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_paper_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_practice_frontend.cjs",
+      "passed": true
+    },
+    {
+      "suite": "tests/test_testnet_frontend.cjs",
+      "passed": true
+    }
+  ],
+  "focused_audit_suite_passed": 102,
+  "focused_suite_note": "101 existing checks plus the new one-check audit regression; full suite includes all",
+  "browser": {
+    "status": "PASS",
+    "scope": "OFFLINE_FAKE_QUOTES_MOCK_SUPABASE_ONLY",
+    "real_chromium": true,
+    "real_http_api": true,
+    "existing_execution_engine": true,
+    "open_update_manual_close": true,
+    "confirmed_receipt_displayed": true,
+    "chart_position": true,
+    "open_count": 1,
+    "close_count": 1,
+    "persisted_balance": "10013.96302849",
+    "restart_same_state": true,
+    "real_render_verified": false,
+    "real_supabase_verified": false,
+    "paid_api": false,
+    "production_access": false
+  },
+  "python_syntax_files": 197,
+  "app_main_import": "PASS",
+  "js_syntax": "PASS",
+  "diff_whitespace": "PASS",
+  "review": {
+    "code": "PASS; follow-up adds no runtime code; actual signal/storage path inspected",
+    "security": "PASS; offline-only fixtures in temp directory; public route probe contains no bodies or credentials",
+    "protected_runtime_diff": "EMPTY versus main for automated/intelligence/paper/forward/lab/providers/indicators/context/scheduler/schema/dependencies"
+  },
+  "production": {
+    "private_state_access": false,
+    "unauthenticated_get_only": true,
+    "current_automatic_blocker": "NOT_ESTABLISHED_WITHOUT_OWNER_EVIDENCE",
+    "practice_state_route_http_status": 404,
+    "writes": false,
+    "orders": false,
+    "merge": false,
+    "deploy": false
+  },
+  "render_practice_verified": false,
+  "real_supabase_cycle_verified": false,
+  "postgres_sql_execution": "NOT_RUN",
+  "research_prs_included": false,
+  "sha256": {
+    "tests/test_first_paper_trade_audit.py": "5d8a027e22f984d7fe01069fe2eb0da185d7a99dcce76d65ae70ad4af6bac5d7",
+    "docs/AURA_FIRST_PAPER_TRADE_AUDIT.md": "7a2e123bd07ee9b55537caaff42f51e17083a115b7c52b7c8cf205edda21a55c",
+    "docs/AURA_FIRST_PAPER_TRADE_ROUTE_PROBE.json": "825a5b1b181e541ba23c795829a16af53432d8ae67247d6cea5909fda05f3925"
+  }
+}

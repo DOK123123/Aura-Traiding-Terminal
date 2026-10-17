@@ -1,0 +1,137 @@
+{
+  "base_main": "c50fd0bb2402bd261089142c96d4e9981f4594ab",
+  "research_prs_included": false,
+  "ready_on_render": false,
+  "real_supabase_cycle_verified": false,
+  "postgres_sql_execution": "NOT_RUN_NO_POSTGRES_OR_SUPABASE_CREDENTIALS",
+  "python": {
+    "passed": 1231,
+    "failed": 0,
+    "warnings": 1,
+    "seconds": 79.73,
+    "command": "python -c \"from scripts.replay_aura_csv import enable_sandbox_poll; enable_sandbox_poll(); import pytest; raise SystemExit(pytest.main(['-q','-p','no:cacheprovider','--tb=short']))\"",
+    "warning": "Existing Starlette/AnyIO deprecation"
+  },
+  "practice_tests": {
+    "passed": 33,
+    "scope": "Mock Supabase HTTP contract over SQLite; unchanged existing engine",
+    "concurrency": "Forced same-revision barrier: one commit, one CONCURRENT_UPDATE"
+  },
+  "javascript": {
+    "suites": 17,
+    "failed": 0,
+    "results": [
+      {
+        "suite": "tests/test_alignment_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_auto42_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_auto42_worker.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_bybit_demo_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_bybit_linear_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_ecc_replay_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_exchange_diagnostics_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_execution_verification_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_forward_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_frontend_reliability.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_intelligence_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_lab_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_live_paper_monitor_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_market_context_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_paper_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_practice_frontend.cjs",
+        "passed": true
+      },
+      {
+        "suite": "tests/test_testnet_frontend.cjs",
+        "passed": true
+      }
+    ],
+    "includes": "Explicit connect, 422 recovery, UUID persistence/unknown-result retry, price lines, tampered retry path rejection"
+  },
+  "browser": {
+    "status": "PASS",
+    "scope": "OFFLINE_FAKE_QUOTES_MOCK_SUPABASE_ONLY",
+    "restart_same_state": true,
+    "real_supabase": false
+  },
+  "public_quote_probe": "PASS_LOCAL_PUBLIC_GET_NO_ORDER_OR_DB_WRITE",
+  "syntax": "PASS",
+  "app_main_import": "PASS",
+  "js_syntax": "PASS",
+  "diff_whitespace": "PASS",
+  "code_review": "COMPLETED; existing engine/risk/strategy/scheduler unchanged",
+  "security_review": "COMPLETED; owner/CSRF, fixed GET/RPC paths, CAS/UUID binding, DB age guard, pending retry path allowlist, secret boundaries; real PostgreSQL/Render validation outstanding",
+  "secret_scan": "No private-key/token patterns found in reviewed source; dummy fixtures explicitly marked",
+  "versions": {
+    "python": "3.12.14",
+    "pytest": "8.3.5",
+    "fastapi": "0.115.12",
+    "pydantic": "2.14.1",
+    "httpx": "0.28.1",
+    "node": "v24.19.0"
+  },
+  "sha256": {
+    "app/practice/storage.py": "dc8ddb9d623166e83bf764889e063bcda6e1211fc00b508898de2404379ffced",
+    "app/practice/service.py": "af9c3b390a5ae2cb5af76f9022820f95d9f9fd9525fa821bcc686375be215b0c",
+    "app/practice/core.py": "602e85e7ac21d389505a8575b4813f64fba160c008b761809966f20c38c33b64",
+    "app/practice/__init__.py": "4da8ba0788788aa7cc74140a61d2e768295d924918b02dc633741e86314a4e2d",
+    "app/practice/api.py": "6a04a3964ea39e705803d4ad6947475cc4e4ffdc468ba6eaa0b39657e059a8d3",
+    "app/practice/market.py": "abaa334e7d1ba5a3a4cb08b44afe50f9c8568a63802936f42ffa5e0e39dca3d8",
+    "app/main.py": "07af48534afc7b18bb0fd2eea61825e938c6133fb0628eae959ec800b702b57f",
+    "static/practice.js": "4533b53fbcaf38b4c403ba1a942c5c174ebbe839d91f2db98cd59dcae782ddcd",
+    "static/practice.html": "5024b1483744327cb18b5aced57b83a95d6ee714f3c6f35eac1bee23e5f7c5ba",
+    "scripts/practice_schema.sql": "1bb7dbb589ec0a45d2a3549ba1aabc4a13167ac83c6a5eb6fab1e9154c453a30",
+    "scripts/verify_practice_offline.py": "79038b37f722e72b561bb2496459b2b6208b7f395d944ad2485117b413e3a478",
+    "tests/test_practice.py": "162d012af867bdaa000c6a559f9d520b4158b1fd7fabba84a5e030baaae51678",
+    "tests/test_practice_frontend.cjs": "1992c2f76d26bfc8912c4cc84893c0faff3e1a0d7e7d6009cc4fd8ff80a3c696"
+  },
+  "production_access": false,
+  "production_balance_or_positions_changed": false,
+  "real_orders": false,
+  "merge": false,
+  "deploy": false
+}
