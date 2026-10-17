@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "scope": "READ_ONLY_PUBLIC_QUOTE_FROM_LOCAL_ENV_NOT_RENDER",
+  "quote": {
+    "price": "81678.73000000",
+    "time_ms": 1792235246424,
+    "trade_id": 6770645549,
+    "source": "Binance \u00b7 Spot / data-api.binance.vision public trades"
+  },
+  "checked_at": 1792235247,
+  "orders_sent": false,
+  "render_verified": false
+}
