@@ -141,12 +141,16 @@
       </section>
       <p>Единственный источник режима этой панели — /api/auto42/status. ON в прежнем Historical Pattern не включает Aura 4.2. <a href="#paper-legacy-panel">Открыть прежний Paper / Historical Pattern</a></p>
       <p id="a42-status" role="status" aria-live="polite">НЕ РАБОТАЕТ — состояние ещё не загружено</p>
+      <p>Версия Render: <span id="a42-build">Версия Render не подтверждена</span></p>
+      <p>Свежая цена BTCUSDT (только отображение): <span id="a42-quote">Нет свежей котировки</span></p>
+      <p>Последний подтверждённый сигнал: <span id="a42-signal">—</span></p>
       <dl class="a42-grid">
         <div><dt>Режим Aura 4.2 (Supabase)</dt><dd id="a42-mode">—</dd></div>
         <div><dt>Виртуальный баланс, USDT</dt><dd id="a42-balance">—</dd></div>
         <div><dt>Текущий equity, USDT</dt><dd id="a42-equity">Нет свежих данных</dd></div>
         <div><dt>Реализованный PnL, USDT</dt><dd id="a42-realized">—</dd></div>
-        <div><dt>Нереализованный PnL с издержками выхода, USDT</dt><dd id="a42-unrealized">—</dd></div>
+        <div><dt>PnL открытой позиции после комиссий входа/выхода, USDT</dt><dd id="a42-unrealized">—</dd></div>
+        <div><dt>Комиссии портфеля, USDT</dt><dd id="a42-fees">—</dd></div>
         <div><dt>Закрытые сделки</dt><dd id="a42-trades">—</dd></div>
         <div><dt>Win rate, %</dt><dd id="a42-win">—</dd></div>
         <div><dt>Profit factor</dt><dd id="a42-pf">—</dd></div>
@@ -166,7 +170,7 @@
       </div>
       <p id="a42-message" role="status" aria-live="polite"></p>
       <p>Риск 0,5% · не более 1 позиции · дневной лимит 2% · просадка 10%. STOP запрещает новые входы; защитные выходы требуют проверенных данных и внешнего scheduler. RESET не закрывает позицию и не удаляет журнал.</p>
-      <details><summary>Последние закрытые виртуальные сделки</summary><ul id="a42-history"></ul></details>
+      <details><summary>Закрытые виртуальные сделки</summary><p id="a42-history-note">История не загружена</p><ul id="a42-history"></ul><button id="a42-older" type="button" disabled>Более ранние сделки</button></details>
       <a href="/api/auto42/journal">Журнал событий (JSON, первая страница)</a>
     </details>
   <details id="bybit-linear-preview" class="auto42">

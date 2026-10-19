@@ -30,7 +30,7 @@ def fixture(side='LONG'):
     trend=1 if side=='LONG' else -1
     state=dict(version=VERSION,timestamp=at,timeframe='15m',symbol='BTCUSDT',mtf=dict(known_mask=3,alignment=True,
         h1=dict(direction=trend,closed_at=at//3600*3600),h4=dict(direction=trend,closed_at=at//14400*14400)),
-        trend_direction=trend,trend_strength=30,retest=side,liquidity_sweep=None,atr=1,volatility_ratio=1,
+        trend_direction=trend,trend_strength=30,retest=side,retest_origin=dict(direction=side,level='99.5' if trend==1 else '100.5',breakout_closed_at=at-900),liquidity_sweep=None,atr=1,volatility_ratio=1,
         support='80',resistance='120',breakout_level='99.5' if trend==1 else '100.5',regime='TREND_UP' if trend==1 else 'TREND_DOWN')
     snap=dict(status='OK',freshness=dict(status='FRESH'),source=SOURCE,symbol='BTCUSDT',timeframe='15m',last_closed_at=at,state=state,
         history=dict(source_sha256=digest([b.data() for b in bs])),structure_events=[
@@ -210,6 +210,7 @@ class StoreServiceTests(unittest.IsolatedAsyncioTestCase):
         self.bs.append(bar(self.bs[-1].time+900));self.now[0]+=900;at=self.bs[-1].time+900
         v=self.market.value;v['last_closed_at']=at;v['state']['timestamp']=at;v['history']['source_sha256']=digest([b.data() for b in self.bs])
         for key,step in [('h1',3600),('h4',14400)]:v['state']['mtf'][key]['closed_at']=at//step*step
+        v['state']['retest_origin']['breakout_closed_at']=at-900
         v['structure_events']=[dict(type='structure_event',value='BOS',confirmed_at=at-900),dict(type='breakout',value='LONG',confirmed_at=at-900)]
     async def test_full_virtual_signal_entry_exit_commission_journal(self):
         with self.auth():await self.svc.control('START','a'*32)

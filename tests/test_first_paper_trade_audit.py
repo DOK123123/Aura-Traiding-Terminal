@@ -31,6 +31,7 @@ def test_alignment_rejection_persists_without_entry_then_accepted_signal_reaches
                 dict(type='structure_event', value='BOS', confirmed_at=at - 900),
                 dict(type='breakout', value='LONG', confirmed_at=at - 900),
             ]
+            value['state']['retest_origin']['breakout_closed_at'] = at-900
 
         try:
             with patch.dict('os.environ', AURA_AUTO42_SCHEDULER_SECRET=DUMMY_TOKEN,

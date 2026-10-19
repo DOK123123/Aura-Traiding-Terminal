@@ -21,8 +21,9 @@ def scheduler_configured():
 
 
 class Service:
-    def __init__(self,market,store=None,clock=time.time,reason=None):
+    def __init__(self,market,store=None,clock=time.time,reason=None,quotes=None):
         self.market=market;self.store=store;self.clock=clock;self.reason=reason;self.task=None;self.closed=False
+        self.quotes=quotes
         self.market_diagnostics=None
         self.last_confirmed=None
         self.activation_error=None
@@ -35,6 +36,7 @@ class Service:
         self.closed=True
         if self.task and not self.task.done():self.task.cancel();await asyncio.gather(self.task,return_exceptions=True)
         if self.store:await self.store.close()
+        if self.quotes:await self.quotes.close()
     async def snapshot(self):
         value=await snapshot_for_auto(self.market);bars=list(self.market.bars);now=int(self.clock())
         allowed={'OK','STALE','UPSTREAM_TIMEOUT','ANALYSIS_TIMEOUT','NETWORK_ERROR','RATE_LIMIT',
@@ -220,7 +222,9 @@ class Service:
             if not blocked and state['pending'] is None:blocked=state['last_decision']
         protection='BLOCKED' if error else 'UNKNOWN' if state is None else 'BLOCKED' if blocked else 'OK'
         mode='ERROR' if error or state and state['last_error'] else 'STOPPED' if state and state['mode'] in ('PAUSED','EMERGENCY') else state['mode'] if state else 'ERROR'
+        from .live_monitor import origin
         return dict(render_api='ONLINE',storage=storage,configuration=config,checked_at=now,
+            runtime=origin(self.store.backend if self.store else 'NOT_CONFIGURED',bool(self.store and self.store.durable),self.monitor_instance),
             scheduler_last_confirmed_at=state['last_run_at'] if state else None,
             scheduler_last_success_at=state['last_success_at'] if state else None,
             last_processed_closed_at=state['watermark'] if state else None,
@@ -239,7 +243,21 @@ class Service:
         fresh=s['last_mark_at'] is not None and 0<=now-s['last_mark_at']<900 and s['last_success_at'] is not None and 0<=now-s['last_success_at']<=360 and s['last_error'] is None
         operational=self.store.durable and scheduler_configured() and s['last_success_at'] is not None and 0<=now-s['last_success_at']<=360 and s['last_error'] is None
         trades=[e['payload'] for e in recent if e['kind']=='CLOSE']
+        history_available=True;history_error=None
+        try:
+            trade_rows=await self.store.closed_trades(s['epoch'],limit=50)
+            trades=[e['payload'] for e in trade_rows]
+        except DemoError as exc:
+            # Missing optional reader must not suppress the authoritative ledger.
+            if exc.code!='STORAGE_SCHEMA_MISSING':raise
+            history_available=False;history_error=exc.code;trade_rows=[]
         return dict(status='RECENT_TICK_OBSERVED' if operational else 'NOT_OPERATIONAL',state=s,revision=env['revision'],
+            quote_available=self.quotes is not None,
+            last_signal=deepcopy((s.get('live_paper_monitor') or {}).get('last_signal')),
+            position_net_pnl=text(money(D(s['equity'])-D(s['balance'])-D(s['position']['entry_fee']))) if fresh and s['position'] else None,
+            history_is_partial=not history_available or len(trade_rows)==50,
+            history_error=history_error,history_available=history_available,
+            history_cursor=trade_rows[-1]['seq'] if trade_rows else None,
             fresh=fresh,current_equity=s['equity'] if fresh else None,unrealized_pnl=text(money(D(s['equity'])-D(s['balance']))) if fresh and s['position'] else None,
             win_rate=text(money(D(s['wins'])/s['trades']*100)) if s['trades'] else None,
             profit_factor=text(money(D(s['gross_profit'])/D(s['gross_loss']))) if D(s['gross_loss']) else None,
@@ -272,13 +290,16 @@ class Service:
 
 
 def configured(market):
+    # Reuse the existing fixed-host PUBLIC quote reader only. No Practice
+    # service/store/commands or quote-based Auto42 fills are introduced.
+    from app.practice.market import Quotes
     url=os.getenv('AURA_AUTO42_SUPABASE_URL','');key=os.getenv('AURA_AUTO42_SUPABASE_SERVICE_KEY','');path=os.getenv('AURA_AUTO42_SQLITE_PATH','')
     try:
         if path and (url or key):raise DemoError('AMBIGUOUS_STORAGE')
         if path:
             if os.getenv('RENDER','').lower() in ('true','1'):raise DemoError('RENDER_REQUIRES_DURABLE_STORAGE')
-            return Service(market,SQLiteStore(path))
-        if url and key:return Service(market,SupabaseStore(url,key))
+            return Service(market,SQLiteStore(path),quotes=Quotes())
+        if url and key:return Service(market,SupabaseStore(url,key),quotes=Quotes())
         return Service(market,reason='STORAGE_NOT_CONFIGURED')
     except (DemoError,sqlite3.Error,OSError) as exc:
         return Service(market,reason=exc.code if isinstance(exc,DemoError) else 'STORAGE_UNAVAILABLE')
