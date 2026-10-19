@@ -9,14 +9,14 @@ from app.automated.engine import DemoError
 from .core import initial,validate,SCOPE
 
 class Store:
-    backend='SUPABASE_ACTIVE43';durable=True
+    backend='SUPABASE_ACTIVE43_BYBIT';durable=True
     def __init__(self,url,key,config,transport=None):
         self.config=config;self.status='UNKNOWN'
         try:self.transport=SafeTransport(url,key,transport)
         except ForwardError as exc:raise DemoError(exc.code) from None
     async def close(self):await self.transport.close()
     async def rpc(self,name,args):
-        if name not in ('aura_active43_load','aura_active43_commit','aura_active43_history'):raise DemoError('STORAGE_METHOD_FORBIDDEN')
+        if name not in ('aura_active43_bybit_load','aura_active43_bybit_commit','aura_active43_bybit_history'):raise DemoError('STORAGE_METHOD_FORBIDDEN')
         try:
             async with asyncio.timeout(12):
                 async with self.transport.slots:
@@ -46,17 +46,17 @@ class Store:
         env=verify_envelope(value);validate(env['state'])
         if type(value.get('duplicate',False)) is not bool:raise DemoError('STORAGE_INVALID_RESPONSE')
         return dict(env,duplicate=value.get('duplicate',False))
-    async def load(self,now):return self.envelope(await self.rpc('aura_active43_load',dict(seed=packed(initial(now,self.config)))))
+    async def load(self,now):return self.envelope(await self.rpc('aura_active43_bybit_load',dict(seed=packed(initial(now,self.config)))))
     async def commit(self,revision,state,events,key):
         validate(state);validate_commit(state,events,key)
-        return self.envelope(await self.rpc('aura_active43_commit',dict(expected_revision=revision,new_state=packed(state),new_events=[dict(e,**packed(e)) for e in events],operation_key=key)))
+        return self.envelope(await self.rpc('aura_active43_bybit_commit',dict(expected_revision=revision,new_state=packed(state),new_events=[dict(e,**packed(e)) for e in events],operation_key=key)))
     async def history(self,epoch=None,after=None,limit=50,key=None,kind=None,before=None):
         if not 1<=limit<=200 or kind not in (None,'CLOSE','OPEN','SIGNAL','ERROR'):raise DemoError('READ_LIMIT')
-        value=await self.rpc('aura_active43_history',dict(selected_epoch=epoch,after_seq=after,row_limit=limit,event_id=key,kind_filter=kind,before_seq=before))
+        value=await self.rpc('aura_active43_bybit_history',dict(selected_epoch=epoch,after_seq=after,row_limit=limit,event_id=key,kind_filter=kind,before_seq=before))
         if not isinstance(value,list) or len(value)>limit:raise DemoError('STORAGE_INVALID_RESPONSE')
         try:
             rows=[dict(unpack(r),seq=r['seq']) for r in value]
-            if any(e['payload'].get('scope')!=SCOPE or not e['epoch'].startswith('ACTIVE43_') or (epoch and e['epoch']!=epoch) for e in rows):raise DemoError('STORAGE_SCOPE_MISMATCH')
+            if any(e['payload'].get('scope')!=SCOPE or not e['epoch'].startswith('ACTIVE43_BYBIT_') or (epoch and e['epoch']!=epoch) for e in rows):raise DemoError('STORAGE_SCOPE_MISMATCH')
             return rows
         except (KeyError,TypeError):raise DemoError('STORAGE_INVALID_RESPONSE') from None
     async def lookup(self,key):

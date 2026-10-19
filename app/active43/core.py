@@ -4,22 +4,24 @@ Engine ABI remains 4.2; scope/strategy identity and policy are independently pin
 No global monkeypatching, account fallback or exchange client.
 """
 from copy import deepcopy
-from decimal import Decimal as D,ROUND_DOWN
+from decimal import Decimal as D,ROUND_DOWN,ROUND_UP
 from app.automated import engine as paper
 from app.lab.execution import fee,fill
 from app.lab.models import digest,money,text,precise,LabError
 from .strategies import VERSION,STEPS,PARAMETERS,config as make_config
 
 SCOPE='AURA43_ACTIVE_PAPER'
-SOURCE='Binance · Spot / data-api.binance.vision'
-FILTERS=dict(qty_step='0.00001',min_qty='0.00001',min_notional='5',price_tick='0.01')
-POLICY=dict(paper.POLICY,classification='EXPERIMENTAL / NO_EDGE_FOUND',execution='CLOSED_SIGNAL_NEXT_OPEN',filters=FILTERS)
+SOURCE='Bybit · USDT Perpetual / api.bybit.com'
+IDENTITY=dict(exchange='BYBIT',market_type='USDT_PERPETUAL',category='linear',symbol='BTCUSDT',settlement='USDT')
+FILTERS=dict(qty_step='0.001',min_qty='0.001',min_notional='5',price_tick='0.10')
+POLICY=dict(paper.POLICY,classification='EXPERIMENTAL / UNVALIDATED_FUTURES',execution='CLOSED_SIGNAL_NEXT_OPEN',filters=FILTERS,source=SOURCE,identity=IDENTITY,funding='NOT_MODELED',
+    cost_model='CONSERVATIVE_FIXED_10BPS_FEE_5BPS_SLIPPAGE_PER_SIDE')
 
 
 def initial(now,config=None,epoch=None):
     cfg=config or make_config();s=paper.initial(now,epoch=epoch)
-    s['epoch']='ACTIVE43_'+s['epoch']
-    s.update(scope=SCOPE,strategy_version=VERSION,config=cfg,config_hash=digest(cfg),active_policy_hash=digest(POLICY),
+    s['epoch']='ACTIVE43_BYBIT_'+s['epoch']
+    s.update(scope=SCOPE,market_source=SOURCE,market_identity=IDENTITY,strategy_version=VERSION,config=cfg,config_hash=digest(cfg),active_policy_hash=digest(POLICY),
              pending_exit=None,recovery_status='COLD_START',last_signal=None,last_check=None,last_close=None,last_price=None)
     return s
 
@@ -28,10 +30,12 @@ def validate(s):
     paper.validate(s)
     try:
         cfg=s['config']
-        if (s['scope']!=SCOPE or not s['epoch'].startswith('ACTIVE43_') or s['strategy_version']!=VERSION
+        if (s['scope']!=SCOPE or not s['epoch'].startswith('ACTIVE43_BYBIT_') or s.get('market_source')!=SOURCE or s.get('market_identity')!=IDENTITY or s['strategy_version']!=VERSION
             or cfg!=make_config(cfg['strategy'],cfg['timeframe']) or s['config_hash']!=digest(cfg)
             or s['active_policy_hash']!=digest(POLICY)):raise ValueError()
         p=s['position']
+        if s['pending'] and s['pending'].get('source')!=SOURCE:raise ValueError()
+        if p and p.get('market_source')!=SOURCE:raise ValueError()
         if p:
             active=D(p.get('active_stop',p['stop_loss']));old=D(p['stop_loss']);target=D(p['take_profit'])
             if not active.is_finite() or active<=0 or not (old<=active<target if p['direction']=='LONG' else target<active<=old):raise ValueError()
@@ -56,8 +60,14 @@ def plan(decision,bar,step,atr_value=None):
 
 @precise
 def open_position(s,decision,bar,now):
-    # Reuse production sizing/risk; floor to frozen Spot lot step, then use the
+    # Reuse production sizing/risk; floor to frozen Bybit linear lot step, then use the
     # same production fee/fill functions to reconcile the smaller virtual fill.
+    decision=deepcopy(decision);long=decision['direction']=='LONG';tick=D(FILTERS['price_tick'])
+    # Virtual trigger prices obey the same contract tick. Round a stop outward
+    # and a target toward entry; the existing fee-inclusive risk is recomputed.
+    for key in ('stop_loss','take_profit'):
+        rounding=ROUND_DOWN if long else ROUND_UP
+        decision[key]=text((D(decision[key])/tick).to_integral_value(rounding=rounding)*tick)
     ev=paper.open_virtual(s,decision,bar,now);p=s['position'];old=deepcopy(p);q=D(p['size'])
     q=(q/D(FILTERS['qty_step'])).to_integral_value(rounding=ROUND_DOWN)*D(FILTERS['qty_step'])
     px=D(p['entry_price']);cost=money(px*q,ceil=True)
@@ -70,7 +80,7 @@ def open_position(s,decision,bar,now):
     s['fees']=text(money(D(s['fees'])-D(old['entry_fee'])+ef))
     s['slippage']=text(money(D(s['slippage'])-money(abs(px-bar.open)*D(old['size']))+money(abs(px-bar.open)*q)))
     p.update(size=text(q),notional=text(cost),entry_fee=text(ef),risk_usdt=text(risk),timeframe=s['config']['timeframe'],
-             active_stop=p['stop_loss'],trailing_extreme=p['entry_price'])
+             active_stop=p['stop_loss'],trailing_extreme=p['entry_price'],market_source=SOURCE)
     return event(s,'OPEN',decision['signal_at'],now,deepcopy(p))
 
 
@@ -101,6 +111,7 @@ def ratchet(s,b,distance,closed_at):
     extreme=max(D(p['trailing_extreme']),b.high) if long else min(D(p['trailing_extreme']),b.low)
     candidate=min(extreme-distance,b.close-tick,target-tick) if long else max(extreme+distance,b.close+tick,target+tick)
     new=max(old,candidate) if long else min(old,candidate)
+    new=(new/tick).to_integral_value(rounding=ROUND_DOWN if long else ROUND_UP)*tick
     p.update(active_stop=text(new),trailing_extreme=text(extreme))
     return dict(effective_from=closed_at,old_stop=text(old),active_stop=text(new)) if new!=old else None
 

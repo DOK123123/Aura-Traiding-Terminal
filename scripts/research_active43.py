@@ -15,7 +15,7 @@ from app.active43.core import initial,advance,plan,close,POLICY
 from app.automated.engine import mark
 from app.lab.execution import metrics
 from app.lab.models import Baseline,digest,money,text
-from scripts.active43_history import load,aggregate
+from scripts.active43_history import load,aggregate,require_spot_protocol
 
 ROOT=Path(__file__).resolve().parents[1]
 FILES=('app/active43/core.py','app/active43/strategies.py','app/automated/engine.py','app/lab/strategies.py','app/lab/indicators.py','app/lab/models.py','app/lab/execution.py','scripts/active43_history.py','scripts/research_active43.py')
@@ -34,6 +34,7 @@ def rolling_signals(bars,name,step):
 
 
 def simulate(bars,values,cfg,start,end):
+    require_spot_protocol()
     step=STEPS[cfg['timeframe']];times=[b.time for b in bars]
     begin=bisect_left(times,start);finish=bisect_left(times,end)
     if begin<1000 or begin==finish or bars[begin].time!=start or bars[finish-1].time+step!=end:raise ValueError('INCOMPLETE_SEGMENT')
@@ -85,6 +86,7 @@ def score(row):
 
 
 def main(folder,workers=2):
+    require_spot_protocol()
     if not __debug__ or os.getenv('RENDER'):raise ValueError('LOCAL_RESEARCH_ONLY')
     folder=Path(folder);csv=folder/'btc-5m.csv';prov=json.loads((folder/'provenance.json').read_text())
     if hashlib.sha256(csv.read_bytes()).hexdigest()!=prov['csv_sha256'] or not prov['checksums_verified']:raise ValueError('SOURCE_INTEGRITY')

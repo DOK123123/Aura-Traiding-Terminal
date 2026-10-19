@@ -61,6 +61,8 @@ def ticker(data,now):
 
 
 class Client:
+    steps=STEPS
+    intervals=INTERVAL
     def __init__(self,transport=None,clock=time.time):
         self.clock=clock;self.http=httpx.AsyncClient(timeout=5,follow_redirects=False,transport=transport)
         self.slots=asyncio.Semaphore(2);self.cooldown=0
@@ -114,7 +116,7 @@ class Client:
         await self.verify_instrument()
         return ticker(await self.get('/v5/market/tickers',dict(category='linear',symbol='BTCUSDT')),self.clock())
     async def candles(self,timeframe,start,end):
-        step=STEPS.get(timeframe)
+        step=self.steps.get(timeframe)
         if (not step or type(start) is not int or type(end) is not int or start<0 or start%step or end%step or end<=start or end>self.clock()):raise MarketError('INVALID_RANGE')
         count=(end-start)//step
         if count>MAX_BARS:raise MarketError('HISTORY_LIMIT')
@@ -122,7 +124,7 @@ class Client:
         async with asyncio.timeout(60):
             while cursor>=start*1000:
                 if pages>=15:raise MarketError('PAGE_LIMIT')
-                data=await self.get('/v5/market/kline',dict(category='linear',symbol='BTCUSDT',interval=INTERVAL[timeframe],start=start*1000,end=cursor,limit=min(1000,count)))
+                data=await self.get('/v5/market/kline',dict(category='linear',symbol='BTCUSDT',interval=self.intervals[timeframe],start=start*1000,end=cursor,limit=min(1000,count)))
                 result=identity_result(data)
                 if result.get('symbol')!='BTCUSDT':raise MarketError('SOURCE_MISMATCH')
                 rows=result.get('list');pages+=1

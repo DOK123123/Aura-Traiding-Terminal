@@ -12,7 +12,7 @@ class Opener:
     def __init__(self,body):self.body=body;self.requests=[]
     def open(self,req,timeout):self.requests.append(req);return Response(self.body)
 
-def body():return dict(status='COMPLETED',scope='AURA43_ACTIVE_PAPER',paper_only=True,exchange_execution=False,state_saved=True,processed=True,duplicate=False,mode='ON',opened=1,closed=0,last_processed_closed_at=1800000000)
+def body():return dict(status='COMPLETED',scope='AURA43_ACTIVE_PAPER',market_source='Bybit · USDT Perpetual / api.bybit.com',strategy_version='AURA_4.3_ACTIVE_PAPER_2',paper_only=True,exchange_execution=False,state_saved=True,processed=True,duplicate=False,mode='ON',opened=1,closed=0,last_processed_closed_at=1800000000)
 
 def test_scheduler_fixed_namespace_and_safe_output():
     opener=Opener(body());messages=[];token='DUMMY_ACTIVE43_SCHEDULER_ONLY_'+'x'*40
@@ -23,6 +23,6 @@ def test_scheduler_fixed_namespace_and_safe_output():
 
 def test_scheduler_rejects_unconfigured_unsafe_ambiguous_or_wrong_portfolio():
     assert run({},opener=Opener(body()),emit=lambda _:None)==1
-    for change in (dict(scope='AURA42'),dict(exchange_execution=True),dict(state_saved=False),dict(status='PAUSED'),dict(opened=2),dict(processed=True,last_processed_closed_at=None)):
+    for change in (dict(scope='AURA42'),dict(market_source='Binance Spot'),dict(strategy_version='AURA_4.3_ACTIVE_PAPER_1'),dict(exchange_execution=True),dict(state_saved=False),dict(status='PAUSED'),dict(opened=2),dict(processed=True,last_processed_closed_at=None)):
         b=body();b.update(change);assert not verified(b)
         assert run({'AURA_ACTIVE43_SCHEDULER_SECRET':'DUMMY_'+'x'*40},opener=Opener(b),emit=lambda _:None,sleep=lambda _:None)==1

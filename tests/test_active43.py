@@ -96,8 +96,9 @@ def test_trailing_stop_only_effective_on_later_bar(side):
     s,events=advance(s,market.bars,decision,at+930)
     assert s['position'] and not any(e['kind']=='CLOSE' for e in events)
     assert any(e['kind']=='STOP_UPDATE' for e in events)
-    active=D(s['position']['active_stop']);assert active>D(s['position']['entry_price']) if side=='LONG' else active<D(s['position']['entry_price'])
-    assert s['position']['stop_loss']==('98' if side=='LONG' else '102')
+    active=D(s['position']['active_stop']);assert active%D(core.FILTERS['price_tick'])==0
+    assert active>D(s['position']['entry_price']) if side=='LONG' else active<D(s['position']['entry_price'])
+    assert D(s['position']['stop_loss'])==D('98' if side=='LONG' else '102')
     validate(s)
 
 
@@ -207,10 +208,10 @@ def test_daily_limit_owner_restart_only_after_new_utc_day_keeps_balance():
 
 def test_current_quote_pnl_reads_same_position_without_writing():
     async def run():
-        from app.practice.core import SOURCE as QUOTE_SOURCE
+        from app.active43.core import SOURCE as QUOTE_SOURCE,IDENTITY
         market,now,store,svc=setup()
         class Quote:
-            async def get(self):return dict(price='101',time_ms=now[0]*1000,trade_id=1,source=QUOTE_SOURCE)
+            async def get(self):return dict(price='101',time_ms=now[0]*1000,trade_id=1,source=QUOTE_SOURCE,identity=IDENTITY)
             async def close(self):pass
         svc.quotes=Quote()
         with patch('app.active43.service.scheduler_configured',return_value=True):await svc.control('START','a'*32,1)

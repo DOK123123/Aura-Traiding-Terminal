@@ -9,13 +9,10 @@
       "sl_atr": 2,
       "tp_atr": 4
     },
-    "version": "AURA_4.3_ACTIVE_PAPER_1",
-    "protocol_hash": "34d0e143e3e3e0e82de4837125c09e06d2237648d74e68531c5c0a5901cca95d"
+    "version": "AURA_4.3_ACTIVE_PAPER_2",
+    "protocol_hash": "8bb07ec940ecfc554adc5568cfc201d688472cc531aeec401d08cca43e797d3c"
   },
+  "verdict": "UNVALIDATED_FUTURES",
   "development_validation_edge": false,
-  "verdict": "NO_EDGE_FOUND",
-  "reason": "No candidate passed the predeclared development/validation criteria. Fixed Donchian 15m is an experimental execution candidate, not a profitable winner.",
-  "selected_before_final_test": true,
-  "protocol_hash": "34d0e143e3e3e0e82de4837125c09e06d2237648d74e68531c5c0a5901cca95d",
-  "fingerprint": "65ef08a25b878c5dea22e75abfcc6daa7b5fdeb94e47bfa0c7762d75c3238ed9"
+  "reason": "Unchanged fixed Donchian 15m technical candidate. Prior Spot research is not evidence for Bybit Futures. No profitability claim; no parameter optimization."
 }

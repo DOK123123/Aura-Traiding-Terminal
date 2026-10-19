@@ -15,3 +15,11 @@ def test_actual_sql_transactions_roles_recovery_and_cycles(tmp_path,monkeypatch)
     assert report['POSTGRESQL_VERIFIED'] and report['RLS_VERIFIED']
     assert len(report['cases'])==7 and len(report['checks'])>=8
     assert not report['PRODUCTION_PAPER_VERIFIED']
+
+
+def test_browser_cli_refuses_render_even_child_before_server(monkeypatch):
+    import runpy
+    monkeypatch.setenv('RENDER','true')
+    monkeypatch.setattr('sys.argv',['verify_active43_browser','--child','8000'])
+    with pytest.raises(ValueError,match='LOCAL_OFFLINE_ONLY'):
+        runpy.run_module('scripts.verify_active43_browser',run_name='__main__')

@@ -10,6 +10,13 @@ from app.active43.strategies import PROTOCOL
 from app.lab.models import digest
 ROOT='https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/5m/'
 
+def require_spot_protocol():
+    # These frozen public artifacts belong to the original Spot commit. Never
+    # relabel its CSV, cost model or selection with the current Bybit core.
+    if not PROTOCOL['source'].startswith('BINANCE_SPOT'):
+        raise ValueError('ARCHIVED_SPOT_STUDY_REQUIRES_COMMIT_6284A3C')
+
+
 def load(path):
     path=Path(path)
     if path.stat().st_size>40*1024*1024:raise ValueError('HISTORY_LIMIT')
@@ -33,6 +40,7 @@ def aggregate(bars,step):
     return result
 
 def download(folder):
+    require_spot_protocol()
     if os.getenv('RENDER'):raise ValueError('LOCAL_ONLY')
     folder=Path(folder);folder.mkdir(parents=True,exist_ok=True)
     # Freeze protocol before fetching/inspecting candidate outcomes.

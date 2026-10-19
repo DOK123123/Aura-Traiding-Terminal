@@ -6,14 +6,15 @@ from pathlib import Path
 from app.automated.engine import DemoError,risk_reason,mark
 from app.lab.models import digest,money,text
 from app.forward.models import scheduler_secret_valid
-from app.practice.market import Quotes
 from .core import initial,validate,advance,event,SCOPE,POLICY,SOURCE
-from .strategies import config,STEPS
+from .strategies import config,STEPS,VERSION
 from .storage import Store
-from .market import Market
+from .market import Market,Quotes
 from .evidence import observe,verified
 
-RETRYABLE={'STALE_DATA','MARKET_UNAVAILABLE','SPOT_FILTERS_UNAVAILABLE','SPOT_FILTERS_CHANGED','STALE_OR_MISMATCHED_DATA'}
+RETRYABLE={'STALE_DATA','MARKET_UNAVAILABLE','FUTURES_FILTERS_UNAVAILABLE','FUTURES_FILTERS_CHANGED','STALE_OR_MISMATCHED_DATA',
+    'REGION_OR_ACCESS_RESTRICTED','RATE_LIMIT','UPSTREAM_TIMEOUT','NETWORK_ERROR','HTTP_ERROR','UPSTREAM_API_ERROR',
+    'UPSTREAM_CLOCK_OR_STALE_RESPONSE','REDIRECT_BLOCKED'}
 
 
 def selected():
@@ -55,7 +56,7 @@ class Service:
             or decision.get('source_sha256')!=digest([b.data() for b in bars])):raise DemoError('STALE_OR_MISMATCHED_DATA')
         return bars,decision,now
     async def control(self,action,request_id,expected_revision=None):
-        self.ready();key='active43:control:'+request_id
+        self.ready();key='active43:bybit:control:'+request_id
         async with self.lock:
             for attempt in range(3):
                 env=await self.load();old=await self.store.lookup(key)
@@ -145,7 +146,7 @@ class Service:
     @staticmethod
     def result(s,events,duplicate,processed):
         return dict(status='PAUSED' if s['last_error'] else 'COMPLETED',paper_only=True,exchange_execution=False,
-            scope=SCOPE,state_saved=True,duplicate=duplicate,processed=processed and not duplicate,
+            scope=SCOPE,market_source=SOURCE,strategy_version=VERSION,state_saved=True,duplicate=duplicate,processed=processed and not duplicate,
             last_processed_closed_at=s['watermark'],mode=s['mode'],decision=s['last_error'] or s['last_decision'],
             opened=sum(e['kind']=='OPEN' for e in events),closed=sum(e['kind']=='CLOSE' for e in events),
             production_paper_verified=verified(s))
@@ -153,17 +154,26 @@ class Service:
         self.ready();env=await self.load();s=env['state'];now=int(self.clock());step=STEPS[self.config['timeframe']]
         trades=await self.store.history(epoch=s['epoch'],kind='CLOSE',limit=50)
         fresh=s['last_mark_at'] is not None and 0<=now-s['last_mark_at']<step and s['last_success_at'] is not None and 0<=now-s['last_success_at']<360 and not s['last_error']
-        return dict(scope=SCOPE,state=s,revision=env['revision'],last_saved_at=env['last_saved_at'],server_now=now,
+        cached=getattr(self.market,'cache',None)
+        chart=None
+        if cached and cached[1].get('source')==SOURCE and cached[1].get('config_hash')==digest(self.config):
+            chart=dict(source=SOURCE,timeframe=self.config['timeframe'],closed_at=cached[0][-1].time+step,
+                       bars=[b.data() for b in cached[0][-120:]],read_only=True)
+        return dict(chart=chart,scope=SCOPE,state=s,revision=env['revision'],last_saved_at=env['last_saved_at'],server_now=now,
             market_status='FRESH_CLOSED_CANDLES' if fresh else 'NOT_FRESH',storage_status='CONNECTED',scheduler_configured=scheduler_configured(),
             position_net_pnl=text(money(D(s['equity'])-D(s['balance'])-D(s['position']['entry_fee']))) if fresh and s['position'] else None,
             current_equity=s['equity'] if fresh else None,win_rate=text(money(D(s['wins'])/s['trades']*100)) if s['trades'] else None,
             trades=[e['payload'] for e in trades],history_cursor=trades[-1]['seq'] if trades else None,history_has_more=len(trades)==50,
             policy=dict(POLICY,timeframe=self.config['timeframe']),restart_readback=self.restored,production_paper_verified=verified(s),
+            scheduler_status=('NOT_CONFIGURED' if not scheduler_configured() else 'NEVER_SEEN' if s['last_run_at'] is None else 'FRESH' if 0<=now-s['last_run_at']<=360 else 'STALE'),
+            scheduler_age_seconds=None if s['last_run_at'] is None else max(0,now-s['last_run_at']),
+            analysis_at=s['watermark'],last_market_success_at=s['last_success_at'],market_source=SOURCE,
             live_status='PRODUCTION_PAPER_VERIFIED' if verified(s) else 'WAITING_FOR_REAL_SIGNAL',paper_only=True,exchange_execution=False)
 
 
 def configured():
     if os.getenv('AURA_ACTIVE43_ENABLED','').lower()!='true':return Service(reason='ACTIVE43_DISABLED')
+    if os.getenv('AURA_ACTIVE43_BYBIT_ENABLED','').lower()!='true':return Service(reason='ACTIVE43_BYBIT_DISABLED')
     url=os.getenv('AURA_ACTIVE43_SUPABASE_URL','');key=os.getenv('AURA_ACTIVE43_SUPABASE_SERVICE_KEY','')
     if not url or not key:return Service(reason='ACTIVE43_STORAGE_NOT_CONFIGURED')
     try:

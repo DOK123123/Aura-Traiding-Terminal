@@ -153,16 +153,20 @@ Historical Pattern Engine реализован отдельным пакетом
 изменён. Без активации стратегий, связи с Paper ledger или биржевых ордеров.
 [Методика, ограничения и Render/Android checklist](docs/STRATEGY_LAB.md).
 
-## Aura 4.3 Active Paper
+## Aura 4.3 Active Paper — Bybit Futures
 
-Отдельный opt-in виртуальный портфель BTCUSDT с собственными Supabase таблицами,
-owner/CSRF API, scheduler-токеном, автоматическими LONG/SHORT, SL/TP, ATR trailing
-и восстановлением состояния. Риск ≤0,5%, одна позиция, notional ≤2000 USDT.
-**По умолчанию выключен. Aura 4.2 и Paper Practice не заменяются.**
+Отдельный opt-in PAPER-портфель BTCUSDT USDT Perpetual: публичные Bybit V5
+closed candles/ticker, автоматические LONG/SHORT/SL/TP, существующий Decimal
+engine, собственные Supabase account/events, owner UI с Futures-графиком,
+внешний scheduler и restart recovery. Риск ≤0,5%, дневной лимит 2%, одна
+позиция, notional ≤2000 USDT. **По умолчанию OFF**, отдельный Bybit opt-in.
+Aura 4.2 и Paper Practice не переключаются, реальные ордера не поддерживаются.
 
-Годовое сравнение пяти семейств на 5m/15m/1h с 60/20/20 и walk-forward дало
-**NO_EDGE_FOUND**: все финальные OOS результаты отрицательны после расходов.
-Donchian 15m оставлен только как заранее объявленный технический fallback.
-Никакой доходности не обещается; Spot virtual SHORT не выдаётся за futures.
-В панели доступны отдельные live-ledger данные и явно отделённый backtest.
-[Архитектура, результаты, ограничения, тесты и ручной запуск на Render](docs/AURA43_ACTIVE_PAPER.md).
+Стратегия не имеет подтверждённого преимущества на Futures. Архивный годовой
+Spot backtest `NO_EDGE_FOUND` остаётся отдельно помеченным историческим отчётом.
+Production и 24/7 не подтверждены: требуется фактический доступ Render к Bybit
+и Supabase, миграция и внешние ticks. Из проверочного окружения Bybit блокирует
+регион (403); подмена источника/обход не предусмотрены.
+
+[Запуск, SQL, env, тесты, ограничения и проверка Render](docs/AURA43_BYBIT_OPERATIONS.md).
+[Архив Spot-исследования на исходном коммите](docs/AURA43_ACTIVE_PAPER.md).

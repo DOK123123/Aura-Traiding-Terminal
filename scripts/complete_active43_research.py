@@ -6,11 +6,12 @@ locally; the terminal receives only a bounded public historical summary.
 import argparse,hashlib,json,os,gzip
 from pathlib import Path
 from scripts.research_active43 import main as research,hashes,simulate,rolling_signals
-from scripts.active43_history import load,aggregate
+from scripts.active43_history import load,aggregate,require_spot_protocol
 from app.active43.strategies import STEPS
 
 
 def run(folder):
+    require_spot_protocol()
     if os.getenv('RENDER'):raise ValueError('LOCAL_ONLY')
     folder=Path(folder)
     if not (folder/'results.json').exists():research(folder)

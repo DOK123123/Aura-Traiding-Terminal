@@ -1,6 +1,7 @@
 """Compact evidence from committed events only. Never runs/recomputes signals."""
 from copy import deepcopy
 import os,re
+from .core import SOURCE
 
 
 def verified(s):
@@ -11,7 +12,7 @@ def verified(s):
     signal=opened.get('signal') or {}
     if not isinstance(signal,dict):return False
     origins=[v.get('origin') or {} for v in (signal,opened,closed)]
-    if any(not isinstance(o,dict) or o.get('render_native') is not True or not isinstance(o.get('render_commit'),str)
+    if any(not isinstance(o,dict) or o.get('source')!=SOURCE or o.get('render_native') is not True or not isinstance(o.get('render_commit'),str)
            or not re.fullmatch('[a-f0-9]{40}',o['render_commit']) for o in origins):return False
     times=[v.get('recorded_at') for v in (signal,opened,closed)]
     at=opened.get('signal_at');sha=signal.get('source_sha256')
@@ -26,9 +27,9 @@ def verified(s):
 
 def observe(state,events,now,*,market_native,durable,backend):
     s=deepcopy(state);commit=os.getenv('RENDER_GIT_COMMIT','')
-    native=(market_native and durable and backend=='SUPABASE_ACTIVE43' and os.getenv('RENDER','').lower() in ('1','true')
+    native=(market_native and durable and backend=='SUPABASE_ACTIVE43_BYBIT' and os.getenv('RENDER','').lower() in ('1','true')
             and bool(re.fullmatch('[a-f0-9]{40}',commit)))
-    provenance=dict(render_native=native,render_commit=commit if re.fullmatch('[a-f0-9]{40}',commit) else None)
+    provenance=dict(source=SOURCE,render_native=native,render_commit=commit if re.fullmatch('[a-f0-9]{40}',commit) else None)
     for ev in events:
         p=ev['payload'];kind=ev['kind']
         if kind=='SIGNAL' and p.get('direction') in ('LONG','SHORT'):

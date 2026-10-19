@@ -3,7 +3,7 @@ import os,secrets
 from decimal import Decimal as D
 from app.lab.models import money,text
 from app.automated.engine import liquidation_equity
-from app.practice.core import quote_checked
+from .market import quote_checked
 from typing import Literal
 from fastapi import APIRouter,Depends,Request,HTTPException,Query
 from fastapi.responses import JSONResponse
@@ -29,7 +29,7 @@ def svc(request):
 
 def scheduler(request:Request):
     if not scheduler_configured():raise HTTPException(503,'SCHEDULER_NOT_CONFIGURED',headers=HEADERS)
-    token=request.headers.get('X-Aura-Active43-Token','')
+    token=request.headers.get('X-Aura-Active43-Bybit-Token','')
     if request.headers.get('origin') or request.headers.get('Sec-Fetch-Site')=='cross-site' or not secrets.compare_digest(token.encode(),os.getenv('AURA_ACTIVE43_SCHEDULER_SECRET','').encode()):raise HTTPException(401,'SCHEDULER_AUTH_REQUIRED',headers=HEADERS)
 
 

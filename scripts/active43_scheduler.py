@@ -6,7 +6,8 @@ URL='https://aura-traiding-terminal.onrender.com/api/active43/tick'
 
 def verified(body):
     if (type(body) is not dict or body.get('paper_only') is not True or body.get('exchange_execution') is not False
-        or body.get('scope')!='AURA43_ACTIVE_PAPER' or body.get('state_saved') is not True
+        or body.get('scope')!='AURA43_ACTIVE_PAPER' or body.get('market_source')!='Bybit · USDT Perpetual / api.bybit.com'
+        or body.get('strategy_version')!='AURA_4.3_ACTIVE_PAPER_2' or body.get('state_saved') is not True
         or body.get('status')!='COMPLETED' or body.get('mode') not in ('ON','OFF','PAUSED','EMERGENCY')
         or type(body.get('processed')) is not bool or type(body.get('duplicate')) is not bool
         or any(type(body.get(k)) is not int or not 0<=body[k]<=1 for k in ('opened','closed'))):return False
@@ -20,7 +21,7 @@ def run(env=None,opener=None,sleep=time.sleep,emit=print):
     client=opener or urllib.request.build_opener(NoRedirect)
     for attempt in range(3):
         try:
-            req=urllib.request.Request(URL,data=b'',method='POST',headers={'X-Aura-Active43-Token':token})
+            req=urllib.request.Request(URL,data=b'',method='POST',headers={'X-Aura-Active43-Bybit-Token':token})
             with client.open(req,timeout=90) as r:
                 raw=r.read(65537)
                 if r.status!=200 or len(raw)>65536:raise ValueError()
