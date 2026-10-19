@@ -21,7 +21,7 @@ from scripts.verify_practice_postgres import docker,IMAGE
 from scripts.verify_active43 import FixtureMarket
 from scripts.verify_auto42_execution import check_accounting
 
-ROOT=Path(__file__).resolve().parents[1];DATABASE='aura_active43_bybit_verification'
+ROOT=Path(__file__).resolve().parents[1];DATABASE='aura_active43_bitget_verification'
 
 class PG:
     def __init__(self,name):
@@ -36,9 +36,9 @@ class PG:
         return r.stdout.strip() if check else r
     def rpc(self,name,args):
         expressions={
-          'aura_active43_bybit_load':"a->'seed'",
-          'aura_active43_bybit_commit':"(a->>'expected_revision')::bigint,a->'new_state',a->'new_events',a->>'operation_key'",
-          'aura_active43_bybit_history':"a->>'selected_epoch',(a->>'after_seq')::bigint,(a->>'row_limit')::integer,a->>'event_id',a->>'kind_filter',(a->>'before_seq')::bigint"}
+          'aura_active43_bitget_load':"a->'seed'",
+          'aura_active43_bitget_commit':"(a->>'expected_revision')::bigint,a->'new_state',a->'new_events',a->>'operation_key'",
+          'aura_active43_bitget_history':"a->>'selected_epoch',(a->>'after_seq')::bigint,(a->>'row_limit')::integer,a->>'event_id',a->>'kind_filter',(a->>'before_seq')::bigint"}
         if self.clock is not None:self.sql('UPDATE public.active43_test_clock SET epoch='+str(int(self.clock[0]))+';')
         encoded=base64.b64encode(json.dumps(args).encode()).decode()
         return json.loads(self.sql("WITH arg AS(SELECT convert_from(decode('"+encoded+"','base64'),'UTF8')::jsonb a) SELECT public."+name+'('+expressions[name]+') FROM arg;','service_role'))
@@ -48,23 +48,30 @@ class PG:
             time.sleep(.1)
         raise RuntimeError('Local PostgreSQL not ready')
     def legacy_hash(self):
-        sql="SELECT jsonb_build_object('auto42',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_auto42_account t),'practice',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_practice_account t),'auto_events',(SELECT count(*) FROM public.aura_auto42_events),'practice_events',(SELECT count(*) FROM public.aura_practice_events),'spot43',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_active43_account t),'spot43_events',(SELECT count(*) FROM public.aura_active43_events));"
+        sql="SELECT jsonb_build_object('auto42',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_auto42_account t),'practice',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_practice_account t),'auto_events',(SELECT count(*) FROM public.aura_auto42_events),'practice_events',(SELECT count(*) FROM public.aura_practice_events),'spot43',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_active43_account t),'spot43_events',(SELECT count(*) FROM public.aura_active43_events),'bybit43',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_active43_bybit_account t),'bybit43_events',(SELECT count(*) FROM public.aura_active43_bybit_events));"
         return hashlib.sha256(self.sql(sql).encode()).hexdigest()
+
+    def legacy_functions_hash(self):
+        query="""SELECT coalesce(jsonb_agg(pg_get_functiondef(p.oid) ORDER BY p.proname,p.oid),'[]'::jsonb)
+        FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+        WHERE n.nspname='public' AND (p.proname LIKE 'aura_auto42_%' OR p.proname LIKE 'aura_practice_%'
+          OR p.proname LIKE 'aura_active43_bybit_%' OR p.proname IN ('aura_active43_load','aura_active43_commit','aura_active43_history','aura_active43_now','aura_active43_immutable'));"""
+        return hashlib.sha256(self.sql(query).encode()).hexdigest()
 
 class Bridge:
     def __init__(self,pg):self.pg=pg;self.lose_after_commit=False
     async def __call__(self,request):
         name=request.url.path.rsplit('/',1)[-1]
-        if name not in ('aura_active43_bybit_load','aura_active43_bybit_commit','aura_active43_bybit_history'):raise AssertionError('Wrong portfolio RPC')
+        if name not in ('aura_active43_bitget_load','aura_active43_bitget_commit','aura_active43_bitget_history'):raise AssertionError('Wrong portfolio RPC')
         try:value=await asyncio.to_thread(self.pg.rpc,name,json.loads(request.content))
         except Exception:return httpx.Response(503,json={'code':'OFFLINE_TEST_DB_FAILURE'})
-        if name=='aura_active43_bybit_commit' and self.lose_after_commit:
+        if name=='aura_active43_bitget_commit' and self.lose_after_commit:
             self.lose_after_commit=False;raise httpx.ReadTimeout('TEST_ONLY_UNKNOWN_COMMIT_OUTCOME')
         return httpx.Response(200,json=value)
     def store(self,cfg):return Store('https://abcdefghijkl.supabase.co','DUMMY_ACTIVE43_LOCAL_ONLY_'+'x'*40,cfg,httpx.MockTransport(self))
 
 async def setup(pg,side='LONG',case='TP',tf='15m',strategy='DONCHIAN'):
-    pg.sql('TRUNCATE public.aura_active43_bybit_account,public.aura_active43_bybit_events RESTART IDENTITY;')
+    pg.sql('TRUNCATE public.aura_active43_bitget_account,public.aura_active43_bitget_events RESTART IDENTITY;')
     market=FixtureMarket(side,tf);now=[market.bars[-1].time+market.step+30];cfg=config(strategy,tf);pg.clock=now
     bridge=Bridge(pg);store=bridge.store(cfg);svc=Service(store,market,cfg,clock=lambda:now[0])
     env=await svc.load()
@@ -103,7 +110,7 @@ async def cycle(pg,side,kind,strategy='DONCHIAN'):
     return dict(scenario=side+'_'+kind+'_'+strategy,status='PASS',starting_balance='10000',open=p,close=closes[0],final_balance=s['balance'],fees=s['fees'],slippage=s['slippage'],open_count=1,close_count=1,restart_restored=True,update_saved=True,unknown_close_outcome_deduplicated=True)
 
 async def public_cycle(pg,side):
-    """Native V5 Market -> indicators -> actual SQL -> owner HTTP status.
+    """Native Bitget V2 Market -> indicators -> actual SQL -> owner HTTP status.
 
     All market fixtures are synthetic/offline. Neither SQL nor the status can
     qualify as a natural Render cycle; no artificial production signal exists.
@@ -112,7 +119,7 @@ async def public_cycle(pg,side):
     from app.active43.api import router
     from app.active43.market import Market,Quotes
     from scripts.verify_active43 import PublicFixture
-    pg.sql('TRUNCATE public.aura_active43_bybit_account,public.aura_active43_bybit_events RESTART IDENTITY;')
+    pg.sql('TRUNCATE public.aura_active43_bitget_account,public.aura_active43_bitget_events RESTART IDENTITY;')
     f=PublicFixture(side);clock=lambda:f.now[0];pg.clock=f.now;bridge=Bridge(pg)
     transport=httpx.MockTransport(f.handler)
     market=Market(clock=clock,transport=transport);quotes=Quotes(clock=clock,transport=transport)
@@ -120,10 +127,10 @@ async def public_cycle(pg,side):
     app=FastAPI();app.include_router(router)
     async def external_tick():
         app.state.active43=svc
-        token='DUMMY_BYBIT_EXTERNAL_SCHEDULER_'+'x'*40
-        with patch.dict('os.environ',AURA_ACTIVE43_SCHEDULER_SECRET=token):
+        token='DUMMY_BITGET_EXTERNAL_SCHEDULER_'+'x'*40
+        with patch.dict('os.environ',AURA_ACTIVE43_BITGET_SCHEDULER_SECRET=token):
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as client:
-                r=await client.post('/api/active43/tick',headers={'X-Aura-Active43-Bybit-Token':token})
+                r=await client.post('/api/active43/tick',headers={'X-Aura-Active43-Bitget-Token':token})
                 assert r.status_code==200 and r.json()['state_saved'] is True
                 return r.json()
     env=await svc.load()
@@ -149,7 +156,7 @@ async def public_cycle(pg,side):
             assert body['trades'][0]['id']==closed['id'] and body['chart']['source']==state['market_source']
             assert body['production_paper_verified'] is False
     await svc.close()
-    return dict(status='PASS',direction=side,scope='OFFLINE_V5_FIXTURES_NATIVE_INDICATORS_REAL_LOCAL_POSTGRESQL_OWNER_HTTP_NOT_RENDER',
+    return dict(status='PASS',direction=side,scope='OFFLINE_BITGET_V2_FIXTURES_NATIVE_INDICATORS_REAL_LOCAL_POSTGRESQL_OWNER_HTTP_NOT_RENDER',
                 open=opened,close=closed,final_balance=state['balance'],open_count=1,close_count=1,restart_restored=True,external_scheduler_http=True,no_browser=True)
 
 
@@ -163,20 +170,26 @@ async def verify(pg):
     archived=dict(auto42_initial(int(time.time())),scope='AURA43_ACTIVE_PAPER',strategy_version='AURA_4.3_ACTIVE_PAPER_1',epoch='ACTIVE43_ARCHIVED_SPOT_ACCOUNT')
     encoded=base64.b64encode(json.dumps(packed(archived)).encode()).decode()
     pg.sql("SELECT public.aura_active43_load(convert_from(decode('"+encoded+"','base64'),'UTF8')::jsonb);")
-    before=pg.legacy_hash();sql=(ROOT/'scripts/active43_bybit_schema.sql').read_text();pg.sql(sql);pg.sql(sql)
-    assert pg.legacy_hash()==before
-    real_now=int(pg.sql('SELECT public.aura_active43_bybit_now();'));assert abs(real_now-int(time.time()))<5
+    pg.sql((ROOT/'scripts/active43_bybit_schema.sql').read_text())
+    bybit=dict(auto42_initial(int(time.time())),scope='AURA43_ACTIVE_PAPER',strategy_version='AURA_4.3_ACTIVE_PAPER_2',epoch='ACTIVE43_BYBIT_ARCHIVED',
+        market_source='Bybit · USDT Perpetual / api.bybit.com',market_identity=dict(exchange='BYBIT',market_type='USDT_PERPETUAL',category='linear',symbol='BTCUSDT',settlement='USDT'))
+    encoded=base64.b64encode(json.dumps(packed(bybit)).encode()).decode()
+    pg.sql("SELECT public.aura_active43_bybit_load(convert_from(decode('"+encoded+"','base64'),'UTF8')::jsonb);")
+    before_functions=pg.legacy_functions_hash()
+    before=pg.legacy_hash();sql=(ROOT/'scripts/active43_bitget_schema.sql').read_text();pg.sql(sql);pg.sql(sql)
+    assert pg.legacy_hash()==before and pg.legacy_functions_hash()==before_functions
+    real_now=int(pg.sql('SELECT public.aura_active43_bitget_now();'));assert abs(real_now-int(time.time()))<5
     # Superuser-controlled clock ONLY in this disposable verification DB.
     # Production helper above is real clock_timestamp and not writable by service_role.
-    pg.sql('CREATE TABLE public.active43_test_clock(epoch bigint); INSERT INTO public.active43_test_clock VALUES(0); CREATE OR REPLACE FUNCTION public.aura_active43_bybit_now() RETURNS bigint LANGUAGE sql VOLATILE SET search_path=public,pg_temp AS $$ SELECT epoch FROM public.active43_test_clock $$;')
+    pg.sql('CREATE TABLE public.active43_test_clock(epoch bigint); INSERT INTO public.active43_test_clock VALUES(0); CREATE OR REPLACE FUNCTION public.aura_active43_bitget_now() RETURNS bigint LANGUAGE sql VOLATILE SET search_path=public,pg_temp AS $$ SELECT epoch FROM public.active43_test_clock $$;')
     checks=['MIGRATION_REAPPLY_LEGACY_ACCOUNTS_UNCHANGED']
     for role in ('anon','authenticated'):
-        for call in ("aura_active43_bybit_load('{}'::jsonb)","aura_active43_bybit_commit(1,'{}'::jsonb,'[]'::jsonb,'x')",'aura_active43_bybit_history(NULL,NULL,10,NULL,NULL,NULL)'):
+        for call in ("aura_active43_bitget_load('{}'::jsonb)","aura_active43_bitget_commit(1,'{}'::jsonb,'[]'::jsonb,'x')",'aura_active43_bitget_history(NULL,NULL,10,NULL,NULL,NULL)'):
             r=pg.sql('SELECT public.'+call+';',role,check=False);assert r.returncode and 'permission denied' in r.stderr
-        for table in ('aura_active43_bybit_account','aura_active43_bybit_events'):
+        for table in ('aura_active43_bitget_account','aura_active43_bitget_events'):
             r=pg.sql('SELECT * FROM public.'+table+';',role,check=False);assert r.returncode and 'permission denied' in r.stderr
-    assert pg.sql("SELECT bool_and(relrowsecurity) FROM pg_class WHERE oid IN ('aura_active43_bybit_account'::regclass,'aura_active43_bybit_events'::regclass);")=='t'
-    assert pg.rpc('aura_active43_bybit_load',dict(seed=packed(auto42_initial(int(time.time())))))['error']=='CORRUPT_PORTFOLIO'
+    assert pg.sql("SELECT bool_and(relrowsecurity) FROM pg_class WHERE oid IN ('aura_active43_bitget_account'::regclass,'aura_active43_bitget_events'::regclass);")=='t'
+    assert pg.rpc('aura_active43_bitget_load',dict(seed=packed(auto42_initial(int(time.time())))))['error']=='CORRUPT_PORTFOLIO'
     checks.append('RLS_ANON_AUTHENTICATED_DENIED_SERVICE_ROLE_ONLY_SCOPE_ENFORCED')
     cases=[]
     for side in ('LONG','SHORT'):
@@ -197,13 +210,13 @@ async def verify(pg):
     else:raise AssertionError('Stale OPEN committed at database boundary')
     pg.clock=now;assert await svc.load()==before_failure
     checks.append('DATABASE_CLOCK_BLOCKS_LATE_OPEN_AT_COMMIT')
-    pg.sql("CREATE FUNCTION public.test_active43_fail() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'OFFLINE_TEST_ONLY_FAILURE'; END $$; CREATE TRIGGER test_active43_fail BEFORE UPDATE ON public.aura_active43_bybit_account FOR EACH ROW EXECUTE FUNCTION public.test_active43_fail();")
+    pg.sql("CREATE FUNCTION public.test_active43_fail() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'OFFLINE_TEST_ONLY_FAILURE'; END $$; CREATE TRIGGER test_active43_fail BEFORE UPDATE ON public.aura_active43_bitget_account FOR EACH ROW EXECUTE FUNCTION public.test_active43_fail();")
     try:await svc.tick()
     except DemoError:pass
     else:raise AssertionError('Failed save confirmed OPEN')
     assert await svc.load()==before_failure
     assert not await store.history(kind='OPEN')
-    pg.sql('DROP TRIGGER test_active43_fail ON public.aura_active43_bybit_account; DROP FUNCTION public.test_active43_fail();')
+    pg.sql('DROP TRIGGER test_active43_fail ON public.aura_active43_bitget_account; DROP FUNCTION public.test_active43_fail();')
     bridge.lose_after_commit=True
     try:await svc.tick()
     except DemoError:pass
@@ -217,8 +230,10 @@ async def verify(pg):
     docker('start',pg.name);pg.ready();assert await svc.load()==saved
     checks.append('REAL_DATABASE_OUTAGE_RESTART_STATE_RESTORED')
     await svc.close();actual=[await public_cycle(pg,side) for side in ('LONG','SHORT')]
-    assert pg.legacy_hash()==before;checks.append('LEGACY_AUTO42_PRACTICE_SPOT43_UNCHANGED_ENTIRE_RUN')
-    return dict(checks=checks,cases=cases,native_cycles=actual,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash())
+    assert pg.legacy_hash()==before;checks.append('LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN')
+    assert pg.legacy_functions_hash()==before_functions
+    checks.append('LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED')
+    return dict(checks=checks,cases=cases,native_cycles=actual,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash(),legacy_functions_before_sha256=before_functions,legacy_functions_after_sha256=pg.legacy_functions_hash())
 
 
 def run(output):

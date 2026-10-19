@@ -29,8 +29,8 @@ def svc(request):
 
 def scheduler(request:Request):
     if not scheduler_configured():raise HTTPException(503,'SCHEDULER_NOT_CONFIGURED',headers=HEADERS)
-    token=request.headers.get('X-Aura-Active43-Bybit-Token','')
-    if request.headers.get('origin') or request.headers.get('Sec-Fetch-Site')=='cross-site' or not secrets.compare_digest(token.encode(),os.getenv('AURA_ACTIVE43_SCHEDULER_SECRET','').encode()):raise HTTPException(401,'SCHEDULER_AUTH_REQUIRED',headers=HEADERS)
+    token=request.headers.get('X-Aura-Active43-Bitget-Token','')
+    if request.headers.get('origin') or request.headers.get('Sec-Fetch-Site')=='cross-site' or not secrets.compare_digest(token.encode(),os.getenv('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET','').encode()):raise HTTPException(401,'SCHEDULER_AUTH_REQUIRED',headers=HEADERS)
 
 
 async def respond(operation):

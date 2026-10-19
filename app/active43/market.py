@@ -1,13 +1,13 @@
-"""Fixed Bybit USDT perpetual public data. No keys, writes, redirects or fallback."""
+"""Fixed Bitget USDT perpetual public data. No keys, writes, redirects or fallback."""
 import asyncio
 import time
 from decimal import Decimal as D
 
 from app.async_workers import run_in_slot
 from app.automated.engine import DemoError
-from app.bybit_linear.client import Client, MarketError, IDENTITY as BYBIT_IDENTITY, number, stamp, identity_result
+from .bitget import Client, MarketError, number
 from app.lab.models import Bar, digest, LabError
-from .core import SOURCE, FILTERS, plan
+from .core import SOURCE, FILTERS, IDENTITY, plan
 from .strategies import STEPS, signals
 
 
@@ -17,9 +17,9 @@ def analyze(bars, cfg):
 
 
 def quote_checked(value, now):
-    """Active43 accepts only Bybit quotes, never the Practice/Spot validator."""
+    """Active43 accepts only Bitget quotes, never the Practice/Spot validator."""
     try:
-        if not isinstance(value, dict) or value.get('source') != SOURCE or value.get('identity') != BYBIT_IDENTITY.data():
+        if not isinstance(value, dict) or value.get('source') != SOURCE or value.get('identity') != IDENTITY:
             raise DemoError('QUOTE_SOURCE_MISMATCH')
         at = value['time_ms']
         if type(at) is not int or not -3000 <= now * 1000 - at <= 10000:
@@ -30,17 +30,7 @@ def quote_checked(value, now):
         raise DemoError('INVALID_QUOTE') from None
 
 
-class PublicClient(Client):
-    """Add response-clock validation to the existing closed V5 GET allowlist."""
-    steps={'5m':300,**Client.steps}
-    intervals={'5m':'5',**Client.intervals}
-
-    async def get(self, path, params):
-        data = await super().get(path, params)
-        at = stamp(data.get('time'))
-        if not -3000 <= self.clock() * 1000 - at <= 10000:
-            raise MarketError('UPSTREAM_CLOCK_OR_STALE_RESPONSE')
-        return data
+PublicClient = Client
 
 
 class Market:
@@ -63,19 +53,17 @@ class Market:
         if self.specs_checked is not None and 0 <= self.clock() - self.specs_checked < 300:
             return None
         try:
-            result = identity_result(await self.client.get('/v5/market/instruments-info', dict(category='linear', symbol='BTCUSDT')))
-            rows = result.get('list')
-            expected = dict(symbol='BTCUSDT', contractType='LinearPerpetual', quoteCoin='USDT', settleCoin='USDT', status='Trading')
-            if not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], dict) or any(rows[0].get(k) != v for k, v in expected.items()):
-                raise DemoError('SOURCE_MISMATCH')
-            row = rows[0]
-            lot = row['lotSizeFilter']
-            actual = dict(qty_step=lot['qtyStep'], min_qty=lot['minOrderQty'], min_notional=lot['minNotionalValue'], price_tick=row['priceFilter']['tickSize'])
-            if any(number(actual[k], True) != D(FILTERS[k]) for k in FILTERS):
+            row = await self.client.instrument()
+            for key in ('pricePlace','volumePlace'):
+                if type(row.get(key)) is not str or not row[key].isdigit() or not 0<=int(row[key])<=12:
+                    raise DemoError('FUTURES_FILTERS_UNAVAILABLE')
+            actual = dict(qty_step=row['sizeMultiplier'], min_qty=row['minTradeNum'], min_notional=row['minTradeUSDT'],
+                          price_tick=str(number(row['priceEndStep'],True)*D(10)**-int(row['pricePlace'])))
+            if any(number(actual[k],True)!=D(FILTERS[k]) for k in FILTERS):
                 raise DemoError('FUTURES_FILTERS_CHANGED')
-            # Verify that the frozen notional cap fits the published market
-            # quantity bound at the current closed price (checked below).
-            self.max_market_qty = number(lot['maxMktOrderQty'], True)
+            if D(FILTERS['qty_step']) < D(10)**-int(row['volumePlace']):
+                raise DemoError('FUTURES_FILTERS_CHANGED')
+            self.max_market_qty = number(row['maxMarketOrderQty'],True)
             self.specs_checked = self.clock()
             self.client.verified_at = self.clock()
             self.specs_error = None
@@ -85,6 +73,7 @@ class Market:
             self.specs_error = exc.code
         except (ValueError, KeyError, TypeError, ArithmeticError):
             self.specs_error = 'FUTURES_FILTERS_UNAVAILABLE'
+        if self.specs_error=='SOURCE_MISMATCH':raise DemoError('SOURCE_MISMATCH')
         return self.specs_error
 
     async def snapshot(self, cfg):
@@ -99,9 +88,10 @@ class Market:
             start = end // 86400 * 86400 - 1000 * step
             try:
                 async with asyncio.timeout(32):
+                    await self.client.check_time()
                     err = await self.specs()
                     raw = await self.client.candles(cfg['timeframe'], start, end)
-                    if raw['identity'] != BYBIT_IDENTITY.data():
+                    if raw['identity'] != IDENTITY:
                         raise DemoError('SOURCE_MISMATCH')
                     bars = [Bar.restore(b) for b in raw['bars']]
                     if len(bars) < 1000 or bars[0].time != start or bars[-1].time + step != end:
@@ -117,7 +107,7 @@ class Market:
                 if now // step * step != end:
                     raise DemoError('STALE_DATA')
                 decision.update(source=SOURCE, source_sha256=digest([b.data() for b in bars]), evaluated_at=now,
-                                config_hash=digest(cfg), market_identity=BYBIT_IDENTITY.data())
+                                config_hash=digest(cfg), market_identity=IDENTITY)
                 self.cache = (bars, decision, now)
                 self.cached_at = time.monotonic()
                 return self.cache

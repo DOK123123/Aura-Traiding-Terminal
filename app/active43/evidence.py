@@ -27,7 +27,7 @@ def verified(s):
 
 def observe(state,events,now,*,market_native,durable,backend):
     s=deepcopy(state);commit=os.getenv('RENDER_GIT_COMMIT','')
-    native=(market_native and durable and backend=='SUPABASE_ACTIVE43_BYBIT' and os.getenv('RENDER','').lower() in ('1','true')
+    native=(market_native and durable and backend=='SUPABASE_ACTIVE43_BITGET' and os.getenv('RENDER','').lower() in ('1','true')
             and bool(re.fullmatch('[a-f0-9]{40}',commit)))
     provenance=dict(source=SOURCE,render_native=native,render_commit=commit if re.fullmatch('[a-f0-9]{40}',commit) else None)
     for ev in events:

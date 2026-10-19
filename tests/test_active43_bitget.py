@@ -1,4 +1,4 @@
-"""Native-indicator E2E on isolated V5-shaped fixtures; never live proof."""
+"""Native-indicator E2E on isolated Bitget V2-shaped fixtures; never live proof."""
 import asyncio
 from copy import deepcopy
 from unittest.mock import patch
@@ -8,7 +8,7 @@ import pytest
 
 from app.active43.core import initial,validate,SOURCE,IDENTITY
 from app.active43.market import Market,Quotes,quote_checked
-from app.active43.service import Service,configured
+from app.active43.service import Service,configured,scheduler_configured as actual_scheduler_configured
 from app.automated.engine import DemoError
 from scripts.verify_active43 import PublicFixture
 from scripts.verify_auto42_execution import check_accounting
@@ -47,14 +47,14 @@ def test_native_market_indicators_signal_execution_restart_database_and_display(
         assert dashboard['state']['trades']==1 and dashboard['trades'][0]['market_source']==SOURCE
         assert dashboard['chart']['source']==SOURCE and dashboard['scheduler_status']=='FRESH'
         assert not dashboard['production_paper_verified']
-        assert all(r.method=='GET' and r.url.path.startswith('/v5/market/') for r in fixture.requests)
+        assert all(r.method=='GET' and r.url.path.startswith('/api/v2/') for r in fixture.requests)
         await svc.close()
     asyncio.run(run())
 
 
-def test_bybit_requires_separate_opt_in_and_never_reads_spot_config(monkeypatch):
-    monkeypatch.setenv('AURA_ACTIVE43_ENABLED','true');monkeypatch.delenv('AURA_ACTIVE43_BYBIT_ENABLED',raising=False)
-    assert configured().reason=='ACTIVE43_BYBIT_DISABLED'
+def test_bitget_requires_separate_opt_in_and_never_reads_spot_config(monkeypatch):
+    monkeypatch.setenv('AURA_ACTIVE43_ENABLED','true');monkeypatch.delenv('AURA_ACTIVE43_BITGET_ENABLED',raising=False)
+    assert configured().reason=='ACTIVE43_BITGET_DISABLED'
     s=initial(1700000000);s['market_source']='Binance · Spot / data-api.binance.vision'
     with pytest.raises(DemoError):validate(s)
     with pytest.raises(DemoError):quote_checked(dict(price='68000',time_ms=1700000000000,source='Binance Spot'),1700000000)
@@ -99,9 +99,9 @@ def test_unrepresentable_normalized_candle_is_a_controlled_error():
         fixture=PublicFixture()
         def handler(request):
             response=fixture.handler(request)
-            if request.url.path.endswith('/kline'):
+            if request.url.path.endswith('/history-candles'):
                 body=response.json()
-                for row in body['result']['list']:row[5]='0.00000000000000000001'
+                for row in body['data']:row[5]='0.00000000000000000001'
                 return httpx.Response(200,json=body)
             return response
         market=Market(clock=lambda:fixture.now[0],transport=httpx.MockTransport(handler))
@@ -111,7 +111,7 @@ def test_unrepresentable_normalized_candle_is_a_controlled_error():
     asyncio.run(run())
 
 
-def test_archived_spot_research_cannot_relabel_data_or_replace_bybit_selection(tmp_path):
+def test_archived_spot_research_cannot_relabel_data_or_replace_bitget_selection(tmp_path):
     from pathlib import Path
     from scripts.active43_history import download
     from scripts.research_active43 import main,simulate
@@ -134,23 +134,56 @@ def test_current_quote_failure_is_controlled_and_never_uses_spot(failure):
             return httpx.Response(failure,text='OFFLINE_TEST_ONLY')
         quotes=Quotes(clock=lambda:fixture.now[0],transport=httpx.MockTransport(handler))
         with pytest.raises(DemoError):await quotes.get()
-        assert requests and all(r.url.host=='api.bybit.com' and r.method=='GET' for r in requests)
+        assert requests and all(r.url.host=='api.bitget.com' and r.method=='GET' for r in requests)
         await quotes.close()
     asyncio.run(run())
 
 
-def test_bybit_scheduler_header_is_incompatible_with_archived_spot_runtime(monkeypatch):
+def test_bitget_scheduler_header_is_incompatible_with_archived_spot_runtime(monkeypatch):
     from fastapi import FastAPI
     from app.active43.api import router
     from tests.test_active43 import setup
-    monkeypatch.setenv('AURA_ACTIVE43_SCHEDULER_SECRET','DUMMY_BYBIT_SCHEDULER_'+'x'*40)
+    monkeypatch.setenv('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET','DUMMY_BITGET_SCHEDULER_'+'x'*40)
     async def run():
         market,now,store,service=setup();app=FastAPI();app.include_router(router);app.state.active43=service
-        token='DUMMY_BYBIT_SCHEDULER_'+'x'*40
+        token='DUMMY_BITGET_SCHEDULER_'+'x'*40
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as client:
             assert (await client.post('/api/active43/tick',headers={'X-Aura-Active43-Token':token})).status_code==401
-            response=await client.post('/api/active43/tick',headers={'X-Aura-Active43-Bybit-Token':token})
+            assert (await client.post('/api/active43/tick',headers={'X-Aura-Active43-Bybit-Token':token})).status_code==401
+            response=await client.post('/api/active43/tick',headers={'X-Aura-Active43-Bitget-Token':token})
             assert response.status_code==200
-            assert response.json()['market_source']==SOURCE and response.json()['strategy_version']=='AURA_4.3_ACTIVE_PAPER_2'
+            assert response.json()['market_source']==SOURCE and response.json()['strategy_version']=='AURA_4.3_ACTIVE_PAPER_3'
         await service.close()
     asyncio.run(run())
+
+
+def test_old_bybit_enablement_cannot_start_v3(monkeypatch):
+    monkeypatch.setenv('AURA_ACTIVE43_ENABLED','true')
+    monkeypatch.setenv('AURA_ACTIVE43_BYBIT_ENABLED','true')
+    monkeypatch.delenv('AURA_ACTIVE43_BITGET_ENABLED',raising=False)
+    assert configured().store is None and configured().reason=='ACTIVE43_BITGET_DISABLED'
+
+
+def test_last_successful_scheduler_run_is_durable_and_not_advanced_by_source_failure():
+    async def run():
+        f=PublicFixture();clock=lambda:f.now[0];market=Market(clock=clock,transport=httpx.MockTransport(f.handler))
+        store=MemoryStore(config(),clock());svc=Service(store,market,config(),clock=clock)
+        await svc.tick();assert store.state['mode']=='OFF' and store.state['last_successful_run_at']==clock()
+        await svc.control('START','e'*32,store.revision)
+        last=store.state['last_successful_run_at'];f.failure=503;f.now[0]+=300
+        await svc.tick();assert store.state['last_successful_run_at']==last and store.state['last_error']
+        restored=Service(store,market,config(),clock=clock)
+        assert (await restored.dashboard())['last_successful_run_at']==last
+        await restored.close()
+    asyncio.run(run())
+
+
+def test_scheduler_cannot_reuse_bybit_or_owner_secret(monkeypatch):
+    token='DUMMY_BITGET_DISTINCT_TOKEN_'+'x'*40
+    monkeypatch.setenv('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET',token)
+    monkeypatch.setenv('AURA_ACTIVE43_SCHEDULER_SECRET',token)
+    assert not actual_scheduler_configured()
+    monkeypatch.setenv('AURA_ACTIVE43_SCHEDULER_SECRET','DUMMY_OLD_BYBIT_DIFFERENT_'+'y'*40)
+    assert actual_scheduler_configured()
+    monkeypatch.setenv('AURA_TESTNET_VIEW_PASSWORD',token)
+    assert not actual_scheduler_configured()

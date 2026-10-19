@@ -11,18 +11,18 @@ from app.lab.models import digest,money,text,precise,LabError
 from .strategies import VERSION,STEPS,PARAMETERS,config as make_config
 
 SCOPE='AURA43_ACTIVE_PAPER'
-SOURCE='Bybit · USDT Perpetual / api.bybit.com'
-IDENTITY=dict(exchange='BYBIT',market_type='USDT_PERPETUAL',category='linear',symbol='BTCUSDT',settlement='USDT')
-FILTERS=dict(qty_step='0.001',min_qty='0.001',min_notional='5',price_tick='0.10')
+SOURCE='Bitget · USDT-M Futures / api.bitget.com'
+IDENTITY=dict(exchange='BITGET',market_type='USDT_PERPETUAL',product_type='USDT-FUTURES',symbol='BTCUSDT',settlement='USDT')
+FILTERS=dict(qty_step='0.0001',min_qty='0.0001',min_notional='5',price_tick='0.10')
 POLICY=dict(paper.POLICY,classification='EXPERIMENTAL / UNVALIDATED_FUTURES',execution='CLOSED_SIGNAL_NEXT_OPEN',filters=FILTERS,source=SOURCE,identity=IDENTITY,funding='NOT_MODELED',
     cost_model='CONSERVATIVE_FIXED_10BPS_FEE_5BPS_SLIPPAGE_PER_SIDE')
 
 
 def initial(now,config=None,epoch=None):
     cfg=config or make_config();s=paper.initial(now,epoch=epoch)
-    s['epoch']='ACTIVE43_BYBIT_'+s['epoch']
+    s['epoch']='ACTIVE43_BITGET_'+s['epoch']
     s.update(scope=SCOPE,market_source=SOURCE,market_identity=IDENTITY,strategy_version=VERSION,config=cfg,config_hash=digest(cfg),active_policy_hash=digest(POLICY),
-             pending_exit=None,recovery_status='COLD_START',last_signal=None,last_check=None,last_close=None,last_price=None)
+             last_successful_run_at=None,pending_exit=None,recovery_status='COLD_START',last_signal=None,last_check=None,last_close=None,last_price=None)
     return s
 
 
@@ -30,7 +30,7 @@ def validate(s):
     paper.validate(s)
     try:
         cfg=s['config']
-        if (s['scope']!=SCOPE or not s['epoch'].startswith('ACTIVE43_BYBIT_') or s.get('market_source')!=SOURCE or s.get('market_identity')!=IDENTITY or s['strategy_version']!=VERSION
+        if (s['scope']!=SCOPE or not s['epoch'].startswith('ACTIVE43_BITGET_') or s.get('market_source')!=SOURCE or s.get('market_identity')!=IDENTITY or s['strategy_version']!=VERSION
             or cfg!=make_config(cfg['strategy'],cfg['timeframe']) or s['config_hash']!=digest(cfg)
             or s['active_policy_hash']!=digest(POLICY)):raise ValueError()
         p=s['position']
@@ -60,7 +60,7 @@ def plan(decision,bar,step,atr_value=None):
 
 @precise
 def open_position(s,decision,bar,now):
-    # Reuse production sizing/risk; floor to frozen Bybit linear lot step, then use the
+    # Reuse production sizing/risk; floor to frozen Bitget futures lot step, then use the
     # same production fee/fill functions to reconcile the smaller virtual fill.
     decision=deepcopy(decision);long=decision['direction']=='LONG';tick=D(FILTERS['price_tick'])
     # Virtual trigger prices obey the same contract tick. Round a stop outward

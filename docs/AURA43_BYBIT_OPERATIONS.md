@@ -1,3 +1,5 @@
+> АРХИВ V2 BYBIT (PR #15). Текущий v3 использует отдельный Bitget namespace, env и scheduler header. Не применять эту инструкцию для нового портфеля. См. [v3 Bitget](AURA43_BITGET_OPERATIONS.md).
+
 # Aura 4.3 Active Paper — Bybit Futures: эксплуатация и проверка
 
 Сборка `AURA_4.3_ACTIVE_PAPER_2`, отдельный BTCUSDT USDT Perpetual PAPER-портфель.

@@ -6,8 +6,8 @@ URL='https://aura-traiding-terminal.onrender.com/api/active43/tick'
 
 def verified(body):
     if (type(body) is not dict or body.get('paper_only') is not True or body.get('exchange_execution') is not False
-        or body.get('scope')!='AURA43_ACTIVE_PAPER' or body.get('market_source')!='Bybit · USDT Perpetual / api.bybit.com'
-        or body.get('strategy_version')!='AURA_4.3_ACTIVE_PAPER_2' or body.get('state_saved') is not True
+        or body.get('scope')!='AURA43_ACTIVE_PAPER' or body.get('market_source')!='Bitget · USDT-M Futures / api.bitget.com'
+        or body.get('strategy_version')!='AURA_4.3_ACTIVE_PAPER_3' or body.get('state_saved') is not True
         or body.get('status')!='COMPLETED' or body.get('mode') not in ('ON','OFF','PAUSED','EMERGENCY')
         or type(body.get('processed')) is not bool or type(body.get('duplicate')) is not bool
         or any(type(body.get(k)) is not int or not 0<=body[k]<=1 for k in ('opened','closed'))):return False
@@ -16,12 +16,12 @@ def verified(body):
 
 
 def run(env=None,opener=None,sleep=time.sleep,emit=print):
-    env=os.environ if env is None else env;token=env.get('AURA_ACTIVE43_SCHEDULER_SECRET','')
+    env=os.environ if env is None else env;token=env.get('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET','')
     if not 32<=len(token)<=256 or not token.isascii() or not token.isprintable():emit('ACTIVE43: SCHEDULER_NOT_CONFIGURED');return 1
     client=opener or urllib.request.build_opener(NoRedirect)
     for attempt in range(3):
         try:
-            req=urllib.request.Request(URL,data=b'',method='POST',headers={'X-Aura-Active43-Bybit-Token':token})
+            req=urllib.request.Request(URL,data=b'',method='POST',headers={'X-Aura-Active43-Bitget-Token':token})
             with client.open(req,timeout=90) as r:
                 raw=r.read(65537)
                 if r.status!=200 or len(raw)>65536:raise ValueError()

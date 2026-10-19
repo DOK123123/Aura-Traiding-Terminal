@@ -1,4 +1,4 @@
-name: Aura 4.3 isolated virtual scheduler (opt-in)
+name: Aura 4.3 Bitget isolated virtual scheduler (opt-in)
 on:
   workflow_dispatch:
   schedule:
@@ -6,11 +6,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: aura-active43
+  group: aura-active43-bitget
   cancel-in-progress: false
 jobs:
   active43_tick:
-    if: vars.AURA_ACTIVE43_SCHEDULER_ENABLED == 'true'
+    if: vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
@@ -19,5 +19,5 @@ jobs:
           persist-credentials: false
       - name: Independent paper-only tick (not Auto42)
         env:
-          AURA_ACTIVE43_SCHEDULER_SECRET: ${{ secrets.AURA_ACTIVE43_SCHEDULER_SECRET }}
+          AURA_ACTIVE43_BITGET_SCHEDULER_SECRET: ${{ secrets.AURA_ACTIVE43_BITGET_SCHEDULER_SECRET }}
         run: python -m scripts.active43_scheduler
