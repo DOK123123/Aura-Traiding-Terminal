@@ -145,7 +145,22 @@
         "external_scheduler_http": true,
         "no_browser": true
       }
-    ]
+    ],
+    "python_scheduler_final": {
+      "status": "PASS",
+      "passed": 5,
+      "additional_new_cases_after_full_run": 1,
+      "overlap_with_full_suite": 4
+    },
+    "unique_python_cases_passed_across_runs": 1451,
+    "github_real_workflow": {
+      "yaml_and_manual_dispatch": "PASS",
+      "diagnostic_job": "FAIL",
+      "reason": "SCHEDULER_NOT_CONFIGURED: expected secret was empty in job",
+      "trading_tick_step": "SKIPPED",
+      "outbound_http_sent": false,
+      "run_url": "https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39339951183"
+    }
   },
   "real_public_bitget_from_development": {
     "status": "PASS",
@@ -203,7 +218,7 @@
     "bitget_from_render": "BLOCKED: no owner credentials/Render management access; new diagnostics not deployed",
     "supabase_from_render": "BLOCKED: no production credentials; no production DB calls made",
     "github_variables_and_secret_metadata": "BLOCKED: GitHub integration HTTP 403",
-    "scheduler_real_runs": "BLOCKED: no authenticated saved production tick inspected",
+    "scheduler_real_runs": "BLOCKED: expected GitHub Actions secret empty, no HTTP delivered; actual registered diagnostic run failed before contacting Render",
     "real_natural_production_cycle": "NOT TESTED: no real Render OPEN/CLOSE logs inspected"
   },
   "github_workflow": {
@@ -211,7 +226,11 @@
     "state": "active",
     "path": ".github/workflows/aura-active43.yml",
     "initial_runs": 0,
-    "diagnostic_dispatch": "NOT_ATTEMPTED_BEFORE_BRANCH_PUSH"
+    "diagnostic_dispatch": "PASS: real manual diagnostic run accepted, trading step skipped",
+    "run_id": 39339951183,
+    "run_conclusion": "failure",
+    "failure_reason": "Expected AURA_ACTIVE43_BITGET_SCHEDULER_SECRET was empty in job; no request to Render",
+    "environments": []
   },
   "reviews": {
     "code": {
@@ -222,7 +241,8 @@
         "Read-only probes never call load/commit/tick/control/advance",
         "Single-flight, bounded independent market/DB probes and shutdown cancellation",
         "Explicit global OFF preserved; absent legacy flag uses dedicated opt-in, no durable mode mutation",
-        "Original job opt-in retained for scheduled/manual trading ticks; diagnostic dispatch routes only to read-only handler"
+        "Original job opt-in retained for scheduled/manual trading ticks; diagnostic dispatch routes only to read-only handler",
+        "After actual Actions failure, added safe exact-name missing-secret message; 5 scheduler tests PASS; no token values or automatic replacements"
       ],
       "resolved_findings": [
         "Manual workflow was blocked with scheduler variable false",
@@ -242,7 +262,8 @@
         "Fixed single-table GET; validated hash/scope/config, no owner-supplied URLs/SQL",
         "Service-role SELECT only grant; RLS and anon/authenticated denial verified in real PostgreSQL",
         "Credential pattern scan on changed files; no raw env values/upstream errors in diagnostics or logs",
-        "Diagnostic delivery never promoted to trading tick or production verification"
+        "Diagnostic delivery never promoted to trading tick or production verification",
+        "Actual diagnostic workflow verified trading step SKIPPED and missing-token exit before any HTTP; no credential/production mutations"
       ],
       "unresolved_critical_high": []
     }
@@ -261,7 +282,8 @@
     "Hosted Supabase PostgREST/JWT and Render connectivity remain unverified",
     "Optional SELECT grant may require owner approval if deployed project lacks default privileges",
     "Free Render sleep and GitHub schedule delays prevent any 24/7 guarantee",
-    "No profitability or natural production trading claim"
+    "No profitability or natural production trading claim",
+    "Owner must make existing Render token available under exact repository Actions secret name; no token value in session"
   ],
   "existing_strategy_risk_and_legacy_paths_unchanged": true
 }

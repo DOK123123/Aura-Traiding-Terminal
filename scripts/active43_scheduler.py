@@ -31,6 +31,8 @@ def verified(body):
 
 def run(env=None,opener=None,sleep=time.sleep,emit=print,diagnose=False):
     env=os.environ if env is None else env;token=env.get('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET','')
+    if not token:
+        emit('ACTIVE43: SCHEDULER_NOT_CONFIGURED; missing Actions secret AURA_ACTIVE43_BITGET_SCHEDULER_SECRET; no HTTP request sent');return 1
     if not 32<=len(token)<=256 or not token.isascii() or not token.isprintable():emit('ACTIVE43: SCHEDULER_NOT_CONFIGURED');return 1
     client=opener or urllib.request.build_opener(NoRedirect)
     for attempt in range(3):

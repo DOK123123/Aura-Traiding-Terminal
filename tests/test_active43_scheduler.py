@@ -51,3 +51,10 @@ def test_workflow_diagnostic_default_bypasses_only_trading_opt_in():
     assert "if: github.event_name == 'schedule' || inputs.operation == 'tick'" in text
     assert "vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true'" in text
     assert "(github.event_name == 'workflow_dispatch' && inputs.operation == 'diagnostics') ||" in text
+
+
+def test_missing_actions_secret_has_exact_name_and_never_sends_http():
+    opener=Opener(body());logs=[]
+    assert run({},opener=opener,emit=logs.append,diagnose=True)==1
+    assert not opener.requests
+    assert 'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET' in logs[0] and 'no HTTP request sent' in logs[0]

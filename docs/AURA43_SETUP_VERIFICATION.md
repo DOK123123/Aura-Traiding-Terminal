@@ -26,6 +26,21 @@
   by integration`. Секреты не запрашивались у владельца, их значения не читались.
   Доступа к Render management API/owner-паролю/Supabase credentials в сессии нет.
 
+### Проверка настоящего GitHub Actions запуска
+
+Вручную запущен **только** `operation=diagnostics` из интеграционной ветки:
+[run 39339951183](https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39339951183).
+GitHub принял YAML, checkout и условие диагностического job. Торговый шаг **skipped**.
+Диагностический шаг завершился **FAIL — SCHEDULER_NOT_CONFIGURED**:
+переменная `AURA_ACTIVE43_BITGET_SCHEDULER_SECRET` в этом job была пустой.
+До HTTP-запроса дело не дошло. Это **не** ошибка Bitget/Render и не проверка
+совпадения токенов. Репозиторий не имеет GitHub Environments (API вернул `[]`).
+Чтение metadata secrets текущему GitHub-доступу недоступно (HTTP 403), правильного
+Render token в сессии нет; безопасно записать его автоматически невозможно.
+Нужно сохранить **тот же существующий Render token** в Repository Actions secret
+с точным указанным именем; не публиковать значение и не передавать его в чат.
+Сам workflow уже зарегистрирован, а прямой видимый запуск теперь существует.
+
 ## Что изменено
 
 1. Кнопка **ПРОВЕРИТЬ ВСЮ СИСТЕМУ** в Owner Panel: защищённый
@@ -114,7 +129,9 @@ PostgreSQL, а на Render — только последующими сохра�
 
 ### 2. Проверить соединения и затем отдельно разрешить PAPER
 
-1. [Открыть терминал](https://aura-traiding-terminal.onrender.com/), войти владельцем,
+1. В [Repository Actions Secrets](https://github.com/DOK123123/Aura-Traiding-Terminal/settings/secrets/actions)
+   сохранить `AURA_ACTIVE43_BITGET_SCHEDULER_SECRET` с тем же значением, которое
+   уже настроено в Render. Затем [открыть терминал](https://aura-traiding-terminal.onrender.com/), войти владельцем,
    открыть Aura 4.3 → **ПРОВЕРИТЬ ВСЮ СИСТЕМУ**. Bitget/Supabase должны быть
    CONNECTED. При ошибке оставить PAPER OFF; панель покажет конкретную причину.
    Нажатие «Обновить» читает/инициализирует новый портфель через существующий load:
