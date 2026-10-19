@@ -29,9 +29,9 @@ def selected():
 
 
 def scheduler_configured():
-    token=os.getenv('AURA_ACTIVE43_SCHEDULER_SECRET','')
-    return (scheduler_secret_valid(token,os.getenv('AURA_TESTNET_VIEW_PASSWORD',''),os.getenv('AURA_ACTIVE43_SUPABASE_SERVICE_KEY',''))
-            and token not in (os.getenv('AURA_AUTO42_SCHEDULER_SECRET',''),os.getenv('AURA_FORWARD_SCHEDULER_SECRET','')))
+    token=os.getenv('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET','')
+    return (scheduler_secret_valid(token,os.getenv('AURA_TESTNET_VIEW_PASSWORD',''),os.getenv('AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY',''))
+            and token not in (os.getenv('AURA_AUTO42_SCHEDULER_SECRET',''),os.getenv('AURA_FORWARD_SCHEDULER_SECRET',''),os.getenv('AURA_ACTIVE43_SCHEDULER_SECRET','')))
 
 
 class Service:
@@ -56,7 +56,7 @@ class Service:
             or decision.get('source_sha256')!=digest([b.data() for b in bars])):raise DemoError('STALE_OR_MISMATCHED_DATA')
         return bars,decision,now
     async def control(self,action,request_id,expected_revision=None):
-        self.ready();key='active43:bybit:control:'+request_id
+        self.ready();key='active43:bitget:control:'+request_id
         async with self.lock:
             for attempt in range(3):
                 env=await self.load();old=await self.store.lookup(key)
@@ -124,6 +124,7 @@ class Service:
                 if s['mode']=='ON':s['mode']='PAUSED'
                 events=[event(s,'ERROR',now//300,now,dict(reason=exc.code))]
             s['missed_runs']+=max(0,now//300-old['last_run_at']//300-1) if old['last_run_at'] else 0
+            if not s['last_error']:s['last_successful_run_at']=now
             s['last_run_at']=now;s['recovery_status']='POSITION_RESTORED' if s['position'] and s.get('controller_boot')!=self.boot else s['recovery_status']
             s['controller_boot']=self.boot
             try:
@@ -167,14 +168,14 @@ class Service:
             policy=dict(POLICY,timeframe=self.config['timeframe']),restart_readback=self.restored,production_paper_verified=verified(s),
             scheduler_status=('NOT_CONFIGURED' if not scheduler_configured() else 'NEVER_SEEN' if s['last_run_at'] is None else 'FRESH' if 0<=now-s['last_run_at']<=360 else 'STALE'),
             scheduler_age_seconds=None if s['last_run_at'] is None else max(0,now-s['last_run_at']),
-            analysis_at=s['watermark'],last_market_success_at=s['last_success_at'],market_source=SOURCE,
+            analysis_at=s['watermark'],last_market_success_at=s['last_success_at'],last_successful_run_at=s.get('last_successful_run_at'),market_source=SOURCE,
             live_status='PRODUCTION_PAPER_VERIFIED' if verified(s) else 'WAITING_FOR_REAL_SIGNAL',paper_only=True,exchange_execution=False)
 
 
 def configured():
     if os.getenv('AURA_ACTIVE43_ENABLED','').lower()!='true':return Service(reason='ACTIVE43_DISABLED')
-    if os.getenv('AURA_ACTIVE43_BYBIT_ENABLED','').lower()!='true':return Service(reason='ACTIVE43_BYBIT_DISABLED')
-    url=os.getenv('AURA_ACTIVE43_SUPABASE_URL','');key=os.getenv('AURA_ACTIVE43_SUPABASE_SERVICE_KEY','')
+    if os.getenv('AURA_ACTIVE43_BITGET_ENABLED','').lower()!='true':return Service(reason='ACTIVE43_BITGET_DISABLED')
+    url=os.getenv('AURA_ACTIVE43_BITGET_SUPABASE_URL','');key=os.getenv('AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY','')
     if not url or not key:return Service(reason='ACTIVE43_STORAGE_NOT_CONFIGURED')
     try:
         cfg=selected();return Service(Store(url,key,cfg),Market(),cfg,quotes=Quotes())

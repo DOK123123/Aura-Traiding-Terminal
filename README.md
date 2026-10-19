@@ -153,20 +153,17 @@ Historical Pattern Engine реализован отдельным пакетом
 изменён. Без активации стратегий, связи с Paper ledger или биржевых ордеров.
 [Методика, ограничения и Render/Android checklist](docs/STRATEGY_LAB.md).
 
-## Aura 4.3 Active Paper — Bybit Futures
+## Aura 4.3 Active Paper v3 — Bitget Futures
 
-Отдельный opt-in PAPER-портфель BTCUSDT USDT Perpetual: публичные Bybit V5
-closed candles/ticker, автоматические LONG/SHORT/SL/TP, существующий Decimal
-engine, собственные Supabase account/events, owner UI с Futures-графиком,
-внешний scheduler и restart recovery. Риск ≤0,5%, дневной лимит 2%, одна
-позиция, notional ≤2000 USDT. **По умолчанию OFF**, отдельный Bybit opt-in.
-Aura 4.2 и Paper Practice не переключаются, реальные ордера не поддерживаются.
+Отдельный BTCUSDT USDT-M Futures PAPER-портфель: публичные Bitget V2 API,
+closed candles, автоматические LONG/SHORT/SL/TP, существующий Decimal engine,
+собственные `aura_active43_bitget_*` Supabase таблицы, owner UI и Futures-график,
+отдельный scheduler и restart recovery. Риск ≤0,5%, дневной лимит 2%, одна
+позиция и notional ≤2000 USDT. **По умолчанию OFF**, новые Bitget env/token.
+Aura 4.2, Practice, старые Spot/Bybit счета не переключаются и не сбрасываются.
 
-Стратегия не имеет подтверждённого преимущества на Futures. Архивный годовой
-Spot backtest `NO_EDGE_FOUND` остаётся отдельно помеченным историческим отчётом.
-Production и 24/7 не подтверждены: требуется фактический доступ Render к Bybit
-и Supabase, миграция и внешние ticks. Из проверочного окружения Bybit блокирует
-регион (403); подмена источника/обход не предусмотрены.
-
-[Запуск, SQL, env, тесты, ограничения и проверка Render](docs/AURA43_BYBIT_OPERATIONS.md).
-[Архив Spot-исследования на исходном коммите](docs/AURA43_ACTIVE_PAPER.md).
+Доступ Bitget из локальной среды проверяется отдельно от Render. Локальные
+SQL/сценарные тесты не подтверждают production. Никаких реальных ордеров или
+trading keys. Funding не моделируется, прибыльность не заявляется.
+[SQL, env, Actions, запуск/rollback и проверка Render](docs/AURA43_BITGET_OPERATIONS.md).
+[Архив v2 Bybit](docs/AURA43_BYBIT_OPERATIONS.md).

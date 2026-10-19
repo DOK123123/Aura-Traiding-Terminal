@@ -4,7 +4,7 @@ from app.lab.indicators import ema,rsi,atr,adx
 from app.lab.strategies import decisions as native,Decision,PARAMETERS as NATIVE
 from app.lab.models import digest
 
-VERSION='AURA_4.3_ACTIVE_PAPER_2'
+VERSION='AURA_4.3_ACTIVE_PAPER_3'
 STEPS={'5m':300,'15m':900,'1h':3600,'4h':14400}
 PARAMETERS={**NATIVE,
  'PULLBACK':dict(ema_fast=20,ema_slow=50,adx_min=20,rsi_long_min=50,rsi_short_max=50,sl_atr=2,tp_atr=4),
@@ -14,7 +14,7 @@ PROTOCOL=dict(version=VERSION,train_pct=60,validation_pct=20,test_pct=20,startin
  candidates=PARAMETERS,timeframes=list(STEPS),warmup_bars=1000,rolling_anchor='UTC_DAY',
  selection='DEVELOPMENT_AND_VALIDATION_ONLY; frozen before final test; no parameter optimization',
  walk_forward='Three non-overlapping validation/test subsegments; fixed parameters; no final-test reselection',
- source='BYBIT_LINEAR_BTCUSDT_USDT_PERPETUAL; public last-trade OHLC; virtual execution; funding not modeled')
+ source='BITGET_USDT_FUTURES_BTCUSDT_PERPETUAL; public last-trade OHLC; virtual execution; funding not modeled')
 
 def config(name='DONCHIAN',timeframe='15m'):
     if name not in PARAMETERS or timeframe not in STEPS:raise ValueError('Unsupported frozen configuration')

@@ -29,7 +29,7 @@ class FixtureMarket:
         if len(self.bars)>1290:self.bars=self.bars[-1290:]
 
 class PublicFixture:
-    """TEST ONLY public V5-shaped market, native indicators (no forced decision)."""
+    """TEST ONLY public Bitget V2-shaped market, native indicators (no forced decision)."""
     def __init__(self, side='LONG'):
         self.side=side;self.step=900;self.at=1700000000//86400*86400
         self.now=[self.at+30];self.failure=None;self.requests=[]
@@ -44,17 +44,21 @@ class PublicFixture:
     def handler(self,request):
         import httpx
         self.requests.append(request)
-        assert request.method=='GET' and request.url.host=='api.bybit.com'
-        assert request.url.params['category']=='linear' and request.url.params['symbol']=='BTCUSDT'
+        assert request.method=='GET' and request.url.host=='api.bitget.com'
+        path=request.url.path
+        if path!='/api/v2/public/time':
+            assert request.url.params['productType']=='USDT-FUTURES' and request.url.params['symbol']=='BTCUSDT'
         if self.failure:return httpx.Response(self.failure,text='OFFLINE_TEST_ONLY_FAILURE')
-        if request.url.path.endswith('/instruments-info'):
-            result={'category':'linear','list':[dict(symbol='BTCUSDT',status='Trading',contractType='LinearPerpetual',quoteCoin='USDT',settleCoin='USDT',
-                lotSizeFilter=dict(qtyStep='0.001',minOrderQty='0.001',minNotionalValue='5',maxMktOrderQty='1000'),priceFilter=dict(tickSize='0.1'))]}
-        elif request.url.path.endswith('/tickers'):
-            result={'category':'linear','list':[dict(symbol='BTCUSDT',lastPrice=str(self.bars[-1].close),markPrice=str(self.bars[-1].close))]}
+        if path.endswith('/time'):
+            data={'serverTime':str(self.now[0]*1000)}
+        elif path.endswith('/contracts'):
+            data=[dict(symbol='BTCUSDT',baseCoin='BTC',quoteCoin='USDT',symbolType='perpetual',symbolStatus='normal',supportMarginCoins=['USDT'],
+                minTradeNum='0.0001',sizeMultiplier='0.0001',minTradeUSDT='5',priceEndStep='1',pricePlace='1',volumePlace='4',maxMarketOrderQty='220')]
+        elif path.endswith('/ticker'):
+            data=[dict(symbol='BTCUSDT',lastPr=str(self.bars[-1].close),markPrice=str(self.bars[-1].close),ts=str(self.now[0]*1000))]
         else:
-            assert request.url.path=='/v5/market/kline'
-            start=int(request.url.params['start']);end=int(request.url.params['end']);limit=int(request.url.params['limit'])
-            bars=[b for b in self.bars if start<=b.time*1000<=end][-limit:][::-1]
-            result={'category':'linear','symbol':'BTCUSDT','list':[[str(b.time*1000),*[str(v) for v in (b.open,b.high,b.low,b.close,b.volume)],str(b.close*b.volume)] for b in bars]}
-        return httpx.Response(200,json=dict(retCode=0,time=self.now[0]*1000,result=result))
+            assert path=='/api/v2/mix/market/history-candles'
+            start=int(request.url.params['startTime']);end=int(request.url.params['endTime']);limit=int(request.url.params['limit'])
+            bars=[b for b in self.bars if start<=b.time*1000<end][-limit:]
+            data=[[str(b.time*1000),*[str(v) for v in (b.open,b.high,b.low,b.close,b.volume)],str(b.close*b.volume)] for b in bars]
+        return httpx.Response(200,json=dict(code='00000',requestTime=self.now[0]*1000,data=data))

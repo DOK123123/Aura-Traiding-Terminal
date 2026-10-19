@@ -140,7 +140,7 @@ def test_owner_csrf_independent_token_and_no_signal_order_routes(monkeypatch):
     async def run():
         market,now,store,svc=setup();app=FastAPI();app.include_router(router);app.state.active43=svc
         monkeypatch.setenv('AURA_TESTNET_VIEW_PASSWORD','dummy-active43-owner')
-        monkeypatch.setenv('AURA_ACTIVE43_SCHEDULER_SECRET','dummy-active43-scheduler-token-000000000000')
+        monkeypatch.setenv('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET','dummy-active43-scheduler-token-000000000000')
         monkeypatch.setenv('AURA_AUTO42_SCHEDULER_SECRET','dummy-separate-auto42-scheduler-0000000000')
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as client:
             for path in ('status','quote','journal','trades'):assert (await client.get('/api/active43/'+path)).status_code==401

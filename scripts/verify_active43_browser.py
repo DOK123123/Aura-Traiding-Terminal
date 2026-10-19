@@ -1,4 +1,4 @@
-"""LOCAL ONLY synthetic V5/MemoryStore browser verification; no production keys or writes.
+"""LOCAL ONLY synthetic Bitget V2/MemoryStore browser verification; no production keys or writes.
 
 python -m scripts.verify_active43_browser --output /tmp/aura43-browser.json
 Requires installed Chromium. Local HTTP server binds 127.0.0.1. No order/fixture
@@ -42,7 +42,7 @@ else:
  if args.output.exists():raise ValueError('New output path required')
  with tempfile.TemporaryDirectory(prefix='active43-browser-offline-') as folder:
   folder=Path(folder);listen=port();debug=port();procs=[]
-  env=dict(PATH=os.defpath,LANG='C.UTF-8',PYTHONPATH=str(ROOT),AURA_TESTNET_VIEW_PASSWORD=PASSWORD,AURA_ACTIVE43_SCHEDULER_SECRET='DUMMY_ACTIVE43_BROWSER_SCHEDULER_'+'x'*32)
+  env=dict(PATH=os.defpath,LANG='C.UTF-8',PYTHONPATH=str(ROOT),AURA_TESTNET_VIEW_PASSWORD=PASSWORD,AURA_ACTIVE43_BITGET_SCHEDULER_SECRET='DUMMY_ACTIVE43_BROWSER_SCHEDULER_'+'x'*32)
   with (folder/'logs').open('wb') as log:
    try:
     web=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--child',str(listen)],cwd=ROOT,env=env,stdout=log,stderr=log,start_new_session=True);procs.append(web)

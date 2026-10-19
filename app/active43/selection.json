@@ -9,10 +9,10 @@
       "sl_atr": 2,
       "tp_atr": 4
     },
-    "version": "AURA_4.3_ACTIVE_PAPER_2",
-    "protocol_hash": "8bb07ec940ecfc554adc5568cfc201d688472cc531aeec401d08cca43e797d3c"
+    "version": "AURA_4.3_ACTIVE_PAPER_3",
+    "protocol_hash": "f2bf45afdd0e7fc324afd1c4977376aacd804d02fc6f9494212fc05e45b61e69"
   },
   "verdict": "UNVALIDATED_FUTURES",
   "development_validation_edge": false,
-  "reason": "Unchanged fixed Donchian 15m technical candidate. Prior Spot research is not evidence for Bybit Futures. No profitability claim; no parameter optimization."
+  "reason": "Fixed unchanged Donchian 15m technical Paper candidate on Bitget USDT-M Futures. No profitability claim; no Spot/Bybit results transferred."
 }

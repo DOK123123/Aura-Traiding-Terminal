@@ -17,24 +17,26 @@ def test_public_get_only_closed_candles_and_filters(tf,failure):
         step=STEPS[tf];now=1700000000//86400*86400+7*3600+30;end=now//step*step;start=end//86400*86400-1000*step
         calls=[]
         def handler(req):
-            calls.append(req);assert req.method=='GET' and req.url.host=='api.bybit.com'
-            assert req.url.params['category']=='linear' and req.url.params['symbol']=='BTCUSDT'
-            assert not any(k.lower().startswith('x-bapi') for k in req.headers)
+            calls.append(req);assert req.method=='GET' and req.url.host=='api.bitget.com'
+            path=req.url.path
+            if path!='/api/v2/public/time':
+                assert req.url.params['productType']=='USDT-FUTURES' and req.url.params['symbol']=='BTCUSDT'
+            assert not any(k.lower().startswith(('x-bapi','access-key','access-sign')) for k in req.headers)
             if failure=='region':return httpx.Response(403,text='REGION_BLOCKED_TEST')
             if failure=='redirect':return httpx.Response(302,headers={'location':'https://evil.invalid/'})
-            if req.url.path=='/v5/market/instruments-info':
-                rows=[{'symbol':'BTCUSDT','status':'Trading','contractType':'LinearPerpetual','quoteCoin':'USDT','settleCoin':'USDT',
-                    'lotSizeFilter':{'qtyStep':'0.001','minOrderQty':'0.001','minNotionalValue':'10' if failure=='filters' else '5','maxMktOrderQty':'1000'},
-                    'priceFilter':{'tickSize':'0.1'}}]
-                return httpx.Response(200,json={'retCode':0,'time':now*1000,'result':{'category':'linear','list':rows}})
-            assert req.url.path=='/v5/market/kline'
-            right=int(req.url.params['end'])//1000;limit=int(req.url.params['limit'])
-            left=max(start,(right//step-limit+1)*step)
-            rows=[[str(t*1000),'100','101','99','100','100','10000'] for t in range(left,min(end,right+1),step)][::-1]
-            if left==start and failure=='gap':rows.pop(0)
-            if failure=='forming' and right==end-1:rows.insert(0,[str(end*1000),'100','101','99','100','100','10000'])
-            return httpx.Response(200,json={'retCode':0,'time':(now-20 if failure=='stale_response' else now)*1000,
-                'result':{'category':'spot' if failure=='wrong_source' else 'linear','symbol':'BTCUSDT','list':rows[:1000]}})
+            if path.endswith('/time'):
+                data={'serverTime':str(now*1000)}
+            elif path.endswith('/contracts'):
+                data=[dict(symbol='BTCUSDT',baseCoin='BTC',quoteCoin='USDT',symbolType='spot' if failure=='wrong_source' else 'perpetual',symbolStatus='normal',supportMarginCoins=['USDT'],
+                    minTradeNum='0.0001',sizeMultiplier='0.0001',minTradeUSDT='10' if failure=='filters' else '5',priceEndStep='1',pricePlace='1',volumePlace='4',maxMarketOrderQty='220')]
+            else:
+                assert path=='/api/v2/mix/market/history-candles'
+                right=int(req.url.params['endTime'])//1000;left=int(req.url.params['startTime'])//1000;limit=int(req.url.params['limit'])
+                assert right%step==0 # minus-1 millisecond request would lose the latest closed candle
+                data=[[str(t*1000),'100','101','99','100','100','10000'] for t in range(left,min(end,right),step)]
+                if left==start and failure=='gap':data.pop(0)
+                if failure=='forming' and right==end:data.append([str(end*1000),'100','101','99','100','100','10000'])
+            return httpx.Response(200,json={'code':'00000','requestTime':(now-20 if failure=='stale_response' else now)*1000,'data':data[-200:] if isinstance(data,list) and path.endswith('/history-candles') else data})
         market=Market(clock=lambda:now,transport=httpx.MockTransport(handler))
         try:
             if failure in ('gap','redirect','wrong_source','stale_response','region'):
@@ -42,11 +44,11 @@ def test_public_get_only_closed_candles_and_filters(tf,failure):
             else:
                 bars,decision,at=await market.snapshot(config('DONCHIAN',tf))
                 assert bars[0].time==start and bars[-1].time+step==end and at==now
-                if failure=='filters':assert decision['error']=='FUTURES_FILTERS_CHANGED' and decision['direction'] is None
+                if failure in ('filters','wrong_source'):assert decision['error']=='FUTURES_FILTERS_CHANGED' and decision['direction'] is None
                 else:
                     assert decision['signal_at']==end
                     count=len(calls);await market.snapshot(config('DONCHIAN',tf));assert len(calls)==count
-            assert all(r.url.path in ('/v5/market/kline','/v5/market/instruments-info') for r in calls)
+            assert all(r.url.path in ('/api/v2/public/time','/api/v2/mix/market/history-candles','/api/v2/mix/market/contracts') for r in calls)
         finally:await market.close()
     asyncio.run(run())
 
