@@ -111,6 +111,14 @@ class SQLiteStore:
             else:rows=c.execute('select * from auto42_events where seq>? order by seq limit ?',(after,limit)).fetchall()
             return [dict(unpack(dict(r)),seq=r['seq']) for r in rows]
 
+    async def closed_trades(self,epoch,before=None,limit=50):
+        return await self.call(self._closed_trades,epoch,before,limit)
+    def _closed_trades(self,epoch,before,limit):
+        if not 1<=limit<=200:raise DemoError('READ_LIMIT')
+        with self.connect() as c:
+            rows=c.execute("select * from auto42_events where epoch=? and kind='CLOSE' and (? is null or seq<?) order by seq desc limit ?",(epoch,before,before,limit)).fetchall()
+            return [dict(unpack(dict(r)),seq=r['seq']) for r in rows]
+
 
 class SupabaseStore:
     backend='SUPABASE_POSTGRES';durable=True
@@ -125,7 +133,7 @@ class SupabaseStore:
             elapsed_ms=int((time.monotonic()-started)*1000))
         if code:logging.getLogger(__name__).warning('Auto42 storage: operation=%s code=%s http_status=%s upstream_code=%s network=%s elapsed_ms=%d',operation,code,http_status,upstream,network,self.diagnostics['elapsed_ms'])
     async def rpc(self,name,args):
-        if name not in ('aura_auto42_load','aura_auto42_commit','aura_auto42_history'):raise DemoError('INVALID_STORAGE_ACTION')
+        if name not in ('aura_auto42_load','aura_auto42_commit','aura_auto42_history','aura_auto42_closed_trades'):raise DemoError('INVALID_STORAGE_ACTION')
         import httpx
         started=time.monotonic();status=None;upstream=None;network=None
         try:
@@ -178,3 +186,11 @@ class SupabaseStore:
         value=await self.rpc('aura_auto42_history',dict(selected_epoch=epoch,after_seq=after,row_limit=limit))
         if not isinstance(value,list) or len(value)>200:raise DemoError('STORAGE_INVALID_RESPONSE')
         return [dict(unpack(r),seq=r['seq']) for r in value]
+
+    async def closed_trades(self,epoch,before=None,limit=50):
+        if not 1<=limit<=200:raise DemoError('READ_LIMIT')
+        value=await self.rpc('aura_auto42_closed_trades',dict(selected_epoch=epoch,before_seq=before,row_limit=limit))
+        if not isinstance(value,list) or len(value)>limit:raise DemoError('STORAGE_INVALID_RESPONSE')
+        rows=[dict(unpack(r),seq=r['seq']) for r in value]
+        if any(e['epoch']!=epoch or e['kind']!='CLOSE' for e in rows):raise DemoError('STORAGE_INVALID_RESPONSE')
+        return rows

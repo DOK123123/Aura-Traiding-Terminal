@@ -115,3 +115,29 @@ test('unknown control timeout with cached OFF never claims activation definitive
  assert.doesNotMatch(h.node('a42-message').textContent,/режим остался OFF/);
  assert.match(h.node('a42-message').textContent,/обновите состояние/);h.win.handlers.pagehide();
 });
+
+test('fee-inclusive position PnL and signal come from persisted production fields',()=>{
+ const p=payload('ON',{direction:'SHORT',entry_price:'100',size:'2',stop_loss:'102',take_profit:'96'});
+ p.position_net_pnl='-1.25';p.state.fees='2';p.last_signal={closed_candle_at:99900,reason:'CONFIRMED_STRUCTURE_RETEST',details:{direction:'SHORT'}};
+ const v=view(p,false,100010);assert.equal(v.unrealized,'-1,25');assert.equal(v.fees,'2');assert.match(v.signal,/SHORT/);
+ assert.equal(view(p,true,100010).unrealized,'Нет свежих данных');
+});
+test('quote is independent read-only display and never triggers execution',async()=>{
+ const p=payload('ON');p.quote_available=true;const calls=[];const now=Date.now();
+ const h=harness(async(url,o)=>{calls.push(url);assert.notEqual(o.method,'POST');
+  if(url==='/api/auto42/quote')return response({paper_only:true,exchange_execution:false,quote:{price:'68000',time_ms:now}});
+  return response(p);
+ });
+ await h.node('a42-refresh').handlers.click();await new Promise(r=>setImmediate(r));
+ assert.deepEqual(calls,['/api/auto42/status','/api/auto42/quote']);assert.match(h.node('a42-quote').textContent,/68/);
+ h.win.handlers.pagehide();
+});
+test('closed trade pagination does not call trading controls and separates epochs',async()=>{
+ const p=payload('ON');p.state.epoch='unit';p.history_available=true;p.history_is_partial=true;p.history_cursor=12;
+ const calls=[];const h=harness(async(url,o)=>{calls.push(url);assert.notEqual(o.method,'POST');
+  return response(url.includes('/trades?')?{paper_only:true,exchange_execution:false,epoch:'unit',trades:[{direction:'LONG',realized_pnl:'2',exit_time:900}],page_may_have_more:false,next_cursor:1}:p);
+ });
+ await h.node('a42-refresh').handlers.click();assert.equal(h.node('a42-older').disabled,false);
+ await h.node('a42-older').handlers.click();assert.match(h.node('a42-history').children[0].textContent,/LONG/);
+ assert.equal(h.node('a42-older').disabled,true);assert.deepEqual(calls,['/api/auto42/status','/api/auto42/trades?before=12']);h.win.handlers.pagehide();
+});

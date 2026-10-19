@@ -115,6 +115,7 @@ def test_execution_reject_survives_following_decisions_and_restart(tmp_path, sid
             value['history']['source_sha256'] = digest([b.data() for b in bars])
             for key, step in (('h1',3600),('h4',14400)):
                 value['state']['mtf'][key]['closed_at'] = at//step*step
+            value['state']['retest_origin']['breakout_closed_at'] = at-900
             value['structure_events'] = [dict(type='structure_event',value='BOS',confirmed_at=at-900),
                                          dict(type='breakout',value=side,confirmed_at=at-900)]
 

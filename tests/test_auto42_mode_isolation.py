@@ -123,6 +123,7 @@ class ModeIsolationTests(unittest.IsolatedAsyncioTestCase):
         value['history']['source_sha256'] = digest([b.data() for b in self.bars])
         for name, step in [('h1', 3600), ('h4', 14400)]:
             value['state']['mtf'][name]['closed_at'] = at // step * step
+        value['state']['retest_origin']['breakout_closed_at'] = at-900
         value['structure_events'] = [
             dict(type='structure_event', value='BOS', confirmed_at=at - 900),
             dict(type='breakout', value='LONG', confirmed_at=at - 900)]

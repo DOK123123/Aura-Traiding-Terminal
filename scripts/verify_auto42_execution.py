@@ -35,7 +35,7 @@ class TestMarket:
             history=dict(source_sha256=digest([b.data() for b in self.bars])),
             state=dict(version=VERSION,timestamp=at,timeframe='15m',symbol='BTCUSDT',
                 mtf=dict(known_mask=3,alignment=True,h1=dict(direction=d,closed_at=at//3600*3600),h4=dict(direction=d,closed_at=at//14400*14400)),
-                trend_direction=d,trend_strength=30,retest=self.side if self.signal else None,liquidity_sweep=None,atr=1,volatility_ratio=1,
+                trend_direction=d,trend_strength=30,retest=self.side if self.signal else None,retest_origin=dict(direction=self.side,level='99.5' if d==1 else '100.5',breakout_closed_at=at-900),liquidity_sweep=None,atr=1,volatility_ratio=1,
                 support='80',resistance='120',breakout_level='99.5' if d==1 else '100.5',regime='TREND_UP' if d==1 else 'TREND_DOWN'),
             structure_events=[dict(type='structure_event',value='BOS',confirmed_at=at-900),dict(type='breakout',value=self.side,confirmed_at=at-900)])
     def add(self,**kw):self.bars.append(bar(self.bars[-1].time+900,**kw))

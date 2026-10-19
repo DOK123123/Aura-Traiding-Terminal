@@ -51,6 +51,15 @@ async def alignment(request:Request):
     return await respond(service(request).alignment_dashboard())
 
 
+@router.get('/quote',dependencies=[Depends(owner)])
+async def quote(request:Request):
+    async def read():
+        svc=service(request);svc.ready()
+        if svc.quotes is None:raise DemoError('QUOTE_UNAVAILABLE')
+        return dict(quote=await svc.quotes.get(),read_only=True,paper_only=True,exchange_execution=False)
+    return await respond(read())
+
+
 @router.get('/live-monitor',dependencies=[Depends(owner)])
 async def live_monitor(request:Request):
     try:
@@ -90,4 +99,15 @@ async def journal(request:Request,after:int=Query(0,ge=0),limit:int=Query(100,ge
     async def read():
         svc=service(request);svc.ready();rows=await svc.store.history(after=after,limit=limit)
         return dict(rows=rows,next_cursor=rows[-1]['seq'] if rows else after,paper_only=True,exchange_execution=False)
+    return await respond(read())
+
+
+@router.get('/trades',dependencies=[Depends(owner)])
+async def trades(request:Request,before:int|None=Query(None,ge=1),limit:int=Query(50,ge=1,le=200)):
+    async def read():
+        svc=service(request);svc.ready();env=await svc.store.load()
+        rows=await svc.store.closed_trades(env['state']['epoch'],before,limit)
+        return dict(trades=[e['payload'] for e in rows],epoch=env['state']['epoch'],
+            next_cursor=rows[-1]['seq'] if rows else None,page_may_have_more=len(rows)==limit,
+            read_only=True,paper_only=True,exchange_execution=False)
     return await respond(read())

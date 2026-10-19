@@ -194,7 +194,10 @@ def advance(old,bars,decision,now):
     if latest==watermark:return s,[]
     future=[b for b in bars if b.time>=watermark]
     if not future or future[0].time!=watermark or any(b.time-a.time!=STEP for a,b in zip(future,future[1:])):raise DemoError('MISSING_CANDLES')
-    if len(future)>32:raise DemoError('CATCHUP_LIMIT')
+    # The catch-up entry limit must never strand an existing position. All
+    # available candles were validated above; missed signals are discarded
+    # below and only the latest decision can queue a new, forward entry.
+    if len(future)>32 and not s['position']:raise DemoError('CATCHUP_LIMIT')
     if len(future)>1:
         s['missed_candles']+=len(future)-1;s['pending']=None
         events.append(event(s,'MISSED',latest,now,dict(count=len(future)-1,reason='MISSED_RUN_NO_RETROACTIVE_ENTRIES')))

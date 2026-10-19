@@ -10,7 +10,8 @@
   const s=data?.state;const fresh=data?.fresh===true&&!failed&&Number.isFinite(data.server_now)&&now>=data.server_now-30&&now-data.server_now<=120&&now-s?.last_mark_at<900&&now-s?.last_success_at<=360;const pos=s?.position;
   return {status:failed?(data?.diagnostics?.render_api==='ONLINE'?'API ответил; данные портфеля не подтверждены':'Нет свежих данных — сервер не ответил'):label(data?.status),mode:label(s?.mode),
    balance:number(s?.balance),equity:fresh?number(data.current_equity):'Нет свежих данных',
-   realized:number(s?.realized_pnl),unrealized:fresh?number(data.unrealized_pnl):'Нет свежих данных',
+   realized:number(s?.realized_pnl),unrealized:fresh?number(data.position_net_pnl??data.unrealized_pnl):'Нет свежих данных',
+   fees:number(s?.fees),signal:data?.last_signal?`${data.last_signal.details?.direction||'—'} · ${date(data.last_signal.closed_candle_at)} · ${label(data.last_signal.reason)}`:'Подтверждённых сигналов в журнале пока нет',
    trades:number(s?.trades),win:number(data?.win_rate),pf:data?.profit_factor_status==='NO_LOSSES'?'Не определён: нет убытков':number(data?.profit_factor),drawdown:number(s?.max_drawdown_pct),
    missed:`Свечи: ${number(s?.missed_candles)} · scheduler-слоты: ${number(s?.missed_runs)}`,last:label(s?.last_error||s?.last_decision||data?.reason),run:date(s?.last_success_at),candle:date(s?.watermark),
    position:pos?`${pos.direction} · вход ${number(pos.entry_price)} · размер ${number(pos.size)} BTC · SL ${number(pos.stop_loss)} · TP ${number(pos.take_profit)}`:'Нет открытой виртуальной позиции',
@@ -34,18 +35,37 @@
  if(typeof module!=='undefined')module.exports={view,system};
  if(typeof document==='undefined')return;
  const panel=document.getElementById('auto42-panel');if(!panel)return;
- const out=id=>document.getElementById('a42-'+id);let data=null,busy=false,failed=false,controller=null,closed=false,timer=null,generation=0,transport='unknown';
+ const out=id=>document.getElementById('a42-'+id);let data=null,busy=false,failed=false,controller=null,closed=false,timer=null,generation=0,transport='unknown',quoteController=null,quoteTimer=null;
  const msg=t=>{out('message').textContent=t;};
  const safeError=(t,body)=>Object.assign(new Error(t),{safe:true,body});
  function failure(e){failed=true;transport=e.body?.diagnostics?'reply':'unknown';if(e.body?.diagnostics)data={...(data||{}),...(e.body.state?e.body:{}),diagnostics:e.body.diagnostics};else if(data)data={...data,diagnostics:{...(data.diagnostics||{}),render_api:'UNKNOWN',storage:{status:'UNKNOWN'},checked_at:null,last_error:'CLIENT_NO_RESPONSE'}};}
  function render(){
   const v=view(data,failed);const health=system(data,failed,transport);
   for(const [id,value] of Object.entries(health))out('sys-'+id).textContent=value;
-  for(const k of ['status','mode','balance','equity','realized','unrealized','trades','win','pf','drawdown','last','run','candle','position','missed'])out(k).textContent=v[k];
+  for(const k of ['status','mode','balance','equity','realized','unrealized','trades','win','pf','drawdown','last','run','candle','position','missed','fees','signal'])out(k).textContent=v[k];
+  const commit=data?.diagnostics?.runtime?.render_commit;
+  out('build').textContent=typeof commit==='string'&&/^[a-f0-9]{40}$/.test(commit)?commit:'Версия Render не подтверждена';
   out('start').disabled=busy||!v.canStart;out('stop').disabled=!v.canStop;out('emergency').disabled=!v.canStop;out('reset').disabled=busy||!v.canReset;out('refresh').disabled=busy;
   const list=out('history');list.replaceChildren();
   for(const t of data?.trades||[]){const li=document.createElement('li');li.textContent=`${date(t.exit_time)} · ${t.direction} · ${label(t.exit_reason)} · PnL ${number(t.realized_pnl)} USDT`;list.append(li);}
-  if(!data?.trades?.length){const li=document.createElement('li');li.textContent='Закрытых сделок в последних 60 событиях нет';list.append(li);}
+  if(!data?.trades?.length){const li=document.createElement('li');li.textContent=data?.history_available===true?'Закрытых сделок в текущем портфеле нет':'История не подтверждена; требуется проверка хранилища';list.append(li);}
+  out('history-note').textContent=data?.history_error?'Не установлен read-only RPC auto42_trade_history.sql; показана только часть журнала':data?.history_is_partial?'Показана часть истории; загрузите более ранние сделки':'Все закрытые сделки текущего портфеля';
+  out('older').disabled=busy||!data?.history_is_partial||!data?.history_cursor||!data?.history_available;
+ }
+ async function quote(){
+  if(closed||quoteController||!data?.quote_available)return;
+  const local=new AbortController();quoteController=local;
+  const timeout=setTimeout(()=>local.abort(),5000);clearTimeout(quoteTimer);
+  out('quote').textContent='Нет свежей котировки';
+  try{
+   const r=await fetch('/api/auto42/quote',{credentials:'same-origin',cache:'no-store',signal:local.signal});
+   if(!r.ok)return;const b=await r.json(),q=b.quote,age=Date.now()-q?.time_ms;
+   if(!closed&&b.paper_only===true&&b.exchange_execution===false&&Number.isFinite(age)&&age>=-1000&&age<10000&&Number(q.price)>0){
+    out('quote').textContent=number(q.price)+' USDT · '+date(q.time_ms/1000);
+    quoteTimer=setTimeout(()=>{out('quote').textContent='Нет свежей котировки';},Math.max(1,10000-age));
+   }
+  }catch(e){/* Display only; never changes strategy, marks or execution. */}
+  finally{clearTimeout(timeout);quoteController=null;}
  }
  async function request(url,options={}){
   const local=new AbortController();controller=local;const timeout=setTimeout(()=>local.abort(),60000);
@@ -61,7 +81,7 @@
   if(busy||closed)return;const run=++generation;busy=true;render();
   try{const result=await request('/api/auto42/status');if(run!==generation)return;data=result;failed=false;transport='reply';msg(data.diagnostics?.activation_error?'Последний START отклонён: '+label(data.diagnostics.activation_error.code)+'. Режим: '+label(data.state?.mode):data.state?'':'Режим не настроен. Новые сделки невозможны.');}
   catch(e){if(run===generation){failure(e);msg(e.name==='AbortError'?'Время ожидания истекло; состояние не подтверждено':e.safe?e.message:'Нет свежего ответа сервера');}}
-  finally{if(run===generation){busy=false;if(!closed)render();}}
+  finally{if(run===generation){busy=false;if(!closed){render();if(!failed)quote();}}}
  }
  async function control(action){
   const urgent=action==='STOP'||action==='EMERGENCY';
@@ -80,10 +100,20 @@
   finally{if(run===generation){busy=false;if(!closed)render();}}
  }
  panel.addEventListener('toggle',()=>{if(panel.open)refresh();});out('refresh').addEventListener('click',refresh);
+ out('older').addEventListener('click',async()=>{
+  if(busy||!data?.history_cursor)return;const run=++generation,epoch=data.state.epoch;busy=true;render();
+  try{
+   const page=await request('/api/auto42/trades?before='+data.history_cursor);
+   if(run!==generation)return;if(page.epoch!==epoch)throw safeError('Портфель изменился; обновите панель');
+   data={...data,trades:[...data.trades,...page.trades],history_cursor:page.next_cursor,history_is_partial:page.page_may_have_more};
+  }catch(e){if(run===generation)msg(e.safe?e.message:'История не загружена');}
+  finally{if(run===generation){busy=false;if(!closed)render();}}
+ });
  for(const [id,action] of [['start','START'],['stop','STOP'],['emergency','EMERGENCY'],['reset','RESET']])out(id).addEventListener('click',()=>control(action));
  timer=setInterval(()=>{if(panel.open&&!document.hidden)refresh();},60000);
+ const quotePoll=setInterval(()=>{if(panel.open&&!document.hidden&&!failed)quote();},5000);
  document.addEventListener('visibilitychange',()=>{render();if(!document.hidden&&panel.open)refresh();});
- window.addEventListener('pagehide',()=>{closed=true;generation++;clearInterval(timer);controller?.abort();});
+ window.addEventListener('pagehide',()=>{closed=true;generation++;clearInterval(timer);clearInterval(quotePoll);clearTimeout(quoteTimer);quoteController?.abort();controller?.abort();});
  // Pure display adapter exported for offline fixture tests; never activates on load.
  if(typeof module!=='undefined')module.exports={view,system};
  render();

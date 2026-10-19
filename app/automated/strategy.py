@@ -54,10 +54,15 @@ def _evaluate(snapshot,bars,now):
         return dict(result,reason='OPPOSING_LIQUIDITY')
     events=snapshot.get('structure_events') or []
     matches=[]
+    origin=state.get('retest_origin') or {}
+    origin_at=origin.get('breakout_closed_at')
+    if (origin.get('direction')!=side or type(origin_at) is not int
+            or not at-8*STEP<=origin_at<at or origin.get('level')!=state.get('breakout_level')):
+        return dict(result,reason='NO_CONFIRMED_STRUCTURE_BREAK')
     # Require a confirmed BOS/CHoCH and its directed breakout at the SAME timestamp.
     for ev in events:
         t=ev.get('confirmed_at')
-        if type(t) is int and at-8*STEP<=t<at and ev.get('type')=='structure_event' and ev.get('value') in ('BOS','CHoCH'):
+        if type(t) is int and t==origin_at and ev.get('type')=='structure_event' and ev.get('value') in ('BOS','CHoCH'):
             if any(e.get('type')=='breakout' and e.get('value')==side and e.get('confirmed_at')==t for e in events):matches.append(ev)
     if not matches:return dict(result,reason='NO_CONFIRMED_STRUCTURE_BREAK')
     try:
