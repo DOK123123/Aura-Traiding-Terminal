@@ -1,0 +1,23 @@
+name: Aura 4.3 isolated virtual scheduler (opt-in)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '2-59/5 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: aura-active43
+  cancel-in-progress: false
+jobs:
+  active43_tick:
+    if: vars.AURA_ACTIVE43_SCHEDULER_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Independent paper-only tick (not Auto42)
+        env:
+          AURA_ACTIVE43_SCHEDULER_SECRET: ${{ secrets.AURA_ACTIVE43_SCHEDULER_SECRET }}
+        run: python -m scripts.active43_scheduler

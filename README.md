@@ -152,3 +152,21 @@ Historical Pattern Engine реализован отдельным пакетом
 счетами. Aura Existing честно отмечен INCOMPATIBLE: его текущий backtest не
 изменён. Без активации стратегий, связи с Paper ledger или биржевых ордеров.
 [Методика, ограничения и Render/Android checklist](docs/STRATEGY_LAB.md).
+
+## Aura 4.3 Active Paper — Bybit Futures
+
+Отдельный opt-in PAPER-портфель BTCUSDT USDT Perpetual: публичные Bybit V5
+closed candles/ticker, автоматические LONG/SHORT/SL/TP, существующий Decimal
+engine, собственные Supabase account/events, owner UI с Futures-графиком,
+внешний scheduler и restart recovery. Риск ≤0,5%, дневной лимит 2%, одна
+позиция, notional ≤2000 USDT. **По умолчанию OFF**, отдельный Bybit opt-in.
+Aura 4.2 и Paper Practice не переключаются, реальные ордера не поддерживаются.
+
+Стратегия не имеет подтверждённого преимущества на Futures. Архивный годовой
+Spot backtest `NO_EDGE_FOUND` остаётся отдельно помеченным историческим отчётом.
+Production и 24/7 не подтверждены: требуется фактический доступ Render к Bybit
+и Supabase, миграция и внешние ticks. Из проверочного окружения Bybit блокирует
+регион (403); подмена источника/обход не предусмотрены.
+
+[Запуск, SQL, env, тесты, ограничения и проверка Render](docs/AURA43_BYBIT_OPERATIONS.md).
+[Архив Spot-исследования на исходном коммите](docs/AURA43_ACTIVE_PAPER.md).

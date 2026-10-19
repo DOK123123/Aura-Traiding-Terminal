@@ -16,6 +16,7 @@
   <script defer src="/static/paper.js"></script>
   <link rel="stylesheet" href="/static/intelligence.css">
   <link rel="stylesheet" href="/static/auto42.css">
+  <link rel="stylesheet" href="/static/active43.css">
   <script defer src="/static/intelligence.js"></script>
   <link rel="stylesheet" href="/static/market_context.css">
   <script defer src="/static/market_context.js"></script>
@@ -173,9 +174,31 @@
       <details><summary>Закрытые виртуальные сделки</summary><p id="a42-history-note">История не загружена</p><ul id="a42-history"></ul><button id="a42-older" type="button" disabled>Более ранние сделки</button></details>
       <a href="/api/auto42/journal">Журнал событий (JSON, первая страница)</a>
     </details>
+  <details id="active43-panel">
+    <summary>AURA 4.3 ACTIVE PAPER · ОТДЕЛЬНЫЙ ЭКСПЕРИМЕНТАЛЬНЫЙ ПОРТФЕЛЬ</summary>
+    <p class="a43-warning">ТОЛЬКО ВИРТУАЛЬНЫЕ СРЕДСТВА · REAL MONEY EXECUTION = DISABLED.<br>NO_EDGE_FOUND: убедительное преимущество после расходов не найдено. Режим выключен по умолчанию и не заменяет Aura 4.2. Bybit USDT Perpetual Futures — только публичные данные и виртуальное исполнение. UNVALIDATED_FUTURES: архивный Spot-backtest не доказывает результаты Futures. Funding не моделируется. Paper SL/TP не являются биржевыми стоп-ордерами.</p>
+    <a href="/api/paper/login">Вход владельца</a>
+    <dl class="a43-grid"><div><dt>ON/OFF</dt><dd id="a43-mode">—</dd></div><div><dt>Подключение к рынку</dt><dd id="a43-market">—</dd></div><div><dt>Подключение к Supabase</dt><dd id="a43-storage">—</dd></div><div><dt>Активная стратегия</dt><dd id="a43-strategy">—</dd></div><div><dt>Последняя закрытая свеча UTC</dt><dd id="a43-candle">—</dd></div><div><dt>Scheduler (внешний; без браузера)</dt><dd id="a43-scheduler">—</dd></div><div><dt>Последние успешные данные UTC</dt><dd id="a43-success">—</dd></div><div><dt>Последний scheduler run UTC</dt><dd id="a43-run">—</dd></div><div><dt>Последнее сохранение UTC</dt><dd id="a43-saved">—</dd></div><div><dt>Баланс, USDT</dt><dd id="a43-balance">—</dd></div><div><dt>Equity, USDT</dt><dd id="a43-equity">—</dd></div><div><dt>Realized PnL, USDT</dt><dd id="a43-realized">—</dd></div><div><dt>PnL по последней закрытой свече после комиссий, USDT</dt><dd id="a43-pnl">—</dd></div><div><dt>Комиссии, USDT</dt><dd id="a43-fees">—</dd></div><div><dt>Проскальзывание, USDT</dt><dd id="a43-slippage">—</dd></div><div><dt>Max Drawdown, %</dt><dd id="a43-drawdown">—</dd></div><div><dt>Закрытых сделок</dt><dd id="a43-count">—</dd></div><div><dt>Win Rate, %</dt><dd id="a43-win">—</dd></div><div><dt>Восстановление после рестарта</dt><dd id="a43-recovery">—</dd></div></dl>
+    <p id="a43-chart-status">График Bybit Futures появится после scheduler-цикла.</p><svg id="a43-chart" viewBox="0 0 850 230" role="img" aria-label="Закрытые свечи Bybit Futures и точки OPEN/CLOSE Paper"></svg>
+    <p>Свежая цена BTCUSDT, только отображение: <span id="a43-quote">Нет свежей котировки</span></p>
+    <p>Оценка PnL позиции по свежей цене после комиссий, без записи: <span id="a43-quote-pnl">Нет свежих данных</span></p>
+    <p>Последний сигнал: <span id="a43-signal">—</span></p>
+    <p>Причина решения: <span id="a43-reason">—</span></p>
+    <p id="a43-position">Позиция не загружена</p><p id="a43-live">Автономный production-цикл не подтверждён</p>
+    <div role="group" aria-label="Управление Aura 4.3"><button id="a43-start" disabled>START EXPERIMENTAL PAPER</button><button id="a43-stop" disabled>STOP · запрет новых входов</button><button id="a43-emergency" disabled>EMERGENCY STOP</button><button id="a43-refresh">Обновить</button></div>
+    <p id="a43-message" role="status" aria-live="polite"></p>
+    <p>Риск ≤0,5% · дневной лимит 2% · max notional 2000 USDT · одна позиция. STOP сохраняет защитные выходы. Бесплатный Render может спать; пропуски scheduler задерживают SL/TP. Работа 24/7 не подтверждена.</p>
+    <details><summary>История реального Paper-портфеля Aura 4.3</summary><ul id="a43-history"></ul><button id="a43-older" disabled>Более ранние сделки</button><a href="/api/active43/journal">Журнал решений и событий JSON</a></details>
+    <details><summary>Отдельное историческое сравнение стратегий · НЕ LIVE</summary>
+      <button id="a43-research">Показать зафиксированные результаты backtest</button><p id="a43-research-status">Исторический отчёт не загружен. Исследования через production API не запускаются.</p>
+      <div class="a43-scroll" role="region" aria-label="Сравнение стратегий" tabindex="0"><table><thead><tr><th>Стратегия</th><th>TF</th><th>Сделки за год</th><th>В неделю</th><th>Net USDT</th><th>Return %</th><th>Win %</th><th>PF</th><th>Max DD %</th><th>Expectancy</th><th>Sharpe</th><th>Avg win</th><th>Avg loss</th><th>Часы в сделке</th><th>Fees</th><th>Fees/abs gross %</th><th>Validation net</th><th>OOS net</th><th>OOS сделки</th></tr></thead><tbody id="a43-comparison"></tbody></table></div>
+      <p><a href="/static/active43-historical-trades.json.gz" download>Скачать исторические сделки выбранного кандидата · НЕ LIVE (JSON.GZ)</a></p>
+      <p id="a43-curve-label">Историческая equity не является текущим балансом Paper.</p><canvas id="a43-curve" width="850" height="200" role="img" aria-label="Историческая equity выбранного экспериментального кандидата"></canvas>
+    </details>
+  </details>
   <details id="bybit-linear-preview" class="auto42">
     <summary>Bybit BTCUSDT · USDT Perpetual · отдельный READ ONLY preview</summary>
-    <p class="a42-warning">PREVIEW ONLY · НЕ ИСТОЧНИК AUTO PAPER 4.2. Основной график и портфель пока используют Binance Spot. Переход источника и виртуальное исполнение Bybit ещё не подключены.</p>
+    <p class="a42-warning">PREVIEW ONLY · НЕ ИСТОЧНИК AUTO PAPER 4.2. Основной график и портфель пока используют Binance Spot. Для нового виртуального портфеля Bybit используйте отдельную панель Aura 4.3; Aura 4.2 не переключается.</p>
     <dl class="a42-grid"><div><dt>Статус котировки Bybit linear</dt><dd id="bl-status">Нет данных</dd></div><div><dt>Last Price · Bybit Futures</dt><dd id="bl-last">—</dd></div><div><dt>Mark Price · Bybit Futures</dt><dd id="bl-mark">—</dd></div><div><dt>Время ответа / сообщения источника UTC (не время последней сделки)</dt><dd id="bl-time">—</dd></div><div><dt>Транспорт</dt><dd id="bl-transport">—</dd></div></dl>
     <button id="bl-refresh" type="button">Обновить Bybit preview</button><a href="/api/paper/login">Вход владельца</a>
     <p>Feature flag по умолчанию выключен. Нет account API, funding, ордеров или связи с исполнением. Цены свечей не подставляются вместо Last/Mark.</p>
@@ -365,6 +388,7 @@
 </main>
 <script src="/static/forward_validation.js" defer></script>
 <script src="/static/auto42.js" defer></script>
+<script src="/static/active43.js" defer></script>
 <script src="/static/bybit_linear.js" defer></script>
 <script src="/static/exchange_diagnostics.js" defer></script>
 <script src="/static/execution_verification.js" defer></script>

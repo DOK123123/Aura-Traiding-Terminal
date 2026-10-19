@@ -1,0 +1,18 @@
+{
+  "config": {
+    "strategy": "DONCHIAN",
+    "timeframe": "15m",
+    "parameters": {
+      "entry_channel": 20,
+      "exit_channel": 10,
+      "atr_period": 14,
+      "sl_atr": 2,
+      "tp_atr": 4
+    },
+    "version": "AURA_4.3_ACTIVE_PAPER_2",
+    "protocol_hash": "8bb07ec940ecfc554adc5568cfc201d688472cc531aeec401d08cca43e797d3c"
+  },
+  "verdict": "UNVALIDATED_FUTURES",
+  "development_validation_edge": false,
+  "reason": "Unchanged fixed Donchian 15m technical candidate. Prior Spot research is not evidence for Bybit Futures. No profitability claim; no parameter optimization."
+}
