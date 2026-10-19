@@ -167,3 +167,11 @@ SQL/сценарные тесты не подтверждают production. Ни
 trading keys. Funding не моделируется, прибыльность не заявляется.
 [SQL, env, Actions, запуск/rollback и проверка Render](docs/AURA43_BITGET_OPERATIONS.md).
 [Архив v2 Bybit](docs/AURA43_BYBIT_OPERATIONS.md).
+
+
+### Aura 4.3: проверка настройки при PAPER OFF
+
+Owner Panel → **ПРОВЕРИТЬ ВСЮ СИСТЕМУ** проверяет Bitget, read-only Supabase
+и сохранённые scheduler ticks без торговых операций. В GitHub Actions ручной
+`operation=diagnostics` работает при scheduler variable=false. Подробности и
+границы production-проверки: [инструкция](docs/AURA43_SETUP_VERIFICATION.md).

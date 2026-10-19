@@ -26,3 +26,28 @@ def test_scheduler_rejects_unconfigured_unsafe_ambiguous_or_wrong_portfolio():
     for change in (dict(scope='AURA42'),dict(market_source='Binance Spot'),dict(strategy_version='AURA_4.3_ACTIVE_PAPER_1'),dict(exchange_execution=True),dict(state_saved=False),dict(status='PAUSED'),dict(opened=2),dict(processed=True,last_processed_closed_at=None)):
         b=body();b.update(change);assert not verified(b)
         assert run({'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET':'DUMMY_'+'x'*40},opener=Opener(b),emit=lambda _:None,sleep=lambda _:None)==1
+
+
+def test_diagnostic_dispatch_never_calls_tick_even_when_response_says_on():
+    from scripts.active43_scheduler import DIAGNOSTIC_URL,diagnostic_verified
+    b=dict(scope='AURA43_ACTIVE_PAPER',market_source='Bitget · USDT-M Futures / api.bitget.com',strategy_version='AURA_4.3_ACTIVE_PAPER_3',
+        paper_only=True,exchange_execution=False,read_only=True,state_changed=False,production_paper_verified=False,
+        status='BLOCKED',mode='ON',bitget={'status':'CONNECTED'},supabase={'status':'CONNECTED'},
+        scheduler={'status':'ERROR','diagnostic_delivery_confirmed':True})
+    token='DUMMY_DIAGNOSTIC_ONLY_'+'x'*40;opener=Opener(b);logs=[]
+    assert run({'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET':token},opener=opener,emit=logs.append,diagnose=True)==0
+    assert len(opener.requests)==1 and opener.requests[0].full_url==DIAGNOSTIC_URL
+    assert token not in ''.join(logs) and '"mode"' not in ''.join(logs)
+    assert not diagnostic_verified(body())
+    for k,v in [('read_only',False),('state_changed',True),('scheduler',None),('production_paper_verified',True)]:
+        assert not diagnostic_verified(dict(b,**{k:v}))
+
+
+def test_workflow_diagnostic_default_bypasses_only_trading_opt_in():
+    from pathlib import Path
+    text=Path('.github/workflows/aura-active43.yml').read_text()
+    assert 'default: diagnostics' in text and '- diagnostics' in text and '- tick' in text
+    assert 'run: python -m scripts.active43_scheduler --diagnose' in text
+    assert "if: github.event_name == 'schedule' || inputs.operation == 'tick'" in text
+    assert "vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true'" in text
+    assert "(github.event_name == 'workflow_dispatch' && inputs.operation == 'diagnostics') ||" in text

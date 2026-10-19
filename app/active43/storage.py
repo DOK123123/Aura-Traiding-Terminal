@@ -1,5 +1,6 @@
 """Dedicated Supabase namespace; no method can address another portfolio."""
 import asyncio,json
+from datetime import datetime
 import httpx
 from app.forward.storage import SupabaseStore as SafeTransport
 from app.forward.models import ForwardError
@@ -46,6 +47,29 @@ class Store:
         env=verify_envelope(value);validate(env['state'])
         if type(value.get('duplicate',False)) is not bool:raise DemoError('STORAGE_INVALID_RESPONSE')
         return dict(env,duplicate=value.get('duplicate',False))
+    async def peek(self):
+        """GET only the dedicated singleton; unlike load(), never seeds an account."""
+        try:
+            async with asyncio.timeout(12):
+                async with self.transport.slots:
+                    async with self.transport.client.stream('GET',self.transport.base+'/rest/v1/aura_active43_bitget_account',
+                            params={'id':'eq.1','select':'revision,payload,sha256,saved_at','limit':'1'}) as response:
+                        raw=bytearray()
+                        async for chunk in response.aiter_bytes():
+                            if len(raw)+len(chunk)>131072:raise DemoError('STORAGE_RESPONSE_LIMIT')
+                            raw.extend(chunk)
+                        try:value=json.loads(raw)
+                        except ValueError:raise DemoError('STORAGE_INVALID_RESPONSE') from None
+                        if response.status_code!=200:raise DemoError(http_error(response.status_code,value)[0])
+                        if not isinstance(value,list) or len(value)>1:raise DemoError('STORAGE_INVALID_RESPONSE')
+                        if not value:return None
+                        row=value[0]
+                        saved=datetime.fromisoformat(row['saved_at'].replace('Z','+00:00'))
+                        if saved.tzinfo is None:raise DemoError('STORAGE_INVALID_RESPONSE')
+                        return self.envelope(dict(row,last_saved_at=int(saved.timestamp())))
+        except (TimeoutError,httpx.TimeoutException):raise DemoError('STORAGE_READ_TIMEOUT') from None
+        except (httpx.HTTPError,ValueError,KeyError,TypeError,AttributeError,OverflowError):raise DemoError('STORAGE_INVALID_RESPONSE') from None
+
     async def load(self,now):return self.envelope(await self.rpc('aura_active43_bitget_load',dict(seed=packed(initial(now,self.config)))))
     async def commit(self,revision,state,events,key):
         validate(state);validate_commit(state,events,key)

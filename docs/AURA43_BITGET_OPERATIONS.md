@@ -115,7 +115,7 @@ SHA256/checksums, row lock/CAS, unique IDs и commit-time OPEN freshness.
 
 | Переменная | Назначение |
 |---|---|
-| `AURA_ACTIVE43_ENABLED=true` | общий opt-in модуля |
+| `AURA_ACTIVE43_ENABLED=true` | старый общий флаг: теперь необязателен, если отсутствует; явный `false` сохраняет запрет |
 | `AURA_ACTIVE43_BITGET_ENABLED=true` | отдельное согласие на v3 Bitget |
 | `AURA_ACTIVE43_BITGET_SUPABASE_URL` | HTTPS URL существующего Supabase проекта |
 | `AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY` | server-only service_role key |
@@ -260,3 +260,10 @@ Render, hosted Supabase readback, внешний scheduler без браузер
 ## Финальные результаты
 
 **1429 Python PASS**, 1 существующее предупреждение; **18 JavaScript suites PASS** (Active43 frontend 16 tests). PostgreSQL: 7 scenarios, 9 check groups, 2 native HTTP cycles. Chromium mobile 430px: PASS. Syntax/import: PASS. Реальный публичный Bitget REST локально: PASS. Render connectivity / production cycle: NOT TESTED.
+
+
+## Дополнение: настройка и диагностика после PR #16
+
+См. [AURA43_SETUP_VERIFICATION.md](AURA43_SETUP_VERIFICATION.md). Ручной workflow
+по умолчанию вызывает только read-only диагностику, даже при scheduler variable=false.
+Запрос не включает PAPER и не заменяет сохранённый торговый tick.
