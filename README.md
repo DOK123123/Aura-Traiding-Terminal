@@ -152,3 +152,17 @@ Historical Pattern Engine реализован отдельным пакетом
 счетами. Aura Existing честно отмечен INCOMPATIBLE: его текущий backtest не
 изменён. Без активации стратегий, связи с Paper ledger или биржевых ордеров.
 [Методика, ограничения и Render/Android checklist](docs/STRATEGY_LAB.md).
+
+## Aura 4.3 Active Paper
+
+Отдельный opt-in виртуальный портфель BTCUSDT с собственными Supabase таблицами,
+owner/CSRF API, scheduler-токеном, автоматическими LONG/SHORT, SL/TP, ATR trailing
+и восстановлением состояния. Риск ≤0,5%, одна позиция, notional ≤2000 USDT.
+**По умолчанию выключен. Aura 4.2 и Paper Practice не заменяются.**
+
+Годовое сравнение пяти семейств на 5m/15m/1h с 60/20/20 и walk-forward дало
+**NO_EDGE_FOUND**: все финальные OOS результаты отрицательны после расходов.
+Donchian 15m оставлен только как заранее объявленный технический fallback.
+Никакой доходности не обещается; Spot virtual SHORT не выдаётся за futures.
+В панели доступны отдельные live-ledger данные и явно отделённый backtest.
+[Архитектура, результаты, ограничения, тесты и ручной запуск на Render](docs/AURA43_ACTIVE_PAPER.md).

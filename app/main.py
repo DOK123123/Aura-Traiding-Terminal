@@ -35,6 +35,8 @@ from .intelligence.api import router as intelligence_router
 from .intelligence.market_context import MarketContext
 from .forward.api import router as forward_router
 from .forward.service import configured as configured_forward
+from .active43.api import router as active43_router
+from .active43.service import configured as configured_active43
 from .automated.api import router as auto42_router
 from .automated.service import configured as configured_auto42
 from .bybit_linear.api import router as bybit_linear_router,configured as configured_linear
@@ -57,6 +59,7 @@ async def lifespan(app):
         app.state.market_context = MarketContext.from_client(client)
         app.state.forward_validation = configured_forward(app.state.market_context)
         app.state.auto42 = configured_auto42(app.state.market_context)
+        app.state.active43 = configured_active43()
         app.state.exchange_diagnostics = configured_diagnostics()
         app.state.bybit_linear_preview = configured_linear()
         if app.state.bybit_linear_preview:app.state.bybit_linear_preview.start()
@@ -78,6 +81,7 @@ async def lifespan(app):
         finally:
             await app.state.practice.close()
             if app.state.bybit_linear_preview:await app.state.bybit_linear_preview.close()
+            await app.state.active43.close()
             await app.state.auto42.close()
             await app.state.forward_validation.close()
             await app.state.market_context.close()
@@ -95,6 +99,7 @@ app.include_router(lab_router)
 app.include_router(intelligence_router)
 app.include_router(forward_router)
 app.include_router(auto42_router)
+app.include_router(active43_router)
 app.include_router(bybit_linear_router)
 app.include_router(diagnostics_router)
 app.include_router(verification_router)
