@@ -115,3 +115,18 @@ async def diagnostics(request:Request):
 @router.post('/diagnostics/scheduler',dependencies=[Depends(scheduler)])
 async def scheduler_diagnostics(request:Request):
     return await respond(svc(request).diagnostics.run(scheduler_delivery=True))
+
+
+class Initialize(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    confirmation:Literal['INITIALIZE ISOLATED PAPER ACCOUNT']
+
+
+@router.post('/initialize',dependencies=[Depends(scheduler)])
+async def initialize_account(request:Request,body:Initialize):
+    return await respond(svc(request).initialize())
+
+
+@router.post('/verify-off-tick',dependencies=[Depends(scheduler)])
+async def verify_off_tick(request:Request,body:Initialize):
+    return await respond(svc(request).verify_off_tick())

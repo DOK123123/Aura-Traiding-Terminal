@@ -1,0 +1,150 @@
+{
+  "date_utc": "2026-10-20",
+  "base_main": "de6dec764fa83c66ecd4d6b45f6a804f933a67a2",
+  "production_baseline": {
+    "run_id": 39394097695,
+    "run_number": 16,
+    "bitget": "CONNECTED",
+    "supabase": "CONNECTED",
+    "supabase_stage": "COMPLETE",
+    "history_rpc_verified": true,
+    "account_read_verified": true,
+    "server_module_enabled": true,
+    "account_status": "NOT_INITIALIZED",
+    "scheduler_code": "SCHEDULER_ACCOUNT_NOT_INITIALIZED",
+    "state_changed": false
+  },
+  "tests": {
+    "python_full": {
+      "passed": 1472,
+      "skipped": 2,
+      "seconds": 180.41,
+      "postgres_active43": true,
+      "skipped_reason": "Unchanged Auto42/Practice standalone PostgreSQL opt-ins not enabled",
+      "warnings": 1
+    },
+    "targeted_setup_scheduler_final": {
+      "passed": 20,
+      "additional_cases_after_full": 3
+    },
+    "javascript": {
+      "passed": 208
+    },
+    "preparation_actual_local_postgres": {
+      "status": "PASS",
+      "scope": "ISOLATED_LOCAL_POSTGRES_AND_SYNTHETIC_MARKET_NOT_RENDER",
+      "concurrent_initialization": true,
+      "single_account": true,
+      "restart_restored": true,
+      "reinitialization_unchanged": true,
+      "balance": "10000",
+      "mode": "OFF",
+      "open_count": 0,
+      "close_count": 0,
+      "tick_count": 1,
+      "postflight_scheduler": "ACTIVE",
+      "production_paper_verified": false
+    },
+    "final_postgres_verification": {
+      "checks": [
+        "MIGRATION_REAPPLY_LEGACY_ACCOUNTS_UNCHANGED",
+        "RLS_ANON_AUTHENTICATED_DENIED_SERVICE_ROLE_ONLY_SCOPE_ENFORCED",
+        "READ_ONLY_PEEK_DOES_NOT_INITIALIZE_AND_GRANTS_NO_TABLE_WRITES",
+        "ACCOUNT_PREPARATION_CONCURRENT_HTTP_INIT_OFF_HEARTBEAT_AND_DATABASE_RESTART",
+        "NO_SIGNAL_NO_ORDER",
+        "SOURCE_OUTAGE_PAUSE_AND_RECOVERY",
+        "DATABASE_CLOCK_BLOCKS_LATE_OPEN_AT_COMMIT",
+        "SQL_FAILURE_ROLLBACK_AND_UNKNOWN_OPEN_OUTCOME_EXACTLY_ONCE",
+        "REAL_DATABASE_OUTAGE_RESTART_STATE_RESTORED",
+        "DIAGNOSTIC_ON_OPEN_POSITION_BYTE_IDENTICAL_LEDGER_AFTER_RESTART",
+        "LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN",
+        "LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED"
+      ],
+      "legacy_before_sha256": "760140fbd51cf585e2421b5268db27de590ea663547d08fd6b3ab802ee0370f6",
+      "legacy_after_sha256": "760140fbd51cf585e2421b5268db27de590ea663547d08fd6b3ab802ee0370f6",
+      "legacy_functions_before_sha256": "edf63895fed00cf308e2a9ea322f7b37096b2b7b82456757d637a69b7bb9d20e",
+      "legacy_functions_after_sha256": "edf63895fed00cf308e2a9ea322f7b37096b2b7b82456757d637a69b7bb9d20e",
+      "UNIT_TEST_PASSED": true,
+      "POSTGRESQL_VERIFIED": true,
+      "RLS_VERIFIED": true,
+      "TECHNICAL_EXECUTION": "PASS",
+      "PRODUCTION_PAPER_VERIFIED": false,
+      "adapter": "Mock HTTP bridge to actual local PostgreSQL production RPCs; not hosted PostgREST",
+      "postgres_version": "PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+      "image": "postgres:16-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4",
+      "synthetic_cases": true,
+      "production_access": false,
+      "real_orders": false,
+      "limits": {
+        "network": "none",
+        "ports": 0,
+        "memory": "512 MiB",
+        "cpus": 1
+      }
+    },
+    "postgres_regression_cases": 7,
+    "postgres_check_groups": 12,
+    "native_http_sql_trade_cycles": 2,
+    "legacy_accounts_hash_equal": true,
+    "legacy_functions_hash_equal": true,
+    "syntax_import_diff": "PASS"
+  },
+  "reviews": {
+    "code": {
+      "status": "PASS",
+      "method": "Explicit separate self-review, not external review",
+      "checks": [
+        "Existing SQL load insert-on-conflict and validated readback, no reset or new migration",
+        "Existing/ON/position balances and mode preserved",
+        "No initializer dependency on trading control lock",
+        "OFF guard enforced before data and on every CAS retry; separate task from ordinary scheduler",
+        "No unrestricted tick/control in prepare CLI; explicit manual operation only",
+        "Default diagnostics and scheduled tick opt-in/cron unchanged"
+      ]
+    },
+    "security": {
+      "status": "PASS",
+      "method": "Explicit separate self-review against repository safety rules",
+      "checks": [
+        "Dedicated scheduler authentication and strict literal confirmation",
+        "No caller-provided namespace/seed/balance/strategy/signal",
+        "No token/key/financial-account snapshot in public workflow logs; only whitelisted flags",
+        "No writes to existing Aura42/Practice/trade tables; immutable legacy hashes verified",
+        "No new exchange endpoint, private API or real order",
+        "No automatic PAPER activation; emergency/risk guards remain effective"
+      ],
+      "unresolved_critical_high": []
+    }
+  },
+  "CODE_READY": true,
+  "PRODUCTION_READY": false,
+  "PAPER_ONLY": true,
+  "PRODUCTION_PAPER_VERIFIED": false,
+  "production_actions": {
+    "account_created": false,
+    "merge": false,
+    "deploy": false,
+    "sql_applied": false,
+    "settings_or_secrets_changed": false,
+    "paper_enabled": false,
+    "orders": false
+  },
+  "owner_steps": [
+    "Publish reviewed PR and deploy latest Render main while PAPER stays OFF",
+    "Actions -> Run workflow -> operation=initialize"
+  ],
+  "production_limitation": "New setup routes are not deployed; no hosted write/readback or OFF tick claimed until they succeed.",
+  "production_setup_attempt": {
+    "run_id": 39397073669,
+    "run_number": 17,
+    "preflight_bitget": "CONNECTED",
+    "preflight_supabase": "CONNECTED",
+    "preflight_account_status": "NOT_INITIALIZED",
+    "initialization_http_status": 404,
+    "error_code": "SETUP_API_NOT_DEPLOYED",
+    "new_routes_in_render_openapi": false,
+    "trading_step": "SKIPPED",
+    "production_account_created": false,
+    "reason": "Reviewed new server routes require owner-authorized release; no automatic deploy performed"
+  }
+}
