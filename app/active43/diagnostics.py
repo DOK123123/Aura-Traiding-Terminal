@@ -15,14 +15,14 @@ from .strategies import STEPS, VERSION
 
 def configuration() -> dict:
     """Names and booleans only: never return environment values or key fragments."""
-    from .service import scheduler_configured
+    from .service import scheduler_configured,scheduler_auth_configuration
     generic = os.getenv('AURA_ACTIVE43_ENABLED')
     bitget = os.getenv('AURA_ACTIVE43_BITGET_ENABLED', '').lower() == 'true'
     names = ('AURA_ACTIVE43_BITGET_SUPABASE_URL', 'AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY')
     return dict(server_enabled=bitget and (generic is None or generic.lower() == 'true'),
                 bitget_enabled=bitget, explicit_global_stop=generic is not None and generic.lower() != 'true',
                 missing_variables=[name for name in names if not os.getenv(name)],
-                scheduler_secret_valid=scheduler_configured())
+                scheduler_secret_valid=scheduler_configured(),scheduler_auth=scheduler_auth_configuration())
 
 
 class Diagnostics:

@@ -1,5 +1,5 @@
 """Owner controls; independent scheduler authority. No manual/artificial signal API."""
-import os,secrets
+import os,secrets,re
 from decimal import Decimal as D
 from app.lab.models import money,text
 from app.automated.engine import liquidation_equity
@@ -27,10 +27,27 @@ def svc(request):
     return value
 
 
+def scheduler_rejected(request:Request,code:str,status:int):
+    # Whitelisted flags only. No token value/length/fingerprint or raw headers.
+    commit=os.getenv('RENDER_GIT_COMMIT','')
+    detail=dict(code=code,component='AURA43_SCHEDULER_AUTH',
+        header_received=bool(request.headers.get('X-Aura-Active43-Bitget-Token','')),
+        origin_rejected=bool(request.headers.get('origin')) or request.headers.get('Sec-Fetch-Site')=='cross-site',
+        secret_variable='AURA_ACTIVE43_BITGET_SCHEDULER_SECRET',
+        config_source='CURRENT_PROCESS_ENV_NO_FALLBACK',
+        render_commit=commit if re.fullmatch('[a-f0-9]{40}',commit) else None)
+    raise HTTPException(status,detail,headers=HEADERS)
+
+
 def scheduler(request:Request):
-    if not scheduler_configured():raise HTTPException(503,'SCHEDULER_NOT_CONFIGURED',headers=HEADERS)
-    token=request.headers.get('X-Aura-Active43-Bitget-Token','')
-    if request.headers.get('origin') or request.headers.get('Sec-Fetch-Site')=='cross-site' or not secrets.compare_digest(token.encode(),os.getenv('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET','').encode()):raise HTTPException(401,'SCHEDULER_AUTH_REQUIRED',headers=HEADERS)
+    if not scheduler_configured():scheduler_rejected(request,'SCHEDULER_NOT_CONFIGURED',503)
+    if request.headers.get('origin') or request.headers.get('Sec-Fetch-Site')=='cross-site':
+        scheduler_rejected(request,'SCHEDULER_ORIGIN_REJECTED',401)
+    tokens=request.headers.getlist('X-Aura-Active43-Bitget-Token')
+    if not tokens or not tokens[0]:scheduler_rejected(request,'SCHEDULER_TOKEN_MISSING',401)
+    if len(tokens)!=1:scheduler_rejected(request,'SCHEDULER_TOKEN_DUPLICATED',401)
+    if not secrets.compare_digest(tokens[0].encode(),os.getenv('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET','').encode()):
+        scheduler_rejected(request,'SCHEDULER_TOKEN_MISMATCH',401)
 
 
 async def respond(operation):

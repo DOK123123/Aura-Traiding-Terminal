@@ -34,6 +34,21 @@ def scheduler_configured():
             and token not in (os.getenv('AURA_AUTO42_SCHEDULER_SECRET',''),os.getenv('AURA_FORWARD_SCHEDULER_SECRET',''),os.getenv('AURA_ACTIVE43_SCHEDULER_SECRET','')))
 
 
+def scheduler_auth_configuration():
+    """Owner-only configuration metadata, never credential values or fingerprints."""
+    token=os.getenv('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET','')
+    alternatives=('AURA_AUTO42_SCHEDULER_SECRET','AURA_FORWARD_SCHEDULER_SECRET',
+        'AURA_ACTIVE43_SCHEDULER_SECRET','AURA_TESTNET_VIEW_PASSWORD','AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY')
+    return dict(secret_variable='AURA_ACTIVE43_BITGET_SCHEDULER_SECRET',
+        header_name='X-Aura-Active43-Bitget-Token',endpoint='/api/active43/diagnostics/scheduler',
+        token_present=bool(token),token_format_valid=32<=len(token)<=256 and token.isascii() and token.isprintable(),
+        token_has_outer_whitespace=token!=token.strip(),
+        conflicts_with_variables=[name for name in alternatives if token and token==os.getenv(name,'')],
+        configured=scheduler_configured(),config_source='CURRENT_PROCESS_ENV_NO_FALLBACK',
+        reads_environment_on_each_request=True,
+        environment_changes_require_process_restart=True)
+
+
 class Service:
     def __init__(self,store=None,market=None,cfg=None,clock=time.time,quotes=None,reason=None):
         self.store=store;self.market=market;self.config=cfg or config();self.clock=clock;self.quotes=quotes;self.reason=reason

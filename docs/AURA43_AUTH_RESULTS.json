@@ -1,0 +1,91 @@
+{
+  "base_main": "d1faf1ee96ddc4c07d80079750258649f591acf6",
+  "checked_date_utc": "2026-10-20",
+  "AUTH_REJECTION_COMPONENT_VERIFIED": true,
+  "CLIENT_PROTOCOL_VERIFIED": true,
+  "EXACT_PRODUCTION_AUTH_REJECTION_BRANCH_VERIFIED": false,
+  "PRODUCTION_SECRET_EQUALITY_VERIFIED": false,
+  "PRODUCTION_AUTH_FIXED": false,
+  "production_evidence": {
+    "run5": {
+      "id": 39377928524,
+      "result": "HTTP 401 without error detail in old client"
+    },
+    "run6": {
+      "id": 39378543713,
+      "result": "HTTP 401 code=SCHEDULER_AUTH_REQUIRED",
+      "client_token_present": true,
+      "client_token_format_valid": true,
+      "client_token_has_outer_whitespace": false,
+      "client_header_attached": true,
+      "client_origin_header_present": false,
+      "trading_step": "SKIPPED",
+      "server_received_header": "NOT VERIFIED: legacy response lacks flag"
+    },
+    "render_health": 200,
+    "render_openapi_diagnostic_route_present": true,
+    "unauthenticated_dummy_diagnostic_response": {
+      "http": 401,
+      "detail": "SCHEDULER_AUTH_REQUIRED",
+      "www_authenticate": false
+    }
+  },
+  "tests": {
+    "python_full": {
+      "passed": 1452,
+      "skipped": 3,
+      "seconds": 104.49,
+      "warning": "Existing Starlette/AnyIO deprecation",
+      "skips": "Unchanged PostgreSQL opt-in tests; no SQL/storage/financial changes"
+    },
+    "auth_scheduler_final_targeted": {
+      "passed": 10,
+      "additional_new_after_full": 1
+    },
+    "javascript": {
+      "passed": 208,
+      "failed": 0
+    },
+    "syntax_import_whitespace": "PASS"
+  },
+  "reviews": {
+    "code": {
+      "status": "PASS",
+      "method": "Explicit separate self-review; not external review",
+      "findings_fixed": [
+        "Client discarded server rejection detail",
+        "Server collapsed distinct auth failures into one ambiguous 401",
+        "Duplicate scheduler token headers now fail closed"
+      ],
+      "checks": [
+        "Constant-time comparison preserved",
+        "Environment source unchanged and read for every request",
+        "No old-token fallback or owner Basic auth on scheduler endpoint",
+        "No strategy, execution, storage, risk, mode, scheduler frequency or legacy changes"
+      ],
+      "production_gate": "BLOCKED until precise server response deployed and authenticated request succeeds"
+    },
+    "security": {
+      "status": "PASS",
+      "method": "Explicit separate self-review against repository security rules",
+      "checks": [
+        "No token values, lengths, hashes or fragments logged/returned",
+        "Only whitelisted error codes/components/boolean flags emitted",
+        "Raw error response bounded and never printed",
+        "Origin/auth/owner/CSRF authority separation preserved",
+        "No secrets created/changed, no real orders, no financial operations"
+      ],
+      "unresolved_critical_high_code_findings": []
+    }
+  },
+  "actions_not_performed": [
+    "merge",
+    "deploy",
+    "production SQL",
+    "PAPER activation",
+    "secret creation or rotation",
+    "real exchange orders"
+  ],
+  "owner_action": "Publish reviewed server change with saved Render environment, keep PAPER OFF, then Run workflow -> diagnostics. Do not reset secrets blindly.",
+  "limitation": "Actual production rejection branch/value equality cannot be established from legacy combined 401; no Render management or owner credential available."
+}
