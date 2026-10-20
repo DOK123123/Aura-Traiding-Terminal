@@ -92,6 +92,7 @@ node --test tests/*.cjs
   отсутствие свежего heartbeat при выключенном расписании; оно не исправляется
   сбросом счёта и не является доказательством неисправности торгового движка.
   GitHub job success означает доставку диагностики, а не общий readiness PASS.
+- Исправленная ветка также выполнила read-only delivery: [#26](https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39419068349), success; никаких торговых вызовов.
 - Ранее [#24 на main](https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39417473462)
   подтвердил OFF-tick. В этой задаче production tick/initialize/control не вызывались.
 - Настоящий event `schedule`, длительная автономность, полный production
