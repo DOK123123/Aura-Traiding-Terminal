@@ -1,0 +1,13 @@
+{
+  "name": "aura-active43-bitget-free-scheduler",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-20",
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {
+    "AURA_ACTIVE43_CRON_ENABLED": "false",
+    "AURA_ACTIVE43_OPERATION": "diagnostics"
+  },
+  "triggers": {"crons": ["2-59/5 * * * *"]},
+  "observability": {"enabled": true}
+}

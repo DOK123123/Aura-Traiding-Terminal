@@ -168,6 +168,9 @@ trading keys. Funding не моделируется, прибыльность н
 [SQL, env, Actions, запуск/rollback и проверка Render](docs/AURA43_BITGET_OPERATIONS.md).
 [Архив v2 Bybit](docs/AURA43_BYBIT_OPERATIONS.md).
 
+Бесплатный вариант через Cloudflare Workers Free: [настройка, лимиты и проверка](deploy/active43-free-worker/README_RU.md).
+По умолчанию отключён, PAPER не включает; доступность из РФ и production schedule требуют проверки.
+
 Для независимого от GitHub и сна web запуска подготовлен платный Render Cron
 с прямым вызовом существующего Paper controller: [конфигурация, стоимость и запуск](docs/AURA43_RENDER_SCHEDULER.md).
 По умолчанию новый scheduler отключён; ресурсы и PAPER автоматически не включаются.
