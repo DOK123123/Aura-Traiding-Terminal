@@ -3,6 +3,30 @@ import json,os,time,urllib.request,urllib.error
 from scripts.auto42_scheduler import NoRedirect
 URL='https://aura-traiding-terminal.onrender.com/api/active43/tick'
 
+SECRET_VARIABLE='AURA_ACTIVE43_BITGET_SCHEDULER_SECRET'
+TOKEN_HEADER='X-Aura-Active43-Bitget-Token'
+AUTH_CODES={'SCHEDULER_NOT_CONFIGURED','SCHEDULER_AUTH_REQUIRED','SCHEDULER_TOKEN_MISSING','SCHEDULER_TOKEN_MISMATCH','SCHEDULER_ORIGIN_REJECTED','SCHEDULER_SECRET_FORMAT_INVALID'}
+
+
+def auth_configuration(env):
+    token=env.get(SECRET_VARIABLE,'')
+    return dict(secret_variable=SECRET_VARIABLE,token_present=bool(token),
+        token_format_valid=32<=len(token)<=256 and token.isascii() and token.isprintable(),
+        token_has_outer_whitespace=token!=token.strip(),header_name=TOKEN_HEADER,
+        diagnostic_endpoint=DIAGNOSTIC_URL,token_source='CURRENT_PROCESS_ENV_NO_FALLBACK')
+
+
+def rejected_response(exc):
+    # Never emit raw headers, body, exception text, token fragments or hashes.
+    try:
+        raw=exc.read(4097)
+        body=json.loads(raw) if len(raw)<=4096 else {}
+        detail=body.get('detail') if type(body) is dict else None
+        code=detail.get('code') if type(detail) is dict else detail
+        return code if type(code) is str and code in AUTH_CODES else 'UNCLASSIFIED_HTTP_ERROR'
+    except (ValueError,OSError):return 'UNCLASSIFIED_HTTP_ERROR'
+
+
 DIAGNOSTIC_URL='https://aura-traiding-terminal.onrender.com/api/active43/diagnostics/scheduler'
 
 
@@ -30,14 +54,16 @@ def verified(body):
 
 
 def run(env=None,opener=None,sleep=time.sleep,emit=print,diagnose=False):
-    env=os.environ if env is None else env;token=env.get('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET','')
+    env=os.environ if env is None else env;token=env.get(SECRET_VARIABLE,'')
+    if diagnose:emit('ACTIVE43 client auth configuration: '+json.dumps(auth_configuration(env),sort_keys=True))
     if not token:
         emit('ACTIVE43: SCHEDULER_NOT_CONFIGURED; missing Actions secret AURA_ACTIVE43_BITGET_SCHEDULER_SECRET; no HTTP request sent');return 1
     if not 32<=len(token)<=256 or not token.isascii() or not token.isprintable():emit('ACTIVE43: SCHEDULER_NOT_CONFIGURED');return 1
     client=opener or urllib.request.build_opener(NoRedirect)
     for attempt in range(3):
         try:
-            req=urllib.request.Request(DIAGNOSTIC_URL if diagnose else URL,data=b'',method='POST',headers={'X-Aura-Active43-Bitget-Token':token})
+            req=urllib.request.Request(DIAGNOSTIC_URL if diagnose else URL,data=b'',method='POST',headers={TOKEN_HEADER:token})
+            if diagnose:emit('ACTIVE43 request auth: '+json.dumps(dict(header_attached=any(k.lower()==TOKEN_HEADER.lower() for k,v in req.header_items()),origin_header_present=req.has_header('Origin'),method=req.get_method())))
             with client.open(req,timeout=90) as r:
                 raw=r.read(65537)
                 if r.status!=200 or len(raw)>65536:raise ValueError()
@@ -53,7 +79,7 @@ def run(env=None,opener=None,sleep=time.sleep,emit=print,diagnose=False):
                 if not verified(body):raise ValueError()
                 emit('ACTIVE43 tick confirmed: '+json.dumps({k:body[k] for k in ('mode','processed','duplicate','opened','closed')}));return 0
         except urllib.error.HTTPError as exc:
-            emit('ACTIVE43 request rejected: HTTP '+str(exc.code))
+            emit('ACTIVE43 request rejected: HTTP '+str(exc.code)+' code='+rejected_response(exc))
             if exc.code in (301,302,303,307,308,401,403,404):return 1
         except (OSError,ValueError,TypeError):emit('ACTIVE43 request not confirmed; outcome unknown')
         if attempt<2:sleep(2**(attempt+1))

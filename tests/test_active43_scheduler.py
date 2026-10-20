@@ -57,4 +57,28 @@ def test_missing_actions_secret_has_exact_name_and_never_sends_http():
     opener=Opener(body());logs=[]
     assert run({},opener=opener,emit=logs.append,diagnose=True)==1
     assert not opener.requests
-    assert 'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET' in logs[0] and 'no HTTP request sent' in logs[0]
+    assert any('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET' in line and 'no HTTP request sent' in line for line in logs)
+
+
+def test_auth_configuration_does_not_emit_secret_length_hash_or_value():
+    from scripts.active43_scheduler import auth_configuration
+    token='DUMMY_SCHEDULER_SENSITIVE_VALUE_'+'x'*40
+    report=auth_configuration({'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET':' '+token+' '})
+    assert report['token_present'] and report['token_has_outer_whitespace']
+    encoded=json.dumps(report)
+    assert token not in encoded and 'length' not in encoded and 'sha' not in encoded
+
+
+def test_client_reports_server_auth_code_but_never_raw_error_body():
+    import io,urllib.error
+    class Reject:
+        def open(self,req,timeout):
+            assert req.get_method()=='POST'
+            assert any(k.lower()=='x-aura-active43-bitget-token' for k,v in req.header_items())
+            raise urllib.error.HTTPError(req.full_url,401,'ignored',{},io.BytesIO(json.dumps({'detail':'SCHEDULER_AUTH_REQUIRED','secret':'NEVER_LOG_ME'}).encode()))
+    logs=[];token='DUMMY_AUTH_PROBE_'+'x'*40
+    assert run({'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET':token},opener=Reject(),emit=logs.append,diagnose=True)==1
+    text='\n'.join(logs)
+    assert 'code=SCHEDULER_AUTH_REQUIRED' in text
+    assert 'NEVER_LOG_ME' not in text and token not in text
+    assert '"header_attached": true' in text and '"origin_header_present": false' in text
