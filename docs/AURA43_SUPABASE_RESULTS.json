@@ -1,0 +1,161 @@
+{
+  "base_main": "6d7c9f83d225cbf4e591caaea36275e51cfc6b96",
+  "date_utc": "2026-10-20",
+  "production_probe": {
+    "run_id": 39380544587,
+    "run_number": 8,
+    "http_authorization": "PASS",
+    "bitget": "CONNECTED",
+    "supabase": "ERROR",
+    "supabase_code": "INVALID_STORAGE_CONFIGURATION",
+    "history_rpc_verified": false,
+    "account_read_verified": false,
+    "scheduler_code_legacy": "NO_CONFIRMED_TICK",
+    "state_changed": false,
+    "production_paper_verified": false,
+    "confirmed_failure_stage": "Supabase client configuration validation, before HTTP/RPC",
+    "individual_invalid_variable": "Not identifiable from old combined code; new validator identifies URL versus key"
+  },
+  "corrections": [
+    "Precise URL/key missing/invalid codes",
+    "In-memory normalization of URL/key outer padding and root slash; saved secrets unchanged",
+    "Explicit read-only probe stages",
+    "Scheduler DB-unreadable status no longer claims absence of ticks",
+    "Actions prints explicit allowlisted codes/flags, not just ERROR"
+  ],
+  "tests": {
+    "python_full": {
+      "passed": 1463,
+      "skipped": 2,
+      "seconds": 171.45,
+      "warning": "Existing Starlette/AnyIO deprecation",
+      "active43_postgres_opt_in": true,
+      "unchanged_auto42_practice_postgres_skipped": true
+    },
+    "final_targeted": {
+      "passed": 35
+    },
+    "javascript": {
+      "passed": 208
+    },
+    "postgres": {
+      "checks": [
+        "MIGRATION_REAPPLY_LEGACY_ACCOUNTS_UNCHANGED",
+        "RLS_ANON_AUTHENTICATED_DENIED_SERVICE_ROLE_ONLY_SCOPE_ENFORCED",
+        "READ_ONLY_PEEK_DOES_NOT_INITIALIZE_AND_GRANTS_NO_TABLE_WRITES",
+        "NO_SIGNAL_NO_ORDER",
+        "SOURCE_OUTAGE_PAUSE_AND_RECOVERY",
+        "DATABASE_CLOCK_BLOCKS_LATE_OPEN_AT_COMMIT",
+        "SQL_FAILURE_ROLLBACK_AND_UNKNOWN_OPEN_OUTCOME_EXACTLY_ONCE",
+        "REAL_DATABASE_OUTAGE_RESTART_STATE_RESTORED",
+        "DIAGNOSTIC_ON_OPEN_POSITION_BYTE_IDENTICAL_LEDGER_AFTER_RESTART",
+        "LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN",
+        "LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED"
+      ],
+      "legacy_before_sha256": "e088cddc21d38a846054ef984fab04178cbea150762d138daebb493521ca7f23",
+      "legacy_after_sha256": "e088cddc21d38a846054ef984fab04178cbea150762d138daebb493521ca7f23",
+      "legacy_functions_before_sha256": "edf63895fed00cf308e2a9ea322f7b37096b2b7b82456757d637a69b7bb9d20e",
+      "legacy_functions_after_sha256": "edf63895fed00cf308e2a9ea322f7b37096b2b7b82456757d637a69b7bb9d20e",
+      "UNIT_TEST_PASSED": true,
+      "POSTGRESQL_VERIFIED": true,
+      "RLS_VERIFIED": true,
+      "TECHNICAL_EXECUTION": "PASS",
+      "PRODUCTION_PAPER_VERIFIED": false,
+      "adapter": "Mock HTTP bridge to actual local PostgreSQL production RPCs; not hosted PostgREST",
+      "postgres_version": "PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+      "image": "postgres:16-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4",
+      "synthetic_cases": true,
+      "production_access": false,
+      "real_orders": false,
+      "limits": {
+        "network": "none",
+        "ports": 0,
+        "memory": "512 MiB",
+        "cpus": 1
+      }
+    },
+    "postgres_cases": [
+      {
+        "scenario": "LONG_TP_DONCHIAN",
+        "status": "PASS"
+      },
+      {
+        "scenario": "LONG_SL_DONCHIAN",
+        "status": "PASS"
+      },
+      {
+        "scenario": "LONG_BOTH_DONCHIAN",
+        "status": "PASS"
+      },
+      {
+        "scenario": "SHORT_TP_DONCHIAN",
+        "status": "PASS"
+      },
+      {
+        "scenario": "SHORT_SL_DONCHIAN",
+        "status": "PASS"
+      },
+      {
+        "scenario": "SHORT_BOTH_DONCHIAN",
+        "status": "PASS"
+      },
+      {
+        "scenario": "LONG_TP_TREND_ATR",
+        "status": "PASS"
+      }
+    ],
+    "native_sql_http_cycles": 2,
+    "syntax_import_diff_whitespace": "PASS"
+  },
+  "rpc_sql_signatures_match": true,
+  "hosted_rpc_schema_verified": false,
+  "reviews": {
+    "code": {
+      "status": "PASS",
+      "method": "Separate explicit self-review, not external review",
+      "checks": [
+        "No changes to trading functions, risk, scheduler frequency, mode or state",
+        "Store accepts only the original strict HTTPS Supabase project host",
+        "No generic/Bybit/other portfolio credential fallback",
+        "No load/seed/commit/tick from diagnostics",
+        "Error stage reflects operation actually attempted"
+      ]
+    },
+    "security": {
+      "status": "PASS",
+      "method": "Separate explicit self-review against repository security rules",
+      "checks": [
+        "No key, URL value, length, fingerprint or raw upstream data emitted",
+        "Only fixed error-code/stage/env-name/boolean allowlists printed",
+        "Malformed host, REST path, DSN and internal newlines rejected",
+        "RLS and role isolation plus legacy row/function hashes verified in actual isolated PostgreSQL"
+      ],
+      "unresolved_critical_high": []
+    }
+  },
+  "production_changes": {
+    "sql": false,
+    "balances_positions": false,
+    "secrets_settings": false,
+    "merge": false,
+    "deploy": false,
+    "paper_enabled": false,
+    "real_orders": false
+  },
+  "CODE_READY": true,
+  "PRODUCTION_SUPABASE_VERIFIED": false,
+  "PRODUCTION_PAPER_VERIFIED": false,
+  "owner_action": "Publish reviewed change with saved Render environment; run diagnostics; if still URL/key invalid correct the named existing variable. Do not reapply SQL for the current pre-RPC failure.",
+  "repeat_production_probe": {
+    "run_id": 39381224330,
+    "run_number": 9,
+    "supabase_code": "INVALID_STORAGE_CONFIGURATION",
+    "history_rpc_verified": false,
+    "account_read_verified": false,
+    "server_module_enabled": false,
+    "storage_missing_variables": [],
+    "state_changed": false,
+    "production_paper_verified": false,
+    "new_server_validator_deployed": false
+  }
+}

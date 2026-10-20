@@ -1,5 +1,5 @@
 """Dedicated Supabase namespace; no method can address another portfolio."""
-import asyncio,json
+import asyncio,json,re
 from datetime import datetime
 import httpx
 from app.forward.storage import SupabaseStore as SafeTransport
@@ -9,11 +9,33 @@ from app.automated.diagnostics import http_error
 from app.automated.engine import DemoError
 from .core import initial,validate,SCOPE
 
+URL_VARIABLE='AURA_ACTIVE43_BITGET_SUPABASE_URL'
+KEY_VARIABLE='AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY'
+
+
+def storage_configuration(url: str,key: str) -> dict:
+    """Safe metadata only. Never expose URLs, credentials, length or fingerprints."""
+    normalized_url=url.strip().rstrip('/')
+    normalized_key=key.strip()
+    code=None
+    if not normalized_url:code='STORAGE_URL_MISSING'
+    elif not re.fullmatch(r'https://[a-z0-9]{12,40}\.supabase\.co',normalized_url):code='STORAGE_URL_INVALID'
+    elif not normalized_key:code='STORAGE_KEY_MISSING'
+    elif not (32<=len(normalized_key)<=8192 and normalized_key.isascii() and normalized_key.isprintable()):code='STORAGE_KEY_INVALID'
+    return dict(code=code,url_variable=URL_VARIABLE,key_variable=KEY_VARIABLE,
+        url_present=bool(normalized_url),key_present=bool(normalized_key),
+        url_format_valid=bool(re.fullmatch(r'https://[a-z0-9]{12,40}\.supabase\.co',normalized_url)),
+        key_format_valid=32<=len(normalized_key)<=8192 and normalized_key.isascii() and normalized_key.isprintable(),
+        url_padding_normalized=url!=normalized_url,key_padding_normalized=key!=normalized_key)
+
+
 class Store:
     backend='SUPABASE_ACTIVE43_BITGET';durable=True
     def __init__(self,url,key,config,transport=None):
         self.config=config;self.status='UNKNOWN'
-        try:self.transport=SafeTransport(url,key,transport)
+        metadata=storage_configuration(url,key)
+        if metadata['code']:raise DemoError(metadata['code'])
+        try:self.transport=SafeTransport(url.strip().rstrip('/'),key.strip(),transport)
         except ForwardError as exc:raise DemoError(exc.code) from None
     async def close(self):await self.transport.close()
     async def rpc(self,name,args):

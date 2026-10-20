@@ -82,3 +82,17 @@ def test_client_reports_server_auth_code_but_never_raw_error_body():
     assert 'code=SCHEDULER_AUTH_REQUIRED' in text
     assert 'NEVER_LOG_ME' not in text and token not in text
     assert '"header_attached": true' in text and '"origin_header_present": false' in text
+
+
+def test_diagnostic_codes_explain_database_stage_without_raw_server_data():
+    from scripts.active43_scheduler import diagnostic_summary
+    report=dict(status='BLOCKED',bitget={'status':'CONNECTED'},supabase={'status':'ERROR',
+        'code':'STORAGE_PERMISSION_DENIED','history_rpc_verified':True,'account_read_verified':False,
+        'secret':'NEVER_PRINT_THIS'},scheduler={'status':'ERROR','code':'NO_CONFIRMED_TICK'})
+    summary=diagnostic_summary(report)
+    assert summary['supabase_code']=='STORAGE_PERMISSION_DENIED'
+    assert summary['supabase_history_rpc_verified'] and not summary['supabase_account_read_verified']
+    assert summary['scheduler_code']=='NO_CONFIRMED_TICK'
+    assert 'NEVER_PRINT_THIS' not in json.dumps(summary)
+    report['supabase']['code']='NEVER_PRINT_THIS'
+    assert diagnostic_summary(report)['supabase_code']=='UNCLASSIFIED_DIAGNOSTIC_ERROR'
