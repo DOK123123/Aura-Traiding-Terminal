@@ -168,6 +168,10 @@ trading keys. Funding не моделируется, прибыльность н
 [SQL, env, Actions, запуск/rollback и проверка Render](docs/AURA43_BITGET_OPERATIONS.md).
 [Архив v2 Bybit](docs/AURA43_BYBIT_OPERATIONS.md).
 
+Для независимого от GitHub и сна web запуска подготовлен платный Render Cron
+с прямым вызовом существующего Paper controller: [конфигурация, стоимость и запуск](docs/AURA43_RENDER_SCHEDULER.md).
+По умолчанию новый scheduler отключён; ресурсы и PAPER автоматически не включаются.
+
 
 ### Aura 4.3: проверка настройки при PAPER OFF
 

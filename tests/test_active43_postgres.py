@@ -15,6 +15,8 @@ def test_actual_sql_transactions_roles_recovery_and_cycles(tmp_path,monkeypatch)
     assert report['POSTGRESQL_VERIFIED'] and report['RLS_VERIFIED']
     assert len(report['cases'])==7 and len(report['checks'])>=8
     assert not report['PRODUCTION_PAPER_VERIFIED']
+    assert len(report['render_cycles'])==2
+    assert all(c['actual_render_scheduler'] and not c['external_scheduler_http'] and c['no_browser'] and c['restart_restored'] for c in report['render_cycles'])
     assert all(c['actual_scheduler_cli'] and c['external_scheduler_http'] and c['no_browser'] for c in report['native_cycles'])
 
 

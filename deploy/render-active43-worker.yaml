@@ -1,0 +1,23 @@
+# Paid, optional resource. Do not apply without owner approval of monthly costs.
+# This Blueprint manages ONLY a new worker, never the existing terminal web service.
+services:
+  - type: worker
+    name: aura-active43-bitget-paper-worker
+    runtime: python
+    plan: starter
+    repo: https://github.com/DOK123123/Aura-Traiding-Terminal
+    branch: main
+    numInstances: 1
+    autoDeployTrigger: "off"
+    maxShutdownDelaySeconds: 90
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -u -m scripts.active43_render_scheduler
+    envVars:
+      - key: AURA_ACTIVE43_BITGET_RENDER_SCHEDULER_ENABLED
+        value: "false"
+      - key: AURA_ACTIVE43_BITGET_ENABLED
+        value: "true"
+      - key: AURA_ACTIVE43_BITGET_SUPABASE_URL
+        sync: false
+      - key: AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY
+        sync: false
