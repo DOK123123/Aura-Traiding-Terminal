@@ -1,0 +1,198 @@
+{
+  "base_main_sha": "97813c6389096676e43014a9b0d411154ec670a0",
+  "code_review": "PASS: dispatch maps ordinary CLI to /tick; traced CAS, receipt readback, recovery and owner shutdown guards; no engine/strategy changes",
+  "security_review": "PASS: public Bitget GET allowlist only; no new authority, endpoint, secret, SQL or control request; rejection codes allowlisted",
+  "real_market_local": {
+    "status": "PASS",
+    "location": "LOCAL_NOT_RENDER",
+    "source": "Bitget · USDT-M Futures / api.bitget.com",
+    "symbol": "BTCUSDT",
+    "timeframe": "15m",
+    "bars": 1047,
+    "closed_at": 1792496700,
+    "evaluated_at": 1792497372,
+    "signal": null,
+    "reason": "NO_SIGNAL",
+    "error": null,
+    "seconds": 2.586,
+    "real_public_data": true,
+    "state_changed": false
+  },
+  "render_read_only_diagnostics": {
+    "run_number": 25,
+    "url": "https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39418519649",
+    "conclusion": "success",
+    "bitget": "CONNECTED",
+    "supabase": "CONNECTED",
+    "supabase_stage": "COMPLETE",
+    "supabase_history_rpc_verified": true,
+    "supabase_account_read_verified": true,
+    "scheduler": "ERROR",
+    "scheduler_code": "STALE_TICK",
+    "status": "BLOCKED",
+    "state_changed": false,
+    "production_paper_verified": false,
+    "effective_periodic_schedule_enabled": false
+  },
+  "CODE_READY": true,
+  "PRODUCTION_READY": false,
+  "PAPER_ONLY": true,
+  "OPEN_CLOSE_TESTED": true,
+  "SCHEDULER_READY": true,
+  "tests": {
+    "python": {
+      "passed": 1513,
+      "skipped": 2,
+      "warning_count": 1,
+      "seconds": 188.79,
+      "skip_reason": "Unchanged Auto42 and Practice standalone PostgreSQL checks require separate opt-ins; Active43 PostgreSQL check was executed"
+    },
+    "javascript": {
+      "passed": 208,
+      "failed": 0
+    },
+    "syntax_and_app_import": "PASS",
+    "postgresql": {
+      "verified": true,
+      "rls_verified": true,
+      "image": "postgres:16-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4",
+      "limits": {
+        "network": "none",
+        "ports": 0,
+        "memory": "512 MiB",
+        "cpus": 1
+      },
+      "checks": [
+        "MIGRATION_REAPPLY_LEGACY_ACCOUNTS_UNCHANGED",
+        "RLS_ANON_AUTHENTICATED_DENIED_SERVICE_ROLE_ONLY_SCOPE_ENFORCED",
+        "READ_ONLY_PEEK_DOES_NOT_INITIALIZE_AND_GRANTS_NO_TABLE_WRITES",
+        "ACCOUNT_PREPARATION_CONCURRENT_HTTP_INIT_OFF_HEARTBEAT_AND_DATABASE_RESTART",
+        "NO_SIGNAL_NO_ORDER",
+        "SOURCE_OUTAGE_PAUSE_AND_RECOVERY",
+        "DATABASE_CLOCK_BLOCKS_LATE_OPEN_AT_COMMIT",
+        "SQL_FAILURE_ROLLBACK_AND_UNKNOWN_OPEN_OUTCOME_EXACTLY_ONCE",
+        "REAL_DATABASE_OUTAGE_RESTART_STATE_RESTORED",
+        "DIAGNOSTIC_ON_OPEN_POSITION_BYTE_IDENTICAL_LEDGER_AFTER_RESTART",
+        "LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN",
+        "LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED"
+      ],
+      "scenario_count": 7,
+      "scenarios": [
+        {
+          "scenario": "LONG_TP_DONCHIAN",
+          "status": "PASS",
+          "opens": 1,
+          "closes": 1,
+          "fees": "4.07792002",
+          "slippage": "2.03898000",
+          "final_balance": "10073.84309998"
+        },
+        {
+          "scenario": "LONG_SL_DONCHIAN",
+          "status": "PASS",
+          "opens": 1,
+          "closes": 1,
+          "fees": "3.95803999",
+          "slippage": "1.97901000",
+          "final_balance": "9954.08295001"
+        },
+        {
+          "scenario": "LONG_BOTH_DONCHIAN",
+          "status": "PASS",
+          "opens": 1,
+          "closes": 1,
+          "fees": "3.95803999",
+          "slippage": "1.97901000",
+          "final_balance": "9954.08295001"
+        },
+        {
+          "scenario": "SHORT_TP_DONCHIAN",
+          "status": "PASS",
+          "opens": 1,
+          "closes": 1,
+          "fees": "3.92191998",
+          "slippage": "1.96098000",
+          "final_balance": "10074.15710002"
+        },
+        {
+          "scenario": "SHORT_SL_DONCHIAN",
+          "status": "PASS",
+          "opens": 1,
+          "closes": 1,
+          "fees": "4.04204001",
+          "slippage": "2.02101000",
+          "final_balance": "9953.91694999"
+        },
+        {
+          "scenario": "SHORT_BOTH_DONCHIAN",
+          "status": "PASS",
+          "opens": 1,
+          "closes": 1,
+          "fees": "4.04204001",
+          "slippage": "2.02101000",
+          "final_balance": "9953.91694999"
+        },
+        {
+          "scenario": "LONG_TP_TREND_ATR",
+          "status": "PASS",
+          "opens": 1,
+          "closes": 1,
+          "fees": "4.07792002",
+          "slippage": "2.03898000",
+          "final_balance": "10073.84309998"
+        }
+      ],
+      "native_cycles": [
+        {
+          "status": "PASS",
+          "direction": "LONG",
+          "scope": "OFFLINE_BITGET_V2_FIXTURES_NATIVE_INDICATORS_REAL_LOCAL_POSTGRESQL_OWNER_HTTP_NOT_RENDER",
+          "actual_scheduler_cli": true,
+          "external_scheduler_http": true,
+          "open_count": 1,
+          "close_count": 1,
+          "restart_restored": true,
+          "no_browser": true
+        },
+        {
+          "status": "PASS",
+          "direction": "SHORT",
+          "scope": "OFFLINE_BITGET_V2_FIXTURES_NATIVE_INDICATORS_REAL_LOCAL_POSTGRESQL_OWNER_HTTP_NOT_RENDER",
+          "actual_scheduler_cli": true,
+          "external_scheduler_http": true,
+          "open_count": 1,
+          "close_count": 1,
+          "restart_restored": true,
+          "no_browser": true
+        }
+      ],
+      "legacy_accounts_unchanged": true,
+      "legacy_functions_unchanged": true,
+      "production_access": false
+    }
+  },
+  "production_schedule_verified": false,
+  "production_autonomous_open_close_verified": false,
+  "production_restart_tested": false,
+  "paper_enabled_by_task": false,
+  "scheduler_enabled_by_task": false,
+  "production_sql_applied": false,
+  "production_account_initialized_or_reset": false,
+  "production_tick_called_by_task": false,
+  "merge_performed": false,
+  "deploy_performed": false,
+  "status_definitions": {
+    "CODE_READY": "Code and available isolated tests passed; not a production autonomy claim",
+    "SCHEDULER_READY": "Workflow routing and actual normal CLI/API/engine/SQL path verified locally; cron production event not yet verified",
+    "OPEN_CLOSE_TESTED": "Isolated native adapter + real local PostgreSQL, not production Supabase trades",
+    "PRODUCTION_READY": "False until owner-authorized schedule/ON operation and operational verification; no natural production cycle confirmed"
+  },
+  "branch_read_only_delivery": {
+    "run_number": 26,
+    "url": "https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39419068349",
+    "conclusion": "success",
+    "code_sha": "24eb25fa9d6fe3bba64fc01d3f59e30d04c50a27",
+    "operation": "diagnostics",
+    "state_changed": false
+  }
+}

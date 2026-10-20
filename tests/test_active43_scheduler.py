@@ -132,3 +132,24 @@ def test_manual_tick_auth_failure_or_on_race_never_falls_back_to_trading_tick():
     opener=Opener(body())
     assert run({},opener=opener,diagnose=True,off_tick=True,emit=lambda _:None)==1
     assert not opener.requests
+
+
+def test_saved_market_pause_is_reported_once_with_safe_reason_not_unknown_outcome():
+    b=dict(body(),status='PAUSED',mode='PAUSED',opened=0,decision='NETWORK_ERROR')
+    client=Opener(b);logs=[]
+    assert run({'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET':'DUMMY_'+'x'*40},opener=client,emit=logs.append,sleep=lambda _:None)==1
+    assert len(client.requests)==1
+    assert any('tick safely blocked:' in line and 'NETWORK_ERROR' in line and '"state_saved": true' in line for line in logs)
+    assert not any('outcome unknown' in line for line in logs)
+    logs=[]
+    assert run({'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET':'DUMMY_'+'x'*40},opener=Opener(dict(b,decision='SECRET_FROM_UNTRUSTED_RESPONSE')),emit=logs.append)==1
+    assert 'UNCLASSIFIED_TICK_REJECTION' in ''.join(logs)
+    assert 'SECRET_FROM_UNTRUSTED_RESPONSE' not in ''.join(logs)
+
+
+def test_corrupt_or_unsaved_pause_cannot_claim_a_saved_safe_rejection():
+    for change in ({'state_saved':False},{'scope':'AURA42'},{'exchange_execution':True},{'opened':2}):
+        logs=[]
+        b=dict(body(),status='PAUSED',mode='PAUSED',opened=0,decision='NETWORK_ERROR');b.update(change)
+        assert run({'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET':'DUMMY_'+'x'*40},opener=Opener(b),emit=logs.append,sleep=lambda _:None)==1
+        assert not any('tick safely blocked:' in line for line in logs)
