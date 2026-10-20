@@ -36,6 +36,32 @@ def rejected_response(exc):
 DIAGNOSTIC_URL='https://aura-traiding-terminal.onrender.com/api/active43/diagnostics/scheduler'
 
 
+DIAGNOSTIC_CODES=set(('ACTIVE43_DISABLED ACTIVE43_BITGET_DISABLED ACTIVE43_STORAGE_NOT_CONFIGURED '
+    'INVALID_STORAGE_CONFIGURATION STORAGE_AUTH STORAGE_PERMISSION_DENIED STORAGE_SCHEMA_MISSING '
+    'STORAGE_DATABASE_UNAVAILABLE STORAGE_RATE_LIMIT STORAGE_REDIRECT_BLOCKED STORAGE_HTTP_ERROR '
+    'STORAGE_RESPONSE_LIMIT STORAGE_INVALID_RESPONSE STORAGE_UNAVAILABLE_OUTCOME_UNKNOWN '
+    'STORAGE_TIMEOUT_OUTCOME_UNKNOWN STORAGE_READ_TIMEOUT CORRUPT_PORTFOLIO '
+    'ACTIVE_SCOPE_OR_CONFIG_MISMATCH STORAGE_SCOPE_MISMATCH CONFIG_CHANGED DIAGNOSTIC_TIMEOUT '
+    'SCHEDULER_NOT_CONFIGURED NO_CONFIRMED_TICK STALE_TICK REGION_OR_ACCESS_RESTRICTED '
+    'RATE_LIMIT UPSTREAM_TIMEOUT NETWORK_ERROR HTTP_ERROR UPSTREAM_API_ERROR '
+    'UPSTREAM_CLOCK_OR_STALE_RESPONSE SOURCE_MISMATCH STALE_OR_MISMATCHED_DATA '
+    'FUTURES_FILTERS_UNAVAILABLE FUTURES_FILTERS_CHANGED NOT_INITIALIZED').split())
+
+
+def diagnostic_summary(body):
+    def code(section):
+        value=body[section].get('code')
+        return value if type(value) is str and value in DIAGNOSTIC_CODES else None if value is None else 'UNCLASSIFIED_DIAGNOSTIC_ERROR'
+    db=body['supabase']
+    return dict(status=body['status'],bitget=body['bitget']['status'],bitget_code=code('bitget'),
+        supabase=db['status'],supabase_code=code('supabase'),
+        supabase_history_rpc_verified=db.get('history_rpc_verified') is True,
+        supabase_account_read_verified=db.get('account_read_verified') is True,
+        supabase_account_status='NOT_INITIALIZED' if db.get('account_status')=='NOT_INITIALIZED' else None,
+        scheduler=body['scheduler']['status'],scheduler_code=code('scheduler'),
+        state_changed=False,production_paper_verified=False)
+
+
 def diagnostic_verified(body):
     return (type(body) is dict and body.get('scope')=='AURA43_ACTIVE_PAPER'
         and body.get('market_source')=='Bitget · USDT-M Futures / api.bitget.com'
@@ -77,10 +103,7 @@ def run(env=None,opener=None,sleep=time.sleep,emit=print,diagnose=False):
                 if diagnose:
                     if not diagnostic_verified(body):raise ValueError()
                     # Whitelist booleans/status only: no raw responses, env or exceptions.
-                    emit('ACTIVE43 read-only diagnostic delivery confirmed: '+json.dumps({
-                        'status':body['status'], 'bitget':body['bitget']['status'],
-                        'supabase':body['supabase']['status'], 'scheduler':body['scheduler']['status'],
-                        'state_changed':False, 'production_paper_verified':False}))
+                    emit('ACTIVE43 read-only diagnostic delivery confirmed: '+json.dumps(diagnostic_summary(body),sort_keys=True))
                     return 0 if body['bitget']['status']=='CONNECTED' and body['supabase']['status']=='CONNECTED' else 1
                 if not verified(body):raise ValueError()
                 emit('ACTIVE43 tick confirmed: '+json.dumps({k:body[k] for k in ('mode','processed','duplicate','opened','closed')}));return 0
