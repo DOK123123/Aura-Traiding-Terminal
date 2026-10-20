@@ -134,13 +134,35 @@ async def public_cycle(pg,side):
     svc=Service(bridge.store(config()),market,config(),clock=clock,quotes=quotes)
     app=FastAPI();app.include_router(router)
     async def external_tick():
+        # Execute the actual stdlib scheduler client used by Actions. Only its
+        # HTTP wire is adapted to isolated ASGI; all SQL remains real PostgreSQL.
+        from scripts import active43_scheduler as scheduler
+        import io,urllib.error
         app.state.active43=svc
         token='DUMMY_BITGET_EXTERNAL_SCHEDULER_'+'x'*40
-        with patch.dict('os.environ',AURA_ACTIVE43_BITGET_SCHEDULER_SECRET=token):
-            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as client:
-                r=await client.post('/api/active43/tick',headers={'X-Aura-Active43-Bitget-Token':token})
-                assert r.status_code==200 and r.json()['state_saved'] is True
-                return r.json()
+        loop=asyncio.get_running_loop();received=[];logs=[]
+        class Reply:
+            status=200
+            def __init__(self,raw):self.raw=raw
+            def read(self,n):return self.raw[:n]
+            def __enter__(self):return self
+            def __exit__(self,*args):pass
+        class IsolatedWire:
+            def open(self,req,timeout):
+                assert req.full_url==scheduler.URL and req.get_method()=='POST' and req.data==b''
+                async def request():
+                    with patch.dict('os.environ',AURA_ACTIVE43_BITGET_SCHEDULER_SECRET=token):
+                        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as client:
+                            response=await client.post('/api/active43/tick',headers=dict(req.header_items()))
+                            received.append(response.json())
+                            return response.status_code,response.content
+                status,raw=asyncio.run_coroutine_threadsafe(request(),loop).result(timeout=90)
+                if status!=200:raise urllib.error.HTTPError(req.full_url,status,'TEST_ONLY',{},io.BytesIO(raw))
+                return Reply(raw)
+        result=await asyncio.to_thread(scheduler.run,env={scheduler.SECRET_VARIABLE:token},opener=IsolatedWire(),emit=logs.append,sleep=lambda _:None)
+        assert result==0 and len(received)==1 and received[0]['state_saved'] is True
+        assert token not in ''.join(logs)
+        return received[0]
     env=await svc.load()
     with patch('app.active43.service.scheduler_configured',return_value=True):await svc.control('START','c'*32,env['revision'])
     f.add('signal');await external_tick();assert (await svc.load())['state']['pending']['direction']==side
@@ -165,7 +187,7 @@ async def public_cycle(pg,side):
             assert body['production_paper_verified'] is False
     await svc.close()
     return dict(status='PASS',direction=side,scope='OFFLINE_BITGET_V2_FIXTURES_NATIVE_INDICATORS_REAL_LOCAL_POSTGRESQL_OWNER_HTTP_NOT_RENDER',
-                open=opened,close=closed,final_balance=state['balance'],open_count=1,close_count=1,restart_restored=True,external_scheduler_http=True,no_browser=True)
+                open=opened,close=closed,final_balance=state['balance'],open_count=1,close_count=1,restart_restored=True,external_scheduler_http=True,actual_scheduler_cli=True,no_browser=True)
 
 
 async def account_preparation(pg):

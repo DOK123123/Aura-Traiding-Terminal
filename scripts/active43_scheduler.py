@@ -120,6 +120,16 @@ def run(env=None,opener=None,sleep=time.sleep,emit=print,diagnose=False,off_tick
                     # Whitelist booleans/status only: no raw responses, env or exceptions.
                     emit('ACTIVE43 read-only diagnostic delivery confirmed: '+json.dumps(diagnostic_summary(body),sort_keys=True))
                     return 0 if body['bitget']['status']=='CONNECTED' and body['supabase']['status']=='CONNECTED' else 1
+                # A saved PAUSED decision is a known safe rejection, not an unknown
+                # commit outcome. Its immutable tick key cannot recover on an
+                # immediate retry; the next scheduled window can retry fresh data.
+                if type(body) is dict and body.get('status')=='PAUSED' and verified(dict(body,status='COMPLETED')):
+                    reason=body.get('decision')
+                    allowed=DIAGNOSTIC_CODES | AUTH_CODES | {'STALE_DATA','MISSING_CANDLES','SOURCE_CORRECTION_OR_HISTORY_MISSING','MARKET_UNAVAILABLE','INVALID_MARKET_DATA','SNAPSHOT_MISMATCH'}
+                    reason=reason if type(reason) is str and reason in allowed else 'UNCLASSIFIED_TICK_REJECTION'
+                    emit('ACTIVE43 tick safely blocked: '+json.dumps(dict(state_saved=True,mode=body['mode'],
+                        processed=body['processed'],duplicate=body['duplicate'],opened=body['opened'],closed=body['closed'],code=reason),sort_keys=True))
+                    return 1
                 if not verified(body):raise ValueError()
                 if off_tick and (body.get('verification_only') is not True or body['mode']!='OFF' or body['opened']!=0 or body['closed']!=0):
                     raise ValueError()
