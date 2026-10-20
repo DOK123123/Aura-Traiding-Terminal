@@ -1,0 +1,22 @@
+# Recommended: paid optional Cron Job, minimum $1/month plus usage above the floor.
+# Creates ONLY this new service after owner approval; does not manage the web app.
+services:
+  - type: cron
+    name: aura-active43-bitget-paper-cron
+    runtime: python
+    plan: starter
+    repo: https://github.com/DOK123123/Aura-Traiding-Terminal
+    branch: main
+    autoDeployTrigger: "off"
+    schedule: "2-59/5 * * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -u -m scripts.active43_render_scheduler --once
+    envVars:
+      - key: AURA_ACTIVE43_BITGET_RENDER_SCHEDULER_ENABLED
+        value: "false"
+      - key: AURA_ACTIVE43_BITGET_ENABLED
+        value: "true"
+      - key: AURA_ACTIVE43_BITGET_SUPABASE_URL
+        sync: false
+      - key: AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY
+        sync: false

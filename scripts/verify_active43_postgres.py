@@ -117,7 +117,7 @@ async def cycle(pg,side,kind,strategy='DONCHIAN'):
     await svc.close()
     return dict(scenario=side+'_'+kind+'_'+strategy,status='PASS',starting_balance='10000',open=p,close=closes[0],final_balance=s['balance'],fees=s['fees'],slippage=s['slippage'],open_count=1,close_count=1,restart_restored=True,update_saved=True,unknown_close_outcome_deduplicated=True)
 
-async def public_cycle(pg,side):
+async def public_cycle(pg,side,driver='http'):
     """Native Bitget V2 Market -> indicators -> actual SQL -> owner HTTP status.
 
     All market fixtures are synthetic/offline. Neither SQL nor the status can
@@ -134,6 +134,13 @@ async def public_cycle(pg,side):
     svc=Service(bridge.store(config()),market,config(),clock=clock,quotes=quotes)
     app=FastAPI();app.include_router(router)
     async def external_tick():
+        if driver=='render':
+            from scripts import active43_render_scheduler
+            logs=[]
+            assert await active43_render_scheduler.tick(svc,logs.append)
+            result=json.loads(logs[-1])
+            assert result['event']=='TICK_SAVED' and result['state_saved']
+            return result
         # Execute the actual stdlib scheduler client used by Actions. Only its
         # HTTP wire is adapted to isolated ASGI; all SQL remains real PostgreSQL.
         from scripts import active43_scheduler as scheduler
@@ -187,7 +194,7 @@ async def public_cycle(pg,side):
             assert body['production_paper_verified'] is False
     await svc.close()
     return dict(status='PASS',direction=side,scope='OFFLINE_BITGET_V2_FIXTURES_NATIVE_INDICATORS_REAL_LOCAL_POSTGRESQL_OWNER_HTTP_NOT_RENDER',
-                open=opened,close=closed,final_balance=state['balance'],open_count=1,close_count=1,restart_restored=True,external_scheduler_http=True,actual_scheduler_cli=True,no_browser=True)
+                open=opened,close=closed,final_balance=state['balance'],open_count=1,close_count=1,restart_restored=True,external_scheduler_http=driver=='http',actual_scheduler_cli=driver=='http',actual_render_scheduler=driver=='render',no_browser=True)
 
 
 async def account_preparation(pg):
@@ -319,10 +326,12 @@ async def verify(pg):
     assert ledger_before==pg.sql("SELECT jsonb_build_object('account',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_active43_bitget_account t),'events',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_active43_bitget_events t));")
     checks.append('DIAGNOSTIC_ON_OPEN_POSITION_BYTE_IDENTICAL_LEDGER_AFTER_RESTART')
     await svc.close();actual=[await public_cycle(pg,side) for side in ('LONG','SHORT')]
+    renders=[await public_cycle(pg,side,driver='render') for side in ('LONG','SHORT')]
+    checks.append('RENDER_SCHEDULER_EXISTING_SERVICE_NATIVE_LONG_SHORT_SQL_CYCLES_NO_WEB_TICK')
     assert pg.legacy_hash()==before;checks.append('LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN')
     assert pg.legacy_functions_hash()==before_functions
     checks.append('LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED')
-    return dict(checks=checks,cases=cases,native_cycles=actual,preparation=preparation,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash(),legacy_functions_before_sha256=before_functions,legacy_functions_after_sha256=pg.legacy_functions_hash())
+    return dict(checks=checks,cases=cases,native_cycles=actual,render_cycles=renders,preparation=preparation,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash(),legacy_functions_before_sha256=before_functions,legacy_functions_after_sha256=pg.legacy_functions_hash())
 
 
 def run(output):
