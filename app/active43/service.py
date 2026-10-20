@@ -54,14 +54,15 @@ class Service:
         self.store=store;self.market=market;self.config=cfg or config();self.clock=clock;self.quotes=quotes;self.reason=reason
         from .diagnostics import Diagnostics
         self.diagnostics=Diagnostics(self)
-        self.task=None;self.closed=False;self.lock=asyncio.Lock();self.boot=uuid.uuid4().hex;self.restored=False
+        self.task=None;self.off_task=None;self.closed=False;self.lock=asyncio.Lock();self.boot=uuid.uuid4().hex;self.restored=False
     def ready(self):
         if self.store is None:raise DemoError(self.reason or 'ACTIVE43_NOT_CONFIGURED')
         if self.closed:raise DemoError('SERVICE_CLOSED')
     async def close(self):
         self.closed=True
         await self.diagnostics.close()
-        if self.task and not self.task.done():self.task.cancel();await asyncio.gather(self.task,return_exceptions=True)
+        for task in (self.task,self.off_task):
+            if task and not task.done():task.cancel();await asyncio.gather(task,return_exceptions=True)
         for component in (self.store,self.market,self.quotes):
             if component:await component.close()
     async def load(self):
@@ -103,22 +104,45 @@ class Service:
                     return dict(duplicate=False,state_saved=True,paper_only=True,exchange_execution=False)
                 except DemoError as exc:
                     if exc.code!='CONCURRENT_UPDATE' or attempt==2 or action=='START':raise
+    async def initialize(self):
+        from .setup import initialize
+        return await initialize(self)
+    @staticmethod
+    def require_empty_off(s):
+        if s['mode']!='OFF' or any(s.get(k) is not None for k in ('position','pending','pending_exit')) or s.get('data_recovery_armed'):
+            raise DemoError('OFF_TICK_REQUIRES_EMPTY_OFF_ACCOUNT')
+        if risk_reason(s):raise DemoError('OFF_TICK_ACCOUNT_RISK_BLOCKED')
+    async def verify_off_tick(self):
+        self.ready()
+        existing=await self.store.peek()
+        if existing is None:raise DemoError('SCHEDULER_ACCOUNT_NOT_INITIALIZED')
+        validate(existing['state']);self.require_empty_off(existing['state'])
+        if self.off_task is None or self.off_task.done():
+            self.off_task=asyncio.create_task(self._bounded_tick(require_off=True))
+        result=await asyncio.shield(self.off_task)
+        if result['mode']!='OFF' or result['opened']!=0 or result['closed']!=0:
+            raise DemoError('OFF_TICK_REQUIRES_EMPTY_OFF_ACCOUNT')
+        self.diagnostics.cached=None
+        return dict(result,verification_only=True)
     async def tick(self):
         self.ready()
         if self.task is None or self.task.done():self.task=asyncio.create_task(self._bounded_tick())
         return await asyncio.shield(self.task)
-    async def _bounded_tick(self):
+    async def _bounded_tick(self,require_off=False):
         try:
-            async with asyncio.timeout(50):return await self._tick()
+            async with asyncio.timeout(50):
+                return await self._tick(require_off=True) if require_off else await self._tick()
         except TimeoutError:raise DemoError('TICK_TIMEOUT_OUTCOME_UNKNOWN') from None
-    async def _tick(self):
+    async def _tick(self,require_off=False):
         env=await self.load();now=int(self.clock());key=env['state']['epoch']+':tick:'+str(now//300)
+        if require_off:self.require_empty_off(env['state'])
         if await self.store.lookup(key):return self.result(env['state'],[],True,False)
         data=None;error=None
         if env['state']['mode']=='ON' or env['state']['position'] or env['state'].get('data_recovery_armed'):
             try:data=await self.snapshot()
             except DemoError as exc:error=exc.code
         for attempt in range(3):
+            if require_off:self.require_empty_off(env['state'])
             old=env['state'];s=deepcopy(old);events=[];now=int(self.clock());step=STEPS[self.config['timeframe']]
             try:
                 if data:

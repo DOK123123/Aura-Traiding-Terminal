@@ -50,7 +50,8 @@ def test_workflow_diagnostic_default_bypasses_only_trading_opt_in():
     assert 'run: python -m scripts.active43_scheduler --diagnose' in text
     assert "if: github.event_name == 'schedule' || inputs.operation == 'tick'" in text
     assert "vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true'" in text
-    assert "(github.event_name == 'workflow_dispatch' && inputs.operation == 'diagnostics') ||" in text
+    assert "inputs.operation == 'diagnostics' || inputs.operation == 'initialize'" in text
+    assert '- initialize' in text and 'run: python -m scripts.active43_scheduler --initialize' in text
 
 
 def test_missing_actions_secret_has_exact_name_and_never_sends_http():

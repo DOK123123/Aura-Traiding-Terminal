@@ -168,6 +168,45 @@ async def public_cycle(pg,side):
                 open=opened,close=closed,final_balance=state['balance'],open_count=1,close_count=1,restart_restored=True,external_scheduler_http=True,no_browser=True)
 
 
+async def account_preparation(pg):
+    """Native public protocol fixture -> setup HTTP -> real SQL -> restart/readback."""
+    from fastapi import FastAPI
+    from app.active43.api import router
+    from app.active43.market import Market
+    from scripts.verify_active43 import PublicFixture
+    from tests.test_active43_diagnostics import diagnostic_transport
+    pg.sql('TRUNCATE public.aura_active43_bitget_account,public.aura_active43_bitget_events RESTART IDENTITY;')
+    f=PublicFixture();clock=lambda:f.now[0];bridge=Bridge(pg);cfg=config()
+    a=Service(bridge.store(cfg),clock=clock);b=Service(bridge.store(cfg),clock=clock)
+    factory=lambda **kw:Market(clock=kw['clock'],transport=diagnostic_transport(f))
+    token='DUMMY_ISOLATED_INIT_TOKEN_'+'x'*40
+    app=FastAPI();app.include_router(router);app.state.active43=a
+    hdr={'X-Aura-Active43-Bitget-Token':token};body={'confirmation':'INITIALIZE ISOLATED PAPER ACCOUNT'}
+    with patch.dict(os.environ,AURA_ACTIVE43_BITGET_SCHEDULER_SECRET=token,AURA_ACTIVE43_BITGET_ENABLED='true',AURA_ACTIVE43_ENABLED='true'),patch('app.active43.diagnostics.Market',side_effect=factory):
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as c:
+            reports=await asyncio.gather(c.post('/api/active43/initialize',headers=hdr,json=body),b.initialize())
+            assert reports[0].status_code==200 and reports[1]['readback_verified']
+            assert pg.sql('SELECT count(*) FROM public.aura_active43_bitget_account;')=='1'
+            saved=await a.store.peek();assert saved['state']['balance']=='10000' and saved['state']['mode']=='OFF' and saved['state']['position'] is None
+            assert await a.store.history(limit=10)==[]
+            responses=await asyncio.gather(*[c.post('/api/active43/verify-off-tick',headers=hdr,json=body) for _ in range(2)])
+            assert all(r.status_code==200 and r.json()['mode']=='OFF' and r.json()['opened']==r.json()['closed']==0 for r in responses)
+            rows=await a.store.history(limit=10);assert [r['kind'] for r in rows]==['TICK']
+            result=(await c.post('/api/active43/diagnostics/scheduler',headers=hdr)).json()
+            assert result['scheduler']['status']=='ACTIVE' and result['mode']=='OFF' and not result['production_paper_verified']
+        saved=await a.store.peek();await a.close();await b.close()
+        docker('restart',pg.name);pg.ready()
+        restored=Service(bridge.store(cfg),clock=clock)
+        assert await restored.store.peek()==saved
+        assert (await restored.initialize())['balance']=='10000'
+        assert await restored.store.peek()==saved
+        assert all(e['kind']=='TICK' for e in await restored.store.history(limit=10))
+        await restored.close()
+    return dict(status='PASS',scope='ISOLATED_LOCAL_POSTGRES_AND_SYNTHETIC_MARKET_NOT_RENDER',
+        concurrent_initialization=True,single_account=True,restart_restored=True,reinitialization_unchanged=True,
+        balance='10000',mode='OFF',open_count=0,close_count=0,tick_count=1,postflight_scheduler='ACTIVE',production_paper_verified=False)
+
+
 async def verify(pg):
     pg.sql('CREATE SCHEMA extensions; CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN BYPASSRLS; GRANT USAGE ON SCHEMA public,extensions TO anon,authenticated,service_role;')
     pg.sql((ROOT/'scripts/auto42_schema.sql').read_text());pg.sql((ROOT/'scripts/practice_schema.sql').read_text())
@@ -208,6 +247,8 @@ async def verify(pg):
     assert pg.sql('SELECT count(*) FROM public.aura_active43_bitget_account;')=='0'
     await empty.close()
     checks.append('READ_ONLY_PEEK_DOES_NOT_INITIALIZE_AND_GRANTS_NO_TABLE_WRITES')
+    preparation=await account_preparation(pg)
+    checks.append('ACCOUNT_PREPARATION_CONCURRENT_HTTP_INIT_OFF_HEARTBEAT_AND_DATABASE_RESTART')
     cases=[]
     for side in ('LONG','SHORT'):
         for kind in ('TP','SL','BOTH'):
@@ -259,7 +300,7 @@ async def verify(pg):
     assert pg.legacy_hash()==before;checks.append('LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN')
     assert pg.legacy_functions_hash()==before_functions
     checks.append('LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED')
-    return dict(checks=checks,cases=cases,native_cycles=actual,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash(),legacy_functions_before_sha256=before_functions,legacy_functions_after_sha256=pg.legacy_functions_hash())
+    return dict(checks=checks,cases=cases,native_cycles=actual,preparation=preparation,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash(),legacy_functions_before_sha256=before_functions,legacy_functions_after_sha256=pg.legacy_functions_hash())
 
 
 def run(output):

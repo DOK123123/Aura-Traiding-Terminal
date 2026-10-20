@@ -5,7 +5,7 @@ URL='https://aura-traiding-terminal.onrender.com/api/active43/tick'
 
 SECRET_VARIABLE='AURA_ACTIVE43_BITGET_SCHEDULER_SECRET'
 TOKEN_HEADER='X-Aura-Active43-Bitget-Token'
-AUTH_CODES={'SCHEDULER_NOT_CONFIGURED','SCHEDULER_AUTH_REQUIRED','SCHEDULER_TOKEN_MISSING','SCHEDULER_TOKEN_DUPLICATED','SCHEDULER_TOKEN_MISMATCH','SCHEDULER_ORIGIN_REJECTED','SCHEDULER_SECRET_FORMAT_INVALID'}
+AUTH_CODES={'INITIALIZATION_MARKET_UNVERIFIED','INITIALIZATION_STORAGE_UNVERIFIED','INITIALIZATION_READBACK_FAILED','OFF_TICK_REQUIRES_EMPTY_OFF_ACCOUNT','OFF_TICK_ACCOUNT_RISK_BLOCKED','SCHEDULER_ACCOUNT_NOT_INITIALIZED','SCHEDULER_NOT_CONFIGURED','SCHEDULER_AUTH_REQUIRED','SCHEDULER_TOKEN_MISSING','SCHEDULER_TOKEN_DUPLICATED','SCHEDULER_TOKEN_MISMATCH','SCHEDULER_ORIGIN_REJECTED','SCHEDULER_SECRET_FORMAT_INVALID'}
 
 
 def auth_configuration(env):
@@ -21,9 +21,9 @@ def rejected_response(exc):
     try:
         raw=exc.read(4097)
         body=json.loads(raw) if len(raw)<=4096 else {}
-        detail=body.get('detail') if type(body) is dict else None
+        detail=body.get('detail',body.get('code')) if type(body) is dict else None
         code=detail.get('code') if type(detail) is dict else detail
-        safe=code if type(code) is str and code in AUTH_CODES else 'UNCLASSIFIED_HTTP_ERROR'
+        safe=code if type(code) is str and (code in AUTH_CODES or code in DIAGNOSTIC_CODES) else 'UNCLASSIFIED_HTTP_ERROR'
         evidence={}
         if type(detail) is dict and detail.get('component')=='AURA43_SCHEDULER_AUTH':
             evidence['component']='AURA43_SCHEDULER_AUTH'
@@ -125,8 +125,75 @@ def run(env=None,opener=None,sleep=time.sleep,emit=print,diagnose=False):
         if attempt<2:sleep(2**(attempt+1))
     return 1
 
+
+INITIALIZE_URL='https://aura-traiding-terminal.onrender.com/api/active43/initialize'
+OFF_TICK_URL='https://aura-traiding-terminal.onrender.com/api/active43/verify-off-tick'
+SETUP_CONFIRMATION='INITIALIZE ISOLATED PAPER ACCOUNT'
+
+
+def initialization_verified(body):
+    return (type(body) is dict and body.get('operation')=='INITIALIZE_PAPER_ACCOUNT' and body.get('status')=='ACCOUNT_AVAILABLE'
+        and body.get('scope')=='AURA43_ACTIVE_PAPER' and body.get('market_source')=='Bitget · USDT-M Futures / api.bitget.com'
+        and body.get('strategy_version')=='AURA_4.3_ACTIVE_PAPER_3'
+        and all(body.get(k) is True for k in ('paper_only','account_available','state_saved','readback_verified','existing_account_preserved'))
+        and all(body.get(k) is False for k in ('exchange_execution','mode_changed_by_operation','trade_execution_performed','production_paper_verified'))
+        and body.get('mode') in ('ON','OFF','PAUSED','EMERGENCY')
+        and type(body.get('position_present')) is bool and type(body.get('initial_balance_matches')) is bool)
+
+
+def prepare(env=None,opener=None,emit=print):
+    """Explicit setup only; never calls unrestricted tick/control or creates signals."""
+    env=os.environ if env is None else env;token=env.get(SECRET_VARIABLE,'')
+    if not 32<=len(token)<=256 or not token.isascii() or not token.isprintable():
+        emit('ACTIVE43 setup: SCHEDULER_NOT_CONFIGURED');return 1
+    client=opener or urllib.request.build_opener(NoRedirect)
+    def request(url,confirmed=False):
+        payload=json.dumps({'confirmation':SETUP_CONFIRMATION}).encode() if confirmed else b''
+        req=urllib.request.Request(url,data=payload,method='POST',headers={TOKEN_HEADER:token,'Content-Type':'application/json'})
+        with client.open(req,timeout=90) as r:
+            raw=r.read(65537)
+            if r.status!=200 or len(raw)>65536:raise ValueError()
+            return json.loads(raw)
+    phase='PREFLIGHT'
+    try:
+        before=request(DIAGNOSTIC_URL)
+        if not diagnostic_verified(before) or any(before[k]['status']!='CONNECTED' for k in ('bitget','supabase')):
+            emit('ACTIVE43 setup: PREFLIGHT_UNVERIFIED');return 1
+        emit('ACTIVE43 setup preflight: '+json.dumps(diagnostic_summary(before),sort_keys=True))
+        configuration=before.get('configuration') if type(before.get('configuration')) is dict else {}
+        if configuration.get('server_enabled') is not True:
+            emit('ACTIVE43 setup: SERVER_MODULE_DISABLED');return 1
+        phase='INITIALIZE'
+        account=request(INITIALIZE_URL,True)
+        if not initialization_verified(account):raise ValueError()
+        if account['mode']!='OFF' or account['position_present']:
+            emit('ACTIVE43 setup: EXISTING_ACCOUNT_PRESERVED_NOT_EMPTY_OFF; no heartbeat or trading performed');return 1
+        phase='OFF_HEARTBEAT'
+        heartbeat=request(OFF_TICK_URL,True)
+        if not verified(heartbeat) or heartbeat.get('verification_only') is not True or heartbeat['mode']!='OFF' or heartbeat['opened']!=0 or heartbeat['closed']!=0:
+            raise ValueError()
+        phase='POSTFLIGHT'
+        after=request(DIAGNOSTIC_URL)
+        if not diagnostic_verified(after):raise ValueError()
+        emit('ACTIVE43 prepared account diagnostic: '+json.dumps(diagnostic_summary(after),sort_keys=True))
+        if after['status']!='PASS' or after['scheduler']['status']!='ACTIVE' or after.get('mode')!='OFF':
+            emit('ACTIVE43 setup: POSTFLIGHT_UNVERIFIED');return 1
+        emit('ACTIVE43 PREPARATION_VERIFIED: '+json.dumps(dict(account_available=True,readback_verified=True,
+            off_scheduler_tick_saved=True,initial_balance_matches=account['initial_balance_matches'],
+            auto_paper_enabled=False,production_paper_verified=False)))
+        return 0
+    except urllib.error.HTTPError as exc:
+        code='SETUP_API_NOT_DEPLOYED' if exc.code==404 and phase in ('INITIALIZE','OFF_HEARTBEAT') else rejected_response(exc)
+        emit('ACTIVE43 setup rejected: phase='+phase+' HTTP '+str(exc.code)+' code='+code);return 1
+    except (OSError,ValueError,TypeError):
+        emit('ACTIVE43 setup unconfirmed; no trading retry; rerun setup safely');return 1
+
+
 if __name__=='__main__':
     import argparse
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--diagnose',action='store_true',help='read-only probes, no scheduler tick or portfolio writes')
-    raise SystemExit(run(diagnose=parser.parse_args().diagnose))
+    actions=parser.add_mutually_exclusive_group()
+    actions.add_argument('--diagnose',action='store_true',help='read-only probes, no scheduler tick or portfolio writes')
+    actions.add_argument('--initialize',action='store_true',help='explicit isolated account setup and guarded OFF heartbeat; never enables trading')
+    args=parser.parse_args()
+    raise SystemExit(prepare() if args.initialize else run(diagnose=args.diagnose))

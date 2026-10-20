@@ -3,10 +3,11 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: 'diagnostics: read-only, works while Paper/scheduler OFF. tick: enabled scheduler only.'
+        description: 'diagnostics: read-only, works while Paper/scheduler OFF. initialize: isolated OFF account + guarded heartbeat. tick: enabled scheduler only.'
         type: choice
         options:
           - diagnostics
+          - initialize
           - tick
         default: diagnostics
         required: true
@@ -21,7 +22,7 @@ jobs:
   active43_tick:
     # Diagnostic dispatch never enters the trading tick, regardless of ON/OFF.
     if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.operation == 'diagnostics') ||
+      (github.event_name == 'workflow_dispatch' && (inputs.operation == 'diagnostics' || inputs.operation == 'initialize')) ||
       (vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true' &&
        (github.event_name == 'schedule' || inputs.operation == 'tick'))
     runs-on: ubuntu-latest
@@ -35,6 +36,11 @@ jobs:
         env:
           AURA_ACTIVE43_BITGET_SCHEDULER_SECRET: ${{ secrets.AURA_ACTIVE43_BITGET_SCHEDULER_SECRET }}
         run: python -m scripts.active43_scheduler --diagnose
+      - name: Initialize isolated paper account and verify OFF heartbeat (no trades)
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'initialize'
+        env:
+          AURA_ACTIVE43_BITGET_SCHEDULER_SECRET: ${{ secrets.AURA_ACTIVE43_BITGET_SCHEDULER_SECRET }}
+        run: python -m scripts.active43_scheduler --initialize
       - name: Independent paper-only tick (not Auto42)
         if: github.event_name == 'schedule' || inputs.operation == 'tick'
         env:
