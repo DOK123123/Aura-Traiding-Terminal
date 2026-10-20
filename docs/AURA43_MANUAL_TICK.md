@@ -14,7 +14,8 @@ scheduling was disabled or the variable absent. This is an Actions routing defec
 not a strategy rejection, HTTP authentication failure, or an uninitialized account.
 GitHub's repository-variable metadata endpoint returns 403 to this session;
 no claim is made to have read its stored value through that API. The corrected
-workflow reports the effective periodic opt-in as a non-secret boolean.
+workflow reports the effective periodic opt-in as a non-secret boolean. Real
+branch runs #21–#23 confirmed it is false while the manual jobs succeeded.
 
 ## Fix and safety
 
@@ -41,6 +42,24 @@ workflow reports the effective periodic opt-in as a non-secret boolean.
 No server, SQL, UI, strategy, risk, Aura 4.2, Paper Practice, balance or position
 code changes. No secret changes or production SQL are needed. This change needs
 **no Render redeployment**: the protected endpoint was already deployed with PR #20.
+
+## Real GitHub → Render → Supabase verification
+
+At code commit `42455420a9c68ce1c2687510a9d30daa5a201898`, without merge/deploy:
+
+| Run | Operation | Actual result |
+| --- | --- | --- |
+| [#21](https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39415812468) | tick / off_only | success; state saved; OFF; opened=0; closed=0; duplicate=false |
+| [#22](https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39415845735) | tick / off_only | success; OFF; opened=0; closed=0; duplicate=true |
+| [#23](https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39415872010) | diagnostics | success; PASS; Bitget/Supabase CONNECTED; Scheduler ACTIVE |
+
+The postflight read verified both history RPC and account read, stage COMPLETE.
+All three jobs logged `periodic_schedule_enabled=false`. The immutable receipt
+readback and deduplication in a subsequent runner confirm durable OFF heartbeat
+state. No production restart was performed; restart evidence is local PostgreSQL.
+No account initialization/reset, unrestricted tick, control request, trade or
+production SQL was performed in these runs. Scheduler ACTIVE describes the fresh
+heartbeat, not a claim that disabled periodic scheduling is now enabled or 24/7.
 
 ## Owner steps after review/merge
 

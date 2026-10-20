@@ -44,7 +44,7 @@
     "LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED"
   ],
   "postgresql_trade_scenarios": 7,
-  "production_off_tick": "NOT_YET_RUN",
+  "production_off_tick": "PASS",
   "production_paper_verified": false,
   "paper_enabled_by_task": false,
   "real_exchange_orders": false,
@@ -58,5 +58,54 @@
     "included_in_targeted_46": true,
     "added_after_full_suite_collection": true
   },
-  "syntax_and_app_import": "PASS"
+  "syntax_and_app_import": "PASS",
+  "production_checked_code_sha": "42455420a9c68ce1c2687510a9d30daa5a201898",
+  "production_runs": [
+    {
+      "number": 21,
+      "url": "https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39415812468",
+      "operation": "tick",
+      "tick_policy": "off_only",
+      "conclusion": "success",
+      "at": "2026-10-20T11:33:43Z",
+      "state_saved": true,
+      "mode": "OFF",
+      "opened": 0,
+      "closed": 0,
+      "duplicate": false
+    },
+    {
+      "number": 22,
+      "url": "https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39415845735",
+      "operation": "tick",
+      "tick_policy": "off_only",
+      "conclusion": "success",
+      "at": "2026-10-20T11:33:58Z",
+      "state_saved": true,
+      "mode": "OFF",
+      "opened": 0,
+      "closed": 0,
+      "duplicate": true
+    },
+    {
+      "number": 23,
+      "url": "https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39415872010",
+      "operation": "diagnostics",
+      "conclusion": "success",
+      "at": "2026-10-20T11:34:12Z",
+      "bitget": "CONNECTED",
+      "supabase": "CONNECTED",
+      "supabase_stage": "COMPLETE",
+      "supabase_history_rpc_verified": true,
+      "supabase_account_read_verified": true,
+      "scheduler": "ACTIVE",
+      "status": "PASS",
+      "state_changed": false,
+      "production_paper_verified": false
+    }
+  ],
+  "effective_periodic_schedule_enabled": false,
+  "production_restart_performed": false,
+  "production_initialization_performed": false,
+  "production_unrestricted_tick_called": false
 }
