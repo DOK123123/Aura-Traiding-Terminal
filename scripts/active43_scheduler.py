@@ -37,9 +37,11 @@ DIAGNOSTIC_URL='https://aura-traiding-terminal.onrender.com/api/active43/diagnos
 
 
 DIAGNOSTIC_CODES=set(('ACTIVE43_DISABLED ACTIVE43_BITGET_DISABLED ACTIVE43_STORAGE_NOT_CONFIGURED '
+    'STORAGE_URL_MISSING STORAGE_URL_INVALID STORAGE_KEY_MISSING STORAGE_KEY_INVALID '
+    'SCHEDULER_STORAGE_UNVERIFIED SCHEDULER_ACCOUNT_NOT_INITIALIZED '
     'INVALID_STORAGE_CONFIGURATION STORAGE_AUTH STORAGE_PERMISSION_DENIED STORAGE_SCHEMA_MISSING '
     'STORAGE_DATABASE_UNAVAILABLE STORAGE_RATE_LIMIT STORAGE_REDIRECT_BLOCKED STORAGE_HTTP_ERROR '
-    'STORAGE_RESPONSE_LIMIT STORAGE_INVALID_RESPONSE STORAGE_UNAVAILABLE_OUTCOME_UNKNOWN '
+    'STORAGE_RESPONSE_LIMIT STORAGE_INVALID_RESPONSE STORAGE_UNAVAILABLE STORAGE_UNAVAILABLE_OUTCOME_UNKNOWN '
     'STORAGE_TIMEOUT_OUTCOME_UNKNOWN STORAGE_READ_TIMEOUT CORRUPT_PORTFOLIO '
     'ACTIVE_SCOPE_OR_CONFIG_MISMATCH STORAGE_SCOPE_MISMATCH CONFIG_CHANGED DIAGNOSTIC_TIMEOUT '
     'SCHEDULER_NOT_CONFIGURED NO_CONFIRMED_TICK STALE_TICK REGION_OR_ACCESS_RESTRICTED '
@@ -53,12 +55,21 @@ def diagnostic_summary(body):
         value=body[section].get('code')
         return value if type(value) is str and value in DIAGNOSTIC_CODES else None if value is None else 'UNCLASSIFIED_DIAGNOSTIC_ERROR'
     db=body['supabase']
+    config=body.get('configuration') if type(body.get('configuration')) is dict else {}
+    storage=config.get('storage') if type(config.get('storage')) is dict else {}
+    def flag(mapping,key):return mapping.get(key) if type(mapping.get(key)) is bool else None
+    missing=config.get('missing_variables') if type(config.get('missing_variables')) is list else []
     return dict(status=body['status'],bitget=body['bitget']['status'],bitget_code=code('bitget'),
         supabase=db['status'],supabase_code=code('supabase'),
+        supabase_stage=db.get('stage') if db.get('stage') in ('CONFIGURATION','HISTORY_RPC','ACCOUNT_READ','STATE_VALIDATION','COMPLETE') else None,
         supabase_history_rpc_verified=db.get('history_rpc_verified') is True,
         supabase_account_read_verified=db.get('account_read_verified') is True,
         supabase_account_status='NOT_INITIALIZED' if db.get('account_status')=='NOT_INITIALIZED' else None,
         scheduler=body['scheduler']['status'],scheduler_code=code('scheduler'),
+        server_module_enabled=flag(config,'server_enabled'),
+        storage_url_format_valid=flag(storage,'url_format_valid'),storage_key_format_valid=flag(storage,'key_format_valid'),
+        storage_url_padding_normalized=flag(storage,'url_padding_normalized'),storage_key_padding_normalized=flag(storage,'key_padding_normalized'),
+        storage_missing_variables=[name for name in missing if name in ('AURA_ACTIVE43_BITGET_SUPABASE_URL','AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY')],
         state_changed=False,production_paper_verified=False)
 
 

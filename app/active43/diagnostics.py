@@ -9,7 +9,7 @@ from app.automated.engine import DemoError
 from .core import IDENTITY, SOURCE, SCOPE
 from .market import Market
 from .bitget import MarketError
-from .storage import Store
+from .storage import Store,storage_configuration
 from .strategies import STEPS, VERSION
 
 
@@ -21,8 +21,9 @@ def configuration() -> dict:
     names = ('AURA_ACTIVE43_BITGET_SUPABASE_URL', 'AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY')
     return dict(server_enabled=bitget and (generic is None or generic.lower() == 'true'),
                 bitget_enabled=bitget, explicit_global_stop=generic is not None and generic.lower() != 'true',
-                missing_variables=[name for name in names if not os.getenv(name)],
-                scheduler_secret_valid=scheduler_configured(),scheduler_auth=scheduler_auth_configuration())
+                missing_variables=[name for name in names if not os.getenv(name,'').strip()],
+                scheduler_secret_valid=scheduler_configured(),scheduler_auth=scheduler_auth_configuration(),
+                storage=storage_configuration(os.getenv('AURA_ACTIVE43_BITGET_SUPABASE_URL',''),os.getenv('AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY','')))
 
 
 class Diagnostics:
@@ -61,8 +62,8 @@ class Diagnostics:
                       checked_on_render=os.getenv('RENDER', '').lower() in ('true', '1'),
                       render_commit=os.getenv('RENDER_GIT_COMMIT') if re.fullmatch('[a-f0-9]{40}', os.getenv('RENDER_GIT_COMMIT', '')) else None,
                       configuration=config, bitget=dict(status='ERROR', code='DIAGNOSTIC_TIMEOUT'),
-                      supabase=dict(status='ERROR', code='DIAGNOSTIC_TIMEOUT'),
-                      scheduler=dict(status='ERROR', code='NO_CONFIRMED_TICK' if config['scheduler_secret_valid'] else 'SCHEDULER_NOT_CONFIGURED', last_successful_tick=None),
+                      supabase=dict(status='ERROR', code='DIAGNOSTIC_TIMEOUT',stage='CONFIGURATION'),
+                      scheduler=dict(status='ERROR', code='SCHEDULER_STORAGE_UNVERIFIED' if config['scheduler_secret_valid'] else 'SCHEDULER_NOT_CONFIGURED', last_successful_tick=None),
                       virtual_balance=None, current_position=None, mode=None,
                       workflow_url='https://github.com/DOK123123/Aura-Traiding-Terminal/actions/workflows/aura-active43.yml')
         # Independent connections and budgets: a failed market probe cannot hide DB evidence.
@@ -117,18 +118,22 @@ class Diagnostics:
                 if store is None:
                     url = os.getenv('AURA_ACTIVE43_BITGET_SUPABASE_URL', '')
                     key = os.getenv('AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY', '')
-                    if not url or not key:
-                        raise DemoError('ACTIVE43_STORAGE_NOT_CONFIGURED')
+                    metadata=storage_configuration(url,key)
+                    if metadata['code']:raise DemoError(metadata['code'])
                     store = Store(url, key, self.service.config)
                     own = True
+                result['supabase']['stage']='HISTORY_RPC'
                 await store.history(limit=1)
                 result['supabase'] = dict(status='CONNECTED', code=None, history_rpc_verified=True,
-                                           writes_tested=False, account_read_verified=False)
+                                           writes_tested=False, account_read_verified=False,stage='ACCOUNT_READ')
                 env = await store.peek()
                 result['supabase']['account_read_verified'] = True
                 if env is None:
                     result['supabase']['account_status'] = 'NOT_INITIALIZED'
+                    result['supabase']['stage']='COMPLETE'
+                    if configuration()['scheduler_secret_valid']:result['scheduler']['code']='SCHEDULER_ACCOUNT_NOT_INITIALIZED'
                     return
+                result['supabase']['stage']='STATE_VALIDATION'
                 state = env['state']
                 if state['config'] != self.service.config:
                     raise DemoError('CONFIG_CHANGED')
@@ -137,6 +142,7 @@ class Diagnostics:
                 last = state.get('last_successful_run_at')
                 now = int(self.service.clock())
                 active = type(last) is int and 0 <= now-last <= 360 and configuration()['scheduler_secret_valid']
+                result['supabase']['stage']='COMPLETE'
                 result['scheduler'].update(status='ACTIVE' if active else 'ERROR',
                     code=None if active else 'SCHEDULER_NOT_CONFIGURED' if not configuration()['scheduler_secret_valid'] else 'NO_CONFIRMED_TICK' if last is None else 'STALE_TICK',
                     last_successful_tick=last, last_tick=state['last_run_at'])

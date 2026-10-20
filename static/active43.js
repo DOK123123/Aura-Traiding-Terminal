@@ -2,6 +2,7 @@
 (function(){'use strict';
  const labels={ON:'Включён',OFF:'Выключен',PAUSED:'Приостановлен',EMERGENCY:'Аварийный запрет входов',ERROR:'Ошибка',
  ACTIVE43_BITGET_DISABLED:'Bitget Futures выключен отдельной настройкой сервера',ACTIVE43_DISABLED:'Режим выключен в настройках сервера',ACTIVE43_STORAGE_NOT_CONFIGURED:'Отдельное хранилище Aura 4.3 не настроено',ACTIVE43_NOT_CONFIGURED:'Aura 4.3 не настроена',
+ SCHEDULER_STORAGE_UNVERIFIED:'Циклы не проверены: нет подтверждённого чтения БД',SCHEDULER_ACCOUNT_NOT_INITIALIZED:'Счёт Aura 4.3 ещё не создан',STORAGE_URL_INVALID:'Неверный формат AURA_ACTIVE43_BITGET_SUPABASE_URL',STORAGE_KEY_INVALID:'Неверный формат серверного service_role ключа Aura 4.3',STORAGE_URL_MISSING:'Отсутствует AURA_ACTIVE43_BITGET_SUPABASE_URL',STORAGE_KEY_MISSING:'Отсутствует серверный service_role ключ Aura 4.3',
  NO_CONFIRMED_TICK:'Сохранённых успешных циклов ещё нет',STALE_TICK:'Последний успешный цикл устарел',DIAGNOSTIC_TIMEOUT:'Проверка превысила лимит времени',STORAGE_PERMISSION_DENIED:'БД запретила чтение отдельной таблицы Aura 4.3',STORAGE_AUTH:'Supabase отклонила серверный ключ',
  NOT_STARTED:'Автоматический режим ещё не запускался',INVALID_DATA:'Источник вернул некорректные значения свечей',INVALID_MARKET_DATA:'Рыночные данные не прошли проверку',SOURCE_MISMATCH:'Источник не соответствует BITGET · BTCUSDT USDT-M Futures',
  QUOTE_SOURCE_MISMATCH:'Котировка другого источника отклонена',STALE_QUOTE:'Котировка устарела',FUTURES_NOT_VALIDATED:'Стратегия Futures ещё не прошла независимую проверку',

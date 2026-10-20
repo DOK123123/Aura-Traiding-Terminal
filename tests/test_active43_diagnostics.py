@@ -235,3 +235,51 @@ def test_diagnostic_reads_actual_open_position_without_changing_it(side):
         assert store.state==before==reader.store.state and reader.store.reads==2
         await reader.close();await engine.close()
     asyncio.run(run())
+
+
+@pytest.mark.parametrize('url,key,code',[
+ ('','DUMMY_KEY_'+'x'*40,'STORAGE_URL_MISSING'),
+ ('postgresql://private.invalid/db','DUMMY_KEY_'+'x'*40,'STORAGE_URL_INVALID'),
+ ('https://abcdefghijkl.supabase.co/rest/v1','DUMMY_KEY_'+'x'*40,'STORAGE_URL_INVALID'),
+ ('https://abcdefghijkl.supabase.co','','STORAGE_KEY_MISSING'),
+ ('https://abcdefghijkl.supabase.co','short','STORAGE_KEY_INVALID'),
+ ('https://abcdefghijkl.supabase.co','DUMMY_KEY_'+'x'*40+'\nINTERNAL_LINE','STORAGE_KEY_INVALID')])
+def test_storage_configuration_names_precise_invalid_input_without_secret(url,key,code):
+    from app.active43.storage import storage_configuration
+    report=storage_configuration(url,key)
+    assert report['code']==code
+    if key:assert key not in json.dumps(report)
+    with pytest.raises(DemoError) as exc:Store(url,key,config())
+    assert exc.value.code==code
+
+
+def test_url_and_key_copy_padding_normalized_with_no_host_fallback():
+    from app.active43.storage import storage_configuration
+    async def run():
+        seen=[]
+        def handler(req):seen.append(req);return httpx.Response(200,json=[])
+        key='DUMMY_KEY_'+'x'*40
+        store=Store(' https://abcdefghijkl.supabase.co/ \n','  '+key+'\n',config(),httpx.MockTransport(handler))
+        assert await store.peek() is None
+        assert str(seen[0].url).startswith('https://abcdefghijkl.supabase.co/rest/v1/aura_active43_bitget_account?')
+        assert seen[0].headers['apikey']==key and seen[0].headers['authorization']=='Bearer '+key
+        metadata=storage_configuration(' https://abcdefghijkl.supabase.co/ ',' '+key+' ')
+        assert metadata['url_padding_normalized'] and metadata['key_padding_normalized']
+        assert key not in json.dumps(metadata)
+        await store.close()
+    asyncio.run(run())
+
+
+def test_unreadable_storage_does_not_claim_scheduler_has_no_ticks():
+    async def run():
+        class Failed(ReadOnlyStore):
+            async def history(self,**kwargs):raise DemoError('STORAGE_SCHEMA_MISSING')
+        service=Service(Failed(None))
+        async def skip_market(report):report['bitget']={'status':'ERROR','code':'OFFLINE_TEST_ONLY'}
+        with patch('app.active43.service.scheduler_configured',return_value=True),patch.object(service.diagnostics,'market_probe',side_effect=skip_market):
+            result=await service.diagnostics.run()
+        assert result['supabase']['stage']=='HISTORY_RPC'
+        assert result['scheduler']['code']=='SCHEDULER_STORAGE_UNVERIFIED'
+        assert result['scheduler']['last_successful_tick'] is None
+        await service.close()
+    asyncio.run(run())
