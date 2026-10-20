@@ -145,5 +145,17 @@
   "CODE_READY": true,
   "PRODUCTION_SUPABASE_VERIFIED": false,
   "PRODUCTION_PAPER_VERIFIED": false,
-  "owner_action": "Publish reviewed change with saved Render environment; run diagnostics; if still URL/key invalid correct the named existing variable. Do not reapply SQL for the current pre-RPC failure."
+  "owner_action": "Publish reviewed change with saved Render environment; run diagnostics; if still URL/key invalid correct the named existing variable. Do not reapply SQL for the current pre-RPC failure.",
+  "repeat_production_probe": {
+    "run_id": 39381224330,
+    "run_number": 9,
+    "supabase_code": "INVALID_STORAGE_CONFIGURATION",
+    "history_rpc_verified": false,
+    "account_read_verified": false,
+    "server_module_enabled": false,
+    "storage_missing_variables": [],
+    "state_changed": false,
+    "production_paper_verified": false,
+    "new_server_validator_deployed": false
+  }
 }

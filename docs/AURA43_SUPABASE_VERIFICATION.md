@@ -25,6 +25,14 @@ No database writes, portfolio initialization, scheduler tick, mode change, secre
 change or exchange order were performed by this diagnostic. Authorization worked
 and Bitget was CONNECTED from the actual Render diagnostic request.
 
+A second real read-only [run #9](https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39381224330)
+confirmed the same pre-RPC failure, with no missing URL/key variable names reported
+and `server_module_enabled=false`. The variables are present but the old validator
+rejects their format. The new server validator is not deployed, so its individual
+format flags/stage are correctly logged as null, not invented. The server module
+was left disabled. A BLOCKED overall status may remain intentionally while that
+module is disabled; it must not be fixed by automatically enabling PAPER.
+
 ## Code corrections
 
 - Dedicated validator reports `STORAGE_URL_MISSING`, `STORAGE_URL_INVALID`,
