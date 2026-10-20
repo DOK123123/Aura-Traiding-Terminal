@@ -161,7 +161,7 @@ def test_owner_csrf_independent_token_and_no_signal_order_routes(monkeypatch):
 def test_default_off_has_no_account_or_network(monkeypatch):
     monkeypatch.delenv('AURA_ACTIVE43_ENABLED',raising=False)
     service=configured();assert service.store is None and service.market is None
-    assert service.reason=='ACTIVE43_DISABLED'
+    assert service.reason=='ACTIVE43_BITGET_DISABLED'
 
 
 def test_config_scope_and_policy_tampering_fail_closed():

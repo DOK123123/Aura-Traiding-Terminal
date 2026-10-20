@@ -188,6 +188,12 @@
     <p id="a43-position">Позиция не загружена</p><p id="a43-live">Автономный production-цикл не подтверждён</p>
     <div role="group" aria-label="Управление Aura 4.3"><button id="a43-start" disabled>START EXPERIMENTAL PAPER</button><button id="a43-stop" disabled>STOP · запрет новых входов</button><button id="a43-emergency" disabled>EMERGENCY STOP</button><button id="a43-refresh">Обновить</button></div>
     <p id="a43-message" role="status" aria-live="polite"></p>
+    <button id="a43-diagnose">ПРОВЕРИТЬ ВСЮ СИСТЕМУ</button>
+    <p>Проверка доступна при OFF. Только чтение: не открывает сделки, не создаёт счёт и не меняет баланс. Результат — снимок на указанное время. Подтверждение доставки диагностического запроса не означает работу периодического scheduler.</p>
+    <p id="a43-diagnostic-message" role="status" aria-live="polite">Соединения ещё не проверены.</p>
+    <dl class="a43-grid"><div><dt>Bitget (серверная проверка)</dt><dd id="a43-diag-bitget">NOT TESTED</dd></div><div><dt>Supabase (чтение)</dt><dd id="a43-diag-storage">NOT TESTED</dd></div><div><dt>Scheduler (сохранённый цикл)</dt><dd id="a43-diag-scheduler">NOT TESTED</dd></div><div><dt>Последний успешный tick UTC</dt><dd id="a43-diag-tick">—</dd></div><div><dt>Сохранённый баланс USDT</dt><dd id="a43-diag-balance">—</dd></div><div><dt>Сохранённая позиция</dt><dd id="a43-diag-position">—</dd></div><div><dt>Последняя проверка UTC</dt><dd id="a43-diag-at">—</dd></div><div><dt>Последняя ошибка проверки</dt><dd id="a43-diag-error">—</dd></div></dl>
+    <a href="https://github.com/DOK123123/Aura-Traiding-Terminal/actions/workflows/aura-active43.yml" target="_blank" rel="noopener noreferrer">Открыть Aura 4.3 в GitHub Actions</a>
+
     <p>Риск ≤0,5% · дневной лимит 2% · max notional 2000 USDT · одна позиция. STOP сохраняет защитные выходы. Бесплатный Render может спать; пропуски scheduler задерживают SL/TP. Работа 24/7 не подтверждена.</p>
     <details><summary>История реального Paper-портфеля Aura 4.3</summary><ul id="a43-history"></ul><button id="a43-older" disabled>Более ранние сделки</button><a href="/api/active43/journal">Журнал решений и событий JSON</a></details>
     <details><summary>Отдельное историческое сравнение стратегий · НЕ LIVE</summary>

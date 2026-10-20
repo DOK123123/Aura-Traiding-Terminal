@@ -88,3 +88,13 @@ async def control(request:Request,body:Control):
 async def tick(request:Request):
     async def perform():return await svc(request).tick()
     return await respond(perform())
+
+
+@router.post('/diagnostics',dependencies=[Depends(mutation)])
+async def diagnostics(request:Request):
+    return await respond(svc(request).diagnostics.run())
+
+
+@router.post('/diagnostics/scheduler',dependencies=[Depends(scheduler)])
+async def scheduler_diagnostics(request:Request):
+    return await respond(svc(request).diagnostics.run(scheduler_delivery=True))

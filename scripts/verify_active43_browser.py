@@ -22,19 +22,25 @@ if '--child' in sys.argv:
  from app.active43.strategies import config
  from app.active43.market import Market,Quotes
  from tests.test_active43 import MemoryStore
+ from tests.test_active43_diagnostics import diagnostic_transport
+ from copy import deepcopy
  from scripts.verify_active43 import PublicFixture
  from unittest.mock import patch
  import asyncio,uvicorn
  fixture=PublicFixture();transport=httpx.MockTransport(fixture.handler);clock=lambda:fixture.now[0]
+ class BrowserStore(MemoryStore):
+  async def peek(self):
+   return dict(state=deepcopy(self.state),revision=self.revision,last_saved_at=int(clock()))
  async def prepare():
   market=Market(clock=clock,transport=transport);quotes=Quotes(clock=clock,transport=transport)
-  service=Service(MemoryStore(config(),clock()),market,config(),clock=clock,quotes=quotes)
+  service=Service(BrowserStore(config(),clock()),market,config(),clock=clock,quotes=quotes)
   with patch('app.active43.service.scheduler_configured',return_value=True):await service.control('START','a'*32,1)
   for phase in ('signal','fill','update','close'):
    fixture.add(phase);await service.tick()
   return service
  app=FastAPI();app.include_router(router);app.state.active43=asyncio.run(prepare());app.mount('/static',StaticFiles(directory=ROOT/'static'))
- uvicorn.run(app,host='127.0.0.1',port=int(sys.argv[2]),access_log=False)
+ with patch('app.active43.diagnostics.Market',side_effect=lambda **kw:Market(clock=kw['clock'],transport=diagnostic_transport(fixture))):
+  uvicorn.run(app,host='127.0.0.1',port=int(sys.argv[2]),access_log=False)
 else:
  if os.getenv('RENDER') or not __debug__:raise ValueError('LOCAL_OFFLINE_ONLY')
  import argparse
@@ -83,12 +89,17 @@ else:
      wait("document.getElementById('a43-history').textContent.includes('TAKE_PROFIT') || document.getElementById('a43-history').textContent.includes('Take Profit')")
      evaluate("document.getElementById('a43-research').click()")
      wait("document.querySelectorAll('#a43-comparison tr').length===15")
+     before=httpx.get(f'http://127.0.0.1:{listen}/api/active43/status',auth=('aura',PASSWORD),trust_env=False).json()
+     evaluate("document.getElementById('a43-diagnose').click()")
+     wait("document.getElementById('a43-diag-bitget').textContent.startsWith('CONNECTED')")
+     wait("document.getElementById('a43-diag-storage').textContent.startsWith('CONNECTED')")
      width=evaluate("document.getElementById('active43-panel').getBoundingClientRect().width")
      assert width<=430,width
      state=httpx.get(f'http://127.0.0.1:{listen}/api/active43/status',auth=('aura',PASSWORD),trust_env=False).json()
      assert state['state']['mode']=='ON' and state['state']['position'] is None and state['state']['trades']==1
      assert not state['production_paper_verified']
-     result=dict(status='PASS',scope='OFFLINE_SYNTHETIC_MEMORY_STORE_UI_ONLY_NOT_SUPABASE_OR_RENDER',real_chromium=True,real_owner_http_api=True,width=430,panel_width=width,native_indicators_closed_trade_visible=True,entry_exit_markers=2,comparison_rows=15,equity_canvas=True,open_count=1,close_count=1,production_paper_verified=False)
+     assert state['state']==before['state'] and state['revision']==before['revision']
+     result=dict(status='PASS',scope='OFFLINE_SYNTHETIC_MEMORY_STORE_UI_ONLY_NOT_SUPABASE_OR_RENDER',real_chromium=True,real_owner_http_api=True,diagnostic_button=True,diagnostic_portfolio_unchanged=True,width=430,panel_width=width,native_indicators_closed_trade_visible=True,entry_exit_markers=2,comparison_rows=15,equity_canvas=True,open_count=1,close_count=1,production_paper_verified=False)
      args.output.write_text(json.dumps(result,indent=2));print(json.dumps(result))
    finally:
     for p in reversed(procs):

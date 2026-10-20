@@ -12,6 +12,8 @@ ALTER TABLE public.aura_active43_bitget_account ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.aura_active43_bitget_events ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.aura_active43_bitget_account,public.aura_active43_bitget_events FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON SEQUENCE public.aura_active43_bitget_events_seq_seq FROM PUBLIC,anon,authenticated;
+-- Read-only health inspection; no extra table write privileges or anonymous access.
+GRANT SELECT ON public.aura_active43_bitget_account TO service_role;
 CREATE OR REPLACE FUNCTION public.aura_active43_bitget_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN RAISE EXCEPTION 'APPEND_ONLY'; END $$;
 DROP TRIGGER IF EXISTS aura_active43_bitget_immutable ON public.aura_active43_bitget_events;

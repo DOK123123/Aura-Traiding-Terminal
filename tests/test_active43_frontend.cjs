@@ -20,3 +20,13 @@ test('scheduler state is explicit and ages without hiding persisted ON',()=>{con
 test('only Bitget Futures bars and trades enter the separate chart',()=>{const {chartModel}=require('../static/active43.js');const source='Bitget · USDT-M Futures / api.bitget.com',bars=[{time:900,open:'100',high:'102',low:'99',close:'101'},{time:1800,open:'101',high:'103',low:'100',close:'102'}];const d={chart:{source,timeframe:'15m',closed_at:2700,bars},trades:[{market_source:source,entry_time:900,entry_price:'101',exit_time:2700,exit_price:'102',direction:'LONG',exit_reason:'TAKE_PROFIT'},{market_source:'Binance Spot',entry_time:900,entry_price:'99'}]};assert.equal(chartModel(d).marks.length,2);d.chart.source='Binance Spot';assert.equal(chartModel(d),null);d.chart.source=source;d.chart.bars[1].time=1900;assert.equal(chartModel(d),null);});
 test('old Spot runtime cannot be displayed or armed as Bitget Futures',()=>{for(const change of [{market_source:'Binance Spot'},{market_source:undefined}]){const d={...data('ON'),...change};const v=view(d);assert.equal(v.canStart,false);assert.match(v.mode,/не подтверждено/);assert.equal(v.balance,'—');}const d=data();d.state.strategy_version='AURA_4.3_ACTIVE_PAPER_1';assert.equal(view(d).canStart,false);});
 test('missing production deployment has a clear Russian error and cannot arm',async()=>{const h=harness(async()=>response({detail:'Not Found'},404));await h.node('a43-refresh').handlers.click();assert.match(h.node('a43-message').textContent,/не установлена.*404/);assert.equal(h.node('a43-start').disabled,true);h.win.handlers.pagehide();});
+
+test('one-button diagnostics sends only read-only endpoint even without a portfolio',async()=>{
+ const calls=[];const h=harness(async(u,o)=>{calls.push([u,o.method]);return response({paper_only:true,exchange_execution:false,read_only:true,state_changed:false,market_source:'Bitget · USDT-M Futures / api.bitget.com',strategy_version:'AURA_4.3_ACTIVE_PAPER_3',status:'BLOCKED',checked_on_render:false,checked_at:Date.now()/1000,configuration:{server_enabled:false,missing_variables:[],explicit_global_stop:true},bitget:{status:'CONNECTED'},supabase:{status:'CONNECTED',account_status:'NOT_INITIALIZED'},scheduler:{status:'ERROR',code:'NO_CONFIRMED_TICK',last_successful_tick:null},virtual_balance:null,errors:['NO_CONFIRMED_TICK']});});
+ await h.node('a43-diagnose').handlers.click();
+ assert.deepEqual(calls,[['/api/active43/diagnostics','POST']]);
+ assert.equal(h.node('a43-diag-balance').textContent,'—');
+ assert.match(h.node('a43-diag-scheduler').textContent,/ERROR/);
+ assert.match(h.node('a43-diagnostic-message').textContent,/Render не подтверждён/);
+ assert.equal(h.node('a43-start').disabled,true);h.win.handlers.pagehide();
+});

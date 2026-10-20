@@ -1,0 +1,289 @@
+{
+  "checked_utc": "2026-10-19T23:10:49.175667+00:00",
+  "base_main": "1254dbe991c166f606e3421aa32f85464048bbd8",
+  "CODE_READY": true,
+  "PAPER_ONLY": true,
+  "PRODUCTION_READY": false,
+  "PRODUCTION_PAPER_VERIFIED": false,
+  "tests": {
+    "python_full": {
+      "status": "PASS",
+      "passed": 1443,
+      "warnings": 1,
+      "seconds": 221.83,
+      "postgres_opt_ins": [
+        "AURA_ACTIVE43_VERIFY_POSTGRES",
+        "AURA_AUTO42_VERIFY_POSTGRES",
+        "AURA_PRACTICE_VERIFY_POSTGRES"
+      ]
+    },
+    "python_diagnostics_final": {
+      "status": "PASS",
+      "passed": 19,
+      "additional_new_cases_after_full_run": 7,
+      "overlap_with_full_suite": 12
+    },
+    "javascript": {
+      "status": "PASS",
+      "passed": 208,
+      "suites_files": 18
+    },
+    "yaml": {
+      "status": "PASS",
+      "parser": "PyYAML 6.0.2 BaseLoader (temporary tool only; no app dependency)"
+    },
+    "syntax_imports_diff_whitespace": "PASS",
+    "browser": {
+      "status": "PASS",
+      "scope": "OFFLINE_SYNTHETIC_MEMORY_STORE_UI_ONLY_NOT_SUPABASE_OR_RENDER",
+      "real_chromium": true,
+      "real_owner_http_api": true,
+      "diagnostic_button": true,
+      "diagnostic_portfolio_unchanged": true,
+      "width": 430,
+      "panel_width": 406,
+      "native_indicators_closed_trade_visible": true,
+      "entry_exit_markers": 2,
+      "comparison_rows": 15,
+      "equity_canvas": true,
+      "open_count": 1,
+      "close_count": 1,
+      "production_paper_verified": false
+    },
+    "postgres": {
+      "checks": [
+        "MIGRATION_REAPPLY_LEGACY_ACCOUNTS_UNCHANGED",
+        "RLS_ANON_AUTHENTICATED_DENIED_SERVICE_ROLE_ONLY_SCOPE_ENFORCED",
+        "READ_ONLY_PEEK_DOES_NOT_INITIALIZE_AND_GRANTS_NO_TABLE_WRITES",
+        "NO_SIGNAL_NO_ORDER",
+        "SOURCE_OUTAGE_PAUSE_AND_RECOVERY",
+        "DATABASE_CLOCK_BLOCKS_LATE_OPEN_AT_COMMIT",
+        "SQL_FAILURE_ROLLBACK_AND_UNKNOWN_OPEN_OUTCOME_EXACTLY_ONCE",
+        "REAL_DATABASE_OUTAGE_RESTART_STATE_RESTORED",
+        "DIAGNOSTIC_ON_OPEN_POSITION_BYTE_IDENTICAL_LEDGER_AFTER_RESTART",
+        "LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN",
+        "LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED"
+      ],
+      "legacy_before_sha256": "a74acd7cebcc689c715541493cd92e09902bd6bf4e37d1a864f783f57d33bd65",
+      "legacy_after_sha256": "a74acd7cebcc689c715541493cd92e09902bd6bf4e37d1a864f783f57d33bd65",
+      "legacy_functions_before_sha256": "edf63895fed00cf308e2a9ea322f7b37096b2b7b82456757d637a69b7bb9d20e",
+      "legacy_functions_after_sha256": "edf63895fed00cf308e2a9ea322f7b37096b2b7b82456757d637a69b7bb9d20e",
+      "UNIT_TEST_PASSED": true,
+      "POSTGRESQL_VERIFIED": true,
+      "RLS_VERIFIED": true,
+      "TECHNICAL_EXECUTION": "PASS",
+      "PRODUCTION_PAPER_VERIFIED": false,
+      "adapter": "Mock HTTP bridge to actual local PostgreSQL production RPCs; not hosted PostgREST",
+      "postgres_version": "PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+      "image": "postgres:16-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4",
+      "synthetic_cases": true,
+      "production_access": false,
+      "real_orders": false,
+      "limits": {
+        "network": "none",
+        "ports": 0,
+        "memory": "512 MiB",
+        "cpus": 1
+      }
+    },
+    "postgres_cases": [
+      {
+        "scenario": "LONG_TP_DONCHIAN",
+        "status": "PASS",
+        "open_count": 1,
+        "close_count": 1
+      },
+      {
+        "scenario": "LONG_SL_DONCHIAN",
+        "status": "PASS",
+        "open_count": 1,
+        "close_count": 1
+      },
+      {
+        "scenario": "LONG_BOTH_DONCHIAN",
+        "status": "PASS",
+        "open_count": 1,
+        "close_count": 1
+      },
+      {
+        "scenario": "SHORT_TP_DONCHIAN",
+        "status": "PASS",
+        "open_count": 1,
+        "close_count": 1
+      },
+      {
+        "scenario": "SHORT_SL_DONCHIAN",
+        "status": "PASS",
+        "open_count": 1,
+        "close_count": 1
+      },
+      {
+        "scenario": "SHORT_BOTH_DONCHIAN",
+        "status": "PASS",
+        "open_count": 1,
+        "close_count": 1
+      },
+      {
+        "scenario": "LONG_TP_TREND_ATR",
+        "status": "PASS",
+        "open_count": 1,
+        "close_count": 1
+      }
+    ],
+    "native_sql_http_cycles": [
+      {
+        "status": "PASS",
+        "open_count": 1,
+        "close_count": 1,
+        "external_scheduler_http": true,
+        "no_browser": true
+      },
+      {
+        "status": "PASS",
+        "open_count": 1,
+        "close_count": 1,
+        "external_scheduler_http": true,
+        "no_browser": true
+      }
+    ],
+    "python_scheduler_final": {
+      "status": "PASS",
+      "passed": 5,
+      "additional_new_cases_after_full_run": 1,
+      "overlap_with_full_suite": 4
+    },
+    "unique_python_cases_passed_across_runs": 1451,
+    "github_real_workflow": {
+      "yaml_and_manual_dispatch": "PASS",
+      "diagnostic_job": "FAIL",
+      "reason": "SCHEDULER_NOT_CONFIGURED: expected secret was empty in job",
+      "trading_tick_step": "SKIPPED",
+      "outbound_http_sent": false,
+      "run_url": "https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39339951183"
+    }
+  },
+  "real_public_bitget_from_development": {
+    "status": "PASS",
+    "checked_on_render": false,
+    "checked_at": 1792450917,
+    "result": {
+      "status": "CONNECTED",
+      "code": null,
+      "price": "82032.6",
+      "quote_at_ms": 1792450918785,
+      "identity": {
+        "exchange": "BITGET",
+        "market_type": "USDT_PERPETUAL",
+        "product_type": "USDT-FUTURES",
+        "symbol": "BTCUSDT",
+        "settlement": "USDT"
+      },
+      "candles": {
+        "15m": {
+          "last_closed_at": 1792450800,
+          "last_open_at": 1792449900,
+          "count": 2
+        },
+        "1h": {
+          "last_closed_at": 1792450800,
+          "last_open_at": 1792447200,
+          "count": 2
+        },
+        "4h": {
+          "last_closed_at": 1792440000,
+          "last_open_at": 1792425600,
+          "count": 2
+        }
+      },
+      "scope": "CONNECTIVITY_AND_TWO_CLOSED_CANDLES_PER_TIMEFRAME_NOT_STRATEGY_VALIDATION"
+    }
+  },
+  "render_read_only": {
+    "api_health": {
+      "status": "PASS",
+      "http": 200
+    },
+    "owner_status_without_auth": {
+      "status": "PASS",
+      "http": 401
+    },
+    "openapi": {
+      "status": "PASS",
+      "http": 200,
+      "new_diagnostics_deployed": false
+    },
+    "main_frontend_sha256": "0920a1a209ec76b21bf0aa5a1c838f7809876e4b48b9fc57135ac57b5c155401"
+  },
+  "blocked": {
+    "bitget_from_render": "BLOCKED: no owner credentials/Render management access; new diagnostics not deployed",
+    "supabase_from_render": "BLOCKED: no production credentials; no production DB calls made",
+    "github_variables_and_secret_metadata": "BLOCKED: GitHub integration HTTP 403",
+    "scheduler_real_runs": "BLOCKED: expected GitHub Actions secret empty, no HTTP delivered; actual registered diagnostic run failed before contacting Render",
+    "real_natural_production_cycle": "NOT TESTED: no real Render OPEN/CLOSE logs inspected"
+  },
+  "github_workflow": {
+    "id": 389888954,
+    "state": "active",
+    "path": ".github/workflows/aura-active43.yml",
+    "initial_runs": 0,
+    "diagnostic_dispatch": "PASS: real manual diagnostic run accepted, trading step skipped",
+    "run_id": 39339951183,
+    "run_conclusion": "failure",
+    "failure_reason": "Expected AURA_ACTIVE43_BITGET_SCHEDULER_SECRET was empty in job; no request to Render",
+    "environments": []
+  },
+  "reviews": {
+    "code": {
+      "status": "PASS",
+      "method": "Separate explicit self-review pass; no external reviewer claimed",
+      "checks": [
+        "No changes to active43 core/strategy/market/selection/evidence or legacy engines",
+        "Read-only probes never call load/commit/tick/control/advance",
+        "Single-flight, bounded independent market/DB probes and shutdown cancellation",
+        "Explicit global OFF preserved; absent legacy flag uses dedicated opt-in, no durable mode mutation",
+        "Original job opt-in retained for scheduled/manual trading ticks; diagnostic dispatch routes only to read-only handler",
+        "After actual Actions failure, added safe exact-name missing-secret message; 5 scheduler tests PASS; no token values or automatic replacements"
+      ],
+      "resolved_findings": [
+        "Manual workflow was blocked with scheduler variable false",
+        "Feature gates prevented any connection diagnostics and hid initial balance",
+        "Read-only table access lacked an explicit grant in isolated PostgreSQL",
+        "Bound read-only response before extending parse buffer"
+      ],
+      "unresolved_critical_high": []
+    },
+    "security": {
+      "status": "PASS",
+      "method": "Separate explicit self-review against docs/ecc/TRADING_REVIEW.md and security-review skill",
+      "checks": [
+        "Owner auth plus CSRF on diagnostic button",
+        "Separate constant-time scheduler auth; rejects other token namespaces and cross-site requests",
+        "Fixed Bitget public GET allowlist; no private trading credentials or orders",
+        "Fixed single-table GET; validated hash/scope/config, no owner-supplied URLs/SQL",
+        "Service-role SELECT only grant; RLS and anon/authenticated denial verified in real PostgreSQL",
+        "Credential pattern scan on changed files; no raw env values/upstream errors in diagnostics or logs",
+        "Diagnostic delivery never promoted to trading tick or production verification",
+        "Actual diagnostic workflow verified trading step SKIPPED and missing-token exit before any HTTP; no credential/production mutations"
+      ],
+      "unresolved_critical_high": []
+    }
+  },
+  "production_changes": {
+    "merge": false,
+    "deploy": false,
+    "sql_applied": false,
+    "paper_enabled": false,
+    "github_scheduler_variable_changed": false,
+    "secrets_changed": false,
+    "real_orders": false,
+    "production_trades": false
+  },
+  "limitations": [
+    "Hosted Supabase PostgREST/JWT and Render connectivity remain unverified",
+    "Optional SELECT grant may require owner approval if deployed project lacks default privileges",
+    "Free Render sleep and GitHub schedule delays prevent any 24/7 guarantee",
+    "No profitability or natural production trading claim",
+    "Owner must make existing Render token available under exact repository Actions secret name; no token value in session"
+  ],
+  "existing_strategy_risk_and_legacy_paths_unchanged": true
+}

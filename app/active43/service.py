@@ -37,12 +37,15 @@ def scheduler_configured():
 class Service:
     def __init__(self,store=None,market=None,cfg=None,clock=time.time,quotes=None,reason=None):
         self.store=store;self.market=market;self.config=cfg or config();self.clock=clock;self.quotes=quotes;self.reason=reason
+        from .diagnostics import Diagnostics
+        self.diagnostics=Diagnostics(self)
         self.task=None;self.closed=False;self.lock=asyncio.Lock();self.boot=uuid.uuid4().hex;self.restored=False
     def ready(self):
         if self.store is None:raise DemoError(self.reason or 'ACTIVE43_NOT_CONFIGURED')
         if self.closed:raise DemoError('SERVICE_CLOSED')
     async def close(self):
         self.closed=True
+        await self.diagnostics.close()
         if self.task and not self.task.done():self.task.cancel();await asyncio.gather(self.task,return_exceptions=True)
         for component in (self.store,self.market,self.quotes):
             if component:await component.close()
@@ -173,7 +176,10 @@ class Service:
 
 
 def configured():
-    if os.getenv('AURA_ACTIVE43_ENABLED','').lower()!='true':return Service(reason='ACTIVE43_DISABLED')
+    # The dedicated Bitget flag is sufficient when the legacy global flag is absent.
+    # An explicit global false remains a kill switch; this never changes durable mode.
+    generic=os.getenv('AURA_ACTIVE43_ENABLED')
+    if generic is not None and generic.lower()!='true':return Service(reason='ACTIVE43_DISABLED')
     if os.getenv('AURA_ACTIVE43_BITGET_ENABLED','').lower()!='true':return Service(reason='ACTIVE43_BITGET_DISABLED')
     url=os.getenv('AURA_ACTIVE43_BITGET_SUPABASE_URL','');key=os.getenv('AURA_ACTIVE43_BITGET_SUPABASE_SERVICE_KEY','')
     if not url or not key:return Service(reason='ACTIVE43_STORAGE_NOT_CONFIGURED')

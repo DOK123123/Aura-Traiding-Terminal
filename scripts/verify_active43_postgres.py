@@ -62,6 +62,14 @@ class Bridge:
     def __init__(self,pg):self.pg=pg;self.lose_after_commit=False
     async def __call__(self,request):
         name=request.url.path.rsplit('/',1)[-1]
+        if request.method=='GET':
+            assert name=='aura_active43_bitget_account'
+            assert dict(request.url.params)=={'id':'eq.1','select':'revision,payload,sha256,saved_at','limit':'1'}
+            query="SELECT coalesce(jsonb_agg(to_jsonb(t)),'[]'::jsonb) FROM (SELECT revision,payload,sha256,saved_at FROM public.aura_active43_bitget_account WHERE id=1 LIMIT 1) t;"
+            try:value=json.loads(await asyncio.to_thread(self.pg.sql,query,'service_role'))
+            except Exception:return httpx.Response(503,json={'code':'OFFLINE_TEST_DB_FAILURE'})
+            return httpx.Response(200,json=value)
+        assert request.method=='POST'
         if name not in ('aura_active43_bitget_load','aura_active43_bitget_commit','aura_active43_bitget_history'):raise AssertionError('Wrong portfolio RPC')
         try:value=await asyncio.to_thread(self.pg.rpc,name,json.loads(request.content))
         except Exception:return httpx.Response(503,json={'code':'OFFLINE_TEST_DB_FAILURE'})
@@ -177,6 +185,7 @@ async def verify(pg):
     pg.sql("SELECT public.aura_active43_bybit_load(convert_from(decode('"+encoded+"','base64'),'UTF8')::jsonb);")
     before_functions=pg.legacy_functions_hash()
     before=pg.legacy_hash();sql=(ROOT/'scripts/active43_bitget_schema.sql').read_text();pg.sql(sql);pg.sql(sql)
+    grant=(ROOT/'scripts/active43_bitget_diagnostics_grant.sql').read_text();pg.sql(grant);pg.sql(grant)
     assert pg.legacy_hash()==before and pg.legacy_functions_hash()==before_functions
     real_now=int(pg.sql('SELECT public.aura_active43_bitget_now();'));assert abs(real_now-int(time.time()))<5
     # Superuser-controlled clock ONLY in this disposable verification DB.
@@ -191,6 +200,14 @@ async def verify(pg):
     assert pg.sql("SELECT bool_and(relrowsecurity) FROM pg_class WHERE oid IN ('aura_active43_bitget_account'::regclass,'aura_active43_bitget_events'::regclass);")=='t'
     assert pg.rpc('aura_active43_bitget_load',dict(seed=packed(auto42_initial(int(time.time())))))['error']=='CORRUPT_PORTFOLIO'
     checks.append('RLS_ANON_AUTHENTICATED_DENIED_SERVICE_ROLE_ONLY_SCOPE_ENFORCED')
+    assert pg.sql('SELECT count(*) FROM public.aura_active43_bitget_account;','service_role')=='0'
+    for privilege in ('INSERT','UPDATE','DELETE'):
+        assert pg.sql("SELECT has_table_privilege('service_role','public.aura_active43_bitget_account','"+privilege+"');")=='f'
+    empty=Bridge(pg).store(config())
+    assert await empty.peek() is None
+    assert pg.sql('SELECT count(*) FROM public.aura_active43_bitget_account;')=='0'
+    await empty.close()
+    checks.append('READ_ONLY_PEEK_DOES_NOT_INITIALIZE_AND_GRANTS_NO_TABLE_WRITES')
     cases=[]
     for side in ('LONG','SHORT'):
         for kind in ('TP','SL','BOTH'):
@@ -229,6 +246,15 @@ async def verify(pg):
     else:raise AssertionError('Stopped DB confirmed tick')
     docker('start',pg.name);pg.ready();assert await svc.load()==saved
     checks.append('REAL_DATABASE_OUTAGE_RESTART_STATE_RESTORED')
+    assert await store.peek()==saved
+    ledger_before=pg.sql("SELECT jsonb_build_object('account',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_active43_bitget_account t),'events',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_active43_bitget_events t));")
+    async def skip_market(report):report['bitget']={'status':'ERROR','code':'OFFLINE_TEST_ONLY'}
+    with patch.object(svc.diagnostics,'market_probe',side_effect=skip_market):
+        diagnostic=await svc.diagnostics.run(scheduler_delivery=True)
+    assert diagnostic['supabase']['status']=='CONNECTED' and diagnostic['state_changed'] is False
+    assert diagnostic['virtual_balance']==saved['state']['balance']
+    assert ledger_before==pg.sql("SELECT jsonb_build_object('account',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_active43_bitget_account t),'events',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_active43_bitget_events t));")
+    checks.append('DIAGNOSTIC_ON_OPEN_POSITION_BYTE_IDENTICAL_LEDGER_AFTER_RESTART')
     await svc.close();actual=[await public_cycle(pg,side) for side in ('LONG','SHORT')]
     assert pg.legacy_hash()==before;checks.append('LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN')
     assert pg.legacy_functions_hash()==before_functions

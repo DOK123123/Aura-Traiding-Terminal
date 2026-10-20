@@ -1,6 +1,15 @@
-name: Aura 4.3 Bitget isolated virtual scheduler (opt-in)
+name: Aura 4.3 Bitget Paper · diagnostics and scheduler
 on:
   workflow_dispatch:
+    inputs:
+      operation:
+        description: 'diagnostics: read-only, works while Paper/scheduler OFF. tick: enabled scheduler only.'
+        type: choice
+        options:
+          - diagnostics
+          - tick
+        default: diagnostics
+        required: true
   schedule:
     - cron: '2-59/5 * * * *'
 permissions:
@@ -10,14 +19,24 @@ concurrency:
   cancel-in-progress: false
 jobs:
   active43_tick:
-    if: vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true'
+    # Diagnostic dispatch never enters the trading tick, regardless of ON/OFF.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.operation == 'diagnostics') ||
+      (vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true' &&
+       (github.event_name == 'schedule' || inputs.operation == 'tick'))
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+      - name: Read-only server diagnostics (never executes a trade)
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'diagnostics'
+        env:
+          AURA_ACTIVE43_BITGET_SCHEDULER_SECRET: ${{ secrets.AURA_ACTIVE43_BITGET_SCHEDULER_SECRET }}
+        run: python -m scripts.active43_scheduler --diagnose
       - name: Independent paper-only tick (not Auto42)
+        if: github.event_name == 'schedule' || inputs.operation == 'tick'
         env:
           AURA_ACTIVE43_BITGET_SCHEDULER_SECRET: ${{ secrets.AURA_ACTIVE43_BITGET_SCHEDULER_SECRET }}
         run: python -m scripts.active43_scheduler

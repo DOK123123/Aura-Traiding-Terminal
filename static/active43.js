@@ -2,6 +2,7 @@
 (function(){'use strict';
  const labels={ON:'Включён',OFF:'Выключен',PAUSED:'Приостановлен',EMERGENCY:'Аварийный запрет входов',ERROR:'Ошибка',
  ACTIVE43_BITGET_DISABLED:'Bitget Futures выключен отдельной настройкой сервера',ACTIVE43_DISABLED:'Режим выключен в настройках сервера',ACTIVE43_STORAGE_NOT_CONFIGURED:'Отдельное хранилище Aura 4.3 не настроено',ACTIVE43_NOT_CONFIGURED:'Aura 4.3 не настроена',
+ NO_CONFIRMED_TICK:'Сохранённых успешных циклов ещё нет',STALE_TICK:'Последний успешный цикл устарел',DIAGNOSTIC_TIMEOUT:'Проверка превысила лимит времени',STORAGE_PERMISSION_DENIED:'БД запретила чтение отдельной таблицы Aura 4.3',STORAGE_AUTH:'Supabase отклонила серверный ключ',
  NOT_STARTED:'Автоматический режим ещё не запускался',INVALID_DATA:'Источник вернул некорректные значения свечей',INVALID_MARKET_DATA:'Рыночные данные не прошли проверку',SOURCE_MISMATCH:'Источник не соответствует BITGET · BTCUSDT USDT-M Futures',
  QUOTE_SOURCE_MISMATCH:'Котировка другого источника отклонена',STALE_QUOTE:'Котировка устарела',FUTURES_NOT_VALIDATED:'Стратегия Futures ещё не прошла независимую проверку',
  NO_SIGNAL:'Нет сигнала',NO_CONFIRMED_SETUP:'Нет подтверждённого входа',WARMUP:'Недостаточно истории',WARMUP_OR_FLAT_ATR:'Прогрев или нулевой ATR',
@@ -119,6 +120,32 @@
   }catch(e){if(run===generation){failed=true;out('message').textContent='Действие не подтверждено: '+(e.name==='AbortError'?'обновите состояние перед повтором':e.message);}}
   finally{if(run===generation){busy=false;if(!closed)render();}}
  }
+ let diagnosticBusy=false;
+ out('diagnose').addEventListener('click',async()=>{
+  if(closed||diagnosticBusy)return;diagnosticBusy=true;out('diagnose').disabled=true;
+  for(const k of ['bitget','storage','scheduler'])out('diag-'+k).textContent='Проверяется…';
+  for(const k of ['tick','balance','position','at','error'])out('diag-'+k).textContent='—';
+  out('diagnostic-message').textContent='Проверка с сервера, без торговых операций…';
+  try{
+   const b=await request('diagnostics',{method:'POST',headers:{'X-Aura-Paper':'local-only'}});
+   if(b.read_only!==true||b.state_changed!==false||b.market_source!=='Bitget · USDT-M Futures / api.bitget.com'||b.strategy_version!=='AURA_4.3_ACTIVE_PAPER_3')throw Error('Сервер не подтвердил безопасную диагностику Bitget');
+   out('diag-bitget').textContent=b.bitget.status+(b.bitget.code?' · '+label(b.bitget.code):' · '+num(b.bitget.price)+' USDT · '+date(b.bitget.quote_at_ms/1000)+' · закрытые 15m/1h/4h');
+   out('diag-storage').textContent=b.supabase.status+(b.supabase.code?' · '+label(b.supabase.code):b.supabase.account_status==='NOT_INITIALIZED'?' · счёт ещё не создан (проверка его не создаёт)':' · чтение RPC и портфеля подтверждено');
+   out('diag-scheduler').textContent=b.scheduler.status+(b.scheduler.code?' · '+label(b.scheduler.code):' · недавний сохранённый успешный tick');
+   out('diag-tick').textContent=date(b.scheduler.last_successful_tick);
+   out('diag-balance').textContent=num(b.virtual_balance);
+   const p=b.current_position;out('diag-position').textContent=p?`${p.direction} · ${num(p.size)} BTC · Entry ${num(p.entry_price)} · SL ${num(p.active_stop||p.stop_loss)} · TP ${num(p.take_profit)}`:b.virtual_balance===null?'Не подтверждена':'Нет открытой позиции';
+   out('diag-at').textContent=date(b.checked_at);
+   out('diag-error').textContent=(b.errors||[]).map(label).join('; ')||'Нет';
+   out('diagnostic-message').textContent=(b.checked_on_render?'Проверено на Render':'Проверено на сервере приложения; Render не подтверждён')+' · '+b.status+' · PAPER не включался. '+
+    (b.configuration.server_enabled?'Серверный модуль разрешён. ':'Серверный модуль выключен. ')+
+    (b.configuration.missing_variables.length?'Отсутствуют: '+b.configuration.missing_variables.join(', ')+'. ':'')+
+    (b.configuration.explicit_global_stop?'AURA_ACTIVE43_ENABLED явно выключен; требуется разрешение владельца на включение. ':'');
+  }catch(e){
+   for(const k of ['bitget','storage','scheduler'])out('diag-'+k).textContent='ERROR · не подтверждено';
+   out('diagnostic-message').textContent='Диагностика не подтверждена: '+(e.name==='AbortError'?'тайм-аут сервера':e.message);
+  }finally{diagnosticBusy=false;out('diagnose').disabled=false;}
+ });
  out('refresh').addEventListener('click',refresh);for(const [id,action] of [['start','START'],['stop','STOP'],['emergency','EMERGENCY']])out(id).addEventListener('click',()=>control(action));
  out('older').addEventListener('click',async()=>{
   if(busy||!data?.history_cursor)return;const run=++generation,epoch=data.state.epoch;busy=true;render();
