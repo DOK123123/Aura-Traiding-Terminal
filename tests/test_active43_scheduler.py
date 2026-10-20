@@ -48,7 +48,7 @@ def test_workflow_diagnostic_default_bypasses_only_trading_opt_in():
     text=Path('.github/workflows/aura-active43.yml').read_text()
     assert 'default: diagnostics' in text and '- diagnostics' in text and '- tick' in text
     assert 'run: python -m scripts.active43_scheduler --diagnose' in text
-    assert "if: github.event_name == 'schedule' || inputs.operation == 'tick'" in text
+    assert "default: off_only" in text and "--verify-off-tick" in text
     assert "vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true'" in text
     assert "inputs.operation == 'diagnostics' || inputs.operation == 'initialize'" in text
     assert '- initialize' in text and 'run: python -m scripts.active43_scheduler --initialize' in text
@@ -97,3 +97,38 @@ def test_diagnostic_codes_explain_database_stage_without_raw_server_data():
     assert 'NEVER_PRINT_THIS' not in json.dumps(summary)
     report['supabase']['code']='NEVER_PRINT_THIS'
     assert diagnostic_summary(report)['supabase_code']=='UNCLASSIFIED_DIAGNOSTIC_ERROR'
+
+
+def test_guarded_manual_tick_uses_only_existing_off_endpoint_and_confirmation():
+    from scripts.active43_scheduler import OFF_TICK_URL,SETUP_CONFIRMATION
+    b=dict(body(),mode='OFF',opened=0,processed=False,last_processed_closed_at=None,verification_only=True)
+    opener=Opener(b);logs=[];token='DUMMY_MANUAL_OFF_ONLY_'+'x'*40
+    assert run({'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET':token},opener=opener,emit=logs.append,off_tick=True)==0
+    assert len(opener.requests)==1
+    req=opener.requests[0]
+    assert req.full_url==OFF_TICK_URL and req.get_method()=='POST'
+    assert json.loads(req.data)=={'confirmation':SETUP_CONFIRMATION}
+    assert any('OFF_TICK_VERIFIED' in line for line in logs)
+    assert token not in ''.join(logs) and 'production_paper_verified=false' in ''.join(logs)
+    for change in ({'verification_only':False},{'mode':'ON'},{'opened':1},{'closed':1},{'state_saved':False}):
+        messages=[]
+        assert run({'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET':token},opener=Opener(dict(b,**change)),emit=messages.append,sleep=lambda _:None,off_tick=True)==1
+        assert not any('OFF_TICK_VERIFIED' in line for line in messages)
+
+
+def test_manual_tick_auth_failure_or_on_race_never_falls_back_to_trading_tick():
+    import io,urllib.error
+    from scripts.active43_scheduler import OFF_TICK_URL
+    for status,code in ((401,'SCHEDULER_AUTH_REQUIRED'),(409,'OFF_TICK_REQUIRES_EMPTY_OFF_ACCOUNT'),(503,'STORAGE_UNAVAILABLE')):
+        class Reject:
+            def __init__(self):self.urls=[]
+            def open(self,req,timeout):
+                self.urls.append(req.full_url)
+                raise urllib.error.HTTPError(req.full_url,status,'ignored',{},io.BytesIO(json.dumps({'detail':code}).encode()))
+        client=Reject();logs=[]
+        assert run({'AURA_ACTIVE43_BITGET_SCHEDULER_SECRET':'DUMMY_'+'x'*40},opener=client,emit=logs.append,sleep=lambda _:None,off_tick=True)==1
+        assert client.urls and set(client.urls)=={OFF_TICK_URL}
+        assert not any('OFF_TICK_VERIFIED' in line for line in logs)
+    opener=Opener(body())
+    assert run({},opener=opener,diagnose=True,off_tick=True,emit=lambda _:None)==1
+    assert not opener.requests

@@ -1,0 +1,62 @@
+{
+  "original_skipped_run": "https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39412966654",
+  "base_main_sha": "08ff508ff52a61d270ac8d9032e99f06f2fdc309",
+  "cause": "MANUAL_TICK_INCORRECTLY_GATED_BY_PERIODIC_SCHEDULER_VARIABLE",
+  "targeted_tests_passed": 46,
+  "javascript_tests_passed": 208,
+  "python_full_suite": {
+    "passed": 1497,
+    "skipped": 2,
+    "warnings": 1,
+    "seconds": 190.52,
+    "postgresql_opt_in": true,
+    "skip_reason": "Unchanged standalone Auto42 and Practice PostgreSQL suites require their own opt-ins"
+  },
+  "postgresql_verified": true,
+  "rls_verified": true,
+  "postgresql_preparation": {
+    "status": "PASS",
+    "scope": "ISOLATED_LOCAL_POSTGRES_AND_SYNTHETIC_MARKET_NOT_RENDER",
+    "concurrent_initialization": true,
+    "single_account": true,
+    "restart_restored": true,
+    "reinitialization_unchanged": true,
+    "balance": "10000",
+    "mode": "OFF",
+    "open_count": 0,
+    "close_count": 0,
+    "tick_count": 1,
+    "postflight_scheduler": "ACTIVE",
+    "production_paper_verified": false
+  },
+  "postgresql_checks": [
+    "MIGRATION_REAPPLY_LEGACY_ACCOUNTS_UNCHANGED",
+    "RLS_ANON_AUTHENTICATED_DENIED_SERVICE_ROLE_ONLY_SCOPE_ENFORCED",
+    "READ_ONLY_PEEK_DOES_NOT_INITIALIZE_AND_GRANTS_NO_TABLE_WRITES",
+    "ACCOUNT_PREPARATION_CONCURRENT_HTTP_INIT_OFF_HEARTBEAT_AND_DATABASE_RESTART",
+    "NO_SIGNAL_NO_ORDER",
+    "SOURCE_OUTAGE_PAUSE_AND_RECOVERY",
+    "DATABASE_CLOCK_BLOCKS_LATE_OPEN_AT_COMMIT",
+    "SQL_FAILURE_ROLLBACK_AND_UNKNOWN_OPEN_OUTCOME_EXACTLY_ONCE",
+    "REAL_DATABASE_OUTAGE_RESTART_STATE_RESTORED",
+    "DIAGNOSTIC_ON_OPEN_POSITION_BYTE_IDENTICAL_LEDGER_AFTER_RESTART",
+    "LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN",
+    "LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED"
+  ],
+  "postgresql_trade_scenarios": 7,
+  "production_off_tick": "NOT_YET_RUN",
+  "production_paper_verified": false,
+  "paper_enabled_by_task": false,
+  "real_exchange_orders": false,
+  "production_sql_applied": false,
+  "merge_performed": false,
+  "deploy_performed": false,
+  "code_review": "PASS: event/step routing, saved-mode opt-in, bounded guarded retries; no engine changes",
+  "security_review": "PASS: fixed authenticated endpoints, no control call, no secret output, safe input validation",
+  "additional_policy_validation_tests": {
+    "passed": 4,
+    "included_in_targeted_46": true,
+    "added_after_full_suite_collection": true
+  },
+  "syntax_and_app_import": "PASS"
+}

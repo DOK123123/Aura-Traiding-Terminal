@@ -96,7 +96,9 @@ def verified(body):
     return at is None and not body['processed'] or type(at) is int and at>=0 and at%300==0
 
 
-def run(env=None,opener=None,sleep=time.sleep,emit=print,diagnose=False):
+def run(env=None,opener=None,sleep=time.sleep,emit=print,diagnose=False,off_tick=False):
+    if diagnose and off_tick:
+        emit('ACTIVE43: INCOMPATIBLE_OPERATIONS; no HTTP request sent');return 1
     env=os.environ if env is None else env;token=env.get(SECRET_VARIABLE,'')
     if diagnose:emit('ACTIVE43 client auth configuration: '+json.dumps(auth_configuration(env),sort_keys=True))
     if not token:
@@ -105,7 +107,9 @@ def run(env=None,opener=None,sleep=time.sleep,emit=print,diagnose=False):
     client=opener or urllib.request.build_opener(NoRedirect)
     for attempt in range(3):
         try:
-            req=urllib.request.Request(DIAGNOSTIC_URL if diagnose else URL,data=b'',method='POST',headers={TOKEN_HEADER:token})
+            endpoint=DIAGNOSTIC_URL if diagnose else OFF_TICK_URL if off_tick else URL
+            payload=json.dumps({'confirmation':SETUP_CONFIRMATION}).encode() if off_tick else b''
+            req=urllib.request.Request(endpoint,data=payload,method='POST',headers={TOKEN_HEADER:token,'Content-Type':'application/json'})
             if diagnose:emit('ACTIVE43 request auth: '+json.dumps(dict(header_attached=any(k.lower()==TOKEN_HEADER.lower() for k,v in req.header_items()),origin_header_present=req.has_header('Origin'),method=req.get_method())))
             with client.open(req,timeout=90) as r:
                 raw=r.read(65537)
@@ -117,6 +121,9 @@ def run(env=None,opener=None,sleep=time.sleep,emit=print,diagnose=False):
                     emit('ACTIVE43 read-only diagnostic delivery confirmed: '+json.dumps(diagnostic_summary(body),sort_keys=True))
                     return 0 if body['bitget']['status']=='CONNECTED' and body['supabase']['status']=='CONNECTED' else 1
                 if not verified(body):raise ValueError()
+                if off_tick and (body.get('verification_only') is not True or body['mode']!='OFF' or body['opened']!=0 or body['closed']!=0):
+                    raise ValueError()
+                if off_tick:emit('ACTIVE43 OFF_TICK_VERIFIED: saved=true mode=OFF opened=0 closed=0 production_paper_verified=false')
                 emit('ACTIVE43 tick confirmed: '+json.dumps({k:body[k] for k in ('mode','processed','duplicate','opened','closed')}));return 0
         except urllib.error.HTTPError as exc:
             emit('ACTIVE43 request rejected: HTTP '+str(exc.code)+' code='+rejected_response(exc))
@@ -195,5 +202,6 @@ if __name__=='__main__':
     actions=parser.add_mutually_exclusive_group()
     actions.add_argument('--diagnose',action='store_true',help='read-only probes, no scheduler tick or portfolio writes')
     actions.add_argument('--initialize',action='store_true',help='explicit isolated account setup and guarded OFF heartbeat; never enables trading')
+    actions.add_argument('--verify-off-tick',action='store_true',help='guarded server OFF-only tick; no initialize, enable or trade; fails closed if account is not empty OFF')
     args=parser.parse_args()
-    raise SystemExit(prepare() if args.initialize else run(diagnose=args.diagnose))
+    raise SystemExit(prepare() if args.initialize else run(diagnose=args.diagnose,off_tick=args.verify_off_tick))

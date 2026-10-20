@@ -3,13 +3,21 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: 'diagnostics: read-only, works while Paper/scheduler OFF. initialize: isolated OFF account + guarded heartbeat. tick: enabled scheduler only.'
+        description: 'diagnostics: read-only, works while Paper/scheduler OFF. initialize: isolated OFF account + guarded heartbeat. tick: manual cycle independent of schedule opt-in.'
         type: choice
         options:
           - diagnostics
           - initialize
           - tick
         default: diagnostics
+        required: true
+      tick_policy:
+        description: 'tick only: off_only verifies persistence without trades; saved_mode obeys the existing account mode and may trade only if already ON. Does not enable Paper.'
+        type: choice
+        options:
+          - off_only
+          - saved_mode
+        default: off_only
         required: true
   schedule:
     - cron: '2-59/5 * * * *'
@@ -20,17 +28,31 @@ concurrency:
   cancel-in-progress: false
 jobs:
   active43_tick:
-    # Diagnostic dispatch never enters the trading tick, regardless of ON/OFF.
+    # Explicit manual operations are independent of the periodic schedule opt-in.
     if: >-
-      (github.event_name == 'workflow_dispatch' && (inputs.operation == 'diagnostics' || inputs.operation == 'initialize')) ||
-      (vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true' &&
-       (github.event_name == 'schedule' || inputs.operation == 'tick'))
+      (github.event_name == 'workflow_dispatch' && (inputs.operation == 'diagnostics' || inputs.operation == 'initialize' || inputs.operation == 'tick')) ||
+      (github.event_name == 'schedule' && vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+      - name: Validate manual tick policy and report schedule gate (no secrets)
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          OPERATION: ${{ inputs.operation }}
+          TICK_POLICY: ${{ inputs.tick_policy }}
+          PERIODIC_SCHEDULE_ENABLED: ${{ vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true' }}
+        run: |
+          python - <<'PYTHON'
+          import os
+          if os.environ['EVENT_NAME'] == 'workflow_dispatch' and os.environ['OPERATION'] == 'tick':
+              if os.environ['TICK_POLICY'] not in ('', 'off_only', 'saved_mode'):
+                  raise SystemExit('ACTIVE43: INVALID_MANUAL_TICK_POLICY; no HTTP request sent')
+          print('ACTIVE43 periodic_schedule_enabled=' + os.environ['PERIODIC_SCHEDULE_ENABLED'])
+          print('ACTIVE43 manual dispatch does not enable Paper or periodic scheduling')
+          PYTHON
       - name: Read-only server diagnostics (never executes a trade)
         if: github.event_name == 'workflow_dispatch' && inputs.operation == 'diagnostics'
         env:
@@ -41,8 +63,13 @@ jobs:
         env:
           AURA_ACTIVE43_BITGET_SCHEDULER_SECRET: ${{ secrets.AURA_ACTIVE43_BITGET_SCHEDULER_SECRET }}
         run: python -m scripts.active43_scheduler --initialize
-      - name: Independent paper-only tick (not Auto42)
-        if: github.event_name == 'schedule' || inputs.operation == 'tick'
+      - name: Manual OFF-only tick (no trades; saved state verified)
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'tick' && (inputs.tick_policy == 'off_only' || inputs.tick_policy == '')
+        env:
+          AURA_ACTIVE43_BITGET_SCHEDULER_SECRET: ${{ secrets.AURA_ACTIVE43_BITGET_SCHEDULER_SECRET }}
+        run: python -m scripts.active43_scheduler --verify-off-tick
+      - name: Independent paper-only tick in saved account mode (does not enable Paper)
+        if: (github.event_name == 'schedule' && vars.AURA_ACTIVE43_BITGET_SCHEDULER_ENABLED == 'true') || (github.event_name == 'workflow_dispatch' && inputs.operation == 'tick' && inputs.tick_policy == 'saved_mode')
         env:
           AURA_ACTIVE43_BITGET_SCHEDULER_SECRET: ${{ secrets.AURA_ACTIVE43_BITGET_SCHEDULER_SECRET }}
         run: python -m scripts.active43_scheduler
