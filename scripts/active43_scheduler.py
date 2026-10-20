@@ -5,7 +5,7 @@ URL='https://aura-traiding-terminal.onrender.com/api/active43/tick'
 
 SECRET_VARIABLE='AURA_ACTIVE43_BITGET_SCHEDULER_SECRET'
 TOKEN_HEADER='X-Aura-Active43-Bitget-Token'
-AUTH_CODES={'SCHEDULER_NOT_CONFIGURED','SCHEDULER_AUTH_REQUIRED','SCHEDULER_TOKEN_MISSING','SCHEDULER_TOKEN_MISMATCH','SCHEDULER_ORIGIN_REJECTED','SCHEDULER_SECRET_FORMAT_INVALID'}
+AUTH_CODES={'SCHEDULER_NOT_CONFIGURED','SCHEDULER_AUTH_REQUIRED','SCHEDULER_TOKEN_MISSING','SCHEDULER_TOKEN_DUPLICATED','SCHEDULER_TOKEN_MISMATCH','SCHEDULER_ORIGIN_REJECTED','SCHEDULER_SECRET_FORMAT_INVALID'}
 
 
 def auth_configuration(env):
@@ -23,7 +23,13 @@ def rejected_response(exc):
         body=json.loads(raw) if len(raw)<=4096 else {}
         detail=body.get('detail') if type(body) is dict else None
         code=detail.get('code') if type(detail) is dict else detail
-        return code if type(code) is str and code in AUTH_CODES else 'UNCLASSIFIED_HTTP_ERROR'
+        safe=code if type(code) is str and code in AUTH_CODES else 'UNCLASSIFIED_HTTP_ERROR'
+        evidence={}
+        if type(detail) is dict and detail.get('component')=='AURA43_SCHEDULER_AUTH':
+            evidence['component']='AURA43_SCHEDULER_AUTH'
+            for key in ('header_received','origin_rejected'):
+                if type(detail.get(key)) is bool:evidence[key]=detail[key]
+        return safe+(' evidence='+json.dumps(evidence,sort_keys=True) if evidence else '')
     except (ValueError,OSError):return 'UNCLASSIFIED_HTTP_ERROR'
 
 
