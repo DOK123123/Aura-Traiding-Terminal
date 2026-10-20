@@ -109,3 +109,14 @@ Local HTTP-to-real-SQL tests are not hosted PostgREST/Render verification. No
 production account creation is claimed until the deployed initialize endpoint and
 its stored readback actually succeed. No real exchange orders or private exchange
 credentials are involved.
+
+## Actual GitHub/Render setup attempt
+
+[Actions #17](https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/39397073669)
+accepted the new explicit initialize operation from this branch. Real Render
+preflight confirmed Bitget/Supabase CONNECTED and account NOT_INITIALIZED. The
+next request returned HTTP 404, `SETUP_API_NOT_DEPLOYED`, at phase INITIALIZE.
+Public Render OpenAPI also confirms the two new routes are not deployed. The
+unrestricted trading step was SKIPPED. No production account creation, heartbeat
+or balance/position change is claimed. The remaining gate is publishing the
+reviewed server code, not another token, SQL or risk-setting change.

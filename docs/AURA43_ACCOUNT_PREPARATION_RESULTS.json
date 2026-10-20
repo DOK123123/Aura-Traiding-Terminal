@@ -133,5 +133,18 @@
     "Publish reviewed PR and deploy latest Render main while PAPER stays OFF",
     "Actions -> Run workflow -> operation=initialize"
   ],
-  "production_limitation": "New setup routes are not deployed; no hosted write/readback or OFF tick claimed until they succeed."
+  "production_limitation": "New setup routes are not deployed; no hosted write/readback or OFF tick claimed until they succeed.",
+  "production_setup_attempt": {
+    "run_id": 39397073669,
+    "run_number": 17,
+    "preflight_bitget": "CONNECTED",
+    "preflight_supabase": "CONNECTED",
+    "preflight_account_status": "NOT_INITIALIZED",
+    "initialization_http_status": 404,
+    "error_code": "SETUP_API_NOT_DEPLOYED",
+    "new_routes_in_render_openapi": false,
+    "trading_step": "SKIPPED",
+    "production_account_created": false,
+    "reason": "Reviewed new server routes require owner-authorized release; no automatic deploy performed"
+  }
 }
