@@ -221,6 +221,15 @@ async def account_preparation(pg):
             responses=await asyncio.gather(*[c.post('/api/active43/verify-off-tick',headers=hdr,json=body) for _ in range(2)])
             assert all(r.status_code==200 and r.json()['mode']=='OFF' and r.json()['opened']==r.json()['closed']==0 for r in responses)
             rows=await a.store.history(limit=10);assert [r['kind'] for r in rows]==['TICK']
+            # New owner GET must leave real PostgreSQL account and ledger byte-identical.
+            sql_snapshot="SELECT jsonb_build_array((SELECT jsonb_agg(to_jsonb(a)) FROM public.aura_active43_bitget_account a),(SELECT jsonb_agg(to_jsonb(e) ORDER BY seq) FROM public.aura_active43_bitget_events e))::text;"
+            before_read=pg.sql(sql_snapshot)
+            with patch.dict(os.environ,AURA_TESTNET_VIEW_PASSWORD='DUMMY_OWNER_READONLY_PASSWORD'):
+                assert (await c.get('/api/active43/off-only-readiness')).status_code==401
+                reads=await asyncio.gather(*[c.get('/api/active43/off-only-readiness',auth=('aura','DUMMY_OWNER_READONLY_PASSWORD')) for _ in range(3)])
+            assert all(r.status_code==200 and r.json()['status']=='PASS' and r.json()['mode']=='OFF' and r.json()['pending_operations']==0 for r in reads)
+            assert pg.sql(sql_snapshot)==before_read
+
             result=(await c.post('/api/active43/diagnostics/scheduler',headers=hdr)).json()
             assert result['scheduler']['status']=='ACTIVE' and result['mode']=='OFF' and not result['production_paper_verified']
         saved=await a.store.peek();await a.close();await b.close()
@@ -232,7 +241,7 @@ async def account_preparation(pg):
         assert all(e['kind']=='TICK' for e in await restored.store.history(limit=10))
         await restored.close()
     return dict(status='PASS',scope='ISOLATED_LOCAL_POSTGRES_AND_SYNTHETIC_MARKET_NOT_RENDER',
-        concurrent_initialization=True,single_account=True,restart_restored=True,reinitialization_unchanged=True,
+        owner_readiness_get_byte_identical_sql=True,concurrent_initialization=True,single_account=True,restart_restored=True,reinitialization_unchanged=True,
         balance='10000',mode='OFF',open_count=0,close_count=0,tick_count=1,postflight_scheduler='ACTIVE',production_paper_verified=False)
 
 

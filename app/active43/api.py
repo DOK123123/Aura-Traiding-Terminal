@@ -130,3 +130,14 @@ async def initialize_account(request:Request,body:Initialize):
 @router.post('/verify-off-tick',dependencies=[Depends(scheduler)])
 async def verify_off_tick(request:Request,body:Initialize):
     return await respond(svc(request).verify_off_tick())
+
+
+@router.get('/off-only-readiness',dependencies=[Depends(owner)])
+async def off_only_readiness(request:Request):
+    from .readiness import inspect,blocked
+    service=getattr(request.app.state,'active43',None)
+    if service is None:
+        result=blocked();result['errors']=['ACTIVE43_NOT_CONFIGURED']
+    else:
+        result=await inspect(service)
+    return JSONResponse(result,headers=HEADERS)
