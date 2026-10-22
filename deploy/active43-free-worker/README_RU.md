@@ -5,6 +5,15 @@ PAPER, внешние scheduler и платные ресурсы этой раб
 Paper Practice не меняются. Уже существующий `deploy/auto42-worker/` оставлен как есть;
 для 4.3 используется другой Worker, secret binding и API namespace.
 
+## Обновление уже существующего Worker
+
+Для текущего `aura-active43-scheduler` **не создавайте новый Worker** и не запускайте
+слепо `wrangler deploy` с именем из шаблона. Исправление диагностики публикуется
+в существующем Worker владельцем после Merge. Production-настройки в этой работе
+не изменяются, новые ресурсы/ключи не нужны. Подробные события, доказательства,
+ограничения Free и процедура двух off_only циклов:
+[DIAGNOSTICS_VERIFICATION.md](DIAGNOSTICS_VERIFICATION.md).
+
 ## Выбор, цена, карта и Россия
 
 Проверка официальных источников: 2026-10-20.
@@ -84,7 +93,8 @@ Secret binding `AURA_ACTIVE43_BITGET_SCHEDULER_SECRET` — **то же суще�
 
 - `AURA_ACTIVE43_CRON_ENABLED=false` (default): cron только пишет DISABLED, без HTTP.
 - При enabled=true, `AURA_ACTIVE43_OPERATION=diagnostics` (default) — только read-only
-  `/diagnostics/scheduler`. BLOCKED отображается как BLOCKED/ошибка, не readiness PASS.
+  `/diagnostics/scheduler`. Корректный BLOCKED даёт DIAGNOSTICS_BLOCKED без исключения
+  доставки; готовность остаётся BLOCKED, а не PASS. Ошибки auth/сети/контракта остаются ошибками.
 - `off_only` — существующий `/verify-off-tick` с фиксированным confirmation. Требуются
   пустой OFF-счёт и серверные risk guards; OPEN/CLOSE должны быть 0. Не инициализирует счёт.
 - `saved_mode` — существующий `/tick`; соблюдает сохранённые ON/OFF/PAUSED/EMERGENCY.
@@ -167,7 +177,7 @@ Deploy в этой задаче запрещён и не выполнен. До�
   Cloudflare → Render, Free CPU на реальном runtime, wake-up после настоящего idle
   сна, two scheduled OFF runs, 24–48 часов автономности и natural production OPEN/CLOSE.
 
-**Тесты: 1532 Python passed, 2 skipped; 223 JavaScript passed, включая 15 новых.**
+**Архивная проверка первоначального PR #24: 1532 Python passed, 2 skipped; 223 JavaScript passed, включая 15 новых.**
 Реальный локальный PostgreSQL выполнен, legacy accounts/functions неизменны.
 Два skip — opt-in suites старых Auto42/Practice; единственное предупреждение —
 существующий Starlette/AnyIO deprecation. Syntax/app import/diff checks прошли.
