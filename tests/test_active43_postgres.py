@@ -13,6 +13,7 @@ def test_actual_sql_transactions_roles_recovery_and_cycles(tmp_path,monkeypatch)
     monkeypatch.delenv('RENDER',raising=False)
     report=verifier.run(tmp_path/'active43.json')
     assert report['POSTGRESQL_VERIFIED'] and report['RLS_VERIFIED']
+    assert report['preparation']['owner_readiness_get_byte_identical_sql']
     assert len(report['cases'])==7 and len(report['checks'])>=8
     assert not report['PRODUCTION_PAPER_VERIFIED']
     assert len(report['render_cycles'])==2

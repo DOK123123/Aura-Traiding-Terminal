@@ -174,6 +174,25 @@
       <details><summary>Закрытые виртуальные сделки</summary><p id="a42-history-note">История не загружена</p><ul id="a42-history"></ul><button id="a42-older" type="button" disabled>Более ранние сделки</button></details>
       <a href="/api/auto42/journal">Журнал событий (JSON, первая страница)</a>
     </details>
+  <details id="active43-off-readiness">
+    <summary>AURA 4.3 · готовность Cloudflare off_only · только чтение</summary>
+    <a href="/api/paper/login">Вход владельца</a>
+    <p>Свежий снимок отдельного счёта Supabase. Не выполняет tick, создание счёта или торговые команды. PASS относится только к предпосылкам off_only на момент чтения; это не разрешение PAPER и не подтверждение работы Cloudflare.</p>
+    <button id="a43-ro-check">ПРОВЕРИТЬ OFF-ONLY БЕЗ ИЗМЕНЕНИЙ</button>
+    <dl class="a43-grid">
+      <div><dt>Готовность off_only</dt><dd id="a43-ro-status">BLOCKED</dd></div>
+      <div><dt>Сохранённый режим PAPER</dt><dd id="a43-ro-mode">Не подтверждено</dd></div>
+      <div><dt>Открытая позиция</dt><dd id="a43-ro-position">Не подтверждено</dd></div>
+      <div><dt>pending · ожидающий вход</dt><dd id="a43-ro-pending">Не подтверждено</dd></div>
+      <div><dt>pending_exit · ожидающий выход</dt><dd id="a43-ro-exit">Не подтверждено</dd></div>
+      <div><dt>Ожидающих операций</dt><dd id="a43-ro-count">Не подтверждено</dd></div>
+      <div><dt>data_recovery_armed</dt><dd id="a43-ro-recovery">Не подтверждено</dd></div>
+      <div><dt>Risk guards сохранённого счёта</dt><dd id="a43-ro-risk">Не подтверждено</dd></div>
+      <div><dt>Последнее подтверждённое чтение UTC</dt><dd id="a43-ro-at">—</dd></div>
+    </dl>
+    <p id="a43-ro-reason" role="status" aria-live="polite">Нет подтверждённого чтения Supabase</p>
+  </details>
+
   <details id="active43-panel">
     <summary>AURA 4.3 ACTIVE PAPER v3 · BITGET FUTURES</summary>
     <p>Exchange: <strong>BITGET</strong> · Market: <strong>BTCUSDT USDT-M Futures</strong></p>
@@ -395,6 +414,7 @@
 </main>
 <script src="/static/forward_validation.js" defer></script>
 <script src="/static/auto42.js" defer></script>
+<script src="/static/active43-readiness.js" defer></script>
 <script src="/static/active43.js" defer></script>
 <script src="/static/bybit_linear.js" defer></script>
 <script src="/static/exchange_diagnostics.js" defer></script>
