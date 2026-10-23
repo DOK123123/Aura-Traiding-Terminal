@@ -81,10 +81,6 @@ class Diagnostics:
         market = Market(clock=self.service.clock)
         try:
             async with asyncio.timeout(24):
-                quote = await market.client.quote()
-                error = await market.specs()
-                if error:
-                    raise DemoError(error)
                 candles = {}
                 for tf in ('15m', '1h', '4h'):
                     step = STEPS[tf]
@@ -93,8 +89,13 @@ class Diagnostics:
                     if rows['identity'] != IDENTITY or rows['bars'][-1]['time'] + step != end:
                         raise DemoError('STALE_OR_MISMATCHED_DATA')
                     candles[tf] = dict(last_closed_at=end, last_open_at=end-step, count=len(rows['bars']))
-                # A slow probe must not label the starting quote as current.
-                market.client.fresh_time(quote['server_at_ms'])
+                # Candle checks can take >10s; obtain the displayed quote afterwards.
+                # Its clock/request/ticker freshness gates remain unchanged.
+                quote = await market.client.quote()
+                error = await market.specs()
+                if error:
+                    raise DemoError(error)
+                market.client.fresh_time(quote['server_at_ms'],check='diagnostic_quote.ts')
                 if any(value['last_closed_at'] != int(self.service.clock()) // STEPS[tf] * STEPS[tf] for tf,value in candles.items()):
                     raise DemoError('STALE_OR_MISMATCHED_DATA')
                 result['bitget'] = dict(status='CONNECTED', code=None, price=quote['last_price'],
@@ -102,6 +103,8 @@ class Diagnostics:
                                         scope='CONNECTIVITY_AND_TWO_CLOSED_CANDLES_PER_TIMEFRAME_NOT_STRATEGY_VALIDATION')
         except (DemoError, MarketError) as exc:
             result['bitget'] = dict(status='ERROR', code=exc.code)
+            if isinstance(exc,MarketError) and exc.freshness is not None:
+                result['bitget']['freshness']=exc.freshness
         except TimeoutError:
             result['bitget'] = dict(status='ERROR', code='DIAGNOSTIC_TIMEOUT')
         finally:

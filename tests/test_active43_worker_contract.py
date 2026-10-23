@@ -62,3 +62,36 @@ console.log(JSON.stringify({result,logs}));
     assert result['result']['status'] == expected
     assert [e['event'] for e in result['logs']] == ['REQUEST_STARTED','RENDER_REACHED','DIAGNOSTICS_RECEIVED'] + (['DIAGNOSTICS_BLOCKED'] if expected == 'BLOCKED' else [])
     assert token not in out.stdout and 'virtual_balance' not in out.stdout and 'current_position' not in out.stdout
+
+
+def test_saved_mode_off_heartbeat_does_not_require_bitget_or_open_positions(monkeypatch):
+    from tests.test_active43_setup import SeedStore
+    token='DUMMY_SAVED_MODE_FRESHNESS_'+'x'*40
+    monkeypatch.setenv('AURA_ACTIVE43_BITGET_SCHEDULER_SECRET',token)
+    async def response():
+        store=SeedStore();store.exists=True
+        svc=Service(store,clock=lambda:1800000030)
+        app=FastAPI();app.include_router(router);app.state.active43=svc
+        with patch.object(svc,'snapshot',side_effect=AssertionError('OFF must not request market data')):
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://test') as c:
+                responses=[await c.post('/api/active43/tick',headers={'X-Aura-Active43-Bitget-Token':token}) for _ in range(2)]
+        assert all(r.status_code==200 for r in responses)
+        assert [r.json()['duplicate'] for r in responses]==[False,True]
+        assert store.state['mode']=='OFF' and store.state['balance']=='10000'
+        assert store.state['position'] is None and [e['kind'] for e in store.events]==['TICK']
+        await svc.close()
+        return [r.json() for r in responses]
+    bodies=asyncio.run(response())
+    script="""
+import {run} from './deploy/active43-free-worker/worker.mjs';
+let raw='';for await(const chunk of process.stdin)raw+=chunk;
+const {bodies,token}=JSON.parse(raw),logs=[];
+for(const body of bodies)await run({AURA_ACTIVE43_CRON_ENABLED:'true',AURA_ACTIVE43_OPERATION:'saved_mode',AURA_ACTIVE43_BITGET_SCHEDULER_SECRET:token},
+ {emit:b=>logs.push(b),fetcher:async(url)=>{if(!url.endsWith('/tick'))throw Error('WRONG_PATH');return Response.json(body);}});
+console.log(JSON.stringify(logs));
+"""
+    out=subprocess.run(['node','--input-type=module','-e',script],input=json.dumps(dict(bodies=bodies,token=token)),
+        text=True,capture_output=True,timeout=10,check=True,cwd=Path(__file__).resolve().parents[1])
+    logs=json.loads(out.stdout);saves=[r for r in logs if r['event']=='TICK_SAVED']
+    assert len(saves)==2 and all(r['status']=='COMPLETED' and r['mode']=='OFF' and r['opened']==r['closed']==0 and r['state_saved'] for r in saves)
+    assert token not in out.stdout

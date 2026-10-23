@@ -1,6 +1,7 @@
 """Bitget public USDT-M perpetual GET allowlist; no credentials or order methods."""
 import asyncio
 import json
+import logging
 import time
 from decimal import Decimal, InvalidOperation
 
@@ -16,11 +17,13 @@ CONTRACTS = '/api/v2/mix/market/contracts'
 TICKER = '/api/v2/mix/market/ticker'
 HISTORY = '/api/v2/mix/market/history-candles'
 PATHS = {TIME, CONTRACTS, TICKER, HISTORY}
+LOGGER = logging.getLogger(__name__)
 
 
 class MarketError(Exception):
-    def __init__(self, code):
+    def __init__(self, code, freshness=None):
         self.code = code
+        self.freshness = freshness
         super().__init__(code)
 
 
@@ -57,10 +60,18 @@ class Client:
     async def close(self):
         await self.http.aclose()
 
-    def fresh_time(self, value):
+    def fresh_time(self, value, *, check='timestamp', path=None, attempt=None, elapsed_ms=None):
         at = stamp(value)
-        if not -3000 <= self.clock()*1000-at <= 10000:
-            raise MarketError('UPSTREAM_CLOCK_OR_STALE_RESPONSE')
+        local = self.clock()*1000
+        age = local-at
+        if not -3000 <= age <= 10000:
+            # Public timestamps only. Never log URLs/params, response bodies or headers.
+            detail = dict(check=check if check in ('timestamp','requestTime','serverTime','ticker.ts','diagnostic_quote.ts') else 'timestamp',
+                path=path if path in PATHS else None,render_at_ms=local,upstream_at_ms=at,age_ms=age,
+                max_age_ms=10000,max_future_ms=3000,attempt=attempt,request_elapsed_ms=elapsed_ms)
+            LOGGER.warning('%s',json.dumps(dict(component='ACTIVE43_BITGET_PUBLIC',event='FRESHNESS_REJECTED',
+                code='UPSTREAM_CLOCK_OR_STALE_RESPONSE',**detail)))
+            raise MarketError('UPSTREAM_CLOCK_OR_STALE_RESPONSE',freshness=detail)
         return at
 
     async def get(self, path, params):
@@ -79,6 +90,7 @@ class Client:
                 for attempt in range(2):
                     try:
                         async with self.slots:
+                            started=time.monotonic()
                             async with self.http.stream('GET',BASE+path,params=params) as r:
                                 if r.status_code in (403,451):raise MarketError('REGION_OR_ACCESS_RESTRICTED')
                                 if r.status_code in (418,429):
@@ -95,14 +107,20 @@ class Client:
                                 if not isinstance(data,dict) or type(data.get('code')) is not str:raise MarketError('INVALID_RESPONSE')
                                 if data['code']=='429':self.cooldown=self.clock()+60;raise MarketError('RATE_LIMIT')
                                 if data['code']!='00000':raise MarketError('UPSTREAM_API_ERROR')
-                                self.fresh_time(data.get('requestTime'))
+                                self.fresh_time(data.get('requestTime'),check='requestTime',path=path,attempt=attempt+1,
+                                    elapsed_ms=round((time.monotonic()-started)*1000,3))
                                 if 'symbol' in data and data['symbol']!='BTCUSDT':raise MarketError('SOURCE_MISMATCH')
                                 if 'productType' in data and data['productType']!='USDT-FUTURES':raise MarketError('SOURCE_MISMATCH')
                                 return data
                     except (httpx.RequestError,httpx.HTTPStatusError) as exc:
                         transient=not isinstance(exc,httpx.HTTPStatusError) or exc.response.status_code>=500
+                        failure='UPSTREAM_TIMEOUT' if isinstance(exc,httpx.TimeoutException) else 'NETWORK_ERROR' if isinstance(exc,httpx.RequestError) else 'HTTP_ERROR'
+                        LOGGER.warning('%s',json.dumps(dict(component='ACTIVE43_BITGET_PUBLIC',
+                            event='REQUEST_RETRY' if not attempt and transient else 'REQUEST_FAILED',
+                            code=failure,path=path,attempt=attempt+1,
+                            http_status=exc.response.status_code if isinstance(exc,httpx.HTTPStatusError) else None)))
                         if attempt or not transient:
-                            raise MarketError('UPSTREAM_TIMEOUT' if isinstance(exc,httpx.TimeoutException) else 'NETWORK_ERROR' if isinstance(exc,httpx.RequestError) else 'HTTP_ERROR') from None
+                            raise MarketError(failure) from None
                         await asyncio.sleep(.25)
                     except (ValueError,TypeError):raise MarketError('INVALID_RESPONSE') from None
         except TimeoutError:
@@ -111,7 +129,7 @@ class Client:
 
     async def check_time(self):
         data=await self.get(TIME,{})
-        try:self.fresh_time(data['data']['serverTime'])
+        try:self.fresh_time(data['data']['serverTime'],check='serverTime',path=TIME)
         except (KeyError,TypeError):raise MarketError('INVALID_RESPONSE') from None
 
     async def instrument(self):
@@ -136,7 +154,7 @@ class Client:
             raise MarketError('SOURCE_MISMATCH')
         row=rows[0]
         return dict(identity=dict(IDENTITY),last_price=str(number(row.get('lastPr'),True)),
-                    mark_price=str(number(row.get('markPrice'),True)),server_at_ms=self.fresh_time(row.get('ts')))
+                    mark_price=str(number(row.get('markPrice'),True)),server_at_ms=self.fresh_time(row.get('ts'),check='ticker.ts',path=TICKER))
 
     async def candles(self, timeframe, start, end):
         step=STEPS.get(timeframe)
