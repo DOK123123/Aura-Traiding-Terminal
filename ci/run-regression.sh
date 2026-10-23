@@ -4,6 +4,9 @@ set -euo pipefail
 python_bin=$1
 node_bin=$2
 test_dir=$3
+# sudo uses its own secure_path. Nested HTTP/Worker fixtures also invoke bare
+# node/python commands, so retain the exact setup runtimes for every subprocess.
+export PATH="$(dirname "$node_bin"):$(dirname "$python_bin"):$PATH"
 export AURA_ACTIVE43_VERIFY_POSTGRES=true
 export AURA_AUTO42_VERIFY_POSTGRES=true
 export AURA_PRACTICE_VERIFY_POSTGRES=true
