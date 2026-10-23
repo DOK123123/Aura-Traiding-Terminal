@@ -14,6 +14,9 @@ def test_actual_sql_transactions_roles_recovery_and_cycles(tmp_path,monkeypatch)
     report=verifier.run(tmp_path/'active43.json')
     assert report['POSTGRESQL_VERIFIED'] and report['RLS_VERIFIED']
     assert report['preparation']['owner_readiness_get_byte_identical_sql']
+    assert report['cloudflare_off_cycles']['distinct_saved_slots']==2
+    assert report['cloudflare_off_cycles']['duplicate_without_write']
+    assert report['cloudflare_off_cycles']['paper_state_unchanged']
     assert len(report['cases'])==7 and len(report['checks'])>=8
     assert not report['PRODUCTION_PAPER_VERIFIED']
     assert len(report['render_cycles'])==2
@@ -27,3 +30,10 @@ def test_browser_cli_refuses_render_even_child_before_server(monkeypatch):
     monkeypatch.setattr('sys.argv',['verify_active43_browser','--child','8000'])
     with pytest.raises(ValueError,match='LOCAL_OFFLINE_ONLY'):
         runpy.run_module('scripts.verify_active43_browser',run_name='__main__')
+
+
+def test_cloudflare_sql_harness_refuses_render_before_local_http(monkeypatch):
+    import asyncio
+    monkeypatch.setenv('RENDER','true')
+    with pytest.raises(ValueError,match='LOCAL_OFFLINE_ONLY'):
+        asyncio.run(verifier.cloudflare_off_cycles(None))

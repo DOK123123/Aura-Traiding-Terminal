@@ -1,6 +1,7 @@
 // Cloudflare Workers Free scheduler only. No public trigger, account controls,
 // exchange methods, Supabase credentials or strategy implementation.
 const BASE = 'https://aura-traiding-terminal.onrender.com/api/active43';
+export const WORKER_VERSION = 'ACTIVE43_CF_2026_10_23';
 export const CRON = '2-59/5 * * * *';
 const SOURCE = 'Bitget · USDT-M Futures / api.bitget.com';
 const SCOPE = 'AURA43_ACTIVE_PAPER', VERSION = 'AURA_4.3_ACTIVE_PAPER_3';
@@ -68,7 +69,8 @@ export async function run(env, {fetcher = fetch, sleep = ms => new Promise(r => 
  const configuredOperation = env.AURA_ACTIVE43_OPERATION || 'diagnostics';
  // Never log an unvalidated binding (it could accidentally contain a secret).
  const operation = OPERATIONS.has(configuredOperation) ? configuredOperation : null;
- const report = b => emit({component:'ACTIVE43_FREE_SCHEDULER',paper_only:true,exchange_execution:false,
+ const report = b => emit({component:'ACTIVE43_FREE_SCHEDULER',worker_version:WORKER_VERSION,
+  scheduled_time:Number.isInteger(scheduledTime) ? scheduledTime : null,paper_only:true,exchange_execution:false,
   operation,attempt:0,http_status:null,code:null,...b});
  if (env.AURA_ACTIVE43_CRON_ENABLED !== 'true') {
   report({event:'DISABLED',code:'DISABLED',state_changed:false}); return;
@@ -92,8 +94,10 @@ export async function run(env, {fetcher = fetch, sleep = ms => new Promise(r => 
   const remaining = deadline - now();
   if (remaining <= 0) { report({event:'REQUEST_FAILED',attempt,code:'INVOCATION_BUDGET_EXCEEDED'}); throw Error('INVOCATION_BUDGET_EXCEEDED'); }
   const abort = new AbortController(), timer = setTimeout(() => abort.abort(),Math.min(timeout,remaining));
-  let failure = 'NETWORK_ERROR', status = null, retry = true, delay = 2000;
+  let phase = 'REQUEST';
+  let failure = 'NETWORK_ERROR', status = null, retry = true, delay = 2000, cooldownBlocked = false;
   try {
+   report({event:'REQUEST_STARTED',attempt,code:'REQUEST_STARTED',endpoint:path});
    const response = await fetcher(BASE + path,{method:'POST',headers:{[HEADER]:token,'Content-Type':'application/json'},
     body:payload,redirect:'manual',signal:abort.signal});
    status = response.status;
@@ -104,25 +108,26 @@ export async function run(env, {fetcher = fetch, sleep = ms => new Promise(r => 
    if (retryAfter !== null) {
     const seconds = /^\d{1,6}$/.test(retryAfter) ? Number(retryAfter) : NaN;
     // Unparseable dates or delays beyond the budget: do not retry too early.
-    if (!Number.isFinite(seconds) || seconds * 1000 >= deadline - now()) retry = false;
+    if (!Number.isFinite(seconds) || seconds * 1000 >= deadline - now()) { retry = false; cooldownBlocked = true; }
     else delay = Math.max(delay,seconds * 1000);
    } else if (status === 429) delay = 60000;
-   let b;
+   let b;phase = 'BODY';
    try { b = await readBody(response); }
    catch {
-    failure = httpCode(status);
+    failure = abort.signal.aborted ? 'REQUEST_TIMEOUT' : httpCode(status);
     // A waking Render may return HTML immediately instead of holding the POST.
     // Give that cold start time to finish; do not exhaust retries in two seconds.
-    if (status === 200) { retry = true; delay = Math.max(delay,60000); }
+    if (status === 200) { retry = !cooldownBlocked; if (!abort.signal.aborted) delay = Math.max(delay,60000); }
     throw Error(failure);
    }
+   phase = 'HTTP_STATUS';
    if (status !== 200) {
     failure = code(b?.code || (typeof b?.detail === 'object' ? b.detail?.code : b?.detail));
     if (failure === 'UNCLASSIFIED_SERVER_ERROR' && (status === 401 || status === 403 || status >= 300 && status < 400)) failure = httpCode(status);
     if (PERMANENT.has(failure)) retry = false;
     throw Error(failure);
    }
-   retry = false;
+   retry = false;phase = 'CONTRACT';
    if (operation === 'diagnostics') {
     if (!diagnosticVerified(b)) { failure = 'INVALID_CONTRACT'; throw Error(failure); }
     report({event:'DIAGNOSTICS_RECEIVED',attempt,http_status:status,code:'DIAGNOSTICS_RECEIVED',status:b.status,
@@ -141,11 +146,12 @@ export async function run(env, {fetcher = fetch, sleep = ms => new Promise(r => 
    }
    report({event:'TICK_SAVED',attempt,http_status:status,code:'TICK_SAVED',status:b.status,mode:b.mode,processed:b.processed,duplicate:b.duplicate,
     opened:b.opened,closed:b.closed,state_saved:true});
+   phase = 'SERVER_DECISION';
    if (b.status !== 'COMPLETED') { failure = code(b.decision); throw Error(failure); }
    return {status:'COMPLETED',operation};
   } catch {
    if (abort.signal.aborted && failure === 'NETWORK_ERROR') failure = 'REQUEST_TIMEOUT';
-   report({event:'REQUEST_FAILED',attempt,http_status:status,code:failure});
+   report({event:'REQUEST_FAILED',attempt,http_status:status,code:failure,phase});
    if (!retry || attempt === 2 || now() + delay >= deadline) throw Error(failure);
   } finally { clearTimeout(timer); }
   await sleep(delay);
@@ -155,7 +161,8 @@ export async function run(env, {fetcher = fetch, sleep = ms => new Promise(r => 
 export default {
  async scheduled(controller,env) {
   if (env.AURA_ACTIVE43_CRON_ENABLED === 'true' && controller.cron !== CRON) {
-   console.log(JSON.stringify({component:'ACTIVE43_FREE_SCHEDULER',paper_only:true,exchange_execution:false,
+   console.log(JSON.stringify({component:'ACTIVE43_FREE_SCHEDULER',worker_version:WORKER_VERSION,
+    scheduled_time:Number.isInteger(controller.scheduledTime) ? controller.scheduledTime : null,paper_only:true,exchange_execution:false,
     event:'CONFIG_ERROR',operation:OPERATIONS.has(env.AURA_ACTIVE43_OPERATION || 'diagnostics') ? env.AURA_ACTIVE43_OPERATION || 'diagnostics' : null,
     attempt:0,http_status:null,code:'UNEXPECTED_CRON',expected_cron:CRON}));
    throw Error('UNEXPECTED_CRON');

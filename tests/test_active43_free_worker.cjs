@@ -45,8 +45,8 @@ test('diagnostics validates read-only contract and surfaces BLOCKED without fake
  const blockedLogs=[];
  const result=await run(env('diagnostics'),{...options({...diagnostic(),status:'BLOCKED',scheduler:{status:'ERROR',code:'STALE_TICK',diagnostic_delivery_confirmed:true}}),emit:b=>blockedLogs.push(b)});
  assert.deepEqual(result,{status:'BLOCKED',operation:'diagnostics'});
- assert.deepEqual(blockedLogs.map(x=>x.event),['RENDER_REACHED','DIAGNOSTICS_RECEIVED','DIAGNOSTICS_BLOCKED']);
- assert.equal(blockedLogs[1].scheduler_code,'STALE_TICK');
+ assert.deepEqual(blockedLogs.map(x=>x.event),['REQUEST_STARTED','RENDER_REACHED','DIAGNOSTICS_RECEIVED','DIAGNOSTICS_BLOCKED']);
+ assert.equal(blockedLogs.find(x=>x.event==='DIAGNOSTICS_RECEIVED').scheduler_code,'STALE_TICK');
  assert.ok(!blockedLogs.some(x=>x.event==='REQUEST_FAILED'));
  for (const change of [{read_only:false},{state_changed:true},{scope:'AURA42'},{production_paper_verified:true}])
   await assert.rejects(run(env('diagnostics'),options({...diagnostic(),...change})),/INVALID_CONTRACT/);
@@ -171,9 +171,9 @@ test('diagnostic transport errors remain errors; every log has safe delivery met
   await assert.rejects(run(env('diagnostics'),{emit:b=>logs.push(b),fetcher:async()=>{
    calls++;return scenario.body?Response.json(scenario.body,{status:scenario.status}):new Response(scenario.text,{status:scenario.status});
   }}),new RegExp(scenario.expected));
-  assert.equal(calls,1);assert.equal(logs[0].event,'RENDER_REACHED');
+  assert.equal(calls,1);assert.equal(logs.find(x=>x.event==='RENDER_REACHED').event,'RENDER_REACHED');
   assert.equal(logs.at(-1).event,'REQUEST_FAILED');assert.equal(logs.at(-1).code,scenario.expected);
-  for(const entry of logs){assert.equal(entry.http_status,scenario.status);assert.equal(entry.operation,'diagnostics');assert.equal(entry.attempt,1);}
+  for(const entry of logs){assert.equal(entry.http_status,entry.event==='REQUEST_STARTED'?null:scenario.status);assert.equal(entry.operation,'diagnostics');assert.equal(entry.attempt,1);}
   assert.ok(!JSON.stringify(logs).includes(token));assert.ok(!JSON.stringify(logs).includes('PRIVATE_DUMMY_UPSTREAM'));
  }
 });
@@ -187,7 +187,7 @@ test('diagnostic BLOCKED logs safe Supabase stage/codes and never private respon
 test('timeout logs distinguish network, reached Render, and abort without exposing exceptions',async()=>{
  const {run}=await load();const logs=[];
  await assert.rejects(run(env('diagnostics'),{timeout:2,emit:b=>logs.push(b),sleep:async()=>{},fetcher:async(u,r)=>new Promise((resolve,reject)=>r.signal.addEventListener('abort',()=>reject(Error(token))))}),/REQUEST_TIMEOUT/);
- assert.equal(logs.length,2);assert.ok(logs.every(x=>x.event==='REQUEST_FAILED'&&x.http_status===null&&x.code==='REQUEST_TIMEOUT'));
+ const failed=logs.filter(x=>x.event==='REQUEST_FAILED');assert.equal(failed.length,2);assert.ok(failed.every(x=>x.http_status===null&&x.code==='REQUEST_TIMEOUT'&&x.phase==='REQUEST'));
 });
 test('two isolated off_only cycles preserve OFF and distinguish second saved duplicate',async()=>{
  const {run}=await load();const logs=[];let count=0;
@@ -208,4 +208,33 @@ test('actual scheduled handler resolves delivered BLOCKED; disabled handler neve
   await worker.scheduled({cron:CRON,scheduledTime:Date.now()},{...env('off_only'),AURA_ACTIVE43_CRON_ENABLED:'false'});
   assert.equal(calls,1);assert.equal(messages.at(-1).event,'DISABLED');
  }finally{global.fetch=originalFetch;console.log=originalLog;}
+});
+
+
+test('body timeout after HTTP 200 is REQUEST_TIMEOUT, not INVALID_RESPONSE/cold-start HTML',async()=>{
+ const {run}=await load();const logs=[],delays=[];
+ await assert.rejects(run(env('off_only'),{timeout:3,emit:b=>logs.push(b),sleep:async ms=>delays.push(ms),fetcher:async(url,request)=>{
+  return new Response(new ReadableStream({start(controller){request.signal.addEventListener('abort',()=>controller.error(Error('DUMMY_PRIVATE_DO_NOT_LOG')));}}));
+ }}),/REQUEST_TIMEOUT/);
+ const failed=logs.filter(x=>x.event==='REQUEST_FAILED');assert.equal(failed.length,2);
+ assert.ok(failed.every(x=>x.http_status===200&&x.phase==='BODY'&&x.code==='REQUEST_TIMEOUT'));
+ assert.deepEqual(delays,[2000]);assert.ok(!JSON.stringify(logs).includes('DUMMY_PRIVATE_DO_NOT_LOG'));
+});
+test('request-start correlation is emitted before awaiting Render; version/time are safe',async()=>{
+ const {run,WORKER_VERSION}=await load();const logs=[];const at=1800000000000;
+ await run(env('off_only'),{scheduledTime:at,now:()=>at,emit:b=>logs.push(b),fetcher:async()=>{
+  assert.equal(logs.at(-1).event,'REQUEST_STARTED');assert.equal(logs.at(-1).endpoint,'/verify-off-tick');
+  return Response.json(good());
+ }});
+ assert.ok(logs.every(x=>x.scheduled_time===at&&x.worker_version===WORKER_VERSION));
+ assert.ok(!JSON.stringify(logs).includes(token));
+});
+
+
+test('cold-start body failure cannot override an excessive Retry-After cooldown',async()=>{
+ const {run}=await load();let calls=0;
+ await assert.rejects(run(env('off_only'),{emit:()=>{},sleep:async()=>assert.fail('No early retry'),fetcher:async()=>{
+  calls++;return new Response('<html>Loading</html>',{headers:{'Retry-After':'999999'}});
+ }}),/INVALID_RESPONSE/);
+ assert.equal(calls,1);
 });
