@@ -60,5 +60,5 @@ console.log(JSON.stringify({result,logs}));
         cwd=Path(__file__).resolve().parents[1],timeout=10,check=True)
     result = json.loads(out.stdout)
     assert result['result']['status'] == expected
-    assert [e['event'] for e in result['logs']] == ['RENDER_REACHED','DIAGNOSTICS_RECEIVED'] + (['DIAGNOSTICS_BLOCKED'] if expected == 'BLOCKED' else [])
+    assert [e['event'] for e in result['logs']] == ['REQUEST_STARTED','RENDER_REACHED','DIAGNOSTICS_RECEIVED'] + (['DIAGNOSTICS_BLOCKED'] if expected == 'BLOCKED' else [])
     assert token not in out.stdout and 'virtual_balance' not in out.stdout and 'current_position' not in out.stdout

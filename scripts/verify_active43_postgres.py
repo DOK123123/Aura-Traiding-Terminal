@@ -245,6 +245,73 @@ async def account_preparation(pg):
         balance='10000',mode='OFF',open_count=0,close_count=0,tick_count=1,postflight_scheduler='ACTIVE',production_paper_verified=False)
 
 
+async def cloudflare_off_cycles(pg):
+    """Actual Worker.scheduled -> local HTTP -> production API/Store -> REAL SQL.
+
+    No deployed Worker/Render/hosted Supabase access. Test clock, dummy token only.
+    """
+    if os.getenv('RENDER') or not __debug__:raise ValueError('LOCAL_OFFLINE_ONLY')
+    import subprocess,threading
+    from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
+    from fastapi import FastAPI
+    from app.active43.api import router
+    bridge=Bridge(pg);cfg=config();store=bridge.store(cfg)
+    env=await store.peek();state=env['state'];Service.require_empty_off(state)
+    clock=[state['last_run_at']+300];pg.clock=clock
+    financial=('balance','equity','realized_pnl','gross_profit','gross_loss','fees','slippage','trades',
+        'wins','losses','max_drawdown_pct','position','pending','pending_exit','data_recovery_armed','mode')
+    before={k:deepcopy(state[k]) for k in financial}
+    count_before=int(pg.sql('SELECT count(*) FROM public.aura_active43_bitget_events;'))
+    service=Service(store,clock=lambda:clock[0])
+    app=FastAPI();app.include_router(router);app.state.active43=service
+    token='DUMMY_LOCAL_CF_SCHEDULED_'+'x'*40
+    loop=asyncio.get_running_loop();received=[]
+    class Wire(BaseHTTPRequestHandler):
+        def log_message(self,*args):pass
+        def do_POST(self):
+            assert self.path=='/api/active43/verify-off-tick'
+            raw=self.rfile.read(int(self.headers['Content-Length']))
+            async def deliver():
+                async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://local') as client:
+                    response=await client.post(self.path,content=raw,headers=dict(self.headers))
+                    received.append(response.json())
+                    return response.status_code,response.content
+            status,body=asyncio.run_coroutine_threadsafe(deliver(),loop).result(timeout=80)
+            self.send_response(status);self.send_header('Content-Type','application/json');self.end_headers();self.wfile.write(body)
+    server=ThreadingHTTPServer(('127.0.0.1',0),Wire)
+    thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+    logs=[]
+    try:
+        with patch.dict(os.environ,AURA_ACTIVE43_BITGET_SCHEDULER_SECRET=token):
+            for index in range(3):
+                if index==2:
+                    await app.state.active43.close()
+                    docker('restart',pg.name);pg.ready()
+                    clock[0]+=300
+                    app.state.active43=Service(bridge.store(cfg),clock=lambda:clock[0])
+                payload=json.dumps(dict(origin='http://127.0.0.1:'+str(server.server_port),token=token,at=clock[0]*1000))
+                proc=await asyncio.to_thread(subprocess.run,['node',str(ROOT/'tests/fixtures/active43_scheduled_wire.mjs')],
+                    input=payload,text=True,capture_output=True,timeout=90,check=True,cwd=ROOT)
+                assert token not in proc.stdout
+                log=json.loads(proc.stdout)['logs'];saves=[r for r in log if r['event']=='TICK_SAVED']
+                assert len(saves)==1
+                assert saves[0]['status']=='COMPLETED' and saves[0]['mode']=='OFF'
+                assert saves[0]['opened']==saves[0]['closed']==0 and saves[0]['state_saved']
+                logs.append(saves[0])
+        saved=await app.state.active43.store.peek()
+        assert {k:saved['state'][k] for k in financial}==before
+        assert [r['duplicate'] for r in received]==[False,True,False]
+        assert saved['state']['last_successful_run_at']==clock[0]
+        assert int(pg.sql('SELECT count(*) FROM public.aura_active43_bitget_events;'))==count_before+2
+        assert all(r['verification_only'] for r in received)
+        return dict(status='PASS',scope='LOCAL_SCHEDULED_NODE_HTTP_REAL_POSTGRES_NOT_CLOUDFLARE_OR_RENDER',
+            scheduled_handler_calls=3,distinct_saved_slots=2,duplicate_without_write=True,restart_restored=True,
+            paper_state_unchanged=True,opened=0,closed=0,events_added=2,logs=logs,production_verified=False)
+    finally:
+        await asyncio.to_thread(server.shutdown);server.server_close();thread.join(timeout=2)
+        await app.state.active43.close()
+
+
 async def verify(pg):
     pg.sql('CREATE SCHEMA extensions; CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN BYPASSRLS; GRANT USAGE ON SCHEMA public,extensions TO anon,authenticated,service_role;')
     pg.sql((ROOT/'scripts/auto42_schema.sql').read_text());pg.sql((ROOT/'scripts/practice_schema.sql').read_text())
@@ -286,6 +353,8 @@ async def verify(pg):
     await empty.close()
     checks.append('READ_ONLY_PEEK_DOES_NOT_INITIALIZE_AND_GRANTS_NO_TABLE_WRITES')
     preparation=await account_preparation(pg)
+    cloudflare_off=await cloudflare_off_cycles(pg)
+    checks.append('CLOUDFLARE_SCHEDULED_TWO_OFF_SLOTS_HTTP_SQL_DUPLICATE_AND_RESTART')
     checks.append('ACCOUNT_PREPARATION_CONCURRENT_HTTP_INIT_OFF_HEARTBEAT_AND_DATABASE_RESTART')
     cases=[]
     for side in ('LONG','SHORT'):
@@ -340,7 +409,7 @@ async def verify(pg):
     assert pg.legacy_hash()==before;checks.append('LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN')
     assert pg.legacy_functions_hash()==before_functions
     checks.append('LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED')
-    return dict(checks=checks,cases=cases,native_cycles=actual,render_cycles=renders,preparation=preparation,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash(),legacy_functions_before_sha256=before_functions,legacy_functions_after_sha256=pg.legacy_functions_hash())
+    return dict(checks=checks,cases=cases,native_cycles=actual,render_cycles=renders,preparation=preparation,cloudflare_off_cycles=cloudflare_off,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash(),legacy_functions_before_sha256=before_functions,legacy_functions_after_sha256=pg.legacy_functions_hash())
 
 
 def run(output):

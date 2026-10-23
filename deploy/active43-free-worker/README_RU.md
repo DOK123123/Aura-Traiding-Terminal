@@ -14,6 +14,8 @@ Paper Practice не меняются. Уже существующий `deploy/au
 ограничения Free и процедура двух off_only циклов:
 [DIAGNOSTICS_VERIFICATION.md](DIAGNOSTICS_VERIFICATION.md).
 
+Актуальная проверка off_only после PR #27: [RUNTIME_VERIFICATION.md](RUNTIME_VERIFICATION.md).
+
 ## Выбор, цена, карта и Россия
 
 Проверка официальных источников: 2026-10-20.
