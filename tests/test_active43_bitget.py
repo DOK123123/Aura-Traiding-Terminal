@@ -94,6 +94,21 @@ def test_cached_analysis_is_bound_to_strategy_config_and_clock():
     asyncio.run(run())
 
 
+def test_protection_snapshot_uses_only_public_fresh_futures_without_analysis():
+    async def run():
+        fixture=PublicFixture();market=Market(clock=lambda:fixture.now[0],transport=httpx.MockTransport(fixture.handler))
+        with patch('app.active43.market.analyze',side_effect=AssertionError('no entry analysis')):
+            bars,decision,at=await market.protection_snapshot(config())
+        assert len(bars)==12 and bars[-1].time+900==fixture.at
+        assert decision['source']==SOURCE and decision.get('direction') is None
+        assert all(r.method=='GET' for r in fixture.requests)
+        assert any(r.url.path.endswith('/public/time') for r in fixture.requests)
+        fixture.failure=502
+        with pytest.raises(DemoError):await market.protection_snapshot(config())
+        await market.close()
+    asyncio.run(run())
+
+
 def test_unrepresentable_normalized_candle_is_a_controlled_error():
     async def run():
         fixture=PublicFixture()
