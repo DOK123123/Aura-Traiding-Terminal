@@ -409,6 +409,43 @@ async def bounce_selection_and_cycles(pg):
     return dict(status='PASS',saved_mode_bounce=cf_bounce,saved_mode_donchian_rollback=cf_rollback,rollback_preserves_history=True,atomic_switch=True,ordinary_commit_unchanged=True,financial_tamper_rejected=True,bad_event_rollback=True,forced_after_insert_rollback=True,occupied_off_rejected=True,concurrent_selection=True,cases=cases,production_verified=False)
 
 
+async def history_recovery_cycles(pg):
+    """Test fixtures only, against the same SQL RPCs; no production URLs."""
+    from tests.test_active43_history_recovery import history_scenario
+    rows=[]
+    for tf in ('5m','15m'):
+        for side in ('LONG','SHORT'):
+            for damage in ('changed','missing'):
+                for position in (False,True):
+                    market,now,bridge,store,svc=await setup(pg,side,tf=tf,strategy='SR_BOUNCE' if tf=='5m' else 'DONCHIAN')
+                    row=await history_scenario(market,now,store,svc,side,damage,position,restart=lambda:bridge.store(svc.config))
+                    row['timeframe']=tf;rows.append(row)
+    # Actual database restart with a persisted history pause and protective cursor.
+    market,now,bridge,store,svc=await setup(pg)
+    market.add();now[0]+=900;await svc.tick();market.add();now[0]+=900;await svc.tick()
+    from dataclasses import replace
+    from decimal import Decimal
+    market.bars[-1]=replace(market.bars[-1],volume=Decimal(123))
+    market.add();now[0]+=900;await svc.tick();saved=await svc.load()
+    docker('restart',pg.name);pg.ready()
+    assert await svc.load()==saved and saved['state']['mode']=='PAUSED' and saved['state']['position']
+    market.add(high='105');now[0]+=900
+    pg.sql("CREATE FUNCTION public.history_test_fail() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'ISOLATED_TEST_ROLLBACK'; END $$; CREATE TRIGGER history_test_fail BEFORE UPDATE ON public.aura_active43_bitget_account FOR EACH ROW EXECUTE FUNCTION public.history_test_fail();")
+    try:await svc.tick()
+    except DemoError:pass
+    else:raise AssertionError('Protective CLOSE acknowledged after failed transaction')
+    assert await svc.load()==saved and not await store.history(kind='CLOSE')
+    pg.sql('DROP TRIGGER history_test_fail ON public.aura_active43_bitget_account; DROP FUNCTION public.history_test_fail();')
+    bridge.lose_after_commit=True
+    try:await svc.tick()
+    except DemoError:pass
+    else:raise AssertionError('Uncertain protective CLOSE falsely acknowledged')
+    await svc.tick()
+    assert len(await store.history(kind='CLOSE'))==1 and (await svc.load())['state']['position'] is None
+    await svc.close()
+    return dict(status='PASS',cases=rows,database_restart_restored=True,protective_close_rollback=True,unknown_close_outcome_exactly_once=True)
+
+
 async def verify(pg):
     pg.sql('CREATE SCHEMA extensions; CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN; CREATE ROLE service_role NOLOGIN BYPASSRLS; GRANT USAGE ON SCHEMA public,extensions TO anon,authenticated,service_role;')
     pg.sql((ROOT/'scripts/auto42_schema.sql').read_text());pg.sql((ROOT/'scripts/practice_schema.sql').read_text())
@@ -517,13 +554,15 @@ async def verify(pg):
     assert diagnostic['virtual_balance']==saved['state']['balance']
     assert ledger_before==pg.sql("SELECT jsonb_build_object('account',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_active43_bitget_account t),'events',(SELECT jsonb_agg(to_jsonb(t)) FROM public.aura_active43_bitget_events t));")
     checks.append('DIAGNOSTIC_ON_OPEN_POSITION_BYTE_IDENTICAL_LEDGER_AFTER_RESTART')
-    await svc.close();actual=[await public_cycle(pg,side) for side in ('LONG','SHORT')]
+    await svc.close();history_recovery=await history_recovery_cycles(pg)
+    checks.append('HISTORY_PAUSE_FRESH_PROTECTION_RECOVERY_CONCURRENT_TICKS_DATABASE_RESTART_UNKNOWN_CLOSE')
+    actual=[await public_cycle(pg,side) for side in ('LONG','SHORT')]
     renders=[await public_cycle(pg,side,driver='render') for side in ('LONG','SHORT')]
     checks.append('RENDER_SCHEDULER_EXISTING_SERVICE_NATIVE_LONG_SHORT_SQL_CYCLES_NO_WEB_TICK')
     assert pg.legacy_hash()==before;checks.append('LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN')
     assert pg.legacy_functions_hash()==before_functions
     checks.append('LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED')
-    return dict(checks=checks,cases=cases,native_cycles=actual,render_cycles=renders,preparation=preparation,cloudflare_off_cycles=cloudflare_off,bounce=bounce,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash(),legacy_functions_before_sha256=before_functions,legacy_functions_after_sha256=pg.legacy_functions_hash())
+    return dict(checks=checks,cases=cases,history_recovery=history_recovery,native_cycles=actual,render_cycles=renders,preparation=preparation,cloudflare_off_cycles=cloudflare_off,bounce=bounce,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash(),legacy_functions_before_sha256=before_functions,legacy_functions_after_sha256=pg.legacy_functions_hash())
 
 
 def run(output):

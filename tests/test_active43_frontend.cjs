@@ -17,6 +17,16 @@ test('historical panel cannot launch a backtest or set live strategy',()=>{const
 test('historical summary is public market data, not a live portfolio',()=>{const p=JSON.parse(fs.readFileSync('static/active43-research.json'));assert.equal(p.production_paper_verified,false);assert.equal(p.no_profitability_claim,true);assert.equal(p.candidates.length,15);assert.equal(p.source.futures,false);assert.equal(p.selection.selected_before_final_test,true);});
 
 test('scheduler state is explicit and ages without hiding persisted ON',()=>{const d=data('ON');d.scheduler_status='FRESH';d.last_market_success_at=d.server_now;assert.match(view(d).scheduler,/подтверждён/);const v=view(d,false,d.server_now+400);assert.match(v.scheduler,/не поступают/);assert.equal(v.mode,'Включён');assert.notEqual(v.success,'—');});
+test('history pause keeps fresh protective PnL separate from entry permission',()=>{
+ const d=data('PAUSED');d.state.last_error='HISTORY_CANDLE_CHANGED';d.paper_status='PAPER_PAUSED_HISTORY';d.health_status=d.paper_status;
+ d.protection_status='FRESH_PROTECTION';d.candle_age_seconds=10;d.state.position={direction:'LONG',size:'1',entry_price:'100',active_stop:'98',take_profit:'104'};d.position_net_pnl='2';
+ d.last_status_transition={detected_at:d.server_now,reason:'HISTORY_CANDLE_CHANGED',scheduler_run_id:'TEST_ONLY:tick:123'};
+ assert.equal(view(d).pnl,'2');assert.match(view(d).health,/PAPER_PAUSED_HISTORY/);assert.match(view(d).transition,/TEST_ONLY:tick:123/);
+ assert.match(view(d).candleage,/с/);assert.equal(view(d).canStart,false);
+ assert.match(view(d,false,d.server_now+1000).protection,/АВАРИЯ/);
+ d.protection_status='EMERGENCY_UNTRUSTED_DATA';assert.match(view(d).pnl,/Нет свежих/);assert.match(view(d).protection,/АВАРИЯ/);
+ assert.match(view(d,true).health,/не подтверждено/);
+});
 test('only Bitget Futures bars and trades enter the separate chart',()=>{const {chartModel}=require('../static/active43.js');const source='Bitget · USDT-M Futures / api.bitget.com',bars=[{time:900,open:'100',high:'102',low:'99',close:'101'},{time:1800,open:'101',high:'103',low:'100',close:'102'}];const d={chart:{source,timeframe:'15m',closed_at:2700,bars},trades:[{market_source:source,entry_time:900,entry_price:'101',exit_time:2700,exit_price:'102',direction:'LONG',exit_reason:'TAKE_PROFIT'},{market_source:'Binance Spot',entry_time:900,entry_price:'99'}]};assert.equal(chartModel(d).marks.length,2);d.chart.source='Binance Spot';assert.equal(chartModel(d),null);d.chart.source=source;d.chart.bars[1].time=1900;assert.equal(chartModel(d),null);});
 test('old Spot runtime cannot be displayed or armed as Bitget Futures',()=>{for(const change of [{market_source:'Binance Spot'},{market_source:undefined}]){const d={...data('ON'),...change};const v=view(d);assert.equal(v.canStart,false);assert.match(v.mode,/не подтверждено/);assert.equal(v.balance,'—');}const d=data();d.state.strategy_version='AURA_4.3_ACTIVE_PAPER_1';assert.equal(view(d).canStart,false);});
 test('missing production deployment has a clear Russian error and cannot arm',async()=>{const h=harness(async()=>response({detail:'Not Found'},404));await h.node('a43-refresh').handlers.click();assert.match(h.node('a43-message').textContent,/не установлена.*404/);assert.equal(h.node('a43-start').disabled,true);h.win.handlers.pagehide();});

@@ -1,5 +1,5 @@
 """Opt-in Active43 controller. Independent authority, ledger and decision state."""
-import asyncio,json,os,time,uuid
+import asyncio,json,logging,os,time,uuid
 from copy import deepcopy
 from decimal import Decimal as D
 from pathlib import Path
@@ -11,6 +11,9 @@ from .strategies import config,STEPS,VERSION
 from .storage import Store
 from .market import Market,Quotes
 from .evidence import observe,verified
+from .recovery import HISTORY_CODES,LEGACY_HISTORY,history_issue,paper_status,protective_advance,transition
+
+logger=logging.getLogger(__name__)
 
 RETRYABLE={'STALE_DATA','MARKET_UNAVAILABLE','FUTURES_FILTERS_UNAVAILABLE','FUTURES_FILTERS_CHANGED','STALE_OR_MISMATCHED_DATA',
     'REGION_OR_ACCESS_RESTRICTED','RATE_LIMIT','UPSTREAM_TIMEOUT','NETWORK_ERROR','HTTP_ERROR','UPSTREAM_API_ERROR',
@@ -74,7 +77,9 @@ class Service:
         from .selection import select
         return await select(self,choice,request_id,revision)
     async def snapshot(self):
-        bars,decision,_=await self.market.snapshot(self.config);now=int(self.clock());step=STEPS[self.config['timeframe']]
+        return self.checked_snapshot(await self.market.snapshot(self.config))
+    def checked_snapshot(self,value):
+        bars,decision,_=value;now=int(self.clock());step=STEPS[self.config['timeframe']]
         if (not bars or not isinstance(decision,dict) or decision.get('source')!=SOURCE or bars[-1].time+step!=now//step*step or decision.get('signal_at')!=now//step*step
             or decision.get('source_sha256')!=digest([b.data() for b in bars])):raise DemoError('STALE_OR_MISMATCHED_DATA')
         return bars,decision,now
@@ -86,7 +91,7 @@ class Service:
                 if old:
                     if old['payload'].get('action')!=action:raise DemoError('IDEMPOTENCY_CONFLICT')
                     return dict(duplicate=True,state_saved=True,paper_only=True,exchange_execution=False)
-                s=deepcopy(env['state']);now=int(self.clock())
+                before=env['state'];s=deepcopy(before);now=int(self.clock())
                 if action=='START':
                     if expected_revision!=env['revision']:raise DemoError('CONCURRENT_UPDATE')
                     if not scheduler_configured():raise DemoError('SCHEDULER_NOT_CONFIGURED')
@@ -99,12 +104,14 @@ class Service:
                     if risk_reason(s):raise DemoError(risk_reason(s))
                     s.update(mode='ON',watermark=bars[-1].time+STEPS[self.config['timeframe']],last_bar_hash=digest(bars[-1].data()),
                              pending=None,pending_exit=None,last_error=None,last_decision='ACTIVATION_BASELINE',recovery_status='OWNER_STARTED',data_recovery_armed=False)
+                    s.update(history_guard=None,protection_watermark=None,protection_bar_hash=None,protection_gap=None,
+                             last_fresh_closed_at=None,last_source_error=None,protection_status='FRESH_PROTECTION')
                 elif action=='STOP':s.update(mode='OFF',pending=None,pending_exit=None,data_recovery_armed=False,last_error=None,last_decision='OWNER_STOP')
                 elif action=='EMERGENCY':s.update(mode='EMERGENCY',emergency=True,pending=None,pending_exit=None,data_recovery_armed=False,last_decision='EMERGENCY_STOP')
                 else:raise DemoError('INVALID_ACTION')
                 ev=event(s,'CONTROL',request_id,now,dict(action=action));ev['id']=key
                 try:
-                    await self.store.commit(env['revision'],s,[ev],key)
+                    await self.store.commit(env['revision'],s,[ev]+transition(before,s,now,key,reason={'START':'OWNER_STARTED','STOP':'OWNER_STOP','EMERGENCY':'EMERGENCY_STOP'}[action]),key)
                     return dict(duplicate=False,state_saved=True,paper_only=True,exchange_execution=False)
                 except DemoError as exc:
                     if exc.code!='CONCURRENT_UPDATE' or attempt==2 or action=='START':raise
@@ -137,42 +144,97 @@ class Service:
             async with asyncio.timeout(50):
                 return await self._tick(require_off=True) if require_off else await self._tick()
         except TimeoutError:raise DemoError('TICK_TIMEOUT_OUTCOME_UNKNOWN') from None
+    def evaluate(self,old,data,error,protection,protection_error,now):
+        """Evaluate from a CAS snapshot; never commit or call controls here."""
+        s=deepcopy(old);events=[];step=STEPS[self.config['timeframe']]
+        retry_allowed=(old['mode']=='ON' or old.get('data_recovery_armed',False)
+                       or (old['mode']=='PAUSED' and old.get('last_error')==LEGACY_HISTORY))
+        issue=None
+        try:
+            if error:raise DemoError(error)
+            if data:
+                bars,decision,_=data
+                # Revalidate after CAS retries/time spent waiting for storage.
+                self.checked_snapshot(data)
+                issue=history_issue(s,bars,now)
+                if issue:raise DemoError(issue['code'])
+                s['history_guard']=None
+                recovering=(s['mode']=='PAUSED' and retry_allowed and not risk_reason(s))
+                if s.get('protection_watermark'):
+                    # Protection already accounted for these bars. Do not replay
+                    # exits, invent retrospective entries or reuse old signals.
+                    s.update(watermark=bars[-1].time+step,last_bar_hash=digest(bars[-1].data()),pending=None,pending_exit=None)
+                    s['last_decision']='HISTORY_RECOVERED_WAIT_NEXT_CANDLE'
+                if decision.get('error'):
+                    if s['mode']=='ON':s.update(mode='PAUSED',data_recovery_armed=True)
+                    s['pending']=None;s['pending_exit']=None
+                elif recovering:
+                    s.update(mode='ON',data_recovery_armed=False,recovery_status='FRESH_DATA_RECOVERED',last_decision='HISTORY_RECOVERED_WAIT_NEXT_CANDLE')
+                s,events=advance(s,bars,decision,now)
+                s.update(history_guard=None,protection_watermark=None,protection_bar_hash=None,
+                         last_error=decision.get('error'),last_source_error=None,last_success_at=now,last_fresh_closed_at=bars[-1].time+step,
+                         protection_status='FRESH_PROTECTION_GAP' if s.get('protection_gap') else 'FRESH_PROTECTION')
+                if decision.get('error'):
+                    s['last_decision']=decision['error']
+                    events.append(event(s,'ERROR',now//300,now,dict(reason=decision['error'])))
+            if risk_reason(s):s['data_recovery_armed']=False
+            return s,events
+        except DemoError as exc:
+            original=exc.code
+            code=({'MISSING_CANDLES':'HISTORY_INCOMPLETE','INCOMPLETE_HISTORY':'HISTORY_INCOMPLETE'}).get(original,original)
+            if code in ('MARKET_UNAVAILABLE','UPSTREAM_TIMEOUT','NETWORK_ERROR','HTTP_ERROR','UPSTREAM_API_ERROR'):
+                code='HISTORY_SOURCE_UNAVAILABLE'
+            s=deepcopy(old)
+            s.update(pending=None,pending_exit=None,last_error=code,last_source_error=original,last_decision=code,recovery_status='DATA_BLOCKED')
+            if issue:s['history_guard']=issue
+            elif code in HISTORY_CODES and not s.get('history_guard'):
+                s['history_guard']=dict(code=code,candle_timestamp=None if code=='HISTORY_INCOMPLETE' or s['watermark'] is None else s['watermark']-step,
+                    source=SOURCE,old_ohlcv_hash=s['last_bar_hash'],new_ohlcv_hash=None,detected_at=now)
+            s['data_recovery_armed']=retry_allowed and not risk_reason(s) and (original in RETRYABLE or code in HISTORY_CODES or code=='HISTORY_SOURCE_UNAVAILABLE')
+            if s['mode']=='ON':s['mode']='PAUSED'
+            details=dict(reason=code,source_error=original,source=SOURCE,detected_at=now,
+                         candle_timestamp=None if code in ('HISTORY_INCOMPLETE','HISTORY_SOURCE_UNAVAILABLE') or s['watermark'] is None else s['watermark']-step,
+                         anchor_timestamp=None if s['watermark'] is None else s['watermark']-step,
+                         old_ohlcv_hash=s['last_bar_hash'],new_ohlcv_hash=None)
+            if issue:details.update(issue)
+            # Never use an old cached quote or a failed snapshot for protection.
+            trustworthy=data if data else protection
+            if s['position'] and trustworthy:
+                try:
+                    bars,_,_=self.checked_snapshot(trustworthy)
+                    # Only the contiguous suffix is eligible when older history
+                    # has a gap. protective_advance discloses any coverage gap.
+                    cut=max([i+1 for i,(a,b) in enumerate(zip(bars,bars[1:])) if b.time-a.time!=step],default=0)
+                    s,events=protective_advance(s,bars[cut:],now)
+                except DemoError as protection_exc:
+                    s['protection_status']='EMERGENCY_UNTRUSTED_DATA'
+                    details['protection_error']=protection_exc.code
+            elif s['position']:
+                s['protection_status']='EMERGENCY_UNTRUSTED_DATA'
+                details['protection_error']=protection_error or original
+            else:s['protection_status']='NO_OPEN_POSITION'
+            events.append(event(s,'ERROR',now//300,now,details))
+            return s,events
     async def _tick(self,require_off=False):
         env=await self.load();now=int(self.clock());key=env['state']['epoch']+':tick:'+str(now//300)
         if require_off:self.require_empty_off(env['state'])
         if await self.store.lookup(key):return self.result(env['state'],[],True,False)
-        data=None;error=None
-        if env['state']['mode']=='ON' or env['state']['position'] or env['state'].get('data_recovery_armed'):
+        data=None;error=None;protection=None;protection_error=None
+        if env['state']['mode']=='ON' or env['state']['position'] or env['state'].get('data_recovery_armed') or (env['state']['mode']=='PAUSED' and env['state'].get('last_error')==LEGACY_HISTORY):
             try:data=await self.snapshot()
             except DemoError as exc:error=exc.code
+            if error and env['state']['position'] and hasattr(self.market,'protection_snapshot'):
+                try:protection=self.checked_snapshot(await self.market.protection_snapshot(self.config))
+                except DemoError as exc:protection_error=exc.code
         for attempt in range(3):
             if require_off:self.require_empty_off(env['state'])
             old=env['state'];s=deepcopy(old);events=[];now=int(self.clock());step=STEPS[self.config['timeframe']]
-            try:
-                if data:
-                    bars,decision,_=data
-                    if bars[-1].time+step!=now//step*step:raise DemoError('STALE_DATA')
-                    if decision.get('error'):
-                        if s['mode']=='ON':s.update(mode='PAUSED',data_recovery_armed=True)
-                        s['pending']=None;s['pending_exit']=None
-                    elif s['mode']=='PAUSED' and s.get('data_recovery_armed') and not risk_reason(s):
-                        s.update(mode='ON',data_recovery_armed=False,recovery_status='FRESH_DATA_RECOVERED')
-                    s,events=advance(s,bars,decision,now)
-                    s['last_error']=decision.get('error');s['last_success_at']=now
-                    if decision.get('error'):
-                        s['last_decision']=decision['error']
-                        events.append(event(s,'ERROR',now//300,now,dict(reason=decision['error'])))
-                elif error:raise DemoError(error)
-                if risk_reason(s):s['data_recovery_armed']=False
-            except DemoError as exc:
-                s=deepcopy(old);s.update(pending=None,pending_exit=None,last_error=exc.code,last_decision=exc.code,recovery_status='DATA_BLOCKED')
-                s['data_recovery_armed']=exc.code in RETRYABLE and not risk_reason(s) and (s['mode']=='ON' or s.get('data_recovery_armed',False))
-                if s['mode']=='ON':s['mode']='PAUSED'
-                events=[event(s,'ERROR',now//300,now,dict(reason=exc.code))]
+            s,events=self.evaluate(old,data,error,protection,protection_error,now)
             s['missed_runs']+=max(0,now//300-old['last_run_at']//300-1) if old['last_run_at'] else 0
             if not s['last_error']:s['last_successful_run_at']=now
             s['last_run_at']=now;s['recovery_status']='POSITION_RESTORED' if s['position'] and s.get('controller_boot')!=self.boot else s['recovery_status']
             s['controller_boot']=self.boot
+            events.extend(transition(old,s,now,key))
             try:
                 s=observe(s,events,now,market_native=isinstance(self.market,Market),durable=self.store.durable,backend=self.store.backend)
                 s['monitor_error']=None
@@ -185,6 +247,10 @@ class Service:
                 # All success responses are checked by reading the immutable tick
                 # receipt, so an uncertain DB outcome never reports an OPEN.
                 if not await self.store.lookup(key):raise DemoError('STORAGE_READBACK_OUTCOME_UNKNOWN')
+                if not saved['duplicate']:
+                    for ev in events:
+                        if ev['kind'] in ('ERROR','STATE_TRANSITION'):
+                            logger.warning('ACTIVE43_STATE %s',json.dumps({'event':ev['kind'],'scheduler_run_id':key,**ev['payload']},sort_keys=True))
                 return self.result(saved['state'],[] if saved['duplicate'] else events,saved['duplicate'],saved['state']['watermark']!=old['watermark'])
             except DemoError as exc:
                 if exc.code!='CONCURRENT_UPDATE' or attempt==2:raise
@@ -194,6 +260,7 @@ class Service:
     @staticmethod
     def result(s,events,duplicate,processed):
         return dict(status='PAUSED' if s['last_error'] else 'COMPLETED',paper_only=True,exchange_execution=False,
+            paper_status=paper_status(s),protection_status=s.get('protection_status'),
             scope=SCOPE,market_source=SOURCE,strategy_version=VERSION,state_saved=True,duplicate=duplicate,processed=processed and not duplicate,
             last_processed_closed_at=s['watermark'],mode=s['mode'],decision=s['last_error'] or s['last_decision'],
             opened=sum(e['kind']=='OPEN' for e in events),closed=sum(e['kind']=='CLOSE' for e in events),
@@ -201,7 +268,7 @@ class Service:
     async def dashboard(self):
         self.ready();env=await self.load();s=env['state'];now=int(self.clock());step=STEPS[self.config['timeframe']]
         trades=await self.store.history(epoch=s['epoch'],kind='CLOSE',limit=50)
-        fresh=s['last_mark_at'] is not None and 0<=now-s['last_mark_at']<step and s['last_success_at'] is not None and 0<=now-s['last_success_at']<360 and not s['last_error']
+        fresh=s['last_mark_at'] is not None and 0<=now-s['last_mark_at']<step and s['last_success_at'] is not None and 0<=now-s['last_success_at']<360 and (not s['last_error'] or s.get('protection_status') in ('FRESH_PROTECTION','FRESH_PROTECTION_GAP'))
         cached=getattr(self.market,'cache',None)
         chart=None
         if cached and cached[1].get('source')==SOURCE and cached[1].get('config_hash')==digest(self.config):
@@ -212,6 +279,9 @@ class Service:
             and s.get('data_recovery_armed') is False and not risk_reason(s)
             and s['config'] in CHOICES.values()),
             chart=chart,scope=SCOPE,state=s,revision=env['revision'],last_saved_at=env['last_saved_at'],server_now=now,
+            paper_status=paper_status(s),health_status='SCHEDULER_ERROR' if not scheduler_configured() or s['last_run_at'] is None or not 0<=now-s['last_run_at']<=360 else paper_status(s),
+            protection_status=('EMERGENCY_UNTRUSTED_DATA' if not fresh else s.get('protection_status')) if s['position'] else 'NO_OPEN_POSITION',last_status_transition=s.get('last_status_transition'),
+            candle_age_seconds=None if s.get('last_fresh_closed_at') is None or s['last_mark_at'] is None else max(0,now-s['last_fresh_closed_at']),
             market_status='FRESH_CLOSED_CANDLES' if fresh else 'NOT_FRESH',storage_status='CONNECTED',scheduler_configured=scheduler_configured(),
             position_net_pnl=text(money(D(s['equity'])-D(s['balance'])-D(s['position']['entry_fee']))) if fresh and s['position'] else None,
             current_equity=s['equity'] if fresh else None,win_rate=text(money(D(s['wins'])/s['trades']*100)) if s['trades'] else None,

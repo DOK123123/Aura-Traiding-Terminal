@@ -118,6 +118,33 @@ class Market:
             except (ValueError, KeyError, TypeError, ArithmeticError):
                 raise DemoError('INVALID_MARKET_DATA') from None
 
+    async def protection_snapshot(self, cfg):
+        """Small fresh closed-candle window, no analysis or entry permission.
+
+        Separate from full-history ingestion; fixed public Futures client still
+        enforces source, exchange clock, response age, ordering and completeness.
+        """
+        step = STEPS[cfg['timeframe']]
+        end = int(self.clock()) // step * step
+        try:
+            async with asyncio.timeout(10):
+                await self.client.check_time()
+                raw = await self.client.candles(cfg['timeframe'], end - 12 * step, end)
+            if raw['identity'] != IDENTITY:
+                raise DemoError('SOURCE_MISMATCH')
+            bars = [Bar.restore(b) for b in raw['bars']]
+            if len(bars) != 12 or bars[0].time != end - 12 * step or bars[-1].time + step != end:
+                raise DemoError('HISTORY_INCOMPLETE')
+            if int(self.clock()) // step * step != end:
+                raise DemoError('STALE_DATA')
+            return bars, dict(source=SOURCE, signal_at=end, source_sha256=digest([b.data() for b in bars])), int(self.clock())
+        except (MarketError, LabError) as exc:
+            raise DemoError(exc.code) from None
+        except TimeoutError:
+            raise DemoError('MARKET_UNAVAILABLE') from None
+        except (ValueError, KeyError, TypeError, ArithmeticError):
+            raise DemoError('INVALID_MARKET_DATA') from None
+
 
 class Quotes:
     """Read-only same-source display; never drives a financial transition."""

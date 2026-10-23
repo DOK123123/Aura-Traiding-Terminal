@@ -26,16 +26,21 @@
  TAKE_PROFIT_GAP_CONSERVATIVE:'TP при разрыве, консервативно',STRATEGY_EXIT_NEXT_OPEN:'Выход по стратегии на следующем open',
  COLD_START:'Новое хранилище',OWNER_STARTED:'Запущено владельцем',DATA_BLOCKED:'Восстановление блокируется данными',
  POSITION_RESTORED:'Позиция восстановлена из БД',FRESH_DATA_RECOVERED:'Свежие данные восстановлены'};
+ Object.assign(labels,{PAPER_ON:'Торговля включена',PAPER_OFF:'Торговля выключена',PAPER_PAUSED_HISTORY:'Пауза: целостность истории',PAPER_PAUSED_DATA:'Пауза: недостоверные данные',SCHEDULER_ERROR:'Ошибка или нет свежего scheduler-цикла',HISTORY_CANDLE_MISSING:'Ранее обработанная свеча отсутствует',HISTORY_CANDLE_CHANGED:'OHLCV ранее обработанной свечи изменились',HISTORY_SOURCE_UNAVAILABLE:'Источник истории недоступен',HISTORY_INCOMPLETE:'История содержит пропуски',EMERGENCY_UNTRUSTED_DATA:'АВАРИЯ: SL/TP не исполняются по недостоверным данным',FRESH_PROTECTION:'Сопровождение по свежим закрытым свечам',FRESH_PROTECTION_GAP:'Сопровождение активно; есть непроверенный период простоя',NO_OPEN_POSITION:'Открытой позиции нет',HISTORY_RECOVERED_WAIT_NEXT_CANDLE:'Исходная история подтверждена; ожидается новая свеча'});
  const label=x=>labels[x]||x||'—';
  const num=x=>x!==null&&x!==undefined&&x!==''&&Number.isFinite(Number(x))?Number(x).toLocaleString('ru-RU',{maximumFractionDigits:5}):'—';
  const date=x=>typeof x==='number'?new Date(x*1000).toLocaleString('ru-RU',{timeZone:'UTC'})+' UTC':'—';
  function view(data,failed=false,now=Date.now()/1000){
   if(data?.state&&(data.market_source!=='Bitget · USDT-M Futures / api.bitget.com'||data.state.market_source!==data.market_source||data.state.strategy_version!=='AURA_4.3_ACTIVE_PAPER_3'))return view(null,true,now);
   const s=data?.state,p=s?.position;const step={'5m':300,'15m':900,'1h':3600,'4h':14400}[s?.config?.timeframe];
-  const fresh=!failed&&data?.current_equity!==null&&Number.isFinite(data?.server_now)&&now>=data.server_now-30&&now-data.server_now<120&&Number.isFinite(s?.last_mark_at)&&now-s.last_mark_at<step&&now-s.last_mark_at>=0&&Number.isFinite(s?.last_success_at)&&now-s.last_success_at<360&&now-s.last_success_at>=0&&!s?.last_error;
+  const fresh=!failed&&data?.current_equity!==null&&Number.isFinite(data?.server_now)&&now>=data.server_now-30&&now-data.server_now<120&&Number.isFinite(s?.last_mark_at)&&now-s.last_mark_at<step&&now-s.last_mark_at>=0&&Number.isFinite(s?.last_success_at)&&now-s.last_success_at<360&&now-s.last_success_at>=0&&(!s?.last_error||['FRESH_PROTECTION','FRESH_PROTECTION_GAP'].includes(data?.protection_status));
   return {mode:failed?'Состояние не подтверждено':label(s?.mode),market:fresh?'Свежие закрытые свечи':'Нет свежего подтверждения рынка',
    storage:!failed&&data?.storage_status==='CONNECTED'?'Supabase: подтверждено чтение':'Supabase: не подтверждена',
    strategy:s?.config?`${s.config.strategy} ${s.config.timeframe} · BITGET · BTCUSDT USDT-M Futures · PAPER`:'—',
+   health:failed?'Состояние не подтверждено':`${data?.health_status||data?.paper_status||'—'} · ${label(data?.health_status||data?.paper_status)}`,
+   protection:failed?'Сопровождение не подтверждено':p&&!fresh?label('EMERGENCY_UNTRUSTED_DATA'):label(data?.protection_status),
+   candleage:typeof data?.candle_age_seconds==='number'?num(Math.max(0,data.candle_age_seconds+now-data.server_now))+' с':'Не подтверждён',
+   transition:data?.last_status_transition?`${date(data.last_status_transition.detected_at)} · ${label(data.last_status_transition.reason)} · ${data.last_status_transition.scheduler_run_id}`:'Переход ещё не зафиксирован',
    candle:date(s?.watermark),run:date(s?.last_run_at),saved:date(data?.last_saved_at),
    success:date(data?.last_market_success_at),successfulrun:date(data?.last_successful_run_at),scheduler:failed?'Состояние scheduler не подтверждено':label(data?.scheduler_status==='FRESH'&&(!Number.isFinite(s?.last_run_at)||now-s.last_run_at>360)?'STALE':data?.scheduler_status),
    signal:s?.last_signal?`${s.last_signal.direction} · ${date(s.last_signal.signal_at)} · ${label(s.last_signal.reason)}`:'Подтверждённых сигналов ещё нет',
@@ -63,7 +68,7 @@
  const out=k=>document.getElementById('a43-'+k);let data=null,busy=false,failed=false,closed=false,generation=0,controller=null,quoteController=null,quoteExpiry=null;
  function render(){
   const v=view(data,failed);
-  for(const k of ['mode','market','storage','strategy','candle','run','saved','signal','reason','balance','equity','realized','pnl','fees','slippage','drawdown','count','win','recovery','position','live','scheduler','success','successfulrun'])out(k).textContent=v[k];
+  for(const k of ['mode','market','storage','strategy','candle','run','saved','signal','reason','balance','equity','realized','pnl','fees','slippage','drawdown','count','win','recovery','position','live','scheduler','success','successfulrun','health','protection','candleage','transition'])out(k).textContent=v[k];
   out('select-strategy').disabled=busy||!v.canSelect;out('choice').disabled=busy||!v.canSelect;
   out('start').disabled=busy||!v.canStart;out('stop').disabled=!v.canStop;out('emergency').disabled=!v.canStop;out('refresh').disabled=busy;
   out('older').disabled=busy||!data?.history_has_more||!data?.history_cursor;

@@ -1,0 +1,71 @@
+name: Regression CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: regression-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    name: Python + JavaScript + isolated PostgreSQL
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact PR head or pushed main SHA
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Set up repository Python version
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version-file: .python-version
+      - name: Set up pinned Node version
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+      - name: Install complete pinned test dependencies
+        run: |
+          python -m venv .ci-venv
+          .ci-venv/bin/python -m pip install --no-deps --requirement ci/requirements.lock
+          .ci-venv/bin/python -m pip check
+          .ci-venv/bin/python ci/check_results.py
+      - name: Prepare isolated PostgreSQL service image before disabling test egress
+        run: |
+          docker pull postgres:16-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+          git rev-parse HEAD
+          .ci-venv/bin/python --version
+          node --version
+      - name: Run actual regressions with no external network and no production secrets
+        shell: bash
+        run: |
+          # Loopback is needed by existing offline HTTP/Worker fixtures. Docker
+          # is reached through its local Unix socket; each DB has network=none.
+          # No live scheduler/workflow is dispatched. Existing scheduler tests
+          # exercise loopback fixtures only; production endpoints are unreachable.
+          python_bin="$PWD/.ci-venv/bin/python"
+          node_bin="$(command -v node)"
+          test_dir="$RUNNER_TEMP/aura-regression-tests"
+          runner_uid="$(id -u)"
+          runner_gid="$(id -g)"
+          # Root is used only to create the network namespace. Test processes
+          # retain the normal runner user/groups, filesystem semantics and
+          # cancellation permissions, including access to the local Docker socket.
+          sudo unshare --net /bin/bash -c 'ip link set lo up; exec setpriv --reuid="$1" --regid="$2" --init-groups /bin/bash ci/run-regression.sh "$3" "$4" "$5"' -- "$runner_uid" "$runner_gid" "$python_bin" "$node_bin" "$test_dir"
+      - name: Upload actual test reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: regression-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ci-results/*.xml
+            ci-results/summary.json
+          if-no-files-found: error
+          retention-days: 7

@@ -40,6 +40,16 @@ def validate(s):
             active=D(p.get('active_stop',p['stop_loss']));old=D(p['stop_loss']);target=D(p['take_profit'])
             if not active.is_finite() or active<=0 or not (old<=active<target if p['direction']=='LONG' else target<active<=old):raise ValueError()
         if s.get('pending_exit') is not None and (not p or s['pending_exit']!=p['id']):raise ValueError()
+        for key in ('protection_watermark','last_fresh_closed_at'):
+            if s.get(key) is not None and (type(s[key]) is not int or s[key]<0):raise ValueError()
+        # The existing SQL selector preserves unknown audit metadata and clears
+        # the trading watermark. Old timestamps are historical, not a cursor for
+        # the new strategy. START clears them before establishing its baseline.
+        if s['watermark'] is not None and s.get('protection_watermark') is not None and s['protection_watermark']%STEPS[cfg['timeframe']]:raise ValueError()
+        guard=s.get('history_guard')
+        if guard is not None:
+            if not isinstance(guard,dict) or guard.get('source')!=SOURCE or guard.get('code') not in ('HISTORY_CANDLE_MISSING','HISTORY_CANDLE_CHANGED','HISTORY_INCOMPLETE'):raise ValueError()
+            if guard['code']!='HISTORY_INCOMPLETE' and s['watermark'] is not None and guard.get('old_ohlcv_hash')!=s['last_bar_hash']:raise ValueError()
     except (KeyError,TypeError,ValueError,ArithmeticError):raise paper.DemoError('ACTIVE_SCOPE_OR_CONFIG_MISMATCH') from None
 
 
@@ -130,7 +140,7 @@ def advance(old,bars,decision,now):
     try:
         for b in bars:b.validate(step,now)
     except LabError:raise paper.DemoError('INVALID_MARKET_DATA') from None
-    if any(b.time-a.time!=step for a,b in zip(bars,bars[1:])):raise paper.DemoError('MISSING_CANDLES')
+    if any(b.time-a.time!=step for a,b in zip(bars,bars[1:])):raise paper.DemoError('HISTORY_INCOMPLETE')
     if bars[-1].time+step!=latest:raise paper.DemoError('STALE_DATA')
     if decision.get('signal_at')!=latest or decision.get('source')!=SOURCE:raise paper.DemoError('SNAPSHOT_MISMATCH')
     if s['watermark'] is None:
@@ -138,7 +148,8 @@ def advance(old,bars,decision,now):
         paper.mark(s,bars[-1],latest);s['last_price']=text(bars[-1].close)
         return s,[event(s,'BASELINE',latest,now,dict(reason='ACTIVATION_BASELINE'))]
     prior=next((b for b in bars if b.time+step==s['watermark']),None)
-    if prior is None or digest(prior.data())!=s['last_bar_hash']:raise paper.DemoError('SOURCE_CORRECTION_OR_HISTORY_MISSING')
+    if prior is None:raise paper.DemoError('HISTORY_CANDLE_MISSING')
+    if digest(prior.data())!=s['last_bar_hash']:raise paper.DemoError('HISTORY_CANDLE_CHANGED')
     if latest==s['watermark']:return s,[]
     future=[b for b in bars if b.time>=s['watermark']]
     if not future or future[0].time!=s['watermark']:raise paper.DemoError('MISSING_CANDLES')

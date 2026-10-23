@@ -1,0 +1,248 @@
+{
+  "base_main": "da2af6986832833bb56a939ab43dbb80fa0f31c9",
+  "paper_only": true,
+  "production_modified": false,
+  "production_paper_verified": false,
+  "migration_required": false,
+  "strategies_and_risk_unchanged": true,
+  "tests": {
+    "python": {
+      "passed": 1629,
+      "skipped": 3,
+      "failed": 0,
+      "log": "python_tests.log"
+    },
+    "javascript": {
+      "passed": 240,
+      "failed": 0,
+      "log": "javascript_tests.log"
+    },
+    "final_targeted": {
+      "passed": 120,
+      "failed": 0,
+      "scope": "Active43 engine, history recovery, native Bitget, Bounce and owner shutdown/restart after final diagnostic changes"
+    },
+    "syntax_import": {
+      "status": "PASS",
+      "checks": [
+        "Project Python AST parse",
+        "app.main import",
+        "node --check static/active43.js",
+        "git diff --check"
+      ]
+    }
+  },
+  "postgres": {
+    "version": "PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+    "image": "postgres:16-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4",
+    "adapter": "Mock HTTP bridge to actual local PostgreSQL production RPCs; not hosted PostgREST",
+    "checks": [
+      "MIGRATION_REAPPLY_LEGACY_ACCOUNTS_UNCHANGED",
+      "RLS_ANON_AUTHENTICATED_DENIED_SERVICE_ROLE_ONLY_SCOPE_ENFORCED",
+      "READ_ONLY_PEEK_DOES_NOT_INITIALIZE_AND_GRANTS_NO_TABLE_WRITES",
+      "POPULATED_DONCHIAN_MIGRATION_REAPPLY_BYTE_IDENTICAL_ACCOUNT_HISTORY_ALL_RPC",
+      "CLOUDFLARE_SCHEDULED_TWO_OFF_SLOTS_HTTP_SQL_DUPLICATE_AND_RESTART",
+      "BOUNCE_ATOMIC_SELECTION_AND_SIX_REAL_SQL_CYCLES",
+      "ACCOUNT_PREPARATION_CONCURRENT_HTTP_INIT_OFF_HEARTBEAT_AND_DATABASE_RESTART",
+      "NO_SIGNAL_NO_ORDER",
+      "SOURCE_OUTAGE_PAUSE_AND_RECOVERY",
+      "DATABASE_CLOCK_BLOCKS_LATE_OPEN_AT_COMMIT",
+      "SQL_FAILURE_ROLLBACK_AND_UNKNOWN_OPEN_OUTCOME_EXACTLY_ONCE",
+      "REAL_DATABASE_OUTAGE_RESTART_STATE_RESTORED",
+      "DIAGNOSTIC_ON_OPEN_POSITION_BYTE_IDENTICAL_LEDGER_AFTER_RESTART",
+      "HISTORY_PAUSE_FRESH_PROTECTION_RECOVERY_CONCURRENT_TICKS_DATABASE_RESTART_UNKNOWN_CLOSE",
+      "RENDER_SCHEDULER_EXISTING_SERVICE_NATIVE_LONG_SHORT_SQL_CYCLES_NO_WEB_TICK",
+      "LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN",
+      "LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED"
+    ],
+    "history_recovery": {
+      "status": "PASS",
+      "cases": [
+        {
+          "side": "LONG",
+          "damage": "changed",
+          "position": false,
+          "status": "PASS",
+          "opened": 0,
+          "closed": 0,
+          "restart_restored": true,
+          "timeframe": "5m"
+        },
+        {
+          "side": "LONG",
+          "damage": "changed",
+          "position": true,
+          "status": "PASS",
+          "opened": 1,
+          "closed": 1,
+          "restart_restored": true,
+          "timeframe": "5m"
+        },
+        {
+          "side": "LONG",
+          "damage": "missing",
+          "position": false,
+          "status": "PASS",
+          "opened": 0,
+          "closed": 0,
+          "restart_restored": true,
+          "timeframe": "5m"
+        },
+        {
+          "side": "LONG",
+          "damage": "missing",
+          "position": true,
+          "status": "PASS",
+          "opened": 1,
+          "closed": 1,
+          "restart_restored": true,
+          "timeframe": "5m"
+        },
+        {
+          "side": "SHORT",
+          "damage": "changed",
+          "position": false,
+          "status": "PASS",
+          "opened": 0,
+          "closed": 0,
+          "restart_restored": true,
+          "timeframe": "5m"
+        },
+        {
+          "side": "SHORT",
+          "damage": "changed",
+          "position": true,
+          "status": "PASS",
+          "opened": 1,
+          "closed": 1,
+          "restart_restored": true,
+          "timeframe": "5m"
+        },
+        {
+          "side": "SHORT",
+          "damage": "missing",
+          "position": false,
+          "status": "PASS",
+          "opened": 0,
+          "closed": 0,
+          "restart_restored": true,
+          "timeframe": "5m"
+        },
+        {
+          "side": "SHORT",
+          "damage": "missing",
+          "position": true,
+          "status": "PASS",
+          "opened": 1,
+          "closed": 1,
+          "restart_restored": true,
+          "timeframe": "5m"
+        },
+        {
+          "side": "LONG",
+          "damage": "changed",
+          "position": false,
+          "status": "PASS",
+          "opened": 0,
+          "closed": 0,
+          "restart_restored": true,
+          "timeframe": "15m"
+        },
+        {
+          "side": "LONG",
+          "damage": "changed",
+          "position": true,
+          "status": "PASS",
+          "opened": 1,
+          "closed": 1,
+          "restart_restored": true,
+          "timeframe": "15m"
+        },
+        {
+          "side": "LONG",
+          "damage": "missing",
+          "position": false,
+          "status": "PASS",
+          "opened": 0,
+          "closed": 0,
+          "restart_restored": true,
+          "timeframe": "15m"
+        },
+        {
+          "side": "LONG",
+          "damage": "missing",
+          "position": true,
+          "status": "PASS",
+          "opened": 1,
+          "closed": 1,
+          "restart_restored": true,
+          "timeframe": "15m"
+        },
+        {
+          "side": "SHORT",
+          "damage": "changed",
+          "position": false,
+          "status": "PASS",
+          "opened": 0,
+          "closed": 0,
+          "restart_restored": true,
+          "timeframe": "15m"
+        },
+        {
+          "side": "SHORT",
+          "damage": "changed",
+          "position": true,
+          "status": "PASS",
+          "opened": 1,
+          "closed": 1,
+          "restart_restored": true,
+          "timeframe": "15m"
+        },
+        {
+          "side": "SHORT",
+          "damage": "missing",
+          "position": false,
+          "status": "PASS",
+          "opened": 0,
+          "closed": 0,
+          "restart_restored": true,
+          "timeframe": "15m"
+        },
+        {
+          "side": "SHORT",
+          "damage": "missing",
+          "position": true,
+          "status": "PASS",
+          "opened": 1,
+          "closed": 1,
+          "restart_restored": true,
+          "timeframe": "15m"
+        }
+      ],
+      "database_restart_restored": true,
+      "protective_close_rollback": true,
+      "unknown_close_outcome_exactly_once": true
+    },
+    "legacy_before_sha256": "f5e18f231a382bf99e51780530b711611d46e661451201e38490e285af07f135",
+    "legacy_after_sha256": "f5e18f231a382bf99e51780530b711611d46e661451201e38490e285af07f135",
+    "legacy_functions_before_sha256": "edf63895fed00cf308e2a9ea322f7b37096b2b7b82456757d637a69b7bb9d20e",
+    "legacy_functions_after_sha256": "edf63895fed00cf308e2a9ea322f7b37096b2b7b82456757d637a69b7bb9d20e"
+  },
+  "review": {
+    "code": {
+      "status": "PASS",
+      "method": "Separate manual review against docs/ecc/TRADING_REVIEW.md: entry blocking, pinned anchor, protection cursor, CAS/receipts, recovery and unchanged risk/strategies"
+    },
+    "security": {
+      "status": "PASS",
+      "method": "Separate manual review: fixed public GET-only client, unchanged owner/auth boundaries, no new endpoint/credential/source fallback, isolated SQL fixtures; changed-file secret-pattern check"
+    },
+    "unresolved_high_findings": [],
+    "limitations": [
+      "Permanent original OHLCV change intentionally remains paused until explicit owner action on an empty account.",
+      "Incomplete outage coverage is disclosed; no invented stop fills.",
+      "Local PostgreSQL via mock HTTP bridge is not hosted Supabase or Render verification.",
+      "Free hosting and external scheduling cannot establish a 24/7 SLA."
+    ]
+  }
+}
