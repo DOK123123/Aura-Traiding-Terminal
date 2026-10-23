@@ -1,3 +1,5 @@
+> Final integration adds an optional owner-reviewed Git snapshot transfer. See [AURA_RESEARCH_LAB_RELEASE_READINESS.md](AURA_RESEARCH_LAB_RELEASE_READINESS.md). Earlier operational limitations below describe the PR #9 baseline.
+
 # Веб-развёртывание Aura Trading Terminal
 
 Проект предназначен для Python-хостинга с постоянно работающим процессом,
@@ -31,11 +33,16 @@ WebSocket автоматически использует `wss` при HTTPS.
 Обязательны: `app/` со всеми модулями, `static/` со всеми ресурсами и
 `static/vendor/` с библиотекой и лицензиями, `requirements.txt`, `start_web.py`.
 Сохраните `Procfile` и `.python-version`, если платформа их поддерживает.
-`README.md`, `docs/`, `tests/` и `scripts/` полезны для разработки, но не нужны
-для обслуживания страницы. `start.bat` предназначен только для локальной Windows.
+Для полного Research Lab runner необходимы `scripts/`, `research/`, протоколы,
+реальные данные и зафиксированные артефакты из `docs/`. Не удаляйте их из
+checkout для воспроизводимых исследований. Веб-терминал больше не загружает
+тяжёлый replay при старте; отсутствие research assets должно дать контролируемую
+ошибку исследовательского API, а не запускать пересчёт. `README.md` и `tests/`
+не требуются для обслуживания страницы. `start.bat` предназначен только для локальной Windows.
 
 Не переносите `.venv/`, `__pycache__/`, `.pytest_cache/`, `.git/`, `.env`,
-логи и JSON-отчёты предыдущих проверок. Секреты задаются настройками хостинга.
+локальные логи и временные результаты. Версионированные исследовательские
+артефакты из `docs/` сохраняйте. Секреты задаются настройками хостинга.
 `pytest` в requirements нужен для проверок; его наличие не мешает запуску.
 Сторонние импорты приложения покрыты requirements, остальное — стандартная
 библиотека Python. Версии зависимостей в этой проверке не устанавливались.
@@ -56,3 +63,19 @@ TradingView. Регион хостинга и ограничения источ�
 
 После размещения проверить главную страницу, static, REST обоих инструментов,
 WebSocket и pattern API. Только затем можно подтвердить полную работоспособность.
+
+## Research Lab: отдельный runner
+
+Актуальные команды и ограничения: `docs/AI_RESEARCH_RELEASE_FIXES.md`.
+Production терминал предоставляет только read-only Research viewer. HTTP не
+запускает backtest, process или thread с вычислениями. Runner запрещён на Render;
+поддерживаемый недорогой режим — отдельный локальный Linux/WSL компьютер с
+внешним постоянным каталогом, локальной Workbench и ручным CLI-runner.
+
+Не используйте `.data/` checkout, `/tmp` или Render ephemeral filesystem как
+единственное хранилище новых исследований. Нужны явный `AURA_RESEARCH_STATE_DIR`
+вне checkout и `AURA_RESEARCH_STORAGE_MODE=durable`; каталог предварительно
+инициализируется offline CLI. Без них viewer показывает только опубликованные
+Git-результаты. Никаких изменений торговых таблиц Supabase не требуется.
+LLM не нужен: оставьте `AURA_RESEARCH_LLM_ENABLED=false`. Существующие
+trading/scheduler настройки и mounts не менять.

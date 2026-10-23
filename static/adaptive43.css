@@ -1,0 +1,5 @@
+#a43-panel {margin:1rem 0;padding:1rem;border:1px solid #40506b;border-radius:10px}
+#a43-panel summary {cursor:pointer;font-weight:700}
+#a43-panel pre {white-space:pre-wrap;overflow-wrap:anywhere}
+#a43-curve {width:100%;max-height:220px;border:1px solid #40506b}
+#a43-panel select,#a43-panel button {margin:.4rem;padding:.5rem}

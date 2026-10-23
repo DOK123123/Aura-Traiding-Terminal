@@ -1,0 +1,24 @@
+{
+  "python": {
+    "passed": 1254,
+    "failed": 0,
+    "warnings": 1,
+    "new_research_tests": 24,
+    "seconds": 90.98
+  },
+  "javascript": {
+    "suites_passed": 20,
+    "new_page_checks": 12
+  },
+  "python_syntax_files": 223,
+  "app_main_import": "PASS",
+  "changed_js_syntax": "PASS",
+  "experiments": 4,
+  "split_sensitivity_runs": 28,
+  "independent_accounting_audits_passed": 28,
+  "live_llm": "NOT_CONFIGURED_NOT_CALLED",
+  "production_render": "NOT_ACCESSED",
+  "production_supabase": "NOT_ACCESSED",
+  "merge": false,
+  "deploy": false
+}

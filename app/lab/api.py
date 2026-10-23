@@ -72,6 +72,51 @@ async def respond(call):
 def login():return RedirectResponse('/',status_code=303,headers=HEADERS)
 
 
+@router.get('/v2',dependencies=[Depends(owner)])
+async def lab_v2_summary():
+    import asyncio
+    from .v2_report import summary
+    return await respond(asyncio.to_thread(summary))
+
+
+@router.get('/v2/detail',dependencies=[Depends(owner)])
+async def lab_v2_detail(variant:str=Query('DONCHIAN_1h',pattern=r'^(AURA42|AURA43|(DONCHIAN|TREND_ATR|EMA_RSI_ADX)_(15m|1h|4h))$'),
+    split:Literal['development','validation','full_12m','validation_delayed']='validation',side:Literal['ALL','LONG','SHORT']='ALL',offset:int=Query(0,ge=0),limit:int=Query(100,ge=1,le=200)):
+    import asyncio
+    from .v2_report import detail
+    return await respond(asyncio.to_thread(detail,variant,split,offset,limit,side))
+
+
+@router.get('/profiles43',dependencies=[Depends(owner)])
+async def profiles43_summary():
+    import asyncio
+    from .adaptive43_profiles_report import summary
+    return await respond(asyncio.to_thread(summary))
+
+
+@router.get('/profiles43/detail',dependencies=[Depends(owner)])
+async def profiles43_detail(variant:str=Query('Balanced',pattern=r'^(AURA42|AURA43_ORIGINAL|(Conservative|Balanced|Active)(_(TREND_PULLBACK|BREAKOUT|REVERSAL))?)$'),
+    split:Literal['full_6m','development','validation']='validation',offset:int=Query(0,ge=0),limit:int=Query(100,ge=1,le=200)):
+    import asyncio
+    from .adaptive43_profiles_report import detail
+    return await respond(asyncio.to_thread(detail,variant,split,offset,limit))
+
+
+@router.get('/adaptive43',dependencies=[Depends(owner)])
+async def adaptive43_summary():
+    import asyncio
+    from .adaptive43_report import summary
+    return await respond(asyncio.to_thread(summary))
+
+
+@router.get('/adaptive43/detail',dependencies=[Depends(owner)])
+async def adaptive43_detail(variant:Literal['AURA42','AURA43_ADAPTIVE','AURA43_TREND_PULLBACK','AURA43_BREAKOUT','AURA43_REVERSAL']='AURA43_ADAPTIVE',
+    split:Literal['full_90d','development','validation']='validation',offset:int=Query(0,ge=0),limit:int=Query(100,ge=1,le=200)):
+    import asyncio
+    from .adaptive43_report import detail
+    return await respond(asyncio.to_thread(detail,variant,split,offset,limit))
+
+
 @router.get('/experiments',dependencies=[Depends(owner)])
 async def experiments(request:Request):
     import asyncio

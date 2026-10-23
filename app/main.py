@@ -28,6 +28,7 @@ from .paper.market import Market as PaperMarket
 from .paper.service import Service as PaperService
 from .paper.signals import SignalReader as PaperSignalReader
 from .patterns.history import history_service
+from .research.api import router as research_router
 from .lab.api import router as lab_router
 from .lab.service import Service as LabService
 from .lab.data import public_page as lab_public_page
@@ -96,6 +97,7 @@ app.include_router(testnet_router)
 app.include_router(bybit_demo_router)
 app.include_router(paper_router)
 app.include_router(lab_router)
+app.include_router(research_router)
 app.include_router(intelligence_router)
 app.include_router(forward_router)
 app.include_router(auto42_router)
