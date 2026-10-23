@@ -68,6 +68,12 @@ def open_position(s,decision,bar,now):
     for key in ('stop_loss','take_profit'):
         rounding=ROUND_DOWN if long else ROUND_UP
         decision[key]=text((D(decision[key])/tick).to_integral_value(rounding=rounding)*tick)
+    if s['config']['strategy']=='SR_BOUNCE':
+        px=fill(bar.open,decision['direction'],True,paper.SLIP);sign=1 if long else -1
+        distance=sign*(px-D(decision['stop_loss']))
+        if distance<=0:raise paper.DemoError('INVALID_STOPS_AT_NEXT_OPEN')
+        target=px+sign*D('1.5')*distance
+        decision['take_profit']=text((target/tick).to_integral_value(rounding=ROUND_DOWN if long else ROUND_UP)*tick)
     ev=paper.open_virtual(s,decision,bar,now);p=s['position'];old=deepcopy(p);q=D(p['size'])
     q=(q/D(FILTERS['qty_step'])).to_integral_value(rounding=ROUND_DOWN)*D(FILTERS['qty_step'])
     px=D(p['entry_price']);cost=money(px*q,ceil=True)
@@ -81,6 +87,7 @@ def open_position(s,decision,bar,now):
     s['slippage']=text(money(D(s['slippage'])-money(abs(px-bar.open)*D(old['size']))+money(abs(px-bar.open)*q)))
     p.update(size=text(q),notional=text(cost),entry_fee=text(ef),risk_usdt=text(risk),timeframe=s['config']['timeframe'],
              active_stop=p['stop_loss'],trailing_extreme=p['entry_price'],market_source=SOURCE)
+    if s['config']['strategy']=='SR_BOUNCE':p['strategy']='SR_BOUNCE'
     return event(s,'OPEN',decision['signal_at'],now,deepcopy(p))
 
 

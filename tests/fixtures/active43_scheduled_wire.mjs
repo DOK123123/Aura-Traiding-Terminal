@@ -7,15 +7,19 @@ assert.ok(!process.env.RENDER);
 assert.match(input.origin,/^http:\/\/127\.0\.0\.1:\d+$/);
 assert.ok(input.token.startsWith('DUMMY_'));
 assert.ok(Number.isInteger(input.at));
+const operation=input.operation || 'off_only';
+assert.ok(['off_only','saved_mode'].includes(operation));
+const path=operation==='off_only'?'/api/active43/verify-off-tick':'/api/active43/tick';
 const nativeFetch=globalThis.fetch,logs=[];
 globalThis.fetch=async(url,request)=>{
- assert.equal(url,'https://aura-traiding-terminal.onrender.com/api/active43/verify-off-tick');
+ assert.equal(url,'https://aura-traiding-terminal.onrender.com'+path);
  assert.equal(request.method,'POST');
- assert.deepEqual(JSON.parse(request.body),{confirmation:'INITIALIZE ISOLATED PAPER ACCOUNT'});
- return nativeFetch(input.origin+'/api/active43/verify-off-tick',request);
+ if(operation==='off_only') assert.deepEqual(JSON.parse(request.body),{confirmation:'INITIALIZE ISOLATED PAPER ACCOUNT'});
+ else assert.equal(request.body,'');
+ return nativeFetch(input.origin+path,request);
 };
 Date.now=()=>input.at;
 console.log=value=>logs.push(typeof value==='string'?JSON.parse(value):value);
 await worker.scheduled({cron:CRON,scheduledTime:input.at},{AURA_ACTIVE43_CRON_ENABLED:'true',
- AURA_ACTIVE43_OPERATION:'off_only',AURA_ACTIVE43_BITGET_SCHEDULER_SECRET:input.token});
+ AURA_ACTIVE43_OPERATION:operation,AURA_ACTIVE43_BITGET_SCHEDULER_SECRET:input.token});
 process.stdout.write(JSON.stringify({scope:'LOCAL_HTTP_AND_SQL_NOT_CLOUDFLARE_OR_RENDER',logs}));

@@ -17,10 +17,18 @@ PROTOCOL=dict(version=VERSION,train_pct=60,validation_pct=20,test_pct=20,startin
  source='BITGET_USDT_FUTURES_BTCUSDT_PERPETUAL; public last-trade OHLC; virtual execution; funding not modeled')
 
 def config(name='DONCHIAN',timeframe='15m'):
+    if name=='SR_BOUNCE':
+        from .bounce import PARAMETERS as bounce_parameters
+        if timeframe!='5m':raise ValueError('Bounce is closed 5m only')
+        return dict(strategy=name,timeframe=timeframe,parameters=dict(bounce_parameters),version=VERSION,
+                    protocol_hash=digest(dict(parent_protocol_hash=digest(PROTOCOL),experimental='SR_BOUNCE_1',parameters=bounce_parameters)))
     if name not in PARAMETERS or timeframe not in STEPS:raise ValueError('Unsupported frozen configuration')
     return dict(strategy=name,timeframe=timeframe,parameters=PARAMETERS[name],version=VERSION,protocol_hash=digest(PROTOCOL))
 
 def signals(bars,name):
+    if name=='SR_BOUNCE':
+        from .bounce import decisions
+        return decisions(bars)
     if name in NATIVE:return native(bars,name)
     if name not in PARAMETERS:raise ValueError('Unsupported hypothesis')
     closes=[float(b.close) for b in bars];fast=ema(closes,20);slow=ema(closes,50)

@@ -139,7 +139,9 @@ class Diagnostics:
                 result['supabase']['stage']='STATE_VALIDATION'
                 state = env['state']
                 if state['config'] != self.service.config:
-                    raise DemoError('CONFIG_CHANGED')
+                    if store is not self.service.store:raise DemoError('CONFIG_CHANGED')
+                    from .selection import adopt
+                    await adopt(self.service,env)
                 result.update(virtual_balance=state['balance'], mode=state['mode'],
                               current_position={k: state['position'][k] for k in ('id', 'direction', 'size', 'entry_price', 'stop_loss', 'active_stop', 'take_profit')} if state['position'] else None)
                 last = state.get('last_successful_run_at')

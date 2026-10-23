@@ -10,3 +10,5 @@
 #active43-off-readiness dd{margin:4px 0;overflow-wrap:anywhere}
 #active43-off-readiness dt{opacity:.75}
 #a43-readiness-link{text-decoration:underline;color:var(--mint)}
+
+#a43-choice{max-width:100%;min-height:44px;white-space:normal}

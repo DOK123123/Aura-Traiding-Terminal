@@ -30,3 +30,42 @@ test('one-button diagnostics sends only read-only endpoint even without a portfo
  assert.match(h.node('a43-diagnostic-message').textContent,/Render не подтверждён/);
  assert.equal(h.node('a43-start').disabled,true);h.win.handlers.pagehide();
 });
+
+test('strategy selector is fail closed unless server confirms empty OFF and guards',()=>{
+ const d=data('OFF');Object.assign(d.state,{pending:null,pending_exit:null,data_recovery_armed:false,emergency:false});d.strategy_switch_allowed=true;
+ assert.equal(view(d).canSelect,true);
+ for(const patch of [{mode:'ON'},{mode:'PAUSED'},{mode:'EMERGENCY'},{position:{}},{pending:{}},{pending_exit:'p'},{data_recovery_armed:true},{emergency:true}]){
+  assert.equal(view({...d,state:{...d.state,...patch}}).canSelect,false);
+ }
+ assert.equal(view({...d,strategy_switch_allowed:false}).canSelect,false);
+ assert.equal(view(d,true).canSelect,false);
+});
+test('owner strategy selection posts only selection, refreshes persisted config and never START',async()=>{
+ let chosen=false;const calls=[];
+ const h=harness(async(url,options)=>{
+  calls.push([url,options]);
+  if(options.method==='POST'){
+   assert.equal(url,'/api/active43/strategy');const body=JSON.parse(options.body);
+   assert.equal(body.choice,'BOUNCE_5M');assert.equal(body.expected_revision,1);
+   assert.equal(body.confirmation,'CHANGE PAPER STRATEGY WHILE OFF');chosen=true;
+   return response({paper_only:true,exchange_execution:false,state_saved:true});
+  }
+  const d=data('OFF');Object.assign(d.state,{pending:null,pending_exit:null,data_recovery_armed:false,emergency:false});d.strategy_switch_allowed=true;
+  if(chosen){d.state.config={strategy:'SR_BOUNCE',timeframe:'5m'};d.revision=2;}
+  return response(d);
+ });
+ await h.node('a43-refresh').handlers.click();assert.equal(h.node('a43-select-strategy').disabled,false);
+ h.node('a43-choice').value='BOUNCE_5M';await h.node('a43-select-strategy').handlers.click();
+ assert.match(h.node('a43-strategy').textContent,/SR_BOUNCE 5m/);assert.match(h.node('a43-mode').textContent,/Выключен/);
+ assert.equal(calls.filter(x=>x[1].method==='POST').length,1);assert.ok(!calls.some(x=>x[0].endsWith('/control')));
+ h.win.handlers.pagehide();
+});
+test('strategy selection rejected by server is not shown as acknowledged',async()=>{
+ const h=harness(async(url,o)=>{
+  if(o.method==='POST')return response({code:'STRATEGY_SWITCH_BLOCKED'},503);
+  const d=data('OFF');Object.assign(d.state,{pending:null,pending_exit:null,data_recovery_armed:false});d.strategy_switch_allowed=true;return response(d);
+ });
+ await h.node('a43-refresh').handlers.click();h.node('a43-choice').value='BOUNCE_5M';await h.node('a43-select-strategy').handlers.click();
+ assert.match(h.node('a43-message').textContent,/Смена стратегии не подтверждена/);assert.equal(h.node('a43-select-strategy').disabled,true);
+ h.win.handlers.pagehide();
+});

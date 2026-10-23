@@ -67,8 +67,12 @@ class Service:
             if component:await component.close()
     async def load(self):
         env=await self.store.load(int(self.clock()));validate(env['state'])
-        if env['state']['config']!=self.config:raise DemoError('CONFIG_CHANGED')
+        from .selection import adopt
+        await adopt(self,env)
         self.restored=True;return env
+    async def select_strategy(self,choice,request_id,revision):
+        from .selection import select
+        return await select(self,choice,request_id,revision)
     async def snapshot(self):
         bars,decision,_=await self.market.snapshot(self.config);now=int(self.clock());step=STEPS[self.config['timeframe']]
         if (not bars or not isinstance(decision,dict) or decision.get('source')!=SOURCE or bars[-1].time+step!=now//step*step or decision.get('signal_at')!=now//step*step
@@ -186,6 +190,7 @@ class Service:
                 if exc.code!='CONCURRENT_UPDATE' or attempt==2:raise
                 env=await self.load()
                 if env['state']['epoch']!=old['epoch']:raise DemoError('PORTFOLIO_CHANGED')
+                if env['state']['config']!=old['config']:raise DemoError('CONFIG_CHANGED')
     @staticmethod
     def result(s,events,duplicate,processed):
         return dict(status='PAUSED' if s['last_error'] else 'COMPLETED',paper_only=True,exchange_execution=False,
@@ -202,7 +207,11 @@ class Service:
         if cached and cached[1].get('source')==SOURCE and cached[1].get('config_hash')==digest(self.config):
             chart=dict(source=SOURCE,timeframe=self.config['timeframe'],closed_at=cached[0][-1].time+step,
                        bars=[b.data() for b in cached[0][-120:]],read_only=True)
-        return dict(chart=chart,scope=SCOPE,state=s,revision=env['revision'],last_saved_at=env['last_saved_at'],server_now=now,
+        from .selection import CHOICES
+        return dict(strategy_switch_allowed=(s['mode']=='OFF' and all(s.get(k) is None for k in ('position','pending','pending_exit'))
+            and s.get('data_recovery_armed') is False and not risk_reason(s)
+            and s['config'] in CHOICES.values()),
+            chart=chart,scope=SCOPE,state=s,revision=env['revision'],last_saved_at=env['last_saved_at'],server_now=now,
             market_status='FRESH_CLOSED_CANDLES' if fresh else 'NOT_FRESH',storage_status='CONNECTED',scheduler_configured=scheduler_configured(),
             position_net_pnl=text(money(D(s['equity'])-D(s['balance'])-D(s['position']['entry_fee']))) if fresh and s['position'] else None,
             current_equity=s['equity'] if fresh else None,win_rate=text(money(D(s['wins'])/s['trades']*100)) if s['trades'] else None,

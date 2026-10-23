@@ -182,3 +182,8 @@ Owner Panel → **ПРОВЕРИТЬ ВСЮ СИСТЕМУ** проверяет 
 и сохранённые scheduler ticks без торговых операций. В GitHub Actions ручной
 `operation=diagnostics` работает при scheduler variable=false. Подробности и
 границы production-проверки: [инструкция](docs/AURA43_SETUP_VERIFICATION.md).
+
+### Experimental Support/Resistance Bounce 5m
+
+Отдельный owner-selectable сценарий Aura 4.3, выключен по умолчанию.
+[Правила, безопасная смена стратегии, SQL и изолированный прогон](docs/AURA43_BOUNCE5M.md).
