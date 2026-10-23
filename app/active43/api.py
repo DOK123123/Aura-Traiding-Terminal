@@ -141,3 +141,16 @@ async def off_only_readiness(request:Request):
     else:
         result=await inspect(service)
     return JSONResponse(result,headers=HEADERS)
+
+
+class StrategySelection(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    choice:Literal['DONCHIAN_15M','BOUNCE_5M']
+    request_id:StrictStr=Field(pattern='^[a-f0-9]{32}$')
+    expected_revision:StrictInt=Field(ge=1)
+    confirmation:Literal['CHANGE PAPER STRATEGY WHILE OFF']
+
+
+@router.post('/strategy',dependencies=[Depends(mutation)])
+async def select_strategy(request:Request,body:StrategySelection):
+    return await respond(svc(request).select_strategy(body.choice,body.request_id,body.expected_revision))

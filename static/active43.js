@@ -1,6 +1,6 @@
 /* Isolated owner UI. All operations are virtual; never manufactures a signal. */
 (function(){'use strict';
- const labels={ON:'Включён',OFF:'Выключен',PAUSED:'Приостановлен',EMERGENCY:'Аварийный запрет входов',ERROR:'Ошибка',
+ const labels={STRATEGY_CHANGED:'Стратегия изменена; PAPER OFF',CLOSED_SUPPORT_BOUNCE:'Подтверждённый отскок от поддержки',CLOSED_RESISTANCE_REJECTION:'Подтверждённый отбой от сопротивления',BOUNCE_NO_CONFIRMED_REJECTION:'Нет подтверждённого отскока',BOUNCE_WARMUP:'Прогрев Bounce 5m',STRATEGY_SWITCH_BLOCKED:'Смена запрещена: нужен пустой OFF-счёт и risk guards',OFF_TICK_REQUIRES_EMPTY_OFF_ACCOUNT:'Нужен OFF без позиции и ожидающих операций',OFF_TICK_ACCOUNT_RISK_BLOCKED:'Счёт заблокирован risk guards',ON:'Включён',OFF:'Выключен',PAUSED:'Приостановлен',EMERGENCY:'Аварийный запрет входов',ERROR:'Ошибка',
  ACTIVE43_BITGET_DISABLED:'Bitget Futures выключен отдельной настройкой сервера',ACTIVE43_DISABLED:'Режим выключен в настройках сервера',ACTIVE43_STORAGE_NOT_CONFIGURED:'Отдельное хранилище Aura 4.3 не настроено',ACTIVE43_NOT_CONFIGURED:'Aura 4.3 не настроена',
  SCHEDULER_STORAGE_UNVERIFIED:'Циклы не проверены: нет подтверждённого чтения БД',SCHEDULER_ACCOUNT_NOT_INITIALIZED:'Счёт Aura 4.3 ещё не создан',STORAGE_URL_INVALID:'Неверный формат AURA_ACTIVE43_BITGET_SUPABASE_URL',STORAGE_KEY_INVALID:'Неверный формат серверного service_role ключа Aura 4.3',STORAGE_URL_MISSING:'Отсутствует AURA_ACTIVE43_BITGET_SUPABASE_URL',STORAGE_KEY_MISSING:'Отсутствует серверный service_role ключ Aura 4.3',
  NO_CONFIRMED_TICK:'Сохранённых успешных циклов ещё нет',STALE_TICK:'Последний успешный цикл устарел',DIAGNOSTIC_TIMEOUT:'Проверка превысила лимит времени',STORAGE_PERMISSION_DENIED:'БД запретила чтение отдельной таблицы Aura 4.3',STORAGE_AUTH:'Supabase отклонила серверный ключ',
@@ -44,6 +44,7 @@
    drawdown:num(s?.max_drawdown_pct),count:num(s?.trades),win:num(data?.win_rate),recovery:data?.restart_readback?label(s?.recovery_status):'Чтение после старта не подтверждено',
    position:p?`${p.direction} · ${num(p.size)} BTC · вход ${num(p.entry_price)} · SL ${num(p.active_stop||p.stop_loss)} · TP ${num(p.take_profit)} · ${date(p.entry_time)}`:'Нет открытой позиции',
    live:s?.monitor_error?'Диагностика цикла недоступна; проверьте журнал сделок':data?.production_paper_verified===true?'Зафиксирован реальный Render/Supabase цикл':'WAITING_FOR_REAL_SIGNAL — автономный production-цикл не подтверждён',
+   canSelect:!!s&&data.strategy_switch_allowed===true&&!failed&&s.mode==='OFF'&&s.position===null&&s.pending===null&&s.pending_exit===null&&s.data_recovery_armed===false&&!s.emergency&&Number.isInteger(data.revision),
    canStart:!!s&&!failed&&s.mode!=='ON'&&!s.emergency&&!p&&!!data.scheduler_configured&&Number.isInteger(data.revision),canStop:!!s};
  }
  function chartModel(data){
@@ -63,6 +64,7 @@
  function render(){
   const v=view(data,failed);
   for(const k of ['mode','market','storage','strategy','candle','run','saved','signal','reason','balance','equity','realized','pnl','fees','slippage','drawdown','count','win','recovery','position','live','scheduler','success','successfulrun'])out(k).textContent=v[k];
+  out('select-strategy').disabled=busy||!v.canSelect;out('choice').disabled=busy||!v.canSelect;
   out('start').disabled=busy||!v.canStart;out('stop').disabled=!v.canStop;out('emergency').disabled=!v.canStop;out('refresh').disabled=busy;
   out('older').disabled=busy||!data?.history_has_more||!data?.history_cursor;
   out('history').replaceChildren();for(const t of data?.trades||[]){const row=document.createElement('li');row.textContent=`${date(t.exit_time)} · ${t.direction} · ${label(t.exit_reason)} · вход ${num(t.entry_price)} → выход ${num(t.exit_price)} · SL ${num(t.stop_loss)} / TP ${num(t.take_profit)} · ${num(t.realized_pnl)} USDT · комиссии ${num(t.fees)} · ${label(t.reason)}`;out('history').append(row);}
@@ -107,7 +109,7 @@
  }
  async function refresh(){
   if(busy||closed)return;const run=++generation;busy=true;render();
-  try{const b=await request('status');if(run!==generation)return;data=b;failed=false;out('message').textContent='Портфель прочитан из отдельного хранилища Aura 4.3.';}
+  try{const b=await request('status');if(run!==generation)return;data=b;failed=false;out('choice').value=b.state?.config?.strategy==='SR_BOUNCE'?'BOUNCE_5M':'DONCHIAN_15M';out('message').textContent='Портфель прочитан из отдельного хранилища Aura 4.3.';}
   catch(e){if(run===generation){failed=true;out('message').textContent=e.name==='AbortError'?'Сервер не ответил; состояние не подтверждено':e.message;}}
   finally{if(run===generation){busy=false;if(!closed){render();if(!failed)quote();}}}
  }
@@ -117,7 +119,7 @@
   if(urgent)controller?.abort();const run=++generation;busy=true;render();
   try{
    await request('control',{method:'POST',headers:{'Content-Type':'application/json','X-Aura-Paper':'local-only'},body:JSON.stringify({action,request_id:crypto.randomUUID().replace(/-/g,''),expected_revision:action==='START'?data?.revision:null,confirmation:action==='START'?'START EXPERIMENTAL PAPER':''})});
-   if(run!==generation)return;const b=await request('status');if(run!==generation)return;data=b;failed=false;out('message').textContent='Действие подтверждено. Проверяйте режим, scheduler и сохранённые события.';
+   if(run!==generation)return;const b=await request('status');if(run!==generation)return;data=b;failed=false;out('choice').value=b.state?.config?.strategy==='SR_BOUNCE'?'BOUNCE_5M':'DONCHIAN_15M';out('message').textContent='Действие подтверждено. Проверяйте режим, scheduler и сохранённые события.';
   }catch(e){if(run===generation){failed=true;out('message').textContent='Действие не подтверждено: '+(e.name==='AbortError'?'обновите состояние перед повтором':e.message);}}
   finally{if(run===generation){busy=false;if(!closed)render();}}
  }
@@ -146,6 +148,20 @@
    for(const k of ['bitget','storage','scheduler'])out('diag-'+k).textContent='ERROR · не подтверждено';
    out('diagnostic-message').textContent='Диагностика не подтверждена: '+(e.name==='AbortError'?'тайм-аут сервера':e.message);
   }finally{diagnosticBusy=false;out('diagnose').disabled=false;}
+ });
+ out('select-strategy').addEventListener('click',async()=>{
+  if(busy||!view(data,failed).canSelect)return;
+  const choice=out('choice').value;
+  if(!['DONCHIAN_15M','BOUNCE_5M'].includes(choice))return;
+  if(!window.confirm('Сменить PAPER-стратегию без сброса баланса? PAPER останется OFF.'))return;
+  const run=++generation;busy=true;render();
+  try{
+   await request('strategy',{method:'POST',headers:{'Content-Type':'application/json','X-Aura-Paper':'local-only'},
+    body:JSON.stringify({choice,request_id:crypto.randomUUID().replace(/-/g,''),expected_revision:data.revision,confirmation:'CHANGE PAPER STRATEGY WHILE OFF'})});
+   const b=await request('status');if(run!==generation)return;data=b;failed=false;out('choice').value=b.state?.config?.strategy==='SR_BOUNCE'?'BOUNCE_5M':'DONCHIAN_15M';
+   out('message').textContent='Выбор подтверждён хранилищем. PAPER не включён; баланс и история сохранены.';
+  }catch(e){if(run===generation){failed=true;out('message').textContent='Смена стратегии не подтверждена: '+e.message;}}
+  finally{if(run===generation){busy=false;if(!closed)render();}}
  });
  out('refresh').addEventListener('click',refresh);for(const [id,action] of [['start','START'],['stop','STOP'],['emergency','EMERGENCY']])out(id).addEventListener('click',()=>control(action));
  out('older').addEventListener('click',async()=>{

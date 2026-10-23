@@ -14,6 +14,7 @@ def test_actual_sql_transactions_roles_recovery_and_cycles(tmp_path,monkeypatch)
     report=verifier.run(tmp_path/'active43.json')
     assert report['POSTGRESQL_VERIFIED'] and report['RLS_VERIFIED']
     assert report['preparation']['owner_readiness_get_byte_identical_sql']
+    assert report['bounce']['atomic_switch'] and len(report['bounce']['cases'])==6
     assert report['cloudflare_off_cycles']['distinct_saved_slots']==2
     assert report['cloudflare_off_cycles']['duplicate_without_write']
     assert report['cloudflare_off_cycles']['paper_state_unchanged']

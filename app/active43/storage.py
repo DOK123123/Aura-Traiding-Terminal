@@ -39,7 +39,7 @@ class Store:
         except ForwardError as exc:raise DemoError(exc.code) from None
     async def close(self):await self.transport.close()
     async def rpc(self,name,args):
-        if name not in ('aura_active43_bitget_load','aura_active43_bitget_commit','aura_active43_bitget_history'):raise DemoError('STORAGE_METHOD_FORBIDDEN')
+        if name not in ('aura_active43_bitget_load','aura_active43_bitget_commit','aura_active43_bitget_history','aura_active43_bitget_select_strategy'):raise DemoError('STORAGE_METHOD_FORBIDDEN')
         try:
             async with asyncio.timeout(12):
                 async with self.transport.slots:
@@ -58,7 +58,7 @@ class Store:
                             if len(raw)>2*1024*1024:raise DemoError('STORAGE_RESPONSE_LIMIT')
                         value=json.loads(raw)
                         if isinstance(value,dict) and value.get('error'):
-                            code=value['error'];allowed={'CONCURRENT_UPDATE','CORRUPT_PORTFOLIO','INVALID_EVENT','WRITE_LIMIT','CONFIG_CHANGED','STALE_EXECUTION_AT_COMMIT'}
+                            code=value['error'];allowed={'CONCURRENT_UPDATE','CORRUPT_PORTFOLIO','INVALID_EVENT','WRITE_LIMIT','CONFIG_CHANGED','STALE_EXECUTION_AT_COMMIT','STRATEGY_SWITCH_BLOCKED','IDEMPOTENCY_CONFLICT'}
                             raise DemoError(code if code in allowed else 'STORAGE_UNAVAILABLE')
                         self.status='CONNECTED';return value
         except (TimeoutError,httpx.TimeoutException):self.status='ERROR';raise DemoError('STORAGE_TIMEOUT_OUTCOME_UNKNOWN') from None
@@ -96,6 +96,9 @@ class Store:
     async def commit(self,revision,state,events,key):
         validate(state);validate_commit(state,events,key)
         return self.envelope(await self.rpc('aura_active43_bitget_commit',dict(expected_revision=revision,new_state=packed(state),new_events=[dict(e,**packed(e)) for e in events],operation_key=key)))
+    async def select_strategy(self,revision,state,ev,key):
+        validate(state);validate_commit(state,[ev],key)
+        return self.envelope(await self.rpc('aura_active43_bitget_select_strategy',dict(expected_revision=revision,new_state=packed(state),new_event=dict(ev,**packed(ev)),operation_key=key)))
     async def history(self,epoch=None,after=None,limit=50,key=None,kind=None,before=None):
         if not 1<=limit<=200 or kind not in (None,'CLOSE','OPEN','SIGNAL','ERROR'):raise DemoError('READ_LIMIT')
         value=await self.rpc('aura_active43_bitget_history',dict(selected_epoch=epoch,after_seq=after,row_limit=limit,event_id=key,kind_filter=kind,before_seq=before))

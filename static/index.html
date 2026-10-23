@@ -206,6 +206,11 @@
     <p>Последний сигнал: <span id="a43-signal">—</span></p>
     <p>Причина решения: <span id="a43-reason">—</span></p>
     <p id="a43-position">Позиция не загружена</p><p id="a43-live">Автономный production-цикл не подтверждён</p>
+    <div class="a43-controls"><label for="a43-choice">PAPER-стратегия (смена только OFF и пустой счёт)</label>
+      <select id="a43-choice"><option value="DONCHIAN_15M">Donchian 15m · существующая</option><option value="BOUNCE_5M">Support/Resistance Bounce 5m · EXPERIMENTAL</option></select>
+      <button id="a43-select-strategy" type="button" disabled>Сохранить стратегию · PAPER останется OFF</button>
+      <p>Эксперимент без обещания доходности или большей частоты. ATR SL · TP 1.5R до расходов. Баланс и история не сбрасываются.</p>
+    </div>
     <div role="group" aria-label="Управление Aura 4.3"><button id="a43-start" disabled>START EXPERIMENTAL PAPER</button><button id="a43-stop" disabled>STOP · запрет новых входов</button><button id="a43-emergency" disabled>EMERGENCY STOP</button><button id="a43-refresh">Обновить</button></div>
     <p id="a43-message" role="status" aria-live="polite"></p>
     <button id="a43-diagnose">ПРОВЕРИТЬ ВСЮ СИСТЕМУ</button>
