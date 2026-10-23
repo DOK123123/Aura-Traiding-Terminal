@@ -53,7 +53,12 @@ jobs:
           python_bin="$PWD/.ci-venv/bin/python"
           node_bin="$(command -v node)"
           test_dir="$RUNNER_TEMP/aura-regression-tests"
-          sudo unshare --net /bin/bash -c 'ip link set lo up; exec /bin/bash ci/run-regression.sh "$@"' -- "$python_bin" "$node_bin" "$test_dir"
+          runner_uid="$(id -u)"
+          runner_gid="$(id -g)"
+          # Root is used only to create the network namespace. Test processes
+          # retain the normal runner user/groups, filesystem semantics and
+          # cancellation permissions, including access to the local Docker socket.
+          sudo unshare --net /bin/bash -c 'ip link set lo up; exec setpriv --reuid="$1" --regid="$2" --init-groups /bin/bash ci/run-regression.sh "$3" "$4" "$5"' -- "$runner_uid" "$runner_gid" "$python_bin" "$node_bin" "$test_dir"
       - name: Upload actual test reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
