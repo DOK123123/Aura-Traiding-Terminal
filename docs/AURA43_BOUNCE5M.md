@@ -152,21 +152,55 @@ production. Только реальный публичный Bitget; stale/API e
 
 ## Публикация владельцем, не часть этой задачи
 
-1. После review/Merge вручную применить **только** новую миграцию
-   `scripts/active43_bitget_strategy_selection.sql` в существующем Supabase SQL Editor.
-   Base Bitget schema должна уже существовать. Не запускать reset/старые init SQL.
-2. Render Deploy одобренного main. Новые env, ключи, сервисы и Cloudflare Deploy
-   не нужны. PAPER остаётся в сохранённом OFF; Donchian — default, выбор не автоматический.
-3. В Owner Panel при OFF/empty/guards выбрать Bounce 5m и сохранить; проверить
-   active config и OFF после refresh/restart. Для естественного PAPER OPEN→CLOSE
-   потребуется отдельное решение владельца включить существующий START PAPER.
-   Эта задача не включает торговлю и не подтверждает цикл на Render.
+1. **PAPER OFF и preflight до SQL.** В существующей Owner Panel проверить сохранённый
+   OFF, Donchian 15m, position/pending/pending_exit отсутствуют, recovery=false,
+   risk guards PASS. Read-only блок «Готовность Cloudflare off_only» должен
+   подтвердить чтение из Supabase. Записать текущий баланс (ожидается 10000 USDT),
+   число/историю сделок и revision. Если значение другое — не сбрасывать его.
+   При BLOCKED/неизвестном состоянии установку остановить. Никаких initialize/reset.
+2. **SQL до Merge.** В [Supabase SQL Editor](https://supabase.com/dashboard/projects)
+   существующего проекта применить только [active43_bitget_strategy_selection.sql](https://github.com/DOK123123/Aura-Traiding-Terminal/blob/codex/aura43-bounce5m/scripts/active43_bitget_strategy_selection.sql).
+   Base Bitget schema уже должна существовать. Скрипт атомарен BEGIN/COMMIT,
+   повторное применение допустимо. Он добавляет только RPC и права на него;
+   старый код продолжает работать, поскольку прежние функции не меняются.
+   Повторить read-only preflight: баланс/Donchian/история должны сохраниться.
+   Revision может увеличиваться из-за существующего Cloudflare OFF tick — это
+   допустимое heartbeat-сохранение, не изменение баланса/стратегии миграцией.
+3. **Merge, затем Render Deploy** одобренного [PR #30](https://github.com/DOK123123/Aura-Traiding-Terminal/pull/30).
+   В [Render Dashboard](https://dashboard.render.com/) выбрать существующий Web
+   Service → Manual Deploy → Deploy latest commit; сверить commit с main.
+   Новые env, ключи, сервисы и Cloudflare Deploy не нужны.
+4. **Проверка до выбора.** После reload Owner Panel и подтверждённого чтения
+   Supabase должны остаться OFF, Donchian, прежний баланс/история и пустой счёт.
+   Проверить два новых успешных Cloudflare saved_mode tick: COMPLETED, mode OFF,
+   opened=0, closed=0, state_saved=true; увидеть новый last successful tick.
+   Если ошибка — оставить OFF и не выбирать Bounce. Сохранить последние безопасные
+   error codes/время, без секретов. Успешные локальные тесты это не заменяют.
+5. **Выбор Bounce 5m.** В блоке AURA 4.3 перед START/STOP выбрать Bounce и
+   «Сохранить стратегию · PAPER останется OFF». Проверить active config=SR_BOUNCE/5m,
+   OFF и прежний баланс/историю после refresh. Для естественного PAPER OPEN→CLOSE
+   потребуется отдельное решение владельца включить START PAPER. В рамках установки
+   торговлю не включать. Cloudflare оставить в существующем saved_mode.
 
-Rollback: пока OFF и счёт пуст, сохранить Donchian 15m **до** отката к старому коду,
-не знающему Bounce. С открытой позицией выбор запрещён: не сбрасывать счёт ради
-отката, сохранять существующие защитные выходы. Дополнительный RPC можно оставить
-неиспользуемым; старые tables/RPC не менялись. Free Render/Cloudflare остаются
-best-effort, не гарантией 24/7. Paper SL/TP не существуют как ордера Bitget.
+### Безопасный откат
+
+- Ошибка SQL: при штатном SQL Editor выполнение атомарно; при ошибке COMMIT не
+  происходит. Не удалять таблицы и не повторять старые init/reset SQL. Успешно
+  установленный дополнительный RPC можно оставить — старый код его не вызывает.
+- Ошибка нового deploy **до выбора Bounce**: OFF/Donchian сохранены; можно вернуть
+  предыдущий успешный deploy в Render. Схему/балансы/историю откатывать не нужно.
+- Ошибка **после выбора Bounce**: на новой версии при OFF и пустом счёте сначала
+  сохранить Donchian 15m, проверить readback/refresh, затем откатить код в Render.
+  Иначе старая версия не понимает Bounce и вернёт CONFIG_CHANGED (fail closed).
+  Откат кнопкой Render сам по себе стратегию в БД не меняет.
+- При открытой позиции/ожидающей операции смена запрещена. Не сбрасывать счёт,
+  не редактировать config SQL вручную и не откатывать старый код поверх Bounce.
+  Сохранить поддерживающий Bounce код и существующий путь защитных выходов,
+  устранить ошибку; возвращаться к Donchian только после подтверждённого пустого
+  OFF-состояния. STOP запрещает новые входы, но не является закрытием позиции.
+
+Free Render/Cloudflare остаются best-effort, не гарантией 24/7.
+Paper SL/TP не существуют как ордера Bitget.
 
 ## Review
 
@@ -184,12 +218,12 @@ SQL/торговые команды в этой работе не выполня
 ## Финальная проверка
 
 - Полный Python suite с реальным локальным PostgreSQL: **1607 passed, 2 skipped**,
-  255.13 s. Skip — существующие standalone Auto42/Practice PostgreSQL opt-in.
+  264.57 s (финальный аудит). Skip — существующие standalone Auto42/Practice PostgreSQL opt-in.
 - Полный Node suite: **239 passed**. Три новые регрессии selector/OFF/auth-response.
 - Bounce subset: **26 passed**; signal causality, LONG/SHORT SL/TP/BOTH, risk,
   duplicate/restart, owner auth/CSRF/strict input, missing account без seed,
   race tick↔selection, network-free simulation и CLI guards.
-- PostgreSQL: **15 групп проверок**, шесть новых Bounce циклов плюс семь прежних
+- PostgreSQL: **16 групп проверок**, шесть новых Bounce циклов плюс семь прежних
   execution scenarios, RLS/legacy isolation, forced-after-insert rollback, CAS и
   запрет финансовой подмены. Миграция применена дважды только в локальном контейнере.
 - Реальный локальный Chromium, viewport 390px: owner выбрал Bounce через серверный
@@ -199,3 +233,39 @@ SQL/торговые команды в этой работе не выполня
   Одно существующее предупреждение Starlette/anyio deprecation.
 
 PRODUCTION_PAPER_VERIFIED = FALSE. TECHNICAL_SIMULATION = PASS.
+
+
+## Финальный интеграционный аудит PR #30
+
+База сравнения — main `e0b5204fa0cf0a1de42af20a30d3559b26c8112d`.
+Новых дефектов SQL/торгового исполнения не найдено; исправлен порядок публикации
+в инструкции (SQL до Merge), уточнены проверки и обязательные условия отката.
+Код новой миграции и production runtime при этом аудите не менялись.
+
+Дополнительные регрессии на настоящем **локальном PostgreSQL 16**:
+- Первое применение selector migration к уже заполненному Donchian-счёту,
+  затем повторное применение: побайтово неизменны account row (включая revision,
+  saved_at и balance=10000), журнал и определения всех ранее существующих Aura RPC.
+- Настоящий Worker.scheduled → локальный HTTP → production API/Store → SQL:
+  saved_mode с выбранной Bounce сохраняет два разных OFF tick, повтор первого
+  не создаёт запись; после рестарта восстанавливается Bounce. Финансовое состояние
+  неизменно, opened=closed=0, state_saved=true, COMPLETED.
+- После шести технических Bounce циклов — OFF → выбор Donchian с сохранением
+  баланса/PnL/комиссий/закрытой истории, затем два saved_mode tick и restart.
+  Обычный commit RPC продолжает работать. Настройки/код Worker не изменены.
+
+Это доказывает совместимость с существующей схемой из main в воспроизводимом
+контуре, **не подтверждает отсутствие schema drift в действующей Supabase**.
+Production Supabase/Render/Cloudflare в этом аудите не вызывались и не изменялись;
+нет доступа к owner-сессии/БД, поэтому фактический текущий баланс, история и
+последующие автоматические циклы остаются NOT VERIFIED до owner preflight.
+При любом несовпадении с проверенным контрактом — BLOCKED, без reset/initialize.
+Для безопасной установки используется порядок выше, PAPER остаётся OFF.
+
+Результат повторного полного прогона после аудита: **1607 Python passed,
+2 skipped**, 264.57 s; **239 JavaScript passed**. Четыре targeted PostgreSQL
+теста прошли отдельно; полный прогон повторил PostgreSQL проверки уже с первым
+применением migration к заполненному счёту. Один существующий deprecation warning.
+AST/import app.main/default Donchian, JavaScript syntax, diff и ограниченный
+credential-pattern scan: PASS. Code/security review — новых critical/high
+замечаний нет; production preflight остаётся обязательным.

@@ -246,11 +246,12 @@ async def account_preparation(pg):
         balance='10000',mode='OFF',open_count=0,close_count=0,tick_count=1,postflight_scheduler='ACTIVE',production_paper_verified=False)
 
 
-async def cloudflare_off_cycles(pg):
+async def cloudflare_off_cycles(pg,operation='off_only'):
     """Actual Worker.scheduled -> local HTTP -> production API/Store -> REAL SQL.
 
     No deployed Worker/Render/hosted Supabase access. Test clock, dummy token only.
     """
+    assert operation in ('off_only','saved_mode')
     if os.getenv('RENDER') or not __debug__:raise ValueError('LOCAL_OFFLINE_ONLY')
     import subprocess,threading
     from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
@@ -258,7 +259,7 @@ async def cloudflare_off_cycles(pg):
     from app.active43.api import router
     bridge=Bridge(pg);cfg=config();store=bridge.store(cfg)
     env=await store.peek();state=env['state'];Service.require_empty_off(state)
-    clock=[state['last_run_at']+300];pg.clock=clock
+    clock=[(state['last_run_at'] if state['last_run_at'] is not None else pg.clock[0])+300];pg.clock=clock
     financial=('balance','equity','realized_pnl','gross_profit','gross_loss','fees','slippage','trades',
         'wins','losses','max_drawdown_pct','position','pending','pending_exit','data_recovery_armed','mode')
     before={k:deepcopy(state[k]) for k in financial}
@@ -270,7 +271,7 @@ async def cloudflare_off_cycles(pg):
     class Wire(BaseHTTPRequestHandler):
         def log_message(self,*args):pass
         def do_POST(self):
-            assert self.path=='/api/active43/verify-off-tick'
+            assert self.path==('/api/active43/verify-off-tick' if operation=='off_only' else '/api/active43/tick')
             raw=self.rfile.read(int(self.headers['Content-Length']))
             async def deliver():
                 async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),base_url='http://local') as client:
@@ -290,7 +291,7 @@ async def cloudflare_off_cycles(pg):
                     docker('restart',pg.name);pg.ready()
                     clock[0]+=300
                     app.state.active43=Service(bridge.store(cfg),clock=lambda:clock[0])
-                payload=json.dumps(dict(origin='http://127.0.0.1:'+str(server.server_port),token=token,at=clock[0]*1000))
+                payload=json.dumps(dict(origin='http://127.0.0.1:'+str(server.server_port),token=token,at=clock[0]*1000,operation=operation))
                 proc=await asyncio.to_thread(subprocess.run,['node',str(ROOT/'tests/fixtures/active43_scheduled_wire.mjs')],
                     input=payload,text=True,capture_output=True,timeout=90,check=True,cwd=ROOT)
                 assert token not in proc.stdout
@@ -304,9 +305,9 @@ async def cloudflare_off_cycles(pg):
         assert [r['duplicate'] for r in received]==[False,True,False]
         assert saved['state']['last_successful_run_at']==clock[0]
         assert int(pg.sql('SELECT count(*) FROM public.aura_active43_bitget_events;'))==count_before+2
-        assert all(r['verification_only'] for r in received)
+        assert all(r.get('verification_only',False)==(operation=='off_only') for r in received)
         return dict(status='PASS',scope='LOCAL_SCHEDULED_NODE_HTTP_REAL_POSTGRES_NOT_CLOUDFLARE_OR_RENDER',
-            scheduled_handler_calls=3,distinct_saved_slots=2,duplicate_without_write=True,restart_restored=True,
+            operation=operation,scheduled_handler_calls=3,distinct_saved_slots=2,duplicate_without_write=True,restart_restored=True,
             paper_state_unchanged=True,opened=0,closed=0,events_added=2,logs=logs,production_verified=False)
     finally:
         await asyncio.to_thread(server.shutdown);server.server_close();thread.join(timeout=2)
@@ -332,6 +333,10 @@ async def bounce_selection_and_cycles(pg):
     assert all(isinstance(x,dict) or isinstance(x,DemoError) and x.code=='CONCURRENT_UPDATE' for x in results)
     saved=await svc.load();assert svc.config==CHOICES['BOUNCE_5M']
     assert saved['state']['balance']==before['state']['balance']=='10000'
+    # Unchanged deployed Worker saved_mode /tick adopts Bounce after a restart,
+    # saves two OFF slots, deduplicates one, and preserves all financial fields.
+    cf_bounce=await cloudflare_off_cycles(pg,'saved_mode')
+    saved=await svc.load();market.now[0]=saved['state']['last_run_at'];pg.clock=market.now
     # Ordinary commit stays immutable even with the new dedicated selector.
     def proposal(target,key):
         changed=deepcopy(saved['state']);changed.update(config=deepcopy(target),config_hash=digest(target),strategy_change_id=key,last_error=None,last_decision='STRATEGY_CHANGED',recovery_status='STRATEGY_CHANGED_OFF')
@@ -388,7 +393,20 @@ async def bounce_selection_and_cycles(pg):
             assert D(p['risk_usdt'])<=50 and D(p['notional'])<=2000
             cases.append(dict(direction=side,exit=closed['exit_reason'],open_count=1,close_count=1,balance=state['balance'],restart=True))
             await svc.close()
-    return dict(status='PASS',atomic_switch=True,ordinary_commit_unchanged=True,financial_tamper_rejected=True,bad_event_rollback=True,forced_after_insert_rollback=True,occupied_off_rejected=True,concurrent_selection=True,cases=cases,production_verified=False)
+    # Roll back selection before rolling back application code. Existing closed
+    # trades remain present and the ordinary commit/saved_mode still works.
+    rollback=Service(Bridge(pg).store(config()),clock=lambda:market.now[0])
+    await rollback.control('STOP','2'*32)
+    prior=await rollback.load();history_before=await rollback.store.history(kind='CLOSE')
+    await rollback.select_strategy('DONCHIAN_15M','3'*32,prior['revision'])
+    restored=await rollback.load()
+    assert restored['state']['config']==config() and restored['state']['mode']=='OFF'
+    for field in ('balance','equity','fees','trades','realized_pnl','epoch'):
+        assert restored['state'][field]==prior['state'][field]
+    assert await rollback.store.history(kind='CLOSE')==history_before and len(history_before)==1
+    await rollback.close()
+    cf_rollback=await cloudflare_off_cycles(pg,'saved_mode')
+    return dict(status='PASS',saved_mode_bounce=cf_bounce,saved_mode_donchian_rollback=cf_rollback,rollback_preserves_history=True,atomic_switch=True,ordinary_commit_unchanged=True,financial_tamper_rejected=True,bad_event_rollback=True,forced_after_insert_rollback=True,occupied_off_rejected=True,concurrent_selection=True,cases=cases,production_verified=False)
 
 
 async def verify(pg):
@@ -435,6 +453,18 @@ async def verify(pg):
     await empty.close()
     checks.append('READ_ONLY_PEEK_DOES_NOT_INITIALIZE_AND_GRANTS_NO_TABLE_WRITES')
     preparation=await account_preparation(pg)
+    # Applying the selector to an ALREADY POPULATED Donchian account must be
+    # byte-identical, including tick history/revision/timestamps and other RPCs.
+    pg.sql('DROP FUNCTION public.aura_active43_bitget_select_strategy(bigint,jsonb,jsonb,text);')
+    portfolio_sql="SELECT row_to_json(a)::text FROM public.aura_active43_bitget_account a ORDER BY id; SELECT row_to_json(e)::text FROM public.aura_active43_bitget_events e ORDER BY id;"
+    functions_sql="SELECT pg_get_functiondef(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'aura_%' AND p.proname<>'aura_active43_bitget_select_strategy' ORDER BY p.oid;"
+    portfolio_before=pg.sql(portfolio_sql);functions_before=pg.sql(functions_sql)
+    pg.sql(switch_sql);pg.sql(switch_sql)
+    assert pg.sql(portfolio_sql)==portfolio_before and pg.sql(functions_sql)==functions_before
+    populated=Bridge(pg).store(config())
+    snapshot=await populated.peek();assert snapshot['state']['balance']=='10000' and snapshot['state']['config']==config()
+    await populated.close()
+    checks.append('POPULATED_DONCHIAN_MIGRATION_REAPPLY_BYTE_IDENTICAL_ACCOUNT_HISTORY_ALL_RPC')
     cloudflare_off=await cloudflare_off_cycles(pg)
     checks.append('CLOUDFLARE_SCHEDULED_TWO_OFF_SLOTS_HTTP_SQL_DUPLICATE_AND_RESTART')
     bounce=await bounce_selection_and_cycles(pg)
