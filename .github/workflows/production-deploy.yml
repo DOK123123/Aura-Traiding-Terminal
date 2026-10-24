@@ -25,7 +25,7 @@
           "default": "deploy"
         },
         "ci_run_id": {
-          "description": "Successful Regression CI push/main run ID for trusted current main (deploy AND rollback)",
+          "description": "Leave blank: discover successful push/main CI for exact current main SHA; explicit ID is strictly checked (not Render SHA)",
           "required": false,
           "type": "string"
         },

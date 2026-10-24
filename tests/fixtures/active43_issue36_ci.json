@@ -1,0 +1,110 @@
+{
+  "failed_inspection_run_id": 40125643421,
+  "submitted_ci_run_id": 40120701255,
+  "trusted_ci_run_id": 40124624433,
+  "main_sha": "02366e96d119786d190c622acd30eaf5d05a518b",
+  "runs": {
+    "40120701255": {
+      "id": 40120701255,
+      "workflow_id": 394467730,
+      "head_sha": "af325769663b0d6593b64eb844e56558957e6647",
+      "head_branch": "main",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_repository": {
+        "full_name": "DOK123123/Aura-Traiding-Terminal"
+      }
+    },
+    "40124624433": {
+      "id": 40124624433,
+      "workflow_id": 394467730,
+      "head_sha": "02366e96d119786d190c622acd30eaf5d05a518b",
+      "head_branch": "main",
+      "event": "push",
+      "status": "completed",
+      "conclusion": "success",
+      "head_repository": {
+        "full_name": "DOK123123/Aura-Traiding-Terminal"
+      }
+    }
+  },
+  "workflow": {
+    "id": 394467730,
+    "name": "Regression CI",
+    "path": ".github/workflows/regression.yml",
+    "state": "active"
+  },
+  "jobs": {
+    "total_count": 1,
+    "jobs": [
+      {
+        "name": "Python + JavaScript + isolated PostgreSQL",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Checkout exact PR head or pushed main SHA",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Set up repository Python version",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Set up pinned Node version",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install complete pinned test dependencies",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Prepare isolated PostgreSQL service image before disabling test egress",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run actual regressions with no external network and no production secrets",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Upload actual test reports",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Set up pinned Node version",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Set up repository Python version",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Checkout exact PR head or pushed main SHA",
+            "status": "completed",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -55,7 +55,8 @@ configured Secrets доступны только production Actions environment.
 
 1. Открыть https://github.com/DOK123123/Aura-Traiding-Terminal/actions/workflows/production-deploy.yml
    → Run workflow → branch `main` → operation `inspect_worker`.
-2. `ci_run_id`: ID успешного **push/main** Regression CI после merge.
+2. `ci_run_id` оставить пустым: auto-discovery найдёт успешный **push/main** CI
+   точного SHA после merge. Явно заданный старый ID по-прежнему BLOCKED (Issue #36).
    `inspect_worker_version`: `8804fedf-fc51-4aab-a801-b4ca66cc0bda` (если она всё
    ещё существует). Пустое поле означает latest. Не включать PAPER и не менять
    deployment enable flag ради чтения. При required reviewer подтвердить только
