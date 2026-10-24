@@ -57,6 +57,7 @@ class Service:
         self.store=store;self.market=market;self.config=cfg or config();self.clock=clock;self.quotes=quotes;self.reason=reason
         from .diagnostics import Diagnostics
         self.diagnostics=Diagnostics(self)
+        self.readiness_lock=asyncio.Lock()
         self.task=None;self.off_task=None;self.closed=False;self.lock=asyncio.Lock();self.boot=uuid.uuid4().hex;self.restored=False
     def ready(self):
         if self.store is None:raise DemoError(self.reason or 'ACTIVE43_NOT_CONFIGURED')
@@ -245,6 +246,11 @@ class Service:
             commit=os.getenv('RENDER_GIT_COMMIT','')
             tick=event(s,'TICK',now//300,now,dict(reason=s['last_decision'],success=s['last_error'] is None,
                 render_commit=commit if re.fullmatch('[a-f0-9]{40}',commit) else None));tick['id']=key;events.append(tick)
+            from .attribution import scheduled_delivery
+            if scheduled_delivery.get() is not None:
+                tick['payload']['scheduled_delivery']=dict(scheduled_delivery.get(),
+                    status='COMPLETED' if not s['last_error'] else 'PAUSED',mode=s['mode'],
+                    opened=sum(e['kind']=='OPEN' for e in events),closed=sum(e['kind']=='CLOSE' for e in events))
             try:
                 saved=await self.store.commit(env['revision'],s,events,key)
                 # All success responses are checked by reading the immutable tick
