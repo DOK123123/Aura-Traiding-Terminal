@@ -20,6 +20,6 @@ globalThis.fetch=async(url,request)=>{
 };
 Date.now=()=>input.at;
 console.log=value=>logs.push(typeof value==='string'?JSON.parse(value):value);
-await worker.scheduled({cron:CRON,scheduledTime:input.at},{AURA_ACTIVE43_CRON_ENABLED:'true',
+await worker.scheduled({cron:CRON,scheduledTime:Math.floor(input.at/300000)*300000+120000},{AURA_ACTIVE43_CRON_ENABLED:'true',
  AURA_ACTIVE43_OPERATION:operation,AURA_ACTIVE43_BITGET_SCHEDULER_SECRET:input.token});
 process.stdout.write(JSON.stringify({scope:'LOCAL_HTTP_AND_SQL_NOT_CLOUDFLARE_OR_RENDER',logs}));

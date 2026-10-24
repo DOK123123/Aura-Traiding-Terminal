@@ -259,7 +259,7 @@ async def cloudflare_off_cycles(pg,operation='off_only'):
     from app.active43.api import router
     bridge=Bridge(pg);cfg=config();store=bridge.store(cfg)
     env=await store.peek();state=env['state'];Service.require_empty_off(state)
-    clock=[(state['last_run_at'] if state['last_run_at'] is not None else pg.clock[0])+300];pg.clock=clock
+    clock=[(state['last_run_at'] if state['last_run_at'] is not None else pg.clock[0])//300*300+430];pg.clock=clock
     financial=('balance','equity','realized_pnl','gross_profit','gross_loss','fees','slippage','trades',
         'wins','losses','max_drawdown_pct','position','pending','pending_exit','data_recovery_armed','mode')
     before={k:deepcopy(state[k]) for k in financial}
@@ -312,6 +312,21 @@ async def cloudflare_off_cycles(pg,operation='off_only'):
         assert saved['state']['last_successful_run_at']==clock[0]
         assert int(pg.sql('SELECT count(*) FROM public.aura_active43_bitget_events;'))==count_before+2
         assert all(r.get('verification_only',False)==(operation=='off_only') for r in received)
+        # New diagnostics read actual SQL receipts, never seed/adopt/tick/write.
+        from app.active43 import paper_readiness
+        from scripts.verify_active43_bounce import BounceMarket
+        from app.lab.models import Bar
+        probe=BounceMarket('LONG');delta=clock[0]//300*300-probe.at
+        probe.bars=[Bar(b.time+delta,b.open,b.high,b.low,b.close,b.volume) for b in probe.bars]
+        probe.at+=delta;probe.now=[clock[0]]
+        ledger_sql="SELECT jsonb_build_object('account',(SELECT jsonb_agg(to_jsonb(t)) FROM aura_active43_bitget_account t),'events',(SELECT jsonb_agg(to_jsonb(t) ORDER BY seq) FROM aura_active43_bitget_events t));"
+        ledger_before=pg.sql(ledger_sql)
+        with patch.object(paper_readiness,'Market',return_value=probe):
+            ready=await paper_readiness.inspect(app.state.active43)
+        assert ready['scheduler']['status']=='PASS',ready
+        assert {t['tick_id'] for t in ready['scheduler']['ticks']}=={logs[0]['tick_id'],logs[2]['tick_id']}
+        assert ledger_before==pg.sql(ledger_sql)
+
         return dict(status='PASS',scope='LOCAL_SCHEDULED_NODE_HTTP_REAL_POSTGRES_NOT_CLOUDFLARE_OR_RENDER',
             operation=operation,scheduled_handler_calls=3,distinct_saved_slots=2,duplicate_without_write=True,restart_restored=True,
             paper_state_unchanged=True,opened=0,closed=0,events_added=2,logs=logs,production_verified=False)

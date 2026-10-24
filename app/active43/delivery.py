@@ -24,6 +24,8 @@ async def delivery(request: Request, operation, respond):
                 'AURA_TESTNET_VIEW_PASSWORD','AURA_AUTO42_SCHEDULER_SECRET'))):
         raise HTTPException(400,'INVALID_INVOCATION_ID',headers=HEADERS)
     invocation_id = ids[0] if ids else uuid.uuid4().hex
+    from .attribution import attribution, scheduled_delivery
+    context = scheduled_delivery.set(attribution(request, request.app.state.active43.clock()))
     started = time.monotonic()
     response = None
     body = {}
@@ -34,6 +36,7 @@ async def delivery(request: Request, operation, respond):
         completed = True
         return response
     finally:
+        scheduled_delivery.reset(context)
         try:
             record(request,invocation_id,started,response.status_code if completed else 500,body)
         except Exception:

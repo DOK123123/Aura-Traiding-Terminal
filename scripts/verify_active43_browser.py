@@ -39,7 +39,7 @@ if '--child' in sys.argv:
    fixture.add(phase);await service.tick()
   return service
  app=FastAPI();app.include_router(router);app.state.active43=asyncio.run(prepare());app.mount('/static',StaticFiles(directory=ROOT/'static'))
- with patch('app.active43.diagnostics.Market',side_effect=lambda **kw:Market(clock=kw['clock'],transport=diagnostic_transport(fixture))):
+ with patch('app.active43.diagnostics.Market',side_effect=lambda **kw:Market(clock=kw['clock'],transport=diagnostic_transport(fixture))), patch('app.active43.paper_readiness.Market',side_effect=lambda **kw:Market(clock=kw['clock'],transport=diagnostic_transport(fixture))):
   uvicorn.run(app,host='127.0.0.1',port=int(sys.argv[2]),access_log=False)
 else:
  if os.getenv('RENDER') or not __debug__:raise ValueError('LOCAL_OFFLINE_ONLY')
@@ -81,8 +81,12 @@ else:
       raise AssertionError('UI timeout '+str(evaluate("document.getElementById('active43-panel')?.textContent")))
      call('Network.enable');call('Network.setExtraHTTPHeaders',dict(headers={'Authorization':'Basic '+base64.b64encode(('aura:'+PASSWORD).encode()).decode()}))
      call('Emulation.setDeviceMetricsOverride',dict(width=430,height=932,deviceScaleFactor=1,mobile=True))
+     # The offline fixture has a historical clock. Align only this isolated
+     # browser's clock; production freshness gates are never changed.
+     fixture_at=httpx.get(f'http://127.0.0.1:{listen}/api/active43/status',auth=('aura',PASSWORD),trust_env=False).json()['state']['last_run_at']
      call('Page.navigate',dict(url=f'http://127.0.0.1:{listen}/static/index.html'))
      wait("document.readyState==='complete'&&!!document.getElementById('a43-refresh')")
+     evaluate('Date.now=()=>'+str(fixture_at*1000)+';')
      evaluate("document.getElementById('active43-panel').open=true")
      wait("document.getElementById('a43-mode').textContent.includes('Включён')")
      wait("document.querySelectorAll('#a43-chart circle').length===2")
@@ -93,13 +97,16 @@ else:
      evaluate("document.getElementById('a43-diagnose').click()")
      wait("document.getElementById('a43-diag-bitget').textContent.startsWith('CONNECTED')")
      wait("document.getElementById('a43-diag-storage').textContent.startsWith('CONNECTED')")
+     evaluate("document.getElementById('a43-pr-check').click()")
+     wait("!document.getElementById('a43-pr-check').disabled && document.getElementById('a43-pr-status').textContent==='BLOCKED'")
+     assert 'Прочитано UTC' in evaluate("document.getElementById('a43-pr-details').textContent")
      width=evaluate("document.getElementById('active43-panel').getBoundingClientRect().width")
      assert width<=430,width
      state=httpx.get(f'http://127.0.0.1:{listen}/api/active43/status',auth=('aura',PASSWORD),trust_env=False).json()
      assert state['state']['mode']=='ON' and state['state']['position'] is None and state['state']['trades']==1
      assert not state['production_paper_verified']
      assert state['state']==before['state'] and state['revision']==before['revision']
-     result=dict(status='PASS',scope='OFFLINE_SYNTHETIC_MEMORY_STORE_UI_ONLY_NOT_SUPABASE_OR_RENDER',real_chromium=True,real_owner_http_api=True,diagnostic_button=True,diagnostic_portfolio_unchanged=True,width=430,panel_width=width,native_indicators_closed_trade_visible=True,entry_exit_markers=2,comparison_rows=15,equity_canvas=True,open_count=1,close_count=1,production_paper_verified=False)
+     result=dict(status='PASS',scope='OFFLINE_SYNTHETIC_MEMORY_STORE_UI_ONLY_NOT_SUPABASE_OR_RENDER',real_chromium=True,real_owner_http_api=True,diagnostic_button=True,paper_readiness_button=True,diagnostic_portfolio_unchanged=True,width=430,panel_width=width,native_indicators_closed_trade_visible=True,entry_exit_markers=2,comparison_rows=15,equity_canvas=True,open_count=1,close_count=1,production_paper_verified=False)
      args.output.write_text(json.dumps(result,indent=2));print(json.dumps(result))
    finally:
     for p in reversed(procs):

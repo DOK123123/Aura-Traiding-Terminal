@@ -1,7 +1,7 @@
 // Cloudflare Workers Free scheduler only. No public trigger, account controls,
 // exchange methods, Supabase credentials or strategy implementation.
 const BASE = 'https://aura-traiding-terminal.onrender.com/api/active43';
-export const WORKER_VERSION = 'ACTIVE43_CF_RECEIPTS_2026_10_24';
+export const WORKER_VERSION = 'ACTIVE43_CF_READINESS_2026_10_24';
 export const CRON = '2-59/5 * * * *';
 const SOURCE = 'Bitget · USDT-M Futures / api.bitget.com';
 const SCOPE = 'AURA43_ACTIVE_PAPER', VERSION = 'AURA_4.3_ACTIVE_PAPER_3';
@@ -98,7 +98,7 @@ async function readBody(response) {
 }
 
 async function execute(env, {fetcher = fetch, sleep = ms => new Promise(r => setTimeout(r,ms)),
- emit = b => console.log(JSON.stringify(b)), now = Date.now, timeout = 120000, scheduledTime = null, cron = null, invocationId} = {}) {
+ emit = b => console.log(JSON.stringify(b)), now = Date.now, timeout = 120000, scheduledTime = null, cron = null, invocationId, automatic = false} = {}) {
  const configuredOperation = env.AURA_ACTIVE43_OPERATION || 'diagnostics';
  // Never log an unvalidated binding (it could accidentally contain a secret).
  const operation = OPERATIONS.has(configuredOperation) ? configuredOperation : null;
@@ -134,7 +134,8 @@ async function execute(env, {fetcher = fetch, sleep = ms => new Promise(r => set
   let failure = 'NETWORK_ERROR', status = null, retry = true, delay = 2000, cooldownBlocked = false;
   try {
    report({event:'REQUEST_STARTED',attempt,code:'REQUEST_STARTED',endpoint:path});
-   const response = await fetcher(BASE + path,{method:'POST',headers:{[HEADER]:token,'Content-Type':'application/json','X-Aura-Invocation-Id':invocationId},
+   const response = await fetcher(BASE + path,{method:'POST',headers:{[HEADER]:token,'Content-Type':'application/json','X-Aura-Invocation-Id':invocationId,
+     ...(automatic && cron === CRON && Number.isSafeInteger(scheduledTime) ? {'X-Aura-Scheduled-At':String(scheduledTime)} : {})},
     body:payload,redirect:'manual',signal:abort.signal});
    status = response.status;
    report({event:'RENDER_REACHED',attempt,http_status:status,code:'HTTP_RESPONSE'});
@@ -201,7 +202,7 @@ async function execute(env, {fetcher = fetch, sleep = ms => new Promise(r => set
 
 export default {
  async scheduled(controller,env) {
-  await run(env,{scheduledTime:controller.scheduledTime,cron:controller.cron});
+  await run(env,{scheduledTime:controller.scheduledTime,cron:controller.cron,automatic:true});
  },
  async fetch() { return new Response('Not found',{status:404}); }
 };

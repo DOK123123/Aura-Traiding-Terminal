@@ -290,3 +290,19 @@ test('saved rejection includes receipt evidence but ends in TICK_FAILED',async()
  await assert.rejects(run(env('saved_mode'),{emit:b=>logs.push(b),fetcher:async()=>Response.json(body)}),/HISTORY_CANDLE_CHANGED/);
  assert.equal(logs.at(-1).event,'TICK_FAILED');assert.equal(logs.at(-1).tick_id,body.tick_id);assert.equal(logs.at(-1).status,'PAUSED');
 });
+
+test('only scheduled handler sends bounded automatic attribution; exported manual run never does',async()=>{
+ const {run,default:w,CRON}=await load();
+ let headers;
+ await run(env('saved_mode'),{...options(good()),fetcher:async(u,r)=>{headers=r.headers;return Response.json(good());}});
+ assert.equal(headers['X-Aura-Scheduled-At'],undefined);
+ const at=Math.floor(Date.now()/300000)*300000+120000;
+ const originalNow=Date.now,originalFetch=global.fetch,originalLog=console.log;
+ try{
+  Date.now=()=>at+10000;console.log=()=>{};
+  global.fetch=async(u,r)=>{headers=r.headers;return Response.json({...good(),tick_created_at:Math.floor((at+10000)/1000),tick_slot_start:Math.floor(at/300000)*300});};
+  await w.scheduled({cron:CRON,scheduledTime:at},env('saved_mode'));
+  assert.equal(headers['X-Aura-Scheduled-At'],String(at));
+  assert.match(headers['X-Aura-Invocation-Id'],/^[a-f0-9]{32}$/);
+ }finally{Date.now=originalNow;global.fetch=originalFetch;console.log=originalLog;}
+});
