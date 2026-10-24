@@ -212,3 +212,24 @@ def test_old_scheduler_pair_does_not_grant_readiness_even_with_fresh_market():
     market,now,store,svc=prepare()
     rows=deepcopy(store.events)
     assert pr.scheduler_evidence(rows,store.state,now[0]+400)['status']=='BLOCKED'
+
+
+def test_cloudflare_jittered_receipts_are_accepted_without_weakened_provenance():
+    # Real platform scheduledTime observed ~52 seconds after the cron minute.
+    market,now,store,svc=prepare()
+    rows=deepcopy(store.events)
+    for row in rows:
+        proof=row['payload']['scheduled_delivery']
+        proof['scheduled_at']+=52
+        row['created_at']+=52
+    now[0]=now[0]//300*300+220
+    evidence=pr.scheduler_evidence(rows,store.state,now[0])
+    assert evidence['status']=='PASS',evidence
+    assert len(evidence['ticks'])==2
+    # Wrong cron slot and stale/different invocation must remain blocked.
+    bad=deepcopy(rows)
+    bad[0]['payload']['scheduled_delivery']['scheduled_at']-=60
+    assert pr.scheduler_evidence(bad,store.state,now[0])['status']=='BLOCKED'
+    bad=deepcopy(rows)
+    bad[0]['payload']['scheduled_delivery']['invocation_id']=bad[1]['payload']['scheduled_delivery']['invocation_id']
+    assert pr.scheduler_evidence(bad,store.state,now[0])['status']=='BLOCKED'
