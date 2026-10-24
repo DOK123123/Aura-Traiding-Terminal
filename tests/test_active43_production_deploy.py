@@ -28,11 +28,11 @@ class Fake:
         if realm=='github':
             if path=='/commits/main':return {'sha':NEW}
             if path.startswith('/compare/'):return dict(status='ahead',merge_base_commit={'sha':OLD})
-            if path=='/actions/workflows/regression.yml':return {'id':42}
+            if path=='/actions/workflows/regression.yml':return {'id':42,'path':'.github/workflows/regression.yml','state':'active'}
             if path=='/environments/production':return dict(deployment_branch_policy={'custom_branch_policies':True,'protected_branches':False})
             if path.startswith('/environments/production/deployment-branch-policies'):return dict(total_count=1,branch_policies=[dict(name='main',type='branch')])
-            if path=='/actions/runs/17':return dict(head_sha=NEW,head_branch='main',event='push',head_repository={'full_name':d.REPO},workflow_id=42,status='completed',conclusion=self.ci)
-            if path.endswith('/jobs?filter=latest&per_page=100'):return dict(total_count=1,jobs=[dict(name=d.CI_JOB,conclusion=self.ci,steps=[dict(name=n,conclusion=self.ci) for n in ('Run actual regressions with no external network and no production secrets','Upload actual test reports')])])
+            if path=='/actions/runs/17':return dict(id=17,head_sha=NEW,head_branch='main',event='push',head_repository={'full_name':d.REPO},workflow_id=42,status='completed',conclusion=self.ci)
+            if path.endswith('/jobs?filter=latest&per_page=100'):return dict(total_count=1,jobs=[dict(name=d.CI_JOB,status='completed',conclusion=self.ci,steps=[dict(name=n,status='completed',conclusion=self.ci) for n in ('Run actual regressions with no external network and no production secrets','Upload actual test reports')])])
         if realm=='aura':
             assert method=='GET'
             if path=='/api/health':return {'status':'ok'}

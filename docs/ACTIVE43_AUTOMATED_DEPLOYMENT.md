@@ -130,8 +130,8 @@ Workflow появится в списке Actions только после merge 
 2. После проверки нового backend и добавления Secrets/Variables установите
    deploy enabled=true (если разрешена дальнейшая автоматизация). Откройте
    https://github.com/DOK123123/Aura-Traiding-Terminal/actions/workflows/production-deploy.yml
-   → Run workflow, main, operation=deploy, `ci_run_id` = номер успешного **push/main**
-   Regression CI. Если уже Live тот же SHA, Render повторно не пересобирается.
+   → Run workflow, main, operation=deploy, `ci_run_id` оставить пустым: контроллер сам найдёт успешный **push/main**
+   Regression CI точного checkout SHA. Если уже Live тот же SHA, Render повторно не пересобирается.
 3. При настроенном reviewer нажмите Approve. Дождитесь DEPLOY_VERIFIED и artifact:
    Render SHA, Worker Version UUID, два разных автоматических tick ID. PAPER
    должен остаться OFF; включение требует отдельного разрешения.
@@ -149,8 +149,7 @@ Worker/новый backend, чем делать повторный слепой P
 1. В Actions Summary/artifact текущего release найдите `previous_render_commit`
    и `previous_worker_version_id`. Эти безопасные ID также выводятся checkpoint
    до публикации, на случай жёсткой отмены runner до загрузки artifact.
-2. Run workflow → main → operation=rollback. Укажите текущий успешный main
-   `ci_run_id`, оба точных rollback ID и подтверждение
+2. Run workflow → main → operation=rollback. `ci_run_id` можно оставить пустым для поиска CI текущего main; укажите оба точных rollback ID и подтверждение
    `ROLLBACK PAPER OFF NO CONFIG ROTATION`. Требуются PAPER OFF, пустая позиция/
    pending, неизменность текущей истории во время отката и **отсутствие ротации
    secrets/bindings после выбранной версии**. Secret values не читаются API;
@@ -208,3 +207,7 @@ operation `inspect_worker` делает только GET, доступен пр�
 не требует удаления/активации staged версии. Обычный deploy при таком состоянии
 собирает field-level evidence и по-прежнему BLOCKED до review. Никакой автоматической
 коррекции настроек или слепого возобновления POST не предусмотрено.
+
+
+Выбор точного main CI, безопасный auto-discovery и разбор неверного ID из Issue #36:
+[ACTIVE43_CI_ISSUE36.md](ACTIVE43_CI_ISSUE36.md). Пустой input не означает пропуск CI.

@@ -143,36 +143,79 @@ class Release:
         print(json.dumps(dict(event='RELEASE_CHECKPOINT',**{k:self.report[k] for k in (
             'status','release_sha','previous_render_commit','previous_worker_version_id',
             'render_deploy_id','render_commit','render_live_commit','staged_worker_version_id','worker_version_id',
-            'existing_staged_worker_version_id','worker_diagnostics','comparison_failures','mutations')
+            'existing_staged_worker_version_id','worker_diagnostics','comparison_failures','ci_validation','mutations')
             if k in self.report})),flush=True)
 
     def main_head(self):
         return self.r.call('github','GET','/commits/main')['sha']
 
     def verify_ci(self,run_id):
-        require(type(run_id) is int and run_id>0,'CI_RUN_ID_REQUIRED')
-        require(self.main_head()==self.sha,'STALE_MAIN_SHA')
-        run=self.r.call('github','GET','/actions/runs/'+str(run_id))
+        """Exact trusted checkout CI; empty input discovers only that SHA's push CI."""
+        evidence=dict(status='BLOCKED',selection='EXPLICIT' if run_id else 'EXACT_SHA_DISCOVERY',
+                      expected_head_sha=self.sha,checks={},failed_checks=[])
+        self.report['ci_validation']=evidence
+        def check(name,ok,code):
+            evidence['checks'][name]=bool(ok)
+            if not ok:
+                evidence['failed_checks'].append(name);self.save();raise Blocked(code)
+        def safe_id(value):return value if type(value) is int and value>0 else None
+        def safe_sha(value):return value if isinstance(value,str) and SHA.fullmatch(value) else None
+        observed_main=self.main_head();evidence['observed_main_sha']=safe_sha(observed_main)
+        check('checkout_is_current_main',observed_main==self.sha,'STALE_MAIN_SHA')
         workflow=self.r.call('github','GET','/actions/workflows/regression.yml')
-        require(run.get('head_sha')==self.sha and run.get('head_branch')=='main' and run.get('event')=='push'
-            and run.get('head_repository',{}).get('full_name')==REPO
-            and run.get('workflow_id')==workflow['id'] and run.get('status')=='completed'
-            and run.get('conclusion')=='success','EXACT_MAIN_CI_NOT_SUCCESSFUL')
+        expected_id=safe_id(workflow.get('id'));evidence['expected_workflow_id']=expected_id
+        check('trusted_workflow_descriptor',expected_id is not None and workflow.get('path')=='.github/workflows/regression.yml'
+              and workflow.get('state')=='active','REGRESSION_WORKFLOW_UNVERIFIED')
+        check('run_id_is_valid',type(run_id) is int and run_id>=0,'CI_RUN_ID_REQUIRED')
+        if run_id==0:
+            listing=self.r.call('github','GET','/actions/workflows/'+str(expected_id)+
+                '/runs?branch=main&event=push&head_sha='+self.sha+'&status=completed&per_page=100')
+            check('discovery_complete',type(listing.get('total_count')) is int and 0<=listing['total_count']<=100
+                  and isinstance(listing.get('workflow_runs'),list) and len(listing['workflow_runs'])==listing['total_count'],
+                  'CI_DISCOVERY_INCOMPLETE')
+            candidates=[r for r in listing['workflow_runs'] if isinstance(r,dict) and safe_id(r.get('id')) is not None
+                and r.get('head_sha')==self.sha and r.get('head_branch')=='main' and r.get('event')=='push'
+                and safe_id(r.get('workflow_id'))==expected_id and isinstance(r.get('head_repository'),dict) and r['head_repository'].get('full_name')==REPO
+                and r.get('status')=='completed' and r.get('conclusion')=='success']
+            check('exact_sha_success_candidate',bool(candidates),'EXACT_MAIN_CI_NOT_FOUND')
+            run_id=max(r['id'] for r in candidates)
+        evidence['run_id']=run_id
+        run=self.r.call('github','GET','/actions/runs/'+str(run_id))
+        evidence.update(actual_head_sha=safe_sha(run.get('head_sha')),actual_workflow_id=safe_id(run.get('workflow_id')),
+            run_event=run.get('event') if run.get('event') in ('push','pull_request','workflow_dispatch','workflow_run') else 'UNVERIFIED',
+            run_branch='main' if run.get('head_branch')=='main' else 'UNVERIFIED',
+            run_status=run.get('status') if run.get('status') in ('completed','in_progress','queued') else 'UNVERIFIED',
+            run_conclusion=run.get('conclusion') if run.get('conclusion') in ('success','failure','skipped','cancelled','timed_out') else 'UNVERIFIED')
+        identity=dict(run_id_matches_request=safe_id(run.get('id'))==run_id,run_head_sha=run.get('head_sha')==self.sha,run_branch=run.get('head_branch')=='main',
+            run_event=run.get('event')=='push',run_repository=isinstance(run.get('head_repository'),dict) and run['head_repository'].get('full_name')==REPO,
+            run_workflow_id=safe_id(run.get('workflow_id'))==expected_id,run_completed=run.get('status')=='completed',
+            run_success=run.get('conclusion')=='success')
+        evidence['checks'].update(identity)
+        failures=[k for k,v in identity.items() if not v]
+        if failures:
+            evidence['failed_checks'].extend(failures);self.save();raise Blocked('EXACT_MAIN_CI_NOT_SUCCESSFUL')
         jobs=self.r.call('github','GET','/actions/runs/'+str(run_id)+'/jobs?filter=latest&per_page=100')
-        require(jobs.get('total_count')==1 and len(jobs.get('jobs',[]))==1,'CI_JOBS_INCOMPLETE_OR_UNEXPECTED')
+        check('one_complete_regression_job',type(jobs.get('total_count')) is int and jobs['total_count']==1
+              and isinstance(jobs.get('jobs'),list) and len(jobs['jobs'])==1 and isinstance(jobs['jobs'][0],dict),
+              'CI_JOBS_INCOMPLETE_OR_UNEXPECTED')
         required=[j for j in jobs['jobs'] if j['name']==CI_JOB]
-        require(len(required)==1 and required[0].get('conclusion')=='success','REGRESSION_JOB_NOT_SUCCESSFUL')
+        evidence['expected_job_name']=CI_JOB
+        check('regression_job_name',len(required)==1,'REGRESSION_JOB_NOT_SUCCESSFUL')
+        check('regression_job_completed_success',required[0].get('status')=='completed' and required[0].get('conclusion')=='success',
+              'REGRESSION_JOB_NOT_SUCCESSFUL')
+        check('regression_steps_present',isinstance(required[0].get('steps'),list),'REGRESSION_STEP_NOT_SUCCESSFUL')
         for name in ('Run actual regressions with no external network and no production secrets','Upload actual test reports'):
-            require(any(s['name']==name and s.get('conclusion')=='success' for s in required[0]['steps']),'REGRESSION_STEP_NOT_SUCCESSFUL')
+            check('step:'+name,any(isinstance(s,dict) and s.get('name')==name and s.get('status')=='completed' and s.get('conclusion')=='success'
+                for s in required[0]['steps']),'REGRESSION_STEP_NOT_SUCCESSFUL')
         environment=self.r.call('github','GET','/environments/production')
         policy=environment.get('deployment_branch_policy') or {}
-        require(policy.get('custom_branch_policies') is True and policy.get('protected_branches') is False,
-                'PRODUCTION_ENV_MAIN_ONLY_POLICY_REQUIRED')
+        check('production_environment_selected_branches',policy.get('custom_branch_policies') is True and policy.get('protected_branches') is False,
+              'PRODUCTION_ENV_MAIN_ONLY_POLICY_REQUIRED')
         branches=self.r.call('github','GET','/environments/production/deployment-branch-policies?per_page=100')
-        require(branches.get('total_count')==1 and len(branches.get('branch_policies',[]))==1
-            and branches['branch_policies'][0].get('name')=='main'
-            and branches['branch_policies'][0].get('type','branch')=='branch','PRODUCTION_ENV_MAIN_ONLY_POLICY_REQUIRED')
-        self.report['ci_run_id']=run_id
+        check('production_environment_main_only',branches.get('total_count')==1 and len(branches.get('branch_policies',[]))==1
+            and branches['branch_policies'][0].get('name')=='main' and branches['branch_policies'][0].get('type','branch')=='branch',
+            'PRODUCTION_ENV_MAIN_ONLY_POLICY_REQUIRED')
+        evidence['status']='PASS';self.report['ci_run_id']=run_id;self.save()
 
     def off(self,expected_commit=None):
         body=self.r.call('aura','GET','/api/active43/deployment-readiness')
