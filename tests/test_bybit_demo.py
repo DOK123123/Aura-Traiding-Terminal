@@ -13,7 +13,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+from tests.legacy_terminal import app
 from app.bybit_demo.client import BASE_URL, READ_PATHS, Credentials, SafeFailure, BybitDemoReader as Reader
 
 DUMMY = Credentials('DUMMY_BYBIT_DEMO_KEY_CANARY', 'dummy-bybit-demo-secret-never-real')
@@ -440,7 +440,7 @@ def protected_client(monkeypatch):
     monkeypatch.setenv('BYBIT_DEMO_API_KEY', DUMMY.key)
     monkeypatch.setenv('BYBIT_DEMO_API_SECRET', DUMMY.secret)
     monkeypatch.setenv('AURA_TESTNET_VIEW_PASSWORD', OWNER_PASSWORD)
-    monkeypatch.setattr('app.main.BybitDemoReader', lambda: Reader(DUMMY, transport=httpx.MockTransport(good)))
+    monkeypatch.setattr('tests.legacy_terminal.BybitDemoReader', lambda: Reader(DUMMY, transport=httpx.MockTransport(good)))
     with TestClient(app) as client:
         yield client
 

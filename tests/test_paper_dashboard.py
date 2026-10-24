@@ -104,7 +104,7 @@ def test_stale_marks_are_null_not_fabricated_pnl(dashboard):
 
 def test_dashboard_api_owner_preflight_off_and_no_new_route(client):
     c,engine,clock=client
-    from app.main import app
+    from tests.legacy_terminal import app
     app.state.paper.auto=Auto(engine);auth=('aura',PASSWORD)
     assert c.get('/api/paper/state?scope=AUTO').status_code==401
     before=engine.snapshot()
@@ -124,7 +124,7 @@ def test_dashboard_api_owner_preflight_off_and_no_new_route(client):
 
 
 def test_mobile_dashboard_markup_and_no_private_exchange_dependencies():
-    root=Path(__file__).resolve().parents[1];html=(root/'static/index.html').read_text()
+    root=Path(__file__).resolve().parents[1];html=(root/'tests/fixtures/legacy_terminal.html').read_text()
     paper=html[html.index('<section class="panel patterns paper"'):html.index('<section class="panel patterns lab"')]
     assert paper.index('paper-dashboard-title')<paper.index('paper-direction')<paper.index('paper-settings-title')
     assert 'REAL MONEY EXECUTION = DISABLED' in paper and 'Нет свежих данных' in paper

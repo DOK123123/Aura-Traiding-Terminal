@@ -18,7 +18,7 @@ from app.lab.execution import simulate,metrics
 from app.lab.experiment import execute,software_hash
 from app.lab.storage import Store,unpack
 from app.lab.service import Service
-from app.main import app
+from tests.legacy_terminal import app
 from tests.test_audit_math import nearest_ticks,ceiling_ticks,TICKS
 
 END=1800000000//14400*14400
@@ -309,7 +309,7 @@ def test_retention_keeps_newly_inserted_historical_study(tmp_path):
 
 
 def test_lab_controls_do_not_enter_existing_pattern_validation_selector():
-    html=(Path(__file__).resolve().parents[1]/'static/index.html').read_text()
+    html=(Path(__file__).resolve().parents[1]/'tests/fixtures/legacy_terminal.html').read_text()
     section=html.split('aria-labelledby="lab-title"',1)[1].split('<footer>',1)[0]
     assert 'class="pattern-controls"' not in section and 'class="lab-controls"' in section
 

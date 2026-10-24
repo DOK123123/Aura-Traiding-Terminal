@@ -10,6 +10,7 @@ import logging
 from ..gold import TradingViewGoldProvider, FAILURES, failure_reason, GoldProvider
 from ..models import Candle, INTERVALS, validate_candles
 from ..providers import DataUnavailable
+from ..bitget_chart import BitgetProvider, SOURCE
 
 DB_PATH = Path(__file__).resolve().parents[2] / '.cache' / 'patterns.sqlite3'
 logger = logging.getLogger(__name__)
@@ -79,6 +80,9 @@ class HistoryService:
                 break
         return sorted(rows.values(), key=lambda c:c.time)[-count:]
 
+    async def bitget(self, client, timeframe, count=10000):
+        return await BitgetProvider().fetch(client,timeframe,count)
+
     @staticmethod
     def covers(data, required_candles, required_source):
         """Cache eligibility only; never append chart candles to the archive."""
@@ -95,6 +99,8 @@ class HistoryService:
             if not 1<=len(required_candles)<=500:
                 raise ValueError('Invalid required history window')
             validate_candles(required_candles,timeframe,now=time.time(),contiguous=True)
+        if symbol != 'BTCUSDT':
+            raise DataUnavailable('Only Bitget BTCUSDT Futures is enabled')
         key = symbol,timeframe
         async with self.locks.setdefault(key,asyncio.Lock()):
             cached = self.cache.get(key)
@@ -108,8 +114,8 @@ class HistoryService:
             note = ''
             async with asyncio.timeout(100):
                 if symbol == 'BTCUSDT':
-                    rows = await self.binance(client,timeframe,requested)
-                    source = 'Binance · Spot'
+                    rows = await self.bitget(client,timeframe,requested)
+                    source = SOURCE
                 else:
                     try:
                         rows = await TradingViewGoldProvider().fetch(client,timeframe,requested)

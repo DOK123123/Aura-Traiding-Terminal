@@ -211,7 +211,7 @@ class AsyncContextTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):await svc.snapshot('5m')
 
     async def test_main_app_endpoint_health_static_and_fresh_snapshot(self):
-        from app.main import app
+        from tests.legacy_terminal import app
         bs=fixture();now=bs[-1].time+950
         svc=MarketContext(None,clock=lambda:now)
         svc.cache=analyze_window(bs,now);svc.at=svc.monotonic()

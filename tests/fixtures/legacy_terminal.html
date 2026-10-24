@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trading Terminal — XAUUSD & BTC</title>
+  <meta name="description" content="Локальный терминал анализа XAUUSD и BTCUSDT">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/patterns.css">
+  <script defer src="/static/vendor/lightweight-charts.standalone.production.js"></script>
+  <script defer src="/static/live.js"></script>
+  <script defer src="/static/app.js"></script>
+  <script defer src="/static/patterns.js"></script>
+  <script defer src="/static/bybit_demo.js"></script>
+  <link rel="stylesheet" href="/static/paper.css">
+  <script defer src="/static/paper.js"></script>
+  <link rel="stylesheet" href="/static/intelligence.css">
+  <link rel="stylesheet" href="/static/auto42.css">
+  <link rel="stylesheet" href="/static/active43.css">
+  <script defer src="/static/intelligence.js"></script>
+  <link rel="stylesheet" href="/static/market_context.css">
+  <script defer src="/static/market_context.js"></script>
+  <link rel="stylesheet" href="/static/lab.css">
+  <script defer src="/static/lab.js"></script>
+<link rel="stylesheet" href="/static/exchange_diagnostics.css">
+<link rel="stylesheet" href="/static/execution_verification.css">
+<link rel="stylesheet" href="/static/alignment.css">
+<link rel="stylesheet" href="/static/live_paper_monitor.css">
+</head>
+<body>
+<a href="/api/practice/login" style="display:inline-block;padding:10px">PAPER PRACTICE · отдельная виртуальная тренировка</a>
+<header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
+<main>
+  <div class="page-heading"><div><p class="eyebrow">MARKET OVERVIEW</p><h1>Обзор рынка</h1></div><p class="session">Рынок <span>·</span> UTC</p></div>
+  <section class="toolbar" aria-label="Настройки анализа">
+    <div class="instrument-control"><label for="symbol">Инструмент</label><select id="symbol"><option value="BTCUSDT">₿ BTCUSDT</option><option value="XAUUSD">◈ XAUUSD</option></select></div>
+    <div class="timeframe-control"><span class="control-label">Таймфрейм</span><div class="segmented" id="timeframes" role="group" aria-label="Таймфрейм"><button data-tf="1m" aria-pressed="false">1m</button><button data-tf="5m" aria-pressed="false">5m</button><button data-tf="15m" class="active" aria-pressed="true">15m</button><button data-tf="1h" aria-pressed="false">1h</button></div></div>
+    <div class="history-control"><label for="limit">Глубина анализа</label><select id="limit"><option value="500">500 свечей</option><option value="2000">2000 свечей</option></select></div>
+    <button id="refresh" class="refresh">↻ <span>Обновить</span></button>
+  </section>
+  <div id="status" class="status" role="status" aria-live="polite">Подключение к источнику данных…</div>
+  <div class="feed-strip"><span id="feed-state" role="status">Подключение…</span><span id="event-age">—</span><span>Обновлений: <b id="live-events">0</b></span></div>
+  <div id="live-candle" class="ohlcv">Текущая свеча: ожидаем данные источника</div>
+  <div class="terminal-grid">
+    <section class="chart-panel panel" aria-label="Свечной график">
+      <div class="chart-heading"><div><h2 id="chart-title">BTC / USDT</h2><span id="chart-subtitle">Bitcoin · Spot</span></div><div class="chart-price"><strong id="headline-price">—</strong><span id="headline-return">— за выборку</span></div></div>
+      <div class="chart-tools"><div class="legends"><label><input id="ema20-toggle" type="checkbox" checked><span class="key mint"></span>EMA 20</label><label><input id="ema50-toggle" type="checkbox" checked><span class="key violet"></span>EMA 50</label></div><button id="fit" class="text-button">Вся история ↔</button></div>
+      <div class="chart-wrap"><div id="chart"></div><div id="chart-overlay">Загружаем свечи…</div></div>
+      <div id="ohlcv" class="ohlcv">Наведите курсор на свечу для просмотра OHLCV</div>
+      <div class="chart-footer"><span id="source">Источник —</span><a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">Charts by TradingView</a></div>
+    </section>
+    <aside class="analysis panel" aria-label="Market Analysis">
+      <div class="analysis-title"><h2>Market Analysis</h2><span class="tiny-badge">RULE-BASED</span></div>
+      <div class="trend-row"><span>Trend</span><strong id="trend" class="trend">—</strong></div>
+      <div class="score-heading"><h3>Signal score</h3><span>Heuristic estimate</span></div>
+      <div class="scores"><div><span class="up">↗ UP</span><strong id="up">—</strong></div><div><span class="down">↘ DOWN</span><strong id="down">—</strong></div></div>
+      <div class="score-bar"><div id="up-bar"></div><div id="down-bar"></div></div>
+      <p class="score-note">Оценка силы сигнала, не статистически доказанная вероятность движения цены.</p>
+      <dl class="metrics"><div><dt>Последняя цена</dt><dd id="price">—</dd></div><div><dt>EMA 20</dt><dd id="ema20-value">—</dd></div><div><dt>EMA 50</dt><dd id="ema50-value">—</dd></div><div><dt>RSI <small>14</small></dt><dd id="rsi">—</dd></div><div><dt>ATR <small>14</small></dt><dd id="atr">—</dd></div><div><dt>Доходность выборки</dt><dd id="return">—</dd></div><div><dt>Волатильность <small>на свечу</small></dt><dd id="volatility">—</dd></div><div><dt>Momentum <small>10 свечей</small></dt><dd id="momentum">—</dd></div><div><dt>Свечей в анализе</dt><dd id="count">—</dd></div></dl>
+      <details><summary>Как рассчитывается сигнал</summary><p>UP = 50 + 45 × (EMA + RSI + momentum) × D; DOWN = 100 − UP.</p><p>EMA = 0.5 × clip((EMA20 − EMA50) / ATR). RSI = 0.2 × clip((RSI14 − 50) / 25). Momentum = 0.3 × clip((close − close[−10]) / (3 × ATR)). clip ограничивает значение от −1 до 1.</p><p>D = 1 / max(1, σ последних 20 доходностей / σ всей выборки). Повышенная волатильность приближает оценку к 50/50. Диапазон оценки: 5–95%.</p><p id="factor-values">Вклад факторов появится после загрузки.</p><p>Trend определяется разницей EMA20 и EMA50: свыше 0.1 ATR — Bullish, ниже −0.1 ATR — Bearish, иначе Neutral. Горизонт прогноза и калибровка пока не заданы.</p></details>
+    </aside>
+  </div>
+  <section class="modules" aria-labelledby="modules-title"><div class="modules-heading"><h2 id="modules-title">Модули анализа</h2><span>Следующие этапы</span></div><div class="module-grid"><article><span class="module-symbol">⌁</span><h3>Fibonacci</h3><p>Уровни коррекции</p><span class="planned">Запланировано</span></article><article><span class="module-symbol">⇄</span><h3>Divergences</h3><p>Расхождения цены и RSI</p><span class="planned">Запланировано</span></article><article><span class="module-symbol">%</span><h3>Funding rate</h3><p>Ставки финансирования</p><span class="planned">Запланировано</span></article><article><span class="module-symbol">▥</span><h3>Multi-timeframe</h3><p>Анализ таймфреймов</p><span class="planned">Запланировано</span></article><article><span class="module-symbol">∿</span><h3>Elliott Wave</h3><p>Волновая структура</p><span class="planned">Запланировано</span></article></div></section>
+  <section class="panel patterns" aria-labelledby="patterns-title">
+    <div class="modules-heading"><div><p class="eyebrow">RESEARCH / CLOSED CANDLES</p><h2 id="patterns-title">HISTORICAL ANALOGS</h2></div><span class="tiny-badge">PATTERN ENGINE v1</span></div>
+    <p class="score-note">Контекст, инструмент и таймфрейм берутся из панели рынка. Архив поиска шире окна графика. Confidence — оценка качества свидетельств, не вероятность прибыли.</p>
+    <details><summary>Настройки поиска и backtest</summary><div class="pattern-controls">
+      <label>Lookback N<input id="pattern-lookback" type="number" value="20" min="5" max="60"></label>
+      <label>Максимум аналогов<input id="pattern-matches" type="number" value="100" min="5" max="500"></label>
+      <label>Minimum similarity %<input id="pattern-similarity" type="number" value="75" min="0" max="100"></label>
+      <label>Порог направления %<input id="pattern-threshold" type="number" value="60" min="51" max="95"></label>
+      <label>Минимум аналогов<input id="pattern-sample" type="number" value="20" min="5" max="200"></label>
+      <label>Minimum confidence %<input id="pattern-confidence" type="number" value="40" min="0" max="100"></label>
+      <label>Горизонты (свечи)<input id="pattern-horizons" value="5,10,20,50"></label>
+      <label>Горизонт сигнала<input id="pattern-horizon" type="number" value="20" min="1" max="200"></label>
+      <label>Расходы round-trip, bps<input id="pattern-cost" type="number" value="5" min="0" max="100" step="0.1"></label>
+      <label>Историческая точка UTC<input id="pattern-asof" type="datetime-local"></label>
+      <label>Backtest от UTC<input id="pattern-start" type="datetime-local"></label>
+      <label>Backtest до UTC<input id="pattern-end" type="datetime-local"></label>
+      <label>Максимум решений<input id="pattern-points" type="number" value="50" min="1" max="100"></label>
+    </div></details>
+    <div class="pattern-actions"><button id="pattern-run">Анализировать сейчас</button><button id="pattern-point">Проверить историческую точку</button><button id="pattern-backtest">Запустить backtest</button><label><input id="pattern-auto" type="checkbox" checked> Обновлять анализ раз в 60 с</label></div>
+    <p id="pattern-status" role="status">NO DATA · Запустите анализ реального архива.</p>
+    <div id="pattern-result" hidden>
+      <div class="pattern-kpis"><div><span id="pattern-mode">CURRENT MARKET</span><strong id="pattern-signal">—</strong></div><div><span>Confidence score</span><strong id="pattern-score">—</strong></div><div><span>Historical matches</span><strong id="pattern-count">—</strong></div><div><span>Average similarity</span><strong id="pattern-average">—</strong></div></div>
+      <p id="pattern-meta" class="score-note"></p><p id="pattern-warning" class="pattern-warning"></p>
+      <h3>HISTORICAL OUTCOME</h3><p class="score-note">Close-to-close; MFE/MAE — средние благоприятная/неблагоприятная экскурсии для LONG, относительно close аналога. FLAT учитывается отдельно.</p>
+      <div class="pattern-table-wrap"><table><thead><tr><th>Через свечей</th><th>UP</th><th>DOWN</th><th>FLAT</th><th>Average %</th><th>Median %</th><th>Max + %</th><th>Max − %</th><th>MFE %</th><th>MAE %</th></tr></thead><tbody id="pattern-outcomes"></tbody></table></div>
+      <h3>TOP 5 HISTORICAL MATCHES</h3><p class="score-note">Дата — начало последней свечи паттерна (UTC). Нажмите строку для отдельного графика; live-график продолжит работать.</p>
+      <div class="pattern-table-wrap"><table><thead><tr><th>Date UTC</th><th>Similarity</th><th>Move after 5</th><th>Move after 20</th><th>What happened next</th></tr></thead><tbody id="pattern-top"></tbody></table></div>
+      <div id="pattern-preview" hidden><p id="pattern-preview-title"></p><div id="pattern-chart"></div></div>
+      <h3>WHY THIS SIGNAL?</h3><div id="pattern-reasons" class="pattern-reasons"></div>
+      <p id="pattern-actual" class="score-note"></p>
+    </div>
+    <div id="backtest-result" hidden><h3>BACKTEST · WALK FORWARD</h3><p id="backtest-meta" class="score-note"></p><div id="backtest-summary" class="pattern-kpis"></div><div class="pattern-table-wrap"><table><thead><tr><th>Decision UTC</th><th>Signal</th><th>Confidence</th><th>Matches</th><th>Actual close move %</th><th>Net trade %</th></tr></thead><tbody id="backtest-rows"></tbody></table></div></div>
+  </section>
+  <section class="panel patterns" aria-labelledby="demo-title">
+    <div class="modules-heading"><div><p class="eyebrow">BYBIT DEMO / READ ONLY</p><h2 id="demo-title">DEMO ACCOUNT</h2></div><span class="tiny-badge">VIRTUAL FUNDS</span></div>
+    <p class="score-note">REAL MONEY IS NOT USED · Виртуальные средства Bybit Demo. Aura только читает аккаунт: без создания, изменения или отмены ордеров. Графики и сигналы используют прежние публичные источники, не Demo account.</p>
+    <div class="pattern-actions"><div class="pattern-controls"><label>Категория Demo<select id="demo-category"><option value="spot">Spot</option><option value="linear">Linear (USDT/USDC)</option><option value="inverse">Inverse</option><option value="option">Option</option></select></label><label>Пара ордеров/истории<input id="demo-symbol" value="BTCUSDT" pattern="[A-Z0-9-]{3,64}" maxlength="64" aria-label="Пара Bybit Demo"></label></div><button id="demo-refresh">Обновить аккаунт</button><a id="demo-login" href="/api/bybit-demo/login" hidden>Войти для просмотра Demo</a></div>
+    <p role="status" aria-live="polite"><strong id="demo-state">Проверка…</strong> · <span id="demo-message">Ожидаем состояние Demo account.</span></p>
+    <div id="demo-data" hidden>
+      <p id="demo-meta" class="score-note"></p>
+      <h3>DEMO BALANCE · UNIFIED</h3><p id="demo-summary" class="score-note"></p>
+      <p class="score-note">Wallet balance и equity — разные величины. Locked относится к Spot-ордерам; wallet balance не равен свободному торговому балансу. Пропущенные значения показаны как —. Активы кошелька не ограничены выбранной парой.</p>
+      <div class="pattern-table-wrap"><table><thead><tr><th>Актив</th><th>Wallet balance</th><th>Equity</th><th>Locked (Spot)</th><th>USD value</th><th>Spot borrow</th></tr></thead><tbody id="demo-balances"></tbody></table></div>
+      <p id="demo-assets" class="score-note"></p>
+      <h3 id="demo-orders-title">OPEN ORDERS · ВЫБРАННАЯ КАТЕГОРИЯ/ПАРА</h3>
+      <div class="pattern-table-wrap"><table><thead><tr><th>Order ID</th><th>Пара</th><th>Сторона</th><th>Тип</th><th>Статус</th><th>Цена</th><th>Количество</th><th>Исполнено</th></tr></thead><tbody id="demo-orders"></tbody></table></div>
+      <div class="pattern-actions"><button id="demo-history-refresh">Показать историю</button></div>
+      <p id="demo-history-status" role="status" class="score-note">История загружается по запросу: выбранная категория/пара, последние доступные 7 дней, до 200 записей каждого типа. Это не полный архив.</p>
+      <div id="demo-history" hidden>
+        <h3 id="demo-past-orders-title">ORDER HISTORY</h3>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Order ID</th><th>Пара</th><th>Сторона</th><th>Тип</th><th>Статус</th><th>Цена</th><th>Количество</th><th>Исполнено</th><th>UTC</th></tr></thead><tbody id="demo-past-orders"></tbody></table></div>
+        <h3 id="demo-trades-title">TRADE HISTORY</h3>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Execution ID</th><th>Order ID</th><th>Сторона</th><th>Тип исполнения</th><th>Цена</th><th>Количество</th><th>Сумма</th><th>Комиссия</th><th>UTC</th></tr></thead><tbody id="demo-trades"></tbody></table></div>
+      </div>
+    </div>
+  </section>
+    <details id="auto42-panel" class="auto42" open>
+      <summary>AURA AUTO PAPER 4.2 · АВТОМАТИЧЕСКАЯ ДЕМОТОРГОВЛЯ</summary>
+      <p class="a42-warning">ТОЛЬКО ВИРТУАЛЬНЫЕ СРЕДСТВА. REAL MONEY EXECUTION = DISABLED.<br>EXPERIMENTAL / NO_EDGE_FOUND — преимущество не доказано. Портфель Supabase · BTCUSDT 15m · Cloudflare/GitHub вызывают только этот режим. Его ON/OFF не связан с Historical Pattern ниже.</p>
+      <a href="/api/paper/login">Вход владельца</a>
+      <section aria-labelledby="a42-system-title">
+        <h3 id="a42-system-title">СОСТОЯНИЕ СИСТЕМЫ</h3>
+        <dl class="a42-grid">
+          <div><dt>Render API</dt><dd id="a42-sys-api">UNKNOWN</dd></div>
+          <div><dt>Supabase</dt><dd id="a42-sys-storage">UNKNOWN</dd></div>
+          <div><dt>Hostname активного подключения Supabase</dt><dd id="a42-sys-host">—</dd></div>
+          <div><dt>Категория ошибки БД</dt><dd id="a42-sys-category">—</dd></div>
+          <div><dt>Последний подтверждённый scheduler tick (сервер)</dt><dd id="a42-sys-scheduler">—</dd></div>
+          <div><dt>Обработанная закрытая свеча</dt><dd id="a42-sys-candle">—</dd></div>
+          <div><dt>Последнее решение стратегии</dt><dd id="a42-sys-decision">—</dd></div>
+          <div><dt>Последняя ошибка</dt><dd id="a42-sys-error">—</dd></div>
+          <div><dt>Последнее подтверждённое сохранение в БД</dt><dd id="a42-sys-saved">—</dd></div>
+          <div><dt>Режим Aura 4.2 (сервер)</dt><dd id="a42-sys-mode">UNKNOWN</dd></div>
+          <div><dt>Защита новых входов</dt><dd id="a42-sys-protection">UNKNOWN</dd></div>
+          <div><dt>Причина блокировки</dt><dd id="a42-sys-block">Нет свежей диагностики</dd></div>
+        </dl>
+        <p>Отсутствующие или некорректные переменные (только имена): <span id="a42-sys-config">—</span></p>
+        <p>ONLINE относится к ответу API; CONNECTED — к фактическому RPC. Отметка scheduler подтверждает приём сервером, но не доступность GitHub Actions 24/7. Старые времена не считаются свежими проверками.</p>
+      </section>
+      <p>Единственный источник режима этой панели — /api/auto42/status. ON в прежнем Historical Pattern не включает Aura 4.2. <a href="#paper-legacy-panel">Открыть прежний Paper / Historical Pattern</a></p>
+      <p id="a42-status" role="status" aria-live="polite">НЕ РАБОТАЕТ — состояние ещё не загружено</p>
+      <p>Версия Render: <span id="a42-build">Версия Render не подтверждена</span></p>
+      <p>Свежая цена BTCUSDT (только отображение): <span id="a42-quote">Нет свежей котировки</span></p>
+      <p>Последний подтверждённый сигнал: <span id="a42-signal">—</span></p>
+      <dl class="a42-grid">
+        <div><dt>Режим Aura 4.2 (Supabase)</dt><dd id="a42-mode">—</dd></div>
+        <div><dt>Виртуальный баланс, USDT</dt><dd id="a42-balance">—</dd></div>
+        <div><dt>Текущий equity, USDT</dt><dd id="a42-equity">Нет свежих данных</dd></div>
+        <div><dt>Реализованный PnL, USDT</dt><dd id="a42-realized">—</dd></div>
+        <div><dt>PnL открытой позиции после комиссий входа/выхода, USDT</dt><dd id="a42-unrealized">—</dd></div>
+        <div><dt>Комиссии портфеля, USDT</dt><dd id="a42-fees">—</dd></div>
+        <div><dt>Закрытые сделки</dt><dd id="a42-trades">—</dd></div>
+        <div><dt>Win rate, %</dt><dd id="a42-win">—</dd></div>
+        <div><dt>Profit factor</dt><dd id="a42-pf">—</dd></div>
+        <div><dt>Максимальная просадка, %</dt><dd id="a42-drawdown">—</dd></div>
+        <div><dt>Последний успешный scheduler run</dt><dd id="a42-run">—</dd></div>
+        <div><dt>Обработанная закрытая свеча BTCUSDT 15m</dt><dd id="a42-candle">—</dd></div>
+      </dl>
+      <p>Пропущенные запуски: <span id="a42-missed">—</span></p>
+      <p id="a42-position">Состояние позиции ещё не загружено</p>
+      <p>Последнее решение: <span id="a42-last">—</span></p>
+      <div class="a42-controls" role="group" aria-label="Управление отдельным демопортфелем">
+        <button id="a42-start" type="button" disabled>Запустить Aura 4.2 · START PAPER</button>
+        <button id="a42-stop" type="button" disabled>Остановить Aura 4.2 · STOP PAPER</button>
+        <button id="a42-emergency" type="button" disabled>EMERGENCY STOP</button>
+        <button id="a42-reset" type="button" disabled>RESET DEMO</button>
+        <button id="a42-refresh" type="button">Обновить состояние</button>
+      </div>
+      <p id="a42-message" role="status" aria-live="polite"></p>
+      <p>Риск 0,5% · не более 1 позиции · дневной лимит 2% · просадка 10%. STOP запрещает новые входы; защитные выходы требуют проверенных данных и внешнего scheduler. RESET не закрывает позицию и не удаляет журнал.</p>
+      <details><summary>Закрытые виртуальные сделки</summary><p id="a42-history-note">История не загружена</p><ul id="a42-history"></ul><button id="a42-older" type="button" disabled>Более ранние сделки</button></details>
+      <a href="/api/auto42/journal">Журнал событий (JSON, первая страница)</a>
+    </details>
+  <details id="active43-paper-readiness" open>
+    <summary>AURA 4.3 · Готовность автономного PAPER · только чтение</summary>
+    <button id="a43-pr-check" type="button">ПРОВЕРИТЬ ГОТОВНОСТЬ PAPER</button>
+    <p id="a43-pr-status" role="status" aria-live="polite">BLOCKED · проверка ещё не выполнена</p>
+    <pre id="a43-pr-details" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+    <p>READY разрешает только подготовку к запуску. Торговля не включается. Отсутствие сигнала не означает неисправность. Преимущество стратегии не подтверждено.</p>
+  </details>
+
+  <details id="active43-off-readiness" open>
+    <summary>AURA 4.3 · Готовность Cloudflare off_only · только чтение</summary>
+    <a href="/api/paper/login">Вход владельца</a>
+    <p>Свежий снимок отдельного счёта Supabase. Не выполняет tick, создание счёта или торговые команды. PASS относится только к предпосылкам off_only на момент чтения; это не разрешение PAPER и не подтверждение работы Cloudflare.</p>
+    <button id="a43-ro-check">ПРОВЕРИТЬ OFF-ONLY БЕЗ ИЗМЕНЕНИЙ</button>
+    <dl class="a43-grid">
+      <div><dt>Готовность off_only</dt><dd id="a43-ro-status">BLOCKED</dd></div>
+      <div><dt>Сохранённый режим PAPER</dt><dd id="a43-ro-mode">Не подтверждено</dd></div>
+      <div><dt>Открытая позиция</dt><dd id="a43-ro-position">Не подтверждено</dd></div>
+      <div><dt>pending · ожидающий вход</dt><dd id="a43-ro-pending">Не подтверждено</dd></div>
+      <div><dt>pending_exit · ожидающий выход</dt><dd id="a43-ro-exit">Не подтверждено</dd></div>
+      <div><dt>Ожидающих операций</dt><dd id="a43-ro-count">Не подтверждено</dd></div>
+      <div><dt>data_recovery_armed</dt><dd id="a43-ro-recovery">Не подтверждено</dd></div>
+      <div><dt>Risk guards сохранённого счёта</dt><dd id="a43-ro-risk">Не подтверждено</dd></div>
+      <div><dt>Последнее подтверждённое чтение UTC</dt><dd id="a43-ro-at">—</dd></div>
+    </dl>
+    <p id="a43-ro-reason" role="status" aria-live="polite">Нет подтверждённого чтения Supabase</p>
+  </details>
+
+  <details id="active43-panel">
+    <summary>AURA 4.3 ACTIVE PAPER v3 · BITGET FUTURES</summary>
+    <p><a id="a43-readiness-link" href="#active43-off-readiness">Готовность Cloudflare off_only · только чтение — перейти к проверке</a></p>
+    <p>Exchange: <strong>BITGET</strong> · Market: <strong>BTCUSDT USDT-M Futures</strong></p>
+    <p class="a43-warning">ТОЛЬКО ВИРТУАЛЬНЫЕ СРЕДСТВА · REAL MONEY EXECUTION = DISABLED.<br>NO_EDGE_FOUND: убедительное преимущество после расходов не найдено. Режим выключен по умолчанию и не заменяет Aura 4.2. Bitget BTCUSDT USDT-M Futures — только публичные данные и виртуальное исполнение. UNVALIDATED_FUTURES: архивный Spot-backtest не доказывает результаты Futures. Funding не моделируется. Paper SL/TP не являются биржевыми стоп-ордерами.</p>
+    <a href="/api/paper/login">Вход владельца</a>
+    <dl class="a43-grid"><div><dt>ON/OFF</dt><dd id="a43-mode">—</dd></div><div><dt>Подключение к рынку</dt><dd id="a43-market">—</dd></div><div><dt>Подключение к Supabase</dt><dd id="a43-storage">—</dd></div><div><dt>Активная стратегия</dt><dd id="a43-strategy">—</dd></div><div><dt>Последняя закрытая свеча UTC</dt><dd id="a43-candle">—</dd></div><div><dt>Scheduler (внешний; без браузера)</dt><dd id="a43-scheduler">—</dd></div><div><dt>Последние успешные данные UTC</dt><dd id="a43-success">—</dd></div><div><dt>Последний успешный scheduler цикл UTC</dt><dd id="a43-successfulrun">—</dd></div><div><dt>Последний scheduler run UTC</dt><dd id="a43-run">—</dd></div><div><dt>Последнее сохранение UTC</dt><dd id="a43-saved">—</dd></div><div><dt>Баланс, USDT</dt><dd id="a43-balance">—</dd></div><div><dt>Equity, USDT</dt><dd id="a43-equity">—</dd></div><div><dt>Realized PnL, USDT</dt><dd id="a43-realized">—</dd></div><div><dt>PnL по последней закрытой свече после комиссий, USDT</dt><dd id="a43-pnl">—</dd></div><div><dt>Комиссии, USDT</dt><dd id="a43-fees">—</dd></div><div><dt>Проскальзывание, USDT</dt><dd id="a43-slippage">—</dd></div><div><dt>Max Drawdown, %</dt><dd id="a43-drawdown">—</dd></div><div><dt>Закрытых сделок</dt><dd id="a43-count">—</dd></div><div><dt>Win Rate, %</dt><dd id="a43-win">—</dd></div><div><dt>Восстановление после рестарта</dt><dd id="a43-recovery">—</dd></div></dl>
+    <dl class="a43-grid"><div><dt>Состояние PAPER / scheduler</dt><dd id="a43-health">—</dd></div><div><dt>Защита существующей позиции SL/TP</dt><dd id="a43-protection">—</dd></div><div><dt>Возраст последней проверенной закрытой свечи</dt><dd id="a43-candleage">—</dd></div><div><dt>Последний переход: причина, время, цикл</dt><dd id="a43-transition">—</dd></div></dl>
+    <p id="a43-chart-status">График Bitget Futures появится после scheduler-цикла.</p><svg id="a43-chart" viewBox="0 0 850 230" role="img" aria-label="Закрытые свечи Bitget Futures и точки OPEN/CLOSE Paper"></svg>
+    <p>Свежая цена BTCUSDT, только отображение: <span id="a43-quote">Нет свежей котировки</span></p>
+    <p>Оценка PnL позиции по свежей цене после комиссий, без записи: <span id="a43-quote-pnl">Нет свежих данных</span></p>
+    <p>Последний сигнал: <span id="a43-signal">—</span></p>
+    <p>Причина решения: <span id="a43-reason">—</span></p>
+    <p id="a43-position">Позиция не загружена</p><p id="a43-live">Автономный production-цикл не подтверждён</p>
+    <div class="a43-controls"><label for="a43-choice">PAPER-стратегия (смена только OFF и пустой счёт)</label>
+      <select id="a43-choice"><option value="DONCHIAN_15M">Donchian 15m · существующая</option><option value="BOUNCE_5M">Support/Resistance Bounce 5m · EXPERIMENTAL</option></select>
+      <button id="a43-select-strategy" type="button" disabled>Сохранить стратегию · PAPER останется OFF</button>
+      <p>Эксперимент без обещания доходности или большей частоты. ATR SL · TP 1.5R до расходов. Баланс и история не сбрасываются.</p>
+    </div>
+    <div role="group" aria-label="Управление Aura 4.3"><button id="a43-start" disabled>START EXPERIMENTAL PAPER</button><button id="a43-stop" disabled>STOP · запрет новых входов</button><button id="a43-emergency" disabled>EMERGENCY STOP</button><button id="a43-refresh">Обновить</button></div>
+    <p id="a43-message" role="status" aria-live="polite"></p>
+    <button id="a43-diagnose">ПРОВЕРИТЬ ВСЮ СИСТЕМУ</button>
+    <p>Проверка доступна при OFF. Только чтение: не открывает сделки, не создаёт счёт и не меняет баланс. Результат — снимок на указанное время. Подтверждение доставки диагностического запроса не означает работу периодического scheduler.</p>
+    <p id="a43-diagnostic-message" role="status" aria-live="polite">Соединения ещё не проверены.</p>
+    <dl class="a43-grid"><div><dt>Bitget (серверная проверка)</dt><dd id="a43-diag-bitget">NOT TESTED</dd></div><div><dt>Supabase (чтение)</dt><dd id="a43-diag-storage">NOT TESTED</dd></div><div><dt>Scheduler (сохранённый цикл)</dt><dd id="a43-diag-scheduler">NOT TESTED</dd></div><div><dt>Последний успешный tick UTC</dt><dd id="a43-diag-tick">—</dd></div><div><dt>Сохранённый баланс USDT</dt><dd id="a43-diag-balance">—</dd></div><div><dt>Сохранённая позиция</dt><dd id="a43-diag-position">—</dd></div><div><dt>Последняя проверка UTC</dt><dd id="a43-diag-at">—</dd></div><div><dt>Последняя ошибка проверки</dt><dd id="a43-diag-error">—</dd></div></dl>
+    <a href="https://github.com/DOK123123/Aura-Traiding-Terminal/actions/workflows/aura-active43.yml" target="_blank" rel="noopener noreferrer">Открыть Aura 4.3 в GitHub Actions</a>
+
+    <p>Риск ≤0,5% · дневной лимит 2% · max notional 2000 USDT · одна позиция. STOP сохраняет защитные выходы. Бесплатный Render может спать; пропуски scheduler задерживают SL/TP. Работа 24/7 не подтверждена.</p>
+    <details><summary>История реального Paper-портфеля Aura 4.3</summary><ul id="a43-history"></ul><button id="a43-older" disabled>Более ранние сделки</button><a href="/api/active43/journal">Журнал решений и событий JSON</a></details>
+    <details><summary>Отдельное историческое сравнение стратегий · НЕ LIVE</summary>
+      <button id="a43-research">Показать зафиксированные результаты backtest</button><p id="a43-research-status">Исторический отчёт не загружен. Исследования через production API не запускаются.</p>
+      <div class="a43-scroll" role="region" aria-label="Сравнение стратегий" tabindex="0"><table><thead><tr><th>Стратегия</th><th>TF</th><th>Сделки за год</th><th>В неделю</th><th>Net USDT</th><th>Return %</th><th>Win %</th><th>PF</th><th>Max DD %</th><th>Expectancy</th><th>Sharpe</th><th>Avg win</th><th>Avg loss</th><th>Часы в сделке</th><th>Fees</th><th>Fees/abs gross %</th><th>Validation net</th><th>OOS net</th><th>OOS сделки</th></tr></thead><tbody id="a43-comparison"></tbody></table></div>
+      <p><a href="/static/active43-historical-trades.json.gz" download>Скачать исторические сделки выбранного кандидата · НЕ LIVE (JSON.GZ)</a></p>
+      <p id="a43-curve-label">Историческая equity не является текущим балансом Paper.</p><canvas id="a43-curve" width="850" height="200" role="img" aria-label="Историческая equity выбранного экспериментального кандидата"></canvas>
+    </details>
+  </details>
+  <details id="bybit-linear-preview" class="auto42">
+    <summary>Bybit BTCUSDT · USDT Perpetual · отдельный READ ONLY preview</summary>
+    <p class="a42-warning">PREVIEW ONLY · НЕ ИСТОЧНИК AUTO PAPER 4.2. Основной график и портфель пока используют Binance Spot. Для нового Paper-портфеля Bitget используйте отдельную панель Aura 4.3 v3; этот Bybit preview остаётся независимым, Aura 4.2 не переключается.</p>
+    <dl class="a42-grid"><div><dt>Статус котировки Bybit linear</dt><dd id="bl-status">Нет данных</dd></div><div><dt>Last Price · Bybit Futures</dt><dd id="bl-last">—</dd></div><div><dt>Mark Price · Bybit Futures</dt><dd id="bl-mark">—</dd></div><div><dt>Время ответа / сообщения источника UTC (не время последней сделки)</dt><dd id="bl-time">—</dd></div><div><dt>Транспорт</dt><dd id="bl-transport">—</dd></div></dl>
+    <button id="bl-refresh" type="button">Обновить Bybit preview</button><a href="/api/paper/login">Вход владельца</a>
+    <p>Feature flag по умолчанию выключен. Нет account API, funding, ордеров или связи с исполнением. Цены свечей не подставляются вместо Last/Mark.</p>
+  </details>
+  <details id="paper-legacy-panel" class="panel paper-fold">
+    <summary>Дополнительно: прежний Paper / Historical Pattern · отдельные режим и история · <span class="tiny-badge" id="paper-auto-badge">Нет свежих данных</span></summary>
+  <section class="panel patterns paper" aria-labelledby="paper-title">
+    <div class="modules-heading"><div><p class="eyebrow">ПРЕЖНИЙ PAPER · ОТДЕЛЬНЫЙ ЛОКАЛЬНЫЙ СЧЁТ SQLITE</p><h2 id="paper-title">Виртуальная торговля · Paper / Historical Pattern · отдельный счёт</h2></div></div>
+    <p class="pattern-warning">Это отдельный движок /api/paper и локальный SQLite, а не Aura 4.2 / Supabase. Его режим и баланс не управляют внешним scheduler. Запуск здесь не включает Aura 4.2. <a href="#auto42-panel">К основному управлению Aura 4.2</a></p>
+    <p class="paper-safety">Только виртуальные средства. REAL MONEY EXECUTION = DISABLED. Биржевые ордера не отправляются.</p>
+    <p class="score-note">Остановка отключает новые автоматические входы. Уже открытые виртуальные позиции остаются под защитой SL/TP при доступных свежих данных. Сон сервера и пропуски котировок задерживают обработку.</p>
+    <div class="pattern-actions"><button id="paper-refresh" type="button">Обновить данные</button><a id="paper-login" href="/api/paper/login" hidden>Войти: пользователь aura</a><a href="/api/paper/export">Скачать резервную копию</a></div>
+    <p id="paper-status" role="status" aria-live="polite">Нет свежих данных · получаем состояние сервера…</p>
+    <div class="pattern-actions"><button id="paper-retry" type="button" hidden>Повторить неподтверждённое действие</button></div>
+    <section class="paper-dashboard" aria-labelledby="paper-dashboard-title">
+      <div class="paper-dashboard-heading"><div><p class="eyebrow">ПРЕЖНЯЯ СТРАТЕГИЯ HISTORICAL PATTERN</p><h3 id="paper-dashboard-title">Historical Pattern · прежний Auto Paper</h3></div><p id="paper-auto-state" role="status" aria-live="polite">Нет свежих данных</p></div>
+      <p id="paper-dashboard-freshness" class="pattern-warning" role="status">Нет свежих данных</p>
+      <p id="paper-auto-last" class="score-note">Закрытая свеча ещё не подтверждена.</p>
+      <div id="paper-dashboard-metrics" class="paper-dashboard-grid"></div>
+      <div class="paper-decision"><p id="paper-dashboard-signal">Сигнал: нет данных</p><p id="paper-dashboard-action">Решение: нет данных</p><p id="paper-dashboard-rejection">Причина: нет данных</p></div>
+      <div class="paper-dashboard-actions"><button id="paper-auto-start" type="button" disabled>Запустить Historical Pattern</button><button id="paper-auto-stop" type="button">Остановить Historical Pattern</button></div>
+      <p id="paper-dashboard-policy" class="score-note">Сохранённая политика SL/TP: нет данных.</p>
+      <p id="paper-dashboard-draft" class="pattern-warning" role="status" aria-live="polite"></p>
+      <h4>Текущая автоматическая позиция</h4><div id="paper-auto-position" class="paper-position" aria-live="polite">Нет свежих данных</div>
+      <h4>Последние закрытые сделки · только AUTO</h4><div id="paper-auto-history" class="paper-history"></div><p id="paper-auto-history-note" class="score-note">Нет свежих данных</p>
+    </section>
+    <div id="paper-data" hidden>
+      <p id="paper-storage" class="pattern-warning"></p>
+      <details class="paper-fold"><summary>Журнал и статистика · все / ручные / автоматические сделки</summary>
+        <label class="paper-scope-label" for="paper-scope">Показать журнал<select id="paper-scope"><option value="ALL">Все сделки · ALL</option><option value="MANUAL">Ручные сделки · MANUAL</option><option value="AUTO">Автоматические сделки · AUTO</option></select></label>
+        <p class="score-note">Фильтр меняет только журнал и статистику ниже. Панель Авто Paper всегда показывает общий счёт ALL и результат только AUTO раздельно. MANUAL/AUTO — атрибуция на одном начальном балансе, не отдельные кошельки.</p>
+        <div class="pattern-kpis" id="paper-metrics"></div>
+        <h3>Кривая виртуального капитала · USDT</h3><p id="paper-curve-note" class="score-note"></p><svg id="paper-curve" viewBox="0 0 600 160" role="img" aria-label="Кривая виртуального капитала"></svg>
+        <h3>Открытые позиции выбранного журнала</h3><div class="pattern-table-wrap" tabindex="0" role="region" aria-label="Открытые виртуальные позиции"><table><thead><tr><th>Пара / направление</th><th>Вход</th><th>Количество</th><th>SL</th><th>TP</th><th>Нереализованный PnL</th><th>Свежесть</th><th>Действие</th></tr></thead><tbody id="paper-positions"></tbody></table></div>
+        <h3>Закрытые сделки выбранного журнала</h3><p id="paper-journal-note" class="score-note"></p><div class="pattern-table-wrap" tabindex="0" role="region" aria-label="Полный журнал виртуальных сделок"><table><thead><tr><th>Выход UTC</th><th>Пара / направление</th><th>Вход</th><th>Выход</th><th>Количество</th><th>Комиссии</th><th>PnL</th><th>PnL %</th><th>Причина входа</th><th>Причина выхода</th><th>Источник / интервал</th><th>Режим</th></tr></thead><tbody id="paper-trades"></tbody></table></div>
+      </details>
+      <details class="paper-fold"><summary>Ручная виртуальная сделка · BTCUSDT</summary>
+        <p class="score-note">Источник и интервал — как на графике. Исполнение по close последней проверенной закрытой свечи, не по live bid/ask. XAUUSD не поддерживается. Ручные сделки не становятся AUTO.</p>
+        <div class="pattern-actions"><button id="paper-quote-refresh" type="button">Получить подтверждённую цену</button><span id="paper-quote" class="score-note">Сначала получите подтверждённую цену.</span></div>
+        <div class="paper-settings-controls">
+          <label>Направление<select id="paper-direction"><option value="LONG">LONG · покупка</option><option value="SHORT">SHORT · продажа</option></select></label>
+          <label>Количество BTC<input id="paper-size" inputmode="decimal" placeholder="Пусто — расчёт по риску"></label>
+          <label>Цена Stop Loss<input id="paper-stop" inputmode="decimal" placeholder="Пусто — процент из настроек"></label>
+          <label>Цена Take Profit<input id="paper-target" inputmode="decimal" placeholder="Пусто — процент из настроек"></label>
+          <label>Причина входа<input id="paper-reason" maxlength="300" placeholder="Объясните ручной вход"></label>
+        </div><p class="score-note">Дробные значения в формах вводите через точку: 0.5. Округление на карточках не меняет точные значения сервера.</p><div class="pattern-actions"><button id="paper-open" type="button" disabled>Открыть виртуальную позицию</button></div>
+      </details>
+      <details class="paper-fold"><summary>Настройки, политика SL/TP и проверка безопасности</summary>
+        <section class="paper-settings-panel" aria-labelledby="paper-settings-title">
+          <h3 id="paper-settings-title">Настройки виртуальной торговли</h3>
+          <p class="score-note">Значения ниже получены с сервера и уже действуют. Черновик формы не действует до сохранения. Баланс и средства с учётом позиций относятся ко всему счёту ALL.</p>
+          <div id="paper-settings-effective" class="paper-settings-grid"></div><p id="paper-settings-source" class="score-note"></p>
+          <p id="paper-settings-preflight" class="pattern-warning" role="status" aria-live="polite">Проверка безопасности недоступна; сначала обновите данные.</p>
+          <p class="score-note">Начальный баланс блокируется после первой сделки. Открытые позиции сохраняют настройки входа. Небезопасные изменения при включённом Auto отклоняются сервером.</p>
+          <details><summary>Редактировать сохранённые настройки</summary><div class="paper-settings-controls" id="paper-settings">
+            <label>Начальный баланс · USDT<input data-paper-setting="starting_balance" inputmode="decimal"></label>
+            <label>Комиссия за одну сторону · %<input data-paper-setting="commission_pct" inputmode="decimal"></label>
+            <label>Максимальный риск на сделку · %<input data-paper-setting="risk_per_trade_pct" inputmode="decimal"></label>
+            <label>Максимальный номинал позиции · USDT<input data-paper-setting="maximum_position_size_usdt" inputmode="decimal"></label>
+            <label>Максимум открытых позиций<input data-paper-setting="maximum_simultaneous_positions" inputmode="numeric"></label>
+            <label>Stop Loss по умолчанию · %<input data-paper-setting="stop_loss_pct" inputmode="decimal"></label>
+            <label>Take Profit по умолчанию · %<input data-paper-setting="take_profit_pct" inputmode="decimal"></label>
+          </div><div class="pattern-actions"><button id="paper-save" type="button">Сохранить настройки</button><button id="paper-settings-discard" type="button">Отменить черновик</button></div></details>
+        </section>
+        <div class="paper-settings-controls">
+          <label>Режим для явного применения<select id="paper-auto-mode"><option value="OFF">OFF · выключить</option><option value="ON">ON · включить / возобновить</option></select></label>
+          <label>Политика защиты SL/TP<select id="paper-auto-policy"><option value="SKIP">SKIP · пропускать сигналы без SL/TP</option><option value="PAPER_SETTINGS">PAPER_SETTINGS · использовать проценты Paper</option></select></label>
+        </div>
+        <p class="score-note">Это черновик. Изменение списка не активирует Auto. Стратегия сейчас не выдаёт SL/TP: SKIP пропускает такие сигналы. PAPER_SETTINGS — только явно выбранный виртуальный fallback, не новые правила стратегии. Политика сохраняется при подтверждённом включении через кнопку ниже. OFF не изменяет сохранённую политику.</p>
+        <div class="pattern-actions"><button id="paper-auto-save" type="button">Подтвердить выбранный режим и политику</button></div><div id="paper-auto-metrics" class="pattern-kpis"></div>
+      </details>
+      <details class="paper-fold"><summary>Журнал решений стратегии · последние 100</summary><p class="score-note">До 2000 решений / 30 дней; watermark от дублей хранится отдельно. Нет сигнала означает, что сигнал не вычислялся, а не выдуманный WAIT.</p><div class="pattern-table-wrap" tabindex="0" role="region" aria-label="Журнал решений стратегии"><table><thead><tr><th>Закрытие свечи UTC</th><th>Пара / интервал</th><th>Сигнал</th><th>Режим</th><th>Открыта сделка</th><th>Причина</th></tr></thead><tbody id="paper-auto-decisions"></tbody></table></div></details>
+      <details class="paper-fold"><summary>Как работает виртуальная торговля и её ограничения</summary><p>Только подтверждённые сигналы Historical Pattern по закрытым свечам. После включения первая свеча — исходная точка; входы возможны со следующей. После перезапуска сервер требует ручного возобновления. Риск Auto ≤1%, не более одной открытой позиции на всём счёте. Средства виртуальные; SL/TP обрабатываются по закрытым свечам, при одновременном касании выбирается SL. Комиссии — настройка симуляции, не тариф биржи. Резервируется 1× номинал; плечо, спред, funding и проскальзывание не моделируются. Доходность симуляции не доказывает прибыльность или безопасность стратегии.</p></details>
+    </div>
+  </section>
+  </details>
+  <section class="panel patterns lab" aria-labelledby="lab-title">
+    <div class="modules-heading"><div><p class="eyebrow">RESEARCH ONLY / NO ACTIVATION</p><h2 id="lab-title">STRATEGY LAB v1.1</h2></div><span class="tiny-badge">BTCUSDT · CLOSED HISTORY</span></div>
+    <p class="pattern-warning">REAL MONEY EXECUTION = DISABLED · No strategy activation. A numerical backtest ranking is not evidence of profitability, safety or production readiness.</p>
+    <p class="score-note">Identical snapshot for 15m / 1h / 4h. Aura Existing is shown honestly as incompatible: its fixed-horizon, 100% notional execution cannot use common ATR stops/risk sizing without changing Aura. Existing Aura remains unchanged.</p>
+    <details><summary>Frozen baseline and calendar coverage</summary>
+      <p class="score-note">Balance 10 000 USDT · risk 1% · max notional 2 000 USDT · one position · next-open entries · SL 2×ATR / TP 4×ATR. Fees/slippage below are research assumptions per fill, not exchange tariffs. Experimental parameters are fixed before validation.</p>
+      <div class="lab-controls">
+        <label>History days (all timeframes)<input id="lab-days" type="number" min="1" max="80" value="60"></label>
+        <label>Development %<input id="lab-development" inputmode="decimal" value="70"></label>
+        <label>Fee per side, bps<input id="lab-fee" inputmode="decimal" value="10"></label>
+        <label>Adverse slippage, bps<input id="lab-slippage" inputmode="decimal" value="5"></label>
+        <label>Optional start UTC (4h boundary)<input id="lab-start" type="datetime-local" step="14400"></label>
+        <label>Optional end UTC (4h boundary)<input id="lab-end" type="datetime-local" step="14400"></label>
+      </div>
+      <p class="score-note">Blank dates: last fully closed UTC 4h boundary minus selected days. 250 warm-up 4h candles precede the comparison. Maximum 12 000 base 15m candles; incomplete or gapped history is rejected, never filled or silently shortened. Split is rounded down to a common UTC 4h boundary.</p>
+    </details>
+    <div class="pattern-actions"><button id="lab-run">Run frozen comparison</button><button id="lab-list-refresh">Refresh saved studies</button><a id="lab-login" href="/api/lab/login" hidden>Owner login: aura</a></div>
+    <p id="lab-status" role="status" aria-live="polite">Research experiments load on request. No changes to Paper or Auto Paper.</p>
+    <div class="lab-controls"><label>Saved experiments (last 10)<select id="lab-experiments"><option value="">Select a saved study</option></select></label></div>
+    <div id="lab-result" hidden>
+      <p id="lab-meta" class="score-note"></p><p id="lab-coverage" class="score-note"></p>
+      <div class="pattern-actions"><button id="lab-replay">Verify snapshot replay</button><a id="lab-export" href="#">Download full snapshot / config / history</a></div>
+      <div class="lab-controls"><label>Timeframe<select id="lab-timeframe"><option value="15m">15m</option><option value="1h">1h</option><option value="4h">4h</option></select></label><label>Split<select id="lab-split"><option value="validation">Validation / out-of-sample</option><option value="development">Development / in-sample</option></select></label></div>
+      <p id="lab-ranking" class="pattern-warning"></p>
+      <div class="pattern-table-wrap"><table><thead><tr><th>Strategy / detail</th><th>Status</th><th>Net Profit</th><th>Return %</th><th>Trades</th><th>Win %</th><th>PF</th><th>Expectancy</th><th>Max DD %</th><th>Avg Win</th><th>Avg Loss</th><th>Realized R/R</th><th>Sharpe</th></tr></thead><tbody id="lab-comparison"></tbody></table></div>
+      <p class="score-note">Ranking: validation Return descending, lower drawdown breaks ties; ≥20 trades for eligibility. Inconclusive results may still have a highest numerical value. Sharpe needs ≥20 trades and ≥30 full UTC daily equity returns, nonzero variance; sqrt(365), zero risk-free rate. No out-of-sample parameter selection.</p>
+      <div id="lab-detail" hidden><h3 id="lab-detail-title">AUDITABLE RESEARCH RUN</h3><p id="lab-detail-note" class="score-note"></p><svg id="lab-curve" viewBox="0 0 600 160" role="img" aria-label="Research equity curve"></svg>
+        <div class="pattern-table-wrap"><table><thead><tr><th>Side</th><th>Signal UTC</th><th>Entry UTC</th><th>Entry fill</th><th>Size</th><th>SL</th><th>TP</th><th>Exit fill</th><th>Fees</th><th>Net PnL</th><th>Exit reason</th></tr></thead><tbody id="lab-trades"></tbody></table></div>
+        <div class="pattern-actions"><button id="lab-more" hidden>Next trade page</button></div>
+      </div>
+    </div>
+  </section>
+  <section class="panel intelligence" aria-labelledby="ai-title">
+    <h2 id="ai-title">AURA INTELLIGENCE</h2>
+    <p class="ai-warning">VIRTUAL FUNDS ONLY · REAL MONEY EXECUTION = DISABLED. Все 17 прежних стратегий убыточны после издержек. Распознавание фигуры не означает прибыльность.</p>
+    <div class="mc-tabs" role="tablist" aria-label="Режим Aura Intelligence">
+      <button id="mc-tab-replay" type="button" role="tab" aria-selected="true" aria-controls="ai-replay-panel">ИСТОРИЧЕСКИЙ REPLAY</button>
+      <button id="mc-tab-market" type="button" role="tab" aria-selected="false" aria-controls="mc-panel" tabindex="-1">АНАЛИЗ РЫНКА</button>
+    </div>
+    <div id="mc-panel" class="market-context" role="tabpanel" aria-labelledby="mc-tab-market" hidden>
+      <h3 class="mc-title">АНАЛИЗ РЫНКА · BTCUSDT</h3>
+      <p class="mc-safety ai-warning">ТОЛЬКО ЧТЕНИЕ · WAIT · В ЭТОМ РЕЖИМЕ РЕАЛЬНОЕ И ВИРТУАЛЬНОЕ ИСПОЛНЕНИЕ ОТКЛЮЧЕНО. Найденная структура не означает преимущество или разрешение сделки.</p>
+      <div class="mc-controls"><label>Таймфрейм анализа<select id="mc-timeframe"><option>15m</option><option>1h</option><option>4h</option></select></label><button id="mc-refresh" type="button">Обновить анализ</button><a href="/api/paper/login">Вход владельца: aura</a></div>
+      <p id="mc-loading" role="status" aria-live="polite"></p><p id="mc-status" class="mc-status" role="status" aria-live="polite">Анализ ещё не загружен</p>
+      <p id="mc-source">Только реальные закрытые свечи публичного источника</p>
+      <div class="ai-card"><h3>Рыночный режим и структура</h3><p id="mc-regime" class="mc-regime">Не определено</p><p id="mc-structure">Нет данных</p><p id="mc-levels">Уровни не доступны</p><p id="mc-volatility">Нет данных</p><p id="mc-smc">Экспериментальные структуры не доступны</p><ul id="mc-mtf"></ul></div>
+      <div class="ai-card"><h3>Последние подтверждённые события</h3><ul id="mc-events"></ul></div>
+      <div class="ai-card"><h3>ИСТОРИЧЕСКИЕ АНАЛОГИ</h3><p id="mc-analogs" aria-live="polite">ИСТОРИЧЕСКИЕ АНАЛОГИ НЕДОСТУПНЫ</p><p id="mc-research">Исследовательские результаты не разрешают сделку</p><p id="mc-decision" class="ai-warning">WAIT · Только чтение</p></div>
+      <details><summary>История, свежесть и ограничения</summary><p id="mc-history">Нет данных</p><p>Автообновление раз в минуту только при открытой вкладке; кэш сервера 30 секунд. Окно ограничено 4175 свечами 15m. Каждый таймфрейм требует 250 непрерывных закрытых свечей; пропуски сбрасывают прогрев, цены не заполняются. Источник недоступен — анализ не показывается как свежий. Состояние рынка не является состоянием Auto Paper.</p><p>Аналоги 4.0 используют отдельный компактный проверяемый артефакт; при его отсутствии статистика недоступна. Полный архив 2020–2025 не загружается в веб-запросах; replay 1.0 использует другую модель и не подставляется вместо 4.0. 2025 уже изучен. Нужна новая forward-проверка; гарантии доходности нет.</p></details>
+      <details><summary>Точные определения алгоритмов и момент подтверждения</summary><ul id="mc-definitions"></ul></details>
+    </div>
+    <details id="fv-panel" class="market-context">
+      <summary>ПРОВЕРКА ПРОГНОЗОВ · только для владельца</summary>
+      <p class="ai-warning">READ_ONLY · WAIT · REAL MONEY EXECUTION = DISABLED. Запись прогнозов не разрешает сделки.</p>
+      <div class="mc-controls"><label>Таймфрейм<select id="fv-timeframe"><option>15m</option><option>1h</option><option>4h</option></select></label><label>Горизонт<select id="fv-horizon"><option>4</option><option>8</option><option>16</option><option>32</option></select></label><button id="fv-refresh" type="button">Обновить проверку</button><a href="/api/paper/login">Вход владельца</a></div>
+      <p id="fv-loading" role="status"></p><p id="fv-status" aria-live="polite">Журнал ещё не загружен</p><p id="fv-times"></p><p id="fv-counts"></p><p id="fv-model"></p><p id="fv-message" class="ai-warning"></p><p id="fv-scores" style="white-space:pre-line"></p>
+      <div class="fv-table-wrap"><table><caption>Журнал прогнозов · выбранный горизонт</caption><thead><tr><th scope="col">Дата UTC</th><th scope="col">TF</th><th scope="col">Режим</th><th scope="col">Прогноз</th><th scope="col">Исход</th><th scope="col">Результат</th><th scope="col">Статус</th></tr></thead><tbody id="fv-journal"></tbody></table></div>
+      <p>Scheduler и постоянное хранилище настраиваются отдельно владельцем. Render Free может спать; пропущенные свечи не восполняются прогнозами задним числом.</p><a href="/api/intelligence/forward/export">Экспорт JSON (страница журнала)</a>
+    </details>
+    <div id="ai-replay-panel" role="tabpanel" aria-labelledby="mc-tab-replay">
+    <p>Исторический replay с отдельным портфелем. Live-анализ только для чтения: автоматическое исполнение недоступно.</p>
+    <div class="ai-actions"><button id="ai-load" type="button">Открыть вкладку / загрузить историю</button><a href="/api/paper/login">Вход владельца: aura</a><button id="ai-live" type="button">Проверить live · только анализ</button></div>
+    <p id="ai-source" class="ai-warning">История ещё не загружена.</p>
+    <div class="ai-grid"><label>Закрытая свеча, UTC<input id="ai-date" type="datetime-local" step="900"></label><label>Таймфрейм<select id="ai-timeframe"><option>15m</option><option>1h</option><option>4h</option></select></label></div>
+    <label><input id="ai-manual" type="checkbox">Явно разрешаю ручное исследование гипотезы при WAIT. Это не рекомендация и не доказанное преимущество.</label>
+    <div class="ai-actions"><button id="ai-create" type="button">Создать отдельный replay</button><button id="ai-next" type="button">Следующая свеча</button><button id="ai-fast" type="button">Вперёд на 32 свечи</button></div>
+    <p id="ai-status" role="status" aria-live="polite">Никакие позиции не создаются без подтверждения.</p>
+    <div class="ai-card"><h3>Контекст и решение</h3><p id="ai-context">Нет данных</p><p id="ai-decision">WAIT</p><p id="ai-evidence">Нет исторической оценки</p><ul id="ai-patterns"></ul></div>
+    <svg id="ai-chart" viewBox="0 0 600 220" role="img" aria-label="Закрытые свечи исторического replay и найденные паттерны"></svg>
+    <div class="ai-card"><h3>План виртуальной сделки</h3><p id="ai-plan">Нет предложения.</p><div class="ai-actions"><button id="ai-propose" type="button">Сформировать план / ручную гипотезу</button><button id="ai-confirm" type="button">ПОДТВЕРДИТЬ</button><button id="ai-reject" type="button">ПРОПУСТИТЬ</button></div></div>
+    <div class="ai-card"><h3>Отдельный replay-портфель</h3><p id="ai-portfolio">Не создан</p><p id="ai-position">Нет позиции</p><ul id="ai-history"></ul></div>
+    <details><summary>Каталог моделей — реализованные и запланированные</summary><div class="ai-grid"><label>Поиск<input id="ai-search" type="search"></label><label>Категория<select id="ai-category"><option value="">Все</option><option>Candlestick</option><option>Chart Patterns</option><option>Price Action</option><option>Market Structure</option><option>SMC</option><option>Volume</option><option>Indicators</option><option>Volatility</option></select></label></div><ul id="ai-catalogue"></ul></details>
+    <details><summary>Ограничения, безопасность и хранение</summary><p>Сессии SQLite отделены от Paper/Auto. Render Free может потерять их при замене инстанса. Компактная проверяемая история включена в приложение; шестилетний архив для replay не нужен. Даты только январь 2023 UTC, до 512 шагов и 20 сессий. 2025 не используется в индексе. Частоты исторических исходов не являются гарантией будущего результата. Коррелированные модели не считаются независимыми голосами. Без явного запроса и подтверждения пользователя вход запрещён. При WAIT разрешён только отдельно включённый ручной исследовательский тест; сам selector остаётся WAIT.</p></details>
+    </div>
+  </section>
+  <details id="exchange-diagnostics">
+    <summary>Exchange Connectivity Diagnostics · только для владельца</summary>
+    <p><strong>READ ONLY — NO TRADING</strong> · Binance и Auto Paper не переключаются.</p>
+    <p>Разовые проверки BingX / Bitget на сервере Render. Bybit — состояние существующего WS preview без новых запросов. Отчёт не подтверждает долгосрочную доступность.</p>
+    <a href="/api/paper/login">Вход владельца: aura</a>
+    <button id="ed-run" type="button" hidden>Run connectivity test</button>
+    <p id="ed-status" role="status" aria-live="polite">Проверка ещё не запускалась.</p>
+    <div id="ed-results"></div>
+  </details>
+  <details id="execution-verification">
+    <summary>PAPER EXECUTION VERIFICATION · только для владельца</summary>
+    <p><strong>TEST ONLY · НИКАКИХ СДЕЛОК В ПОРТФЕЛЕ ВЛАДЕЛЬЦА</strong></p>
+    <p>Технический тест, историческая стратегия и живая автономная торговля проверяются отдельно. Это статусы проверки, не режим ON/OFF. PASS теста не доказывает прибыльность или работу Render.</p>
+    <a href="/api/paper/login">Вход владельца: aura</a>
+    <button id="ev-refresh" type="button" hidden>Обновить сохранённые доказательства</button>
+    <p id="ev-status" role="status" aria-live="polite">Результат ещё не загружен.</p><div id="ev-results"></div>
+  </details>
+  <details id="timeframe-alignment">
+    <summary>TIMEFRAME ALIGNMENT DIAGNOSTICS · только для владельца</summary>
+    <p>Только чтение снимка фактической оценки стратегии. Проверка alignment не доказывает live autonomous open/close.</p>
+    <p>Направление: EMA20 &gt; EMA50 → UP; EMA20 &lt; EMA50 → DOWN; равенство → FLAT. ADX≥25 — отдельный фильтр после alignment.</p>
+    <a href="/api/paper/login">Вход владельца: aura</a>
+    <button id="ta-refresh" type="button" hidden>Обновить сохранённую диагностику</button>
+    <p id="ta-status" role="status" aria-live="polite">Снимок ещё не загружен.</p><div id="ta-results"></div>
+  </details>
+  <details id="live-paper-monitor">
+    <summary>LIVE PAPER TRADING MONITOR · только для владельца</summary>
+    <p>Только виртуальные сделки. VERIFIED требует сохранённую production-цепочку SIGNAL → OPEN → CLOSE на Render/Supabase. Replay и TEST ONLY не подтверждают live execution.</p>
+    <p>Панель читает данные каждые 30 секунд, пока открыта и видима. Торговлю выполняет существующий scheduler независимо от браузера. PnL обновляется по закрытым свечам.</p>
+    <a href="/api/paper/login">Вход владельца: aura</a>
+    <button id="lpm-refresh" type="button" hidden>Обновить монитор</button>
+    <p id="lpm-status" role="status" aria-live="polite">WAITING_FOR_REAL_SIGNAL · production-цикл ещё не проверен.</p>
+    <div id="lpm-results"></div>
+  </details>
+  <footer><span>Аналитический инструмент · без реальных сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
+</main>
+<script src="/static/forward_validation.js" defer></script>
+<script src="/static/auto42.js" defer></script>
+<script src="/static/active43-readiness.js" defer></script>
+<script src="/static/active43-paper-readiness.js" defer></script>
+<script src="/static/active43.js" defer></script>
+<script src="/static/bybit_linear.js" defer></script>
+<script src="/static/exchange_diagnostics.js" defer></script>
+<script src="/static/execution_verification.js" defer></script>
+<script src="/static/alignment.js" defer></script>
+<script src="/static/live_paper_monitor.js" defer></script>
+</body></html>

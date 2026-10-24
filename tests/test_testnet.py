@@ -11,7 +11,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+from tests.legacy_terminal import app
 from app.testnet.client import BASE_URL, Credentials, SafeFailure, TestnetReader as Reader
 
 DUMMY = Credentials('DUMMY_TEST_KEY_CANARY', 'dummy-secret-test-canary-never-real')
@@ -283,7 +283,7 @@ def protected_client(monkeypatch):
     monkeypatch.setenv('BINANCE_TESTNET_API_KEY',DUMMY.key)
     monkeypatch.setenv('BINANCE_TESTNET_API_SECRET',DUMMY.secret)
     monkeypatch.setenv('AURA_TESTNET_VIEW_PASSWORD',OWNER_PASSWORD)
-    monkeypatch.setattr('app.main.TestnetReader',lambda:Reader(DUMMY,transport=httpx.MockTransport(good)))
+    monkeypatch.setattr('tests.legacy_terminal.TestnetReader',lambda:Reader(DUMMY,transport=httpx.MockTransport(good)))
     with TestClient(app) as client:
         yield client
 

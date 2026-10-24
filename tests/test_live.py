@@ -115,7 +115,7 @@ def test_browser_disconnect_cancels_producer(monkeypatch):
             await asyncio.sleep(60)
         finally:
             stopped.set()
-    monkeypatch.setattr('app.live.btc_messages',messages)
+    monkeypatch.setattr('app.bitget_chart.chart_messages',messages)
     from app.live import serve_market
     from starlette.websockets import WebSocketDisconnect
     async def run():

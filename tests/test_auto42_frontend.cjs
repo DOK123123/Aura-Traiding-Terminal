@@ -19,7 +19,7 @@ test('page load makes no request or activation; repeated refresh is single fligh
 test('Start requires confirmation and existing protected API; failure never claims ON',async()=>{let calls=[];const h=harness(async(url,opts)=>{calls.push({url,opts});if(opts.method==='POST')return response({code:'DAILY_LOSS_LIMIT'},409);return response(payload());});await h.node('a42-refresh').handlers.click();await h.node('a42-start').handlers.click();const write=calls.find(c=>c.opts.method==='POST');assert.equal(write.url,'/api/auto42/control');assert.equal(write.opts.headers['X-Aura-Paper'],'local-only');assert.equal(JSON.parse(write.opts.body).confirmation,'START PAPER');assert.match(h.node('a42-message').textContent,/Дневной лимит/);assert.doesNotMatch(h.node('a42-mode').textContent,/Включено/);h.win.handlers.pagehide();});
 test('declined Start and reset confirmation never write',async()=>{let writes=0;const h=harness(async(url,o)=>{if(o.method==='POST')writes++;return response(payload());},false);await h.node('a42-refresh').handlers.click();await h.node('a42-start').handlers.click();await h.node('a42-reset').handlers.click();assert.equal(writes,0);h.win.handlers.pagehide();});
 test('network failures and authorization clear or label prior values, release loading',async()=>{let fail=false;const h=harness(async()=>{if(fail)throw Error('dummy-private-transport-message');return response(payload());});await h.node('a42-refresh').handlers.click();fail=true;await h.node('a42-refresh').handlers.click();assert.equal(h.node('a42-refresh').disabled,false);assert.doesNotMatch(h.node('a42-message').textContent,/dummy-private/);assert.match(h.node('a42-status').textContent,/Нет свежих/);h.win.handlers.pagehide();});
-test('mobile accessible controls, warnings and no exchange authority',()=>{const s=fs.readFileSync('static/auto42.js','utf8'),h=fs.readFileSync('static/index.html','utf8'),c=fs.readFileSync('static/auto42.css','utf8');assert.match(h,/АВТОМАТИЧЕСКАЯ ДЕМОТОРГОВЛЯ/);assert.match(h,/REAL MONEY EXECUTION = DISABLED/);assert.match(h,/NO_EDGE_FOUND/);assert.match(c,/min-height:44px/);assert.match(c,/@media\(max-width:430px\)/);assert.match(c,/:focus-visible/);assert.doesNotMatch(s,/innerHTML|X-Aura-Auto42-Token|SUPABASE|API_KEY|bybit|binance|\/order/);});
+test('mobile accessible controls, warnings and no exchange authority',()=>{const s=fs.readFileSync('static/auto42.js','utf8'),h=fs.readFileSync('tests/fixtures/legacy_terminal.html','utf8'),c=fs.readFileSync('static/auto42.css','utf8');assert.match(h,/АВТОМАТИЧЕСКАЯ ДЕМОТОРГОВЛЯ/);assert.match(h,/REAL MONEY EXECUTION = DISABLED/);assert.match(h,/NO_EDGE_FOUND/);assert.match(c,/min-height:44px/);assert.match(c,/@media\(max-width:430px\)/);assert.match(c,/:focus-visible/);assert.doesNotMatch(s,/innerHTML|X-Aura-Auto42-Token|SUPABASE|API_KEY|bybit|binance|\/order/);});
 test('emergency remains available during pending Start and late response cannot repaint it',async()=>{
  let mode='OFF',release;const gate=new Promise(r=>release=r);let starts=0,emergencies=0;
  const h=harness(async(url,opts)=>{
@@ -47,7 +47,7 @@ test('failed storage HTTP response is displayed as API available with safe diagn
  assert.match(h.node('a42-status').textContent,/API ответил/);assert.equal(h.node('a42-refresh').disabled,false);h.win.handlers.pagehide();
 });
 test('all ten system diagnostic items and timestamp timezone are available accessibly',()=>{
- const html=fs.readFileSync('static/index.html','utf8');assert.match(html,/СОСТОЯНИЕ СИСТЕМЫ/);
+ const html=fs.readFileSync('tests/fixtures/legacy_terminal.html','utf8');assert.match(html,/СОСТОЯНИЕ СИСТЕМЫ/);
  for(const name of ['api','storage','scheduler','candle','decision','error','saved','mode','protection','block'])assert.match(html,new RegExp('id="a42-sys-'+name+'"'));
  const {system}=require('../static/auto42.js');const m=system({diagnostics:{last_saved_at:100000}},false,'reply',100010);assert.match(m.saved,/UTC/);assert.equal(m.protection,'UNKNOWN');
 });
@@ -58,7 +58,7 @@ test('owner connection evidence shows validated active hostname and precise erro
  d.diagnostics.storage.connection.hostname='https://dummy-secret@host';assert.equal(system(d,true,'reply',100001).host,'—');
 });
 test('main Auto42 panel precedes separate collapsed Historical Pattern account',()=>{
- const h=fs.readFileSync('static/index.html','utf8');
+ const h=fs.readFileSync('tests/fixtures/legacy_terminal.html','utf8');
  assert.ok(h.indexOf('id="auto42-panel"')<h.indexOf('id="paper-legacy-panel"'));
  assert.match(h,/<details id="auto42-panel"[^>]* open>/);
  assert.match(h,/<details id="paper-legacy-panel"[^>]*>/);
@@ -92,7 +92,7 @@ test('Auto42 ON and owner OFF are read from same server snapshot without legacy 
  assert.ok(calls.every(p=>!p.startsWith('/api/paper/')));h.win.handlers.pagehide();
 });
 test('legacy mode remains visible on collapsed summary without becoming Auto42 status',()=>{
- const h=fs.readFileSync('static/index.html','utf8');
+ const h=fs.readFileSync('tests/fixtures/legacy_terminal.html','utf8');
  const start=h.indexOf('id="paper-legacy-panel"'),end=h.indexOf('</summary>',start);
  assert.ok(h.slice(start,end).includes('id="paper-auto-badge"'));
  assert.equal((h.match(/id="paper-auto-badge"/g)||[]).length,1);

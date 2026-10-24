@@ -54,9 +54,9 @@ async function loadMarket() {
   const symbol = $('symbol').value, limit = $('limit').value;
   clearData();
   $('chart-title').textContent = symbol === 'BTCUSDT' ? 'BTC / USDT' : 'XAU / USD';
-  $('chart-subtitle').textContent = (symbol === 'BTCUSDT' ? 'Bitcoin · Spot' : 'Gold · BID') + ' · ' + timeframe;
+  $('chart-subtitle').textContent = (symbol === 'BTCUSDT' ? 'Bitcoin · Bitget USDT-M Futures' : 'Gold · BID') + ' · ' + timeframe;
   $('status').className = 'status';
-  $('status').textContent = symbol === 'XAUUSD' ? 'Загружаем архив золота. Первый запрос может занять до 100 секунд…' : 'Загружаем историю Binance…';
+  $('status').textContent = symbol === 'XAUUSD' ? 'Загружаем архив золота. Первый запрос может занять до 100 секунд…' : 'Загружаем историю Bitget Futures…';
   $('chart-overlay').hidden = false; $('chart-overlay').textContent = 'Загружаем свечи…';
   $('refresh').disabled = true;
   const timeout = setTimeout(() => controller?.signal === signal && controller.abort(), 110000);
@@ -132,10 +132,10 @@ if (document.modelContext?.registerTool) {
   try {
     Promise.resolve(document.modelContext.registerTool({
       name: 'configure_market_analysis', description: 'Выбрать рынок, таймфрейм и глубину, загрузить и показать анализ.',
-      inputSchema: {type: 'object', properties: {symbol: {enum: ['BTCUSDT','XAUUSD']}, timeframe: {enum: ['1m','5m','15m','1h']}, limit: {enum: [500,2000]}}, required: ['symbol','timeframe','limit'], additionalProperties: false},
+      inputSchema: {type: 'object', properties: {symbol: {enum: ['BTCUSDT']}, timeframe: {enum: ['1m','5m','15m','1h']}, limit: {enum: [500,2000]}}, required: ['symbol','timeframe','limit'], additionalProperties: false},
       annotations: {readOnlyHint: false, untrustedContentHint: true},
       async execute(input) {
-        if (!input || !['BTCUSDT','XAUUSD'].includes(input.symbol) || !['1m','5m','15m','1h'].includes(input.timeframe) || ![500,2000].includes(input.limit)) throw new Error('Invalid market parameters');
+        if (!input || !['BTCUSDT'].includes(input.symbol) || !['1m','5m','15m','1h'].includes(input.timeframe) || ![500,2000].includes(input.limit)) throw new Error('Invalid market parameters');
         $('symbol').value = input.symbol; $('limit').value = String(input.limit); selectTimeframe(input.timeframe);
         return await loadMarket();
       }

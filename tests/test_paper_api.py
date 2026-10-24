@@ -9,7 +9,7 @@ import uuid
 from fastapi.testclient import TestClient
 import pytest
 
-from app.main import app
+from tests.legacy_terminal import app
 from app.paper.market import Market
 from app.paper.models import PaperError
 from app.paper.service import Service

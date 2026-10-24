@@ -29,7 +29,7 @@ class PatternRequest(BaseModel):
     context: Literal[500,2000]=500
     config: PatternConfig=Field(default_factory=PatternConfig)
     as_of: int | None=Field(None,gt=0)
-    chart_source: Literal['Binance · Spot', 'Dukascopy · XAUUSD BID', 'TradingView · OANDA:XAUUSD'] | None = None
+    chart_source: Literal['Bitget · USDT-M Futures / api.bitget.com', 'Binance · Spot', 'Dukascopy · XAUUSD BID', 'TradingView · OANDA:XAUUSD'] | None = None
 
 
 class BacktestRequest(PatternRequest):
