@@ -103,8 +103,9 @@ async def control(request:Request,body:Control):
 
 @router.post('/tick',dependencies=[Depends(scheduler)])
 async def tick(request:Request):
+    from .delivery import delivery
     async def perform():return await svc(request).tick()
-    return await respond(perform())
+    return await delivery(request,perform,respond)
 
 
 @router.post('/diagnostics',dependencies=[Depends(mutation)])
@@ -129,7 +130,9 @@ async def initialize_account(request:Request,body:Initialize):
 
 @router.post('/verify-off-tick',dependencies=[Depends(scheduler)])
 async def verify_off_tick(request:Request,body:Initialize):
-    return await respond(svc(request).verify_off_tick())
+    from .delivery import delivery
+    async def perform():return await svc(request).verify_off_tick()
+    return await delivery(request,perform,respond)
 
 
 @router.get('/off-only-readiness',dependencies=[Depends(owner)])

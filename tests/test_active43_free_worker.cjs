@@ -7,7 +7,9 @@ const env = operation => ({AURA_ACTIVE43_CRON_ENABLED:'true',AURA_ACTIVE43_OPERA
 const good = () => ({scope:'AURA43_ACTIVE_PAPER',strategy_version:'AURA_4.3_ACTIVE_PAPER_3',
  market_source:'Bitget · USDT-M Futures / api.bitget.com',paper_only:true,exchange_execution:false,
  status:'COMPLETED',state_saved:true,mode:'OFF',opened:0,closed:0,processed:false,duplicate:false,
- last_processed_closed_at:null,verification_only:true});
+ last_processed_closed_at:null,verification_only:true,
+ tick_id:'ACTIVE43_BITGET_'+'a'.repeat(32)+':tick:'+Math.floor(Date.now()/300000),
+ tick_created_at:Math.floor(Date.now()/1000),tick_slot_start:Math.floor(Date.now()/300000)*300,tick_receipt_verified:true});
 const diagnostic = () => ({...good(),status:'PASS',read_only:true,state_changed:false,production_paper_verified:false,
  bitget:{status:'CONNECTED'},supabase:{status:'CONNECTED'},scheduler:{status:'ACTIVE',diagnostic_delivery_confirmed:true}});
 const options = body => ({fetcher:async () => Response.json(body),sleep:async () => {},emit:() => {}});
@@ -138,6 +140,7 @@ test('free config remains distinct from Aura42 and starts disabled without publi
  assert.equal(cfg.vars.AURA_ACTIVE43_CRON_ENABLED,'false');assert.equal(cfg.vars.AURA_ACTIVE43_OPERATION,'diagnostics');
  assert.equal(cfg.workers_dev,false);assert.equal(cfg.preview_urls,false);
  assert.deepEqual(cfg.triggers.crons,['2-59/5 * * * *']);
+ assert.equal(cfg.observability.head_sampling_rate,1);
  assert.ok(!JSON.stringify(cfg).includes(token));assert.equal(cfg.name,'aura-active43-bitget-free-scheduler');
 });
 test('fast Render loading HTML waits for cold start before second POST',async () => {
@@ -237,4 +240,53 @@ test('cold-start body failure cannot override an excessive Retry-After cooldown'
   calls++;return new Response('<html>Loading</html>',{headers:{'Retry-After':'999999'}});
  }}),/INVALID_RESPONSE/);
  assert.equal(calls,1);
+});
+
+test('verified receipt logs correlate UTC, duration, HTTP and persisted tick without private response data',async()=>{
+ const {run}=await load();const logs=[];const receipt=good();let sent;
+ await run(env('off_only'),{emit:b=>logs.push(b),fetcher:async(u,r)=>{sent=r.headers['X-Aura-Invocation-Id'];return Response.json({...receipt,balance:token,pending:{private:token}});}});
+ assert.match(sent,/^[a-f0-9]{32}$/);
+ for(const row of logs){assert.equal(row.invocation_id,sent);assert.ok(Number.isFinite(Date.parse(row.utc)));assert.ok(row.duration_ms>=0);}
+ const saved=logs.find(x=>x.event==='TICK_SAVED');assert.equal(saved.tick_id,receipt.tick_id);assert.equal(saved.tick_created_at,receipt.tick_created_at);
+ assert.equal(saved.http_status,200);assert.equal(saved.tick_receipt_verified,true);assert.ok(!JSON.stringify(logs).includes(token));
+});
+test('old Render without a receipt or an invalid ID cannot emit TICK_SAVED',async()=>{
+ const {run}=await load();
+ for(const change of [{tick_id:undefined},{tick_id:token},{tick_receipt_verified:false},{tick_slot_start:1}]){
+  const logs=[];
+  await assert.rejects(run(env('off_only'),{emit:b=>logs.push(b),fetcher:async()=>Response.json({...good(),...change})}),/TICK_RECEIPT_UNAVAILABLE|INVALID_TICK_RECEIPT/);
+  assert.ok(!logs.some(x=>x.event==='TICK_SAVED'));assert.equal(logs.at(-1).event,'TICK_FAILED');assert.equal(logs.at(-1).http_status,200);
+  assert.ok(!JSON.stringify(logs).includes(token));
+ }
+});
+test('terminal timeout/error is distinct from saved cycles and retry correlation remains stable',async()=>{
+ const {run}=await load();const logs=[],ids=[];
+ await assert.rejects(run(env('saved_mode'),{timeout:2,emit:b=>logs.push(b),sleep:async()=>{},fetcher:async(u,r)=>{
+  ids.push(r.headers['X-Aura-Invocation-Id']);return new Promise((resolve,reject)=>r.signal.addEventListener('abort',()=>reject(Error(token))));
+ }}),/REQUEST_TIMEOUT/);
+ assert.equal(ids.length,2);assert.equal(ids[0],ids[1]);assert.equal(logs.filter(x=>x.event==='TICK_FAILED').length,1);
+ assert.equal(logs.at(-1).attempt,2);assert.equal(logs.at(-1).tick_id,null);assert.equal(logs.at(-1).code,'REQUEST_TIMEOUT');
+ assert.ok(!logs.some(x=>x.event==='TICK_SAVED'));assert.ok(!JSON.stringify(logs).includes(token));
+});
+test('auth errors fail once; 429 and 5xx retain HTTP status and bounded retry',async()=>{
+ const {run}=await load();
+ for(const status of [401,403,429,500,502,503,504]){
+  const logs=[];let count=0;
+  const options={emit:b=>logs.push(b),sleep:async()=>{},fetcher:async()=>++count===1?Response.json({code:'HTTP_ERROR'},{status}):Response.json(good())};
+  if(status===401||status===403){await assert.rejects(run(env('off_only'),options));assert.equal(count,1);assert.equal(logs.at(-1).event,'TICK_FAILED');}
+  else{await run(env('off_only'),options);assert.equal(count,2);assert.equal(logs.at(-1).event,'TICK_SAVED');}
+  assert.equal(logs.find(x=>x.event==='RENDER_REACHED').http_status,status);
+ }
+});
+test('duplicate delivery shares the immutable ID; a later slot has a different ID',async()=>{
+ const {run}=await load();const logs=[],first=good();const slot=first.tick_slot_start/300;
+ const bodies=[first,{...first,duplicate:true},{...first,tick_id:'ACTIVE43_BITGET_'+'a'.repeat(32)+':tick:'+(slot+1),tick_slot_start:first.tick_slot_start+300,tick_created_at:first.tick_created_at+300}];
+ for(const body of bodies)await run(env('off_only'),{emit:b=>logs.push(b),fetcher:async()=>Response.json(body)});
+ const saves=logs.filter(x=>x.event==='TICK_SAVED');assert.equal(saves[0].tick_id,saves[1].tick_id);assert.notEqual(saves[1].tick_id,saves[2].tick_id);
+ assert.equal(saves[1].duplicate,true);assert.equal(new Set(saves.map(x=>x.invocation_id)).size,3);
+});
+test('saved rejection includes receipt evidence but ends in TICK_FAILED',async()=>{
+ const {run}=await load();const logs=[],body={...good(),status:'PAUSED',mode:'PAUSED',decision:'HISTORY_CANDLE_CHANGED'};
+ await assert.rejects(run(env('saved_mode'),{emit:b=>logs.push(b),fetcher:async()=>Response.json(body)}),/HISTORY_CANDLE_CHANGED/);
+ assert.equal(logs.at(-1).event,'TICK_FAILED');assert.equal(logs.at(-1).tick_id,body.tick_id);assert.equal(logs.at(-1).status,'PAUSED');
 });
