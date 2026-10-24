@@ -303,6 +303,12 @@ async def cloudflare_off_cycles(pg,operation='off_only'):
         saved=await app.state.active43.store.peek()
         assert {k:saved['state'][k] for k in financial}==before
         assert [r['duplicate'] for r in received]==[False,True,False]
+        assert all(r['tick_receipt_verified'] for r in received)
+        assert [r['tick_id'] for r in received]==[r['tick_id'] for r in logs]
+        assert logs[0]['tick_id']==logs[1]['tick_id'] and logs[1]['tick_id']!=logs[2]['tick_id']
+        assert logs[0]['tick_slot_start']+300==logs[2]['tick_slot_start']
+        assert len({r['invocation_id'] for r in logs})==3
+        assert all(r['utc'] and r['duration_ms']>=0 and r['http_status']==200 for r in logs)
         assert saved['state']['last_successful_run_at']==clock[0]
         assert int(pg.sql('SELECT count(*) FROM public.aura_active43_bitget_events;'))==count_before+2
         assert all(r.get('verification_only',False)==(operation=='off_only') for r in received)

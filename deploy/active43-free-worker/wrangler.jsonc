@@ -9,5 +9,5 @@
     "AURA_ACTIVE43_OPERATION": "diagnostics"
   },
   "triggers": {"crons": ["2-59/5 * * * *"]},
-  "observability": {"enabled": true}
+  "observability": {"enabled": true, "head_sampling_rate": 1}
 }

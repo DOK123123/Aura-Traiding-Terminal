@@ -1,5 +1,5 @@
 """Opt-in Active43 controller. Independent authority, ledger and decision state."""
-import asyncio,json,logging,os,time,uuid
+import asyncio,json,logging,os,re,time,uuid
 from copy import deepcopy
 from decimal import Decimal as D
 from pathlib import Path
@@ -218,7 +218,8 @@ class Service:
     async def _tick(self,require_off=False):
         env=await self.load();now=int(self.clock());key=env['state']['epoch']+':tick:'+str(now//300)
         if require_off:self.require_empty_off(env['state'])
-        if await self.store.lookup(key):return self.result(env['state'],[],True,False)
+        receipt=await self.store.lookup(key)
+        if receipt:return self.result(env['state'],[],True,False,receipt,key)
         data=None;error=None;protection=None;protection_error=None
         if env['state']['mode']=='ON' or env['state']['position'] or env['state'].get('data_recovery_armed') or (env['state']['mode']=='PAUSED' and env['state'].get('last_error')==LEGACY_HISTORY):
             try:data=await self.snapshot()
@@ -241,25 +242,39 @@ class Service:
             except Exception:
                 # Passive evidence cannot block an otherwise valid protective close.
                 s['monitor_error']='EVIDENCE_CAPTURE_FAILED'
-            tick=event(s,'TICK',now//300,now,dict(reason=s['last_decision'],success=s['last_error'] is None));tick['id']=key;events.append(tick)
+            commit=os.getenv('RENDER_GIT_COMMIT','')
+            tick=event(s,'TICK',now//300,now,dict(reason=s['last_decision'],success=s['last_error'] is None,
+                render_commit=commit if re.fullmatch('[a-f0-9]{40}',commit) else None));tick['id']=key;events.append(tick)
             try:
                 saved=await self.store.commit(env['revision'],s,events,key)
                 # All success responses are checked by reading the immutable tick
                 # receipt, so an uncertain DB outcome never reports an OPEN.
-                if not await self.store.lookup(key):raise DemoError('STORAGE_READBACK_OUTCOME_UNKNOWN')
+                receipt=await self.store.lookup(key)
+                if not receipt:raise DemoError('STORAGE_READBACK_OUTCOME_UNKNOWN')
                 if not saved['duplicate']:
                     for ev in events:
                         if ev['kind'] in ('ERROR','STATE_TRANSITION'):
                             logger.warning('ACTIVE43_STATE %s',json.dumps({'event':ev['kind'],'scheduler_run_id':key,**ev['payload']},sort_keys=True))
-                return self.result(saved['state'],[] if saved['duplicate'] else events,saved['duplicate'],saved['state']['watermark']!=old['watermark'])
+                return self.result(saved['state'],[] if saved['duplicate'] else events,saved['duplicate'],saved['state']['watermark']!=old['watermark'],receipt,key)
             except DemoError as exc:
                 if exc.code!='CONCURRENT_UPDATE' or attempt==2:raise
                 env=await self.load()
                 if env['state']['epoch']!=old['epoch']:raise DemoError('PORTFOLIO_CHANGED')
                 if env['state']['config']!=old['config']:raise DemoError('CONFIG_CHANGED')
     @staticmethod
-    def result(s,events,duplicate,processed):
+    def result(s,events,duplicate,processed,receipt,key):
+        # Evidence comes from the immutable read-back receipt, never from a
+        # newly generated ID or an assumed successful commit/HTTP response.
+        if (receipt.get('id')!=key or receipt.get('kind')!='TICK' or receipt.get('epoch')!=s['epoch']
+            or type(receipt.get('created_at')) is not int or receipt['created_at']<0 or not isinstance(receipt.get('payload'),dict)
+            or receipt.get('payload',{}).get('scope')!=SCOPE):raise DemoError('STORAGE_READBACK_OUTCOME_UNKNOWN')
+        match=re.fullmatch(r'ACTIVE43_BITGET_[a-f0-9]{32}:tick:([0-9]{1,12})',key)
+        if not match:raise DemoError('STORAGE_READBACK_OUTCOME_UNKNOWN')
+        commit=os.getenv('RENDER_GIT_COMMIT','');origin=receipt['payload'].get('render_commit')
         return dict(status='PAUSED' if s['last_error'] else 'COMPLETED',paper_only=True,exchange_execution=False,
+            tick_id=key,tick_created_at=receipt['created_at'],tick_slot_start=int(match[1])*300,tick_receipt_verified=True,
+            render_commit=commit if re.fullmatch('[a-f0-9]{40}',commit) else None,
+            tick_render_commit=origin if isinstance(origin,str) and re.fullmatch('[a-f0-9]{40}',origin) else None,
             paper_status=paper_status(s),protection_status=s.get('protection_status'),
             scope=SCOPE,market_source=SOURCE,strategy_version=VERSION,state_saved=True,duplicate=duplicate,processed=processed and not duplicate,
             last_processed_closed_at=s['watermark'],mode=s['mode'],decision=s['last_error'] or s['last_decision'],

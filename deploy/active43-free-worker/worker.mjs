@@ -1,7 +1,7 @@
 // Cloudflare Workers Free scheduler only. No public trigger, account controls,
 // exchange methods, Supabase credentials or strategy implementation.
 const BASE = 'https://aura-traiding-terminal.onrender.com/api/active43';
-export const WORKER_VERSION = 'ACTIVE43_CF_2026_10_23';
+export const WORKER_VERSION = 'ACTIVE43_CF_RECEIPTS_2026_10_24';
 export const CRON = '2-59/5 * * * *';
 const SOURCE = 'Bitget · USDT-M Futures / api.bitget.com';
 const SCOPE = 'AURA43_ACTIVE_PAPER', VERSION = 'AURA_4.3_ACTIVE_PAPER_3';
@@ -21,6 +21,8 @@ const CODES = new Set(['SCHEDULER_NOT_CONFIGURED','SCHEDULER_TOKEN_MISSING','SCH
  'STORAGE_URL_MISSING','STORAGE_URL_INVALID','STORAGE_KEY_MISSING','STORAGE_KEY_INVALID',
  'STORAGE_INVALID_RESPONSE','STORAGE_RESPONSE_LIMIT','STORAGE_RATE_LIMIT','STORAGE_HTTP_ERROR',
  'STORAGE_REDIRECT_BLOCKED','CORRUPT_PORTFOLIO','ACTIVE_SCOPE_OR_CONFIG_MISMATCH','DIAGNOSTIC_TIMEOUT',
+ 'HISTORY_CANDLE_MISSING','HISTORY_CANDLE_CHANGED','HISTORY_SOURCE_UNAVAILABLE','HISTORY_INCOMPLETE',
+ 'TICK_RECEIPT_UNAVAILABLE','INVALID_TICK_RECEIPT','INVALID_INVOCATION_ID',
  'FUTURES_FILTERS_UNAVAILABLE','DAILY_LOSS_LIMIT','DRAWDOWN_LIMIT','EMERGENCY_STOP','CONFIG_CHANGED']);
 const PERMANENT = new Set(['SCHEDULER_NOT_CONFIGURED','SCHEDULER_TOKEN_MISSING','SCHEDULER_TOKEN_DUPLICATED',
  'SCHEDULER_TOKEN_MISMATCH','SCHEDULER_ORIGIN_REJECTED','OFF_TICK_REQUIRES_EMPTY_OFF_ACCOUNT',
@@ -43,6 +45,37 @@ export function tickVerified(b) {
   ((b.last_processed_closed_at === null && !b.processed) ||
    (Number.isInteger(b.last_processed_closed_at) && b.last_processed_closed_at >= 0 && b.last_processed_closed_at % 300 === 0));
 }
+export function receiptVerified(b) {
+ const match = typeof b?.tick_id === 'string' && /^ACTIVE43_BITGET_[a-f0-9]{32}:tick:([0-9]{1,12})$/.exec(b.tick_id);
+ return !!match && b.tick_receipt_verified === true && Number.isSafeInteger(b.tick_created_at) &&
+  Number.isSafeInteger(b.tick_slot_start) && b.tick_slot_start === Number(match[1]) * 300 &&
+  b.tick_created_at >= b.tick_slot_start && b.tick_created_at < b.tick_slot_start + 360;
+}
+function safeUtc(ms) {
+ return Number.isFinite(ms) && Math.abs(ms) < 8640000000000000 ? new Date(ms).toISOString() : null;
+}
+// An application correlation ID, not a fabricated Cloudflare platform ID.
+// It is stable across retries of one invocation and is never an idempotency key.
+export async function run(env, options = {}) {
+ const now = options.now || Date.now, emit = options.emit || (b => console.log(JSON.stringify(b)));
+ const started = now(), invocationId = crypto.randomUUID().replace(/-/g,'');
+ let last = null, receipt = null;
+ const report = b => {
+  const at = now();
+  last = {...b,invocation_id:invocationId,utc:safeUtc(at),duration_ms:Math.max(0,at-started),
+   scheduled_utc:safeUtc(b.scheduled_time),tick_id:b.tick_id || null};
+  if (b.event === 'TICK_SAVED') receipt = {tick_id:b.tick_id,tick_created_at:b.tick_created_at,
+   tick_slot_start:b.tick_slot_start,state_saved:true,status:b.status,mode:b.mode};
+  emit(last);
+ };
+ try { return await execute(env,{...options,now,emit:report,invocationId}); }
+ catch (error) {
+  if (last?.event === 'REQUEST_FAILED' && ['off_only','saved_mode'].includes(last.operation))
+   report({...last,...(receipt || {}),event:'TICK_FAILED'});
+  throw error;
+ }
+}
+
 function diagnosticVerified(b) {
  return identity(b) && b.read_only === true && b.state_changed === false && b.production_paper_verified === false &&
   ['PASS','BLOCKED'].includes(b.status) && b.scheduler?.diagnostic_delivery_confirmed === true &&
@@ -64,8 +97,8 @@ async function readBody(response) {
  return JSON.parse(new TextDecoder().decode(bytes));
 }
 
-export async function run(env, {fetcher = fetch, sleep = ms => new Promise(r => setTimeout(r,ms)),
- emit = b => console.log(JSON.stringify(b)), now = Date.now, timeout = 120000, scheduledTime = null} = {}) {
+async function execute(env, {fetcher = fetch, sleep = ms => new Promise(r => setTimeout(r,ms)),
+ emit = b => console.log(JSON.stringify(b)), now = Date.now, timeout = 120000, scheduledTime = null, cron = null, invocationId} = {}) {
  const configuredOperation = env.AURA_ACTIVE43_OPERATION || 'diagnostics';
  // Never log an unvalidated binding (it could accidentally contain a secret).
  const operation = OPERATIONS.has(configuredOperation) ? configuredOperation : null;
@@ -74,6 +107,9 @@ export async function run(env, {fetcher = fetch, sleep = ms => new Promise(r => 
   operation,attempt:0,http_status:null,code:null,...b});
  if (env.AURA_ACTIVE43_CRON_ENABLED !== 'true') {
   report({event:'DISABLED',code:'DISABLED',state_changed:false}); return;
+ }
+ if (cron !== null && cron !== CRON) {
+  report({event:'CONFIG_ERROR',code:'UNEXPECTED_CRON',expected_cron:CRON}); throw Error('UNEXPECTED_CRON');
  }
  if (operation === null) {
   report({event:'CONFIG_ERROR',code:'INVALID_OPERATION'}); throw Error('INVALID_OPERATION');
@@ -98,7 +134,7 @@ export async function run(env, {fetcher = fetch, sleep = ms => new Promise(r => 
   let failure = 'NETWORK_ERROR', status = null, retry = true, delay = 2000, cooldownBlocked = false;
   try {
    report({event:'REQUEST_STARTED',attempt,code:'REQUEST_STARTED',endpoint:path});
-   const response = await fetcher(BASE + path,{method:'POST',headers:{[HEADER]:token,'Content-Type':'application/json'},
+   const response = await fetcher(BASE + path,{method:'POST',headers:{[HEADER]:token,'Content-Type':'application/json','X-Aura-Invocation-Id':invocationId},
     body:payload,redirect:'manual',signal:abort.signal});
    status = response.status;
    report({event:'RENDER_REACHED',attempt,http_status:status,code:'HTTP_RESPONSE'});
@@ -144,7 +180,12 @@ export async function run(env, {fetcher = fetch, sleep = ms => new Promise(r => 
    if (operation === 'off_only' && (b.verification_only !== true || b.mode !== 'OFF' || b.opened !== 0 || b.closed !== 0)) {
     failure = 'OFF_ONLY_BOUNDARY'; throw Error(failure);
    }
-   report({event:'TICK_SAVED',attempt,http_status:status,code:'TICK_SAVED',status:b.status,mode:b.mode,processed:b.processed,duplicate:b.duplicate,
+   if (!('tick_id' in b)) { failure = 'TICK_RECEIPT_UNAVAILABLE'; throw Error(failure); }
+   if (!receiptVerified(b) || b.tick_id === token) { failure = 'INVALID_TICK_RECEIPT'; throw Error(failure); }
+   report({event:'TICK_SAVED',tick_id:b.tick_id,tick_created_at:b.tick_created_at,tick_created_utc:safeUtc(b.tick_created_at*1000),
+    tick_slot_start:b.tick_slot_start,tick_slot_utc:safeUtc(b.tick_slot_start*1000),tick_receipt_verified:true,
+    render_commit:typeof b.render_commit === 'string' && b.render_commit !== token && /^[a-f0-9]{40}$/.test(b.render_commit) ? b.render_commit : null,
+    tick_render_commit:typeof b.tick_render_commit === 'string' && b.tick_render_commit !== token && /^[a-f0-9]{40}$/.test(b.tick_render_commit) ? b.tick_render_commit : null,attempt,http_status:status,code:'TICK_SAVED',status:b.status,mode:b.mode,processed:b.processed,duplicate:b.duplicate,
     opened:b.opened,closed:b.closed,state_saved:true});
    phase = 'SERVER_DECISION';
    if (b.status !== 'COMPLETED') { failure = code(b.decision); throw Error(failure); }
@@ -160,14 +201,7 @@ export async function run(env, {fetcher = fetch, sleep = ms => new Promise(r => 
 
 export default {
  async scheduled(controller,env) {
-  if (env.AURA_ACTIVE43_CRON_ENABLED === 'true' && controller.cron !== CRON) {
-   console.log(JSON.stringify({component:'ACTIVE43_FREE_SCHEDULER',worker_version:WORKER_VERSION,
-    scheduled_time:Number.isInteger(controller.scheduledTime) ? controller.scheduledTime : null,paper_only:true,exchange_execution:false,
-    event:'CONFIG_ERROR',operation:OPERATIONS.has(env.AURA_ACTIVE43_OPERATION || 'diagnostics') ? env.AURA_ACTIVE43_OPERATION || 'diagnostics' : null,
-    attempt:0,http_status:null,code:'UNEXPECTED_CRON',expected_cron:CRON}));
-   throw Error('UNEXPECTED_CRON');
-  }
-  await run(env,{scheduledTime:controller.scheduledTime});
+  await run(env,{scheduledTime:controller.scheduledTime,cron:controller.cron});
  },
  async fetch() { return new Response('Not found',{status:404}); }
 };
