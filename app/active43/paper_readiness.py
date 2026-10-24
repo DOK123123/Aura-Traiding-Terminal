@@ -58,6 +58,8 @@ def scheduler_evidence(rows: list[dict], state: dict, now: int) -> dict:
         seen.add(key)
         ticks.append(dict(tick_id=key,created_at=created,created_utc=utc(created),
                           scheduled_at=at,scheduled_utc=utc(at),invocation_id=inv,
+                          render_commit=(row['payload'].get('render_commit') if isinstance(row['payload'].get('render_commit'),str)
+                              and re.fullmatch('[a-f0-9]{40}',row['payload']['render_commit']) else None),
                           status='COMPLETED',mode='OFF',opened=0,closed=0,state_saved=True))
     ticks.sort(key=lambda x:x['scheduled_at'],reverse=True)
     ticks = ticks[:2]

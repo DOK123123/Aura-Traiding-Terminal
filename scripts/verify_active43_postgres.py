@@ -326,6 +326,12 @@ async def cloudflare_off_cycles(pg,operation='off_only'):
         assert ready['scheduler']['status']=='PASS',ready
         assert {t['tick_id'] for t in ready['scheduler']['ticks']}=={logs[0]['tick_id'],logs[2]['tick_id']}
         assert ledger_before==pg.sql(ledger_sql)
+        from app.active43 import deployment_readiness
+        with patch.dict(os.environ,RENDER_GIT_COMMIT='d'*40):
+            release_gate=await deployment_readiness.inspect(app.state.active43)
+        assert release_gate['status']=='PASS',release_gate
+        assert release_gate['account']['mode']=='OFF' and len(release_gate['account']['ledger_sha256'])==64
+        assert ledger_before==pg.sql(ledger_sql)
 
         return dict(status='PASS',scope='LOCAL_SCHEDULED_NODE_HTTP_REAL_POSTGRES_NOT_CLOUDFLARE_OR_RENDER',
             operation=operation,scheduled_handler_calls=3,distinct_saved_slots=2,duplicate_without_write=True,restart_restored=True,

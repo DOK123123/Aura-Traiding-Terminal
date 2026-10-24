@@ -160,6 +160,19 @@ async def paper_readiness(request:Request):
         return JSONResponse(await inspect(service),headers=HEADERS)
 
 
+@router.get('/deployment-readiness',dependencies=[Depends(owner)])
+async def deployment_readiness(request:Request):
+    from .deployment_readiness import inspect
+    service=getattr(request.app.state,'active43',None)
+    if service is None:
+        return JSONResponse(dict(status='BLOCKED',read_only=True,state_changed=False,
+                                 errors=['ACTIVE43_NOT_CONFIGURED']),headers=HEADERS)
+    if service.readiness_lock.locked():
+        return JSONResponse(dict(status='BLOCKED',errors=['READINESS_BUSY']),headers=HEADERS)
+    async with service.readiness_lock:
+        return JSONResponse(await inspect(service),headers=HEADERS)
+
+
 class StrategySelection(BaseModel):
     model_config=ConfigDict(extra='forbid')
     choice:Literal['DONCHIAN_15M','BOUNCE_5M']

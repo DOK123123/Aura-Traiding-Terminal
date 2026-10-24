@@ -1,0 +1,124 @@
+{
+  "name": "Aura 4.3 Production Deployment",
+  "on": {
+    "workflow_run": {
+      "workflows": [
+        "Regression CI"
+      ],
+      "types": [
+        "completed"
+      ],
+      "branches": [
+        "main"
+      ]
+    },
+    "workflow_dispatch": {
+      "inputs": {
+        "operation": {
+          "description": "deploy latest main after CI, or explicit rollback",
+          "type": "choice",
+          "options": [
+            "deploy",
+            "rollback"
+          ],
+          "default": "deploy"
+        },
+        "ci_run_id": {
+          "description": "Successful Regression CI push/main run ID for trusted current main (deploy AND rollback)",
+          "required": false,
+          "type": "string"
+        },
+        "rollback_render_sha": {
+          "description": "Exact previous Render SHA from report",
+          "required": false,
+          "type": "string"
+        },
+        "rollback_worker_version": {
+          "description": "Exact previous Worker Version UUID from report",
+          "required": false,
+          "type": "string"
+        },
+        "rollback_confirmation": {
+          "description": "Rollback only: ROLLBACK PAPER OFF NO CONFIG ROTATION",
+          "required": false,
+          "type": "string"
+        }
+      }
+    }
+  },
+  "permissions": {
+    "contents": "read",
+    "actions": "read"
+  },
+  "concurrency": {
+    "group": "aura43-production",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "production": {
+      "if": "github.ref == 'refs/heads/main' && vars.AURA_PRODUCTION_DEPLOY_ENABLED == 'true' && (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository))",
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 55,
+      "environment": "production",
+      "steps": [
+        {
+          "name": "Checkout trusted main workflow code, never a PR artifact",
+          "uses": "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "with": {
+            "ref": "main",
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Set up pinned Python",
+          "uses": "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "with": {
+            "python-version-file": ".python-version"
+          }
+        },
+        {
+          "name": "Install repository pinned dependencies",
+          "run": "python -m pip install --no-deps --requirement ci/requirements.lock\npython -m pip check\n"
+        },
+        {
+          "name": "Release or explicit rollback with read-only OFF guards",
+          "env": {
+            "AURA_PRODUCTION_DEPLOY_ENABLED": "${{ vars.AURA_PRODUCTION_DEPLOY_ENABLED }}",
+            "AURA_RENDER_SERVICE_ID": "${{ vars.AURA_RENDER_SERVICE_ID }}",
+            "AURA_CLOUDFLARE_ACCOUNT_ID": "${{ vars.AURA_CLOUDFLARE_ACCOUNT_ID }}",
+            "AURA_RENDER_API_KEY": "${{ secrets.AURA_RENDER_API_KEY }}",
+            "AURA_CLOUDFLARE_API_TOKEN": "${{ secrets.AURA_CLOUDFLARE_API_TOKEN }}",
+            "AURA_TESTNET_VIEW_PASSWORD": "${{ secrets.AURA_TESTNET_VIEW_PASSWORD }}",
+            "GITHUB_TOKEN": "${{ github.token }}",
+            "RELEASE_EVENT": "${{ github.event_name }}",
+            "RELEASE_EVENT_SHA": "${{ github.event.workflow_run.head_sha }}",
+            "RELEASE_EVENT_CI_ID": "${{ github.event.workflow_run.id }}",
+            "RELEASE_OPERATION": "${{ inputs.operation || 'deploy' }}",
+            "RELEASE_CI_ID": "${{ inputs.ci_run_id }}",
+            "ROLLBACK_SHA": "${{ inputs.rollback_render_sha }}",
+            "ROLLBACK_WORKER_VERSION": "${{ inputs.rollback_worker_version }}",
+            "ROLLBACK_CONFIRMATION": "${{ inputs.rollback_confirmation }}"
+          },
+          "shell": "bash",
+          "run": "set -euo pipefail\n# Inputs stay data in quoted variables; never interpolate them as shell code.\nrelease_sha=\"$(git rev-parse HEAD)\"\nif [ \"$RELEASE_EVENT\" = workflow_run ]; then\n  test \"$release_sha\" = \"$RELEASE_EVENT_SHA\"\n  ci_id=\"$RELEASE_EVENT_CI_ID\"\nelse\n  ci_id=\"${RELEASE_CI_ID:-0}\"\nfi\npython -m scripts.deploy_active43_production --execute \\\n  --operation \"$RELEASE_OPERATION\" --sha \"$release_sha\" --ci-run-id \"$ci_id\" \\\n  --rollback-sha \"$ROLLBACK_SHA\" --rollback-version \"$ROLLBACK_WORKER_VERSION\" \\\n  --rollback-confirmation \"$ROLLBACK_CONFIRMATION\"\n"
+        },
+        {
+          "name": "Publish sanitized release and rollback evidence",
+          "if": "always()",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "with": {
+            "name": "aura43-production-${{ github.run_id }}",
+            "path": "release-results/deployment-report.json",
+            "if-no-files-found": "warn",
+            "retention-days": 90
+          }
+        },
+        {
+          "name": "Write safe summary",
+          "if": "always()",
+          "run": "python - <<'PY'\nimport json,os\nfrom pathlib import Path\nreport=Path('release-results/deployment-report.json')\nwith open(os.environ['GITHUB_STEP_SUMMARY'],'a') as out:\n    if not report.exists():\n        out.write('DEPLOY_BLOCKED: controller did not start; no verified deployment.\\n')\n    else:\n        data=json.loads(report.read_text())\n        out.write('```json\\n'+json.dumps(data,indent=2)+'\\n```\\n')\nPY\n"
+        }
+      ]
+    }
+  }
+}
