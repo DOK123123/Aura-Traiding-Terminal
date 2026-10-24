@@ -104,9 +104,9 @@ function updateFeedAge() {
     $('status').textContent = 'Данные устарели / рынок закрыт. Ожидаем актуальные котировки; сигнал отключён.';
   }
   $('feed-state').textContent = stale ? 'Задержка / соединение прервано' :
-    liveMode === 'streaming' ? 'LIVE · Binance WebSocket' :
+    liveMode === 'streaming' ? 'LIVE · Bitget' :
     liveMode === 'source_stream' ? 'STREAM · XAUUSD · задержка источника неизвестна' :
-    liveMode === 'polling' ? 'POLLING · 30 с · задержка источника неизвестна' :
+    liveMode === 'polling' ? 'BITGET · проверка 5 с · цена закрытой свечи' :
     liveMode === 'syncing' ? 'Синхронизация · ожидаем текущую свечу' : 'DELAYED · только закрытые свечи';
 }
 setInterval(() => {

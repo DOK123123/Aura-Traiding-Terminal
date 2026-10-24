@@ -133,11 +133,11 @@ class ReliabilityTests(unittest.TestCase):
                 self.assertTrue(client.get('/api/market?timeframe=1m').json()['stale'])
 
     def test_pattern_source_match_mismatch_missing_and_delayed(self):
-        rows=bars(); dataset=Dataset(rows,'Binance · Spot',time.time(),500,'fixture')
+        rows=bars(); dataset=Dataset(rows,'Bitget · USDT-M Futures / api.bitget.com',time.time(),500,'fixture')
         prediction=lambda *args:dict(status='OK',signal='LONG',confidence=80,explanation={'risks':[]})
         with patch('app.patterns.api.history_service.get',AsyncMock(return_value=dataset)), \
              patch('app.patterns.api.evaluate',side_effect=prediction), TestClient(app) as client:
-            for source in (None,'Dukascopy · XAUUSD BID','Binance · Spot'):
+            for source in (None,'Dukascopy · XAUUSD BID','Bitget · USDT-M Futures / api.bitget.com'):
                 body={'symbol':'BTCUSDT','timeframe':'1m','chart_source':source}
                 data=client.post('/api/patterns/analyze',json=body).json()
                 self.assertEqual(data['signal'],'LONG' if source==dataset.source else 'WAIT')
@@ -151,7 +151,7 @@ class ReliabilityTests(unittest.TestCase):
             def save(self,*args):pass
             def read(self,*args):return bars(10,end=rows[0].time-600)+rows
         rows=bars()
-        service=HistoryService(Archive()); service.binance=AsyncMock(return_value=rows)
+        service=HistoryService(Archive()); service.bitget=AsyncMock(return_value=rows)
         with self.assertLogs('app.patterns.history',level='WARNING'):
             data=asyncio.run(service.get(None,'BTCUSDT','1m'))
         self.assertEqual(data.candles,rows)
@@ -169,7 +169,7 @@ class ReliabilityTests(unittest.TestCase):
             async def __aexit__(self,*args):pass
             async def recv(self):return json.dumps(event)
         class Provider:
-            name='Binance · Spot'
+            name='Bitget · USDT-M Futures / api.bitget.com'
             fetch=AsyncMock(return_value=rows)
         provider=Provider()
         async def run():

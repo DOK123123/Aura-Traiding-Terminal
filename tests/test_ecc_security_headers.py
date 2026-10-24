@@ -14,9 +14,9 @@ class SecurityHeadersTests(unittest.IsolatedAsyncioTestCase):
                     self.assertEqual(response.headers['x-frame-options'],'DENY')
                     self.assertEqual(response.headers['content-security-policy'],"frame-ancestors 'none'")
                     self.assertEqual(response.headers['x-content-type-options'],'nosniff')
-                    self.assertIn('id="ai-confirm"',response.text)
-                    self.assertIn('id="paper-title"',response.text)
-                    self.assertIn('id="mc-panel"',response.text)
+                    self.assertIn('id="active43-panel"',response.text)
+                    self.assertNotIn('id="paper-title"',response.text)
+                    self.assertIn('id="chart-title"',response.text)
             script=await c.get('/static/intelligence.js')
             self.assertEqual(script.status_code,200)
             self.assertIn(script.headers['content-type'].split(';',1)[0],

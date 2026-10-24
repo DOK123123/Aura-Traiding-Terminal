@@ -17,7 +17,7 @@ from app.paper.signals import SignalReader
 from app.paper.storage import Store
 
 BASE=1800000000
-SOURCE='Binance · Spot'
+SOURCE='Bitget · USDT-M Futures / api.bitget.com'
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def history(tmp_path,monkeypatch):
     fresh=old+[Candle(BASE,100.,101.,99.,100.,10.)]
     service=HistoryService(Archive(tmp_path/'history.sqlite3'))
     service.cache[('BTCUSDT','15m')]=Dataset(old,SOURCE,clock[0]/1000,10000,'synthetic test only')
-    service.binance=AsyncMock(return_value=fresh)
+    service.bitget=AsyncMock(return_value=fresh)
     return service,clock,old,fresh
 
 
@@ -36,16 +36,16 @@ def test_cached_previous_close_forces_refresh_and_reuses_synchronized_result(his
     service,_,_,fresh=history
     async def run():
         data=await service.get(None,'BTCUSDT','15m',required_candles=fresh[-500:],required_source=SOURCE)
-        assert data.candles==fresh and service.binance.call_count==1
+        assert data.candles==fresh and service.bitget.call_count==1
         again=await service.get(None,'BTCUSDT','15m',required_candles=fresh[-500:],required_source=SOURCE)
-        assert again is data and service.binance.call_count==1
+        assert again is data and service.bitget.call_count==1
     asyncio.run(run())
 
 
 def test_regular_historical_read_retains_existing_cache_semantics(history):
     service,_,old,_=history
     data=asyncio.run(service.get(None,'BTCUSDT','15m'))
-    assert data.candles==old and service.binance.call_count==0
+    assert data.candles==old and service.bitget.call_count==0
 
 
 @pytest.mark.parametrize('field',['open','high','low','close','volume','source'])
@@ -55,14 +55,14 @@ def test_same_timestamp_but_changed_ohlcv_or_source_cannot_reuse_cache(history,f
     if field!='source':wrong[-1]=replace(wrong[-1],**{field:getattr(wrong[-1],field)+(.1 if field!='low' else -.1)})
     service.cache[('BTCUSDT','15m')]=Dataset(wrong,'Other' if field=='source' else SOURCE,clock[0]/1000,10000,'test')
     data=asyncio.run(service.get(None,'BTCUSDT','15m',required_candles=fresh[-500:],required_source=SOURCE))
-    assert data.candles==fresh and data.source==SOURCE and service.binance.call_count==1
+    assert data.candles==fresh and data.source==SOURCE and service.bitget.call_count==1
 
 
 def test_concurrent_same_window_refreshes_only_once(history):
     service,_,_,fresh=history
     async def run():
         a,b=await asyncio.gather(*(service.get(None,'BTCUSDT','15m',required_candles=fresh[-500:],required_source=SOURCE) for _ in range(2)))
-        assert a is b and service.binance.call_count==1
+        assert a is b and service.bitget.call_count==1
     asyncio.run(run())
 
 
@@ -71,12 +71,12 @@ def test_later_archive_candles_do_not_invalidate_matching_past_window(history):
     service.cache[('BTCUSDT','15m')]=Dataset(fresh,SOURCE,clock[0]/1000,10000,'test')
     required=fresh[-5:-1]
     data=asyncio.run(service.get(None,'BTCUSDT','15m',required_candles=required,required_source=SOURCE))
-    assert data.candles==fresh and service.binance.call_count==0
+    assert data.candles==fresh and service.bitget.call_count==0
 
 
 def test_refresh_failure_never_returns_old_cache_as_success(history):
     service,_,_,fresh=history
-    service.binance.side_effect=TimeoutError()
+    service.bitget.side_effect=TimeoutError()
     with pytest.raises(TimeoutError):
         asyncio.run(service.get(None,'BTCUSDT','15m',required_candles=fresh[-500:],required_source=SOURCE))
 
@@ -88,13 +88,13 @@ def test_invalid_required_window_is_rejected_before_fetch(history,defect):
               'gap':[fresh[-3],fresh[-1]],'duplicate':[fresh[-1],fresh[-1]],'empty':[]}[defect]
     with pytest.raises(ValueError):
         asyncio.run(service.get(None,'BTCUSDT','15m',required_candles=required,required_source=SOURCE))
-    assert service.binance.call_count==0
+    assert service.bitget.call_count==0
 
 
 def test_end_to_end_old_rest_then_synced_retry_opens_exactly_once(history,tmp_path,monkeypatch):
     archive,clock,old,fresh=history
     monkeypatch.setenv('AURA_TESTNET_VIEW_PASSWORD','dummy-offline-owner-only')
-    archive.binance.side_effect=[old,fresh]
+    archive.bitget.side_effect=[old,fresh]
     # Synthetic LONG validates integration/control flow, not actual BTC profitability.
     seen=[]
     def evaluate(candles,step,context,config,target,features,charts):
@@ -121,12 +121,12 @@ def test_end_to_end_old_rest_then_synced_retry_opens_exactly_once(history,tmp_pa
         assert state['watermarks']['15m']==BASE-900 and state['signal_retry']['failures']==1
         assert not seen and not engine.snapshot()['open_positions']
         await service.auto_tick()
-        assert archive.binance.call_count==1
+        assert archive.bitget.call_count==1
         clock[0]+=15000;await service.auto_tick()
-        assert archive.binance.call_count==2 and len(seen)==1
+        assert archive.bitget.call_count==2 and len(seen)==1
         assert service.auto.state()['signal_retry'] is None
         assert service.auto.state()['watermarks']['15m']==BASE
         assert len(engine.snapshot()['open_positions'])==1
         await service.auto_tick()
-        assert archive.binance.call_count==2 and len(engine.snapshot()['open_positions'])==1
+        assert archive.bitget.call_count==2 and len(engine.snapshot()['open_positions'])==1
     asyncio.run(run())

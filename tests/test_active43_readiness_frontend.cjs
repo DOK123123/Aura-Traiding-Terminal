@@ -28,14 +28,14 @@ test('click calls only authenticated GET peek route and clears stale PASS on fai
  h.setResponse(new Error('PRIVATE_ERROR'));await h.click();assert.doesNotMatch(h.nodes.get('a43-ro-reason').textContent,/PRIVATE_ERROR/);
 });
 test('new panel is a sibling before legacy load/status panel, not nested within it',()=>{
- const html=fs.readFileSync('static/index.html','utf8');const start=html.indexOf('<details id="active43-off-readiness"'),end=html.indexOf('<details id="active43-panel">');
+ const html=fs.readFileSync('static/index.html','utf8');const start=html.indexOf('<details id="active43-off-readiness"'),end=html.indexOf('<details id="active43-panel"');
  assert.ok(start>0&&end>start);assert.ok(html.slice(start,end).includes('</details>'));assert.ok(html.includes('/static/active43-readiness.js'));
 });
 
 test('readiness card is expanded by default and linked from the Aura 4.3 controls',()=>{
  const html=fs.readFileSync('static/index.html','utf8');
  assert.match(html,/<details id="active43-off-readiness" open>/);
- const panel=html.slice(html.indexOf('<details id="active43-panel">'));
+ const panel=html.slice(html.indexOf('<details id="active43-panel"'));
  assert.match(panel,/<a id="a43-readiness-link" href="#active43-off-readiness">Готовность Cloudflare off_only/);
  assert.match(html,/<script src="\/static\/active43-readiness.js" defer><\/script>/);
  assert.match(fs.readFileSync('static/active43.css','utf8'),/#active43-off-readiness\s*\{/);

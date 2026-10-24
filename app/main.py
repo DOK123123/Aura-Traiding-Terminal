@@ -15,7 +15,8 @@ from fastapi.staticfiles import StaticFiles
 
 from .indicators import analyze
 from .models import Candle, INTERVALS, validate_candles, data_fresh
-from .providers import BinanceProvider, DataUnavailable
+from .providers import DataUnavailable
+from .bitget_chart import BitgetProvider
 from .gold import GoldProvider
 from .live import serve_market
 from .patterns.api import router as patterns_router
@@ -46,7 +47,7 @@ from .practice.service import configured as configured_practice
 from .execution_verification import router as verification_router
 
 ROOT = Path(__file__).resolve().parent.parent
-PROVIDERS = {"BTCUSDT": BinanceProvider(), "XAUUSD": GoldProvider()}
+PROVIDERS = {"BTCUSDT": BitgetProvider()}
 cache = {}
 locks = {}
 logger = logging.getLogger(__name__)
@@ -54,40 +55,15 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app):
-    async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+    # Only the public Bitget market and the isolated Active43 controller start.
+    # Retired ledgers are not constructed, seeded, migrated or repriced.
+    async with httpx.AsyncClient(timeout=20, follow_redirects=False) as client:
         app.state.client = client
-        app.state.market_context = MarketContext.from_client(client)
-        app.state.forward_validation = configured_forward(app.state.market_context)
-        app.state.auto42 = configured_auto42(app.state.market_context)
         app.state.active43 = configured_active43()
-        app.state.exchange_diagnostics = configured_diagnostics()
-        app.state.bybit_linear_preview = configured_linear()
-        if app.state.bybit_linear_preview:app.state.bybit_linear_preview.start()
-        app.state.practice = configured_practice()
-        app.state.practice.start()
-        app.state.testnet = TestnetReader()
-        app.state.bybit_demo = BybitDemoReader()
-        async def paper_fetch(symbol, timeframe):
-            return await market(symbol, timeframe, 500)
-        async def paper_history(symbol,timeframe,**requirements):
-            return await history_service.get(client,symbol,timeframe,**requirements)
-        app.state.paper = PaperService(PaperMarket(paper_fetch),signals=PaperSignalReader(paper_history,synchronize=True))
-        async def lab_page(query):
-            return await lab_public_page(client,query)
-        app.state.lab = LabService(ROOT,lab_page)
-        await app.state.paper.start(ROOT)
         try:
             yield
         finally:
-            await app.state.practice.close()
-            if app.state.bybit_linear_preview:await app.state.bybit_linear_preview.close()
             await app.state.active43.close()
-            await app.state.auto42.close()
-            await app.state.forward_validation.close()
-            await app.state.market_context.close()
-            await app.state.paper.close()
-            await app.state.bybit_demo.close()
-            await app.state.testnet.close()
 
 
 app = FastAPI(title="Trading Terminal", version="0.1.0", lifespan=lifespan)
@@ -121,6 +97,22 @@ class ProtectedStaticFiles(StaticFiles):
         return response
 
 
+@app.middleware('http')
+async def bitget_only_boundary(request, call_next):
+    path = request.url.path
+    retired = ('/api/bybit-demo', '/api/bybit-linear', '/api/testnet',
+               '/api/auto42', '/api/auto42-verification', '/api/practice', '/api/intelligence',
+               '/api/lab', '/api/exchange-diagnostics', '/api/execution-verification',
+               '/api/alignment', '/api/live-paper-monitor')
+    legacy_paper = path.startswith('/api/paper/') and path != '/api/paper/login'
+    if legacy_paper or any(path == prefix or path.startswith(prefix + '/') for prefix in retired):
+        from fastapi.responses import JSONResponse
+        return JSONResponse({'code':'LEGACY_PROVIDER_RETIRED',
+            'message':'Only Bitget Futures is active. Legacy data is preserved; no exchange request or trading action was run.'},
+            status_code=410, headers={'Cache-Control':'no-store'})
+    return await call_next(request)
+
+
 app.mount("/static", ProtectedStaticFiles(directory=ROOT / "static"), name="static")
 
 
@@ -145,6 +137,8 @@ async def market(symbol: Literal["BTCUSDT", "XAUUSD"] = "BTCUSDT",
                  limit: int = Query(500)):
     if limit not in (500, 2000):
         raise HTTPException(422, "Число свечей должно быть 500 или 2000.")
+    if symbol not in PROVIDERS:
+        raise HTTPException(422, "Доступен только BTCUSDT Bitget USDT-M Futures.")
     key = (symbol, timeframe, limit)
     async with locks.setdefault(key, asyncio.Lock()):
         if key in cache and time.monotonic() - cache[key][0] < 30:

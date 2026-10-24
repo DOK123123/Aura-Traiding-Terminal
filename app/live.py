@@ -168,7 +168,8 @@ async def serve_market(socket: WebSocket, client, providers):
         await socket.close(code=1008)
         return
     await socket.accept()
-    generator = (btc_messages if symbol == 'BTCUSDT' else gold_messages)(client,providers[symbol],timeframe,int(limit_text))
+    from .bitget_chart import chart_messages
+    generator = chart_messages(client,providers[symbol],timeframe,int(limit_text))
     async def produce():
         async for payload in generator:
             await socket.send_json(payload)

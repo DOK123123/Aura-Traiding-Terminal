@@ -114,7 +114,7 @@ def test_effective_account_values_ignore_statistics_filter(ledger):
 def test_owner_api_visibility_preflight_and_existing_settings_endpoint(client):
     c,engine,clock=client
     # Fixture injects a new engine; keep its Auto coordinator attached to that ledger.
-    from app.main import app
+    from tests.legacy_terminal import app
     app.state.paper.auto=Auto(engine)
     auth=('aura',PASSWORD)
     state=c.get('/api/paper/state',auth=auth).json()

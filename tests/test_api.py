@@ -28,7 +28,7 @@ def test_query_validation(client, query):
     assert client.get('/api/market?' + query).status_code == 422
 
 
-@pytest.mark.parametrize('symbol', ['BTCUSDT', 'XAUUSD'])
+@pytest.mark.parametrize('symbol', ['BTCUSDT'])
 @pytest.mark.parametrize('timeframe', ['1m','5m','15m','1h'])
 @pytest.mark.parametrize('limit', [500,2000])
 def test_market_contract(client, monkeypatch, symbol, timeframe, limit):
@@ -67,24 +67,19 @@ def test_partial_history_is_not_silently_accepted(client, monkeypatch):
     assert client.get('/api/market').status_code == 503
 
 
-def test_corrupt_archive_returns_readable_error(client, monkeypatch):
-    async def corrupt(*args):
-        raise lzma.LZMAError('bad archive')
-    monkeypatch.setattr(PROVIDERS['XAUUSD'], 'fetch', corrupt)
-    response = client.get('/api/market?symbol=XAUUSD')
-    assert response.status_code == 503
-    assert 'Dukascopy' in response.json()['detail']
+def test_retired_gold_is_rejected_without_provider_request(client):
+    assert 'XAUUSD' not in PROVIDERS
+    assert client.get('/api/market?symbol=XAUUSD').status_code == 422
 
 
-def test_fallback_source_preserved_in_api_and_cache(client, monkeypatch):
-    async def fallback(*args):
+def test_bitget_source_preserved_in_api_and_cache(client, monkeypatch):
+    from app.bitget_chart import SOURCE
+    async def fetch(*args):
         step = 900
         end = int(time.time()) // step * step
-        return CandleBatch([Candle(end-(500-i)*step,100,102,99,101,None) for i in range(500)],
-                           'TradingView · OANDA:XAUUSD','Actual fallback note',True,'HTTP 429')
-    monkeypatch.setattr(PROVIDERS['XAUUSD'],'fetch',fallback)
-    first = client.get('/api/market?symbol=XAUUSD').json()
-    assert first['source'] == 'TradingView · OANDA:XAUUSD'
-    assert first['fallback'] and first['fallback_reason'] == 'HTTP 429'
-    assert first['candles'][0]['volume'] is None
-    assert client.get('/api/market?symbol=XAUUSD').json() == first
+        return [Candle(end-(500-i)*step,100,102,99,101,7) for i in range(500)]
+    monkeypatch.setattr(PROVIDERS['BTCUSDT'],'fetch',fetch)
+    first = client.get('/api/market').json()
+    assert first['source'] == SOURCE
+    assert first['candles'][0]['volume'] == 7
+    assert client.get('/api/market').json() == first

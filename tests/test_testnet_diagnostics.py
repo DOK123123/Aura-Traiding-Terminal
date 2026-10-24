@@ -9,7 +9,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+from tests.legacy_terminal import app
 from app.testnet.client import Credentials, SafeFailure, TestnetReader as Reader
 from tests.test_testnet import DUMMY, OWNER_PASSWORD, good, run
 
@@ -160,7 +160,7 @@ def test_protected_api_exposes_only_sanitized_diagnostics(monkeypatch):
         if request.url.path.endswith('/time'):
             return good(request)
         return httpx.Response(451, json={'code': 0, 'msg': str(request.url)+DUMMY.secret})
-    monkeypatch.setattr('app.main.TestnetReader', lambda: Reader(DUMMY, transport=httpx.MockTransport(callback)))
+    monkeypatch.setattr('tests.legacy_terminal.TestnetReader', lambda: Reader(DUMMY, transport=httpx.MockTransport(callback)))
     with TestClient(app) as client:
         assert client.get('/api/testnet/account').status_code == 401
         response = client.get('/api/testnet/account', auth=('aura', OWNER_PASSWORD))
