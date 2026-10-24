@@ -13,6 +13,7 @@ import re
 import time
 import uuid
 import httpx
+from scripts.active43_worker_evidence import differences, equivalent
 
 REPO='DOK123123/Aura-Traiding-Terminal'
 WORKER='aura-ctive43-scheduler'
@@ -70,7 +71,8 @@ def upload_metadata(settings,sha):
 
 class Remote:
     """Fixed hosts, no redirects, no unsafe POST retries, bounded responses."""
-    def __init__(self,env):
+    def __init__(self,env,read_only=False):
+        self.read_only=read_only
         self.service=env.get('AURA_RENDER_SERVICE_ID','');self.account=env.get('AURA_CLOUDFLARE_ACCOUNT_ID','')
         require(re.fullmatch('srv-[a-z0-9]{10,40}',self.service),'RENDER_SERVICE_ID_MISSING_OR_INVALID')
         require(re.fullmatch('[a-f0-9]{32}',self.account),'CLOUDFLARE_ACCOUNT_ID_MISSING_OR_INVALID')
@@ -92,6 +94,7 @@ class Remote:
 
     def call(self,realm,method,path='',data=None,files=None):
         require(realm in self.bases and (path=='' or path.startswith(('/', '?'))),'INVALID_API_TARGET')
+        require(not self.read_only or method=='GET','READ_ONLY_INSPECTION_WRITE_FORBIDDEN')
         require(method=='GET' or method=='POST' and ((realm=='render' and path=='/deploys') or
             (realm=='cf' and path in ('/versions?bindings_inherit=strict','/deployments'))),'API_WRITE_FORBIDDEN')
         require('://' not in path and '..' not in path,'INVALID_API_TARGET')
@@ -139,7 +142,8 @@ class Release:
         # artifact upload. Never print credentials, settings or account data.
         print(json.dumps(dict(event='RELEASE_CHECKPOINT',**{k:self.report[k] for k in (
             'status','release_sha','previous_render_commit','previous_worker_version_id',
-            'render_deploy_id','render_commit','render_live_commit','staged_worker_version_id','worker_version_id','mutations')
+            'render_deploy_id','render_commit','render_live_commit','staged_worker_version_id','worker_version_id',
+            'existing_staged_worker_version_id','worker_diagnostics','comparison_failures','mutations')
             if k in self.report})),flush=True)
 
     def main_head(self):
@@ -207,7 +211,11 @@ class Release:
         versions=self.r.call('cf','GET','/versions?per_page=100')['items']
         require(bool(versions),'WORKER_VERSIONS_UNVERIFIED')
         latest=max(versions,key=lambda v:v['number'])['id']
-        require(latest==active,'UNDEPLOYED_WORKER_VERSION_REQUIRES_REVIEW')
+        require(isinstance(latest,str) and UUID.fullmatch(latest),'WORKER_VERSION_UNVERIFIED')
+        if latest!=active:
+            self.report['existing_staged_worker_version_id']=latest
+            self.inspect_worker(latest)
+            raise Blocked('UNDEPLOYED_WORKER_VERSION_REQUIRES_REVIEW')
         settings=self.r.call('cf','GET','/settings')
         upload_metadata(settings,self.sha)
         schedules=self.r.call('cf','GET','/schedules')
@@ -219,10 +227,61 @@ class Release:
         return dict(active=active,settings=profile(settings),schedules=schedules,subdomain=domain,
                     resources=version['resources'])
 
+    def compare(self,label,before,after,code):
+        if equivalent(before,after):return
+        self.report.setdefault('comparison_failures',[]).append(dict(
+            component=label,code=code,**differences(before,after)))
+        self.save()
+        raise Blocked(code)
+
+    def inspect_worker(self,staged_id=None):
+        """Only GET. No automatic resume, activation, upload or guessed repair."""
+        active=active_version(self.r.call('cf','GET','/deployments'))
+        versions=self.r.call('cf','GET','/versions?per_page=100')['items']
+        require(bool(versions),'WORKER_VERSIONS_UNVERIFIED')
+        latest=max(versions,key=lambda v:v['number'])['id']
+        require(isinstance(latest,str) and UUID.fullmatch(latest),'WORKER_VERSION_UNVERIFIED')
+        candidate=staged_id or latest
+        require(isinstance(candidate,str) and UUID.fullmatch(candidate),'INVALID_INSPECTION_VERSION')
+        active_data=self.r.call('cf','GET','/versions/'+active)
+        staged_data=self.r.call('cf','GET','/versions/'+candidate)
+        require(active_data.get('id')==active and staged_data.get('id')==candidate,'VERSION_RESOURCES_UNVERIFIED')
+        current=self.r.call('cf','GET','/settings')
+        protected={key:differences(active_data.get('resources',{}).get(key),
+            staged_data.get('resources',{}).get(key)) for key in ('bindings','script_runtime')}
+        runtime_keys=('compatibility_date','compatibility_flags','limits','usage_model')
+        current_runtime={k:current[k] for k in runtime_keys if k in current}
+        active_runtime={k:active_data.get('resources',{}).get('script_runtime',{})[k]
+            for k in runtime_keys if k in active_data.get('resources',{}).get('script_runtime',{})}
+        staged_runtime={k:staged_data.get('resources',{}).get('script_runtime',{})[k]
+            for k in runtime_keys if k in staged_data.get('resources',{}).get('script_runtime',{})}
+        schedules=self.r.call('cf','GET','/schedules')
+        evidence=dict(active_version_id=active,latest_version_id=latest,inspected_version_id=candidate,
+            unactivated_version_present=latest!=active,read_only=True,root_cause_confirmed=False,secret_value_equality_verified=False,
+            active_staged_resources=protected,
+            current_vs_active_runtime=differences(active_runtime,current_runtime),
+            current_vs_staged_runtime=differences(staged_runtime,current_runtime),
+            current_vs_active_bindings=differences(active_data.get('resources',{}).get('bindings'),current.get('bindings')),
+            current_vs_staged_bindings=differences(staged_data.get('resources',{}).get('bindings'),current.get('bindings')),
+            current_cron_matches_expected=[v.get('cron') for v in schedules.get('schedules',[])]==[CRON],
+            safe_to_resume=False,resume_code='REVIEW_REQUIRED_NO_AUTOMATIC_POST',
+            missing_evidence='FAILED_RUN_PRE_UPLOAD_SETTINGS_SNAPSHOT_NOT_CAPTURED')
+        # Recheck stability; observing two stable reads does NOT reconstruct the
+        # settings snapshot that the failed historic run never persisted.
+        evidence['inspection_settings_stable']=differences(current,self.r.call('cf','GET','/settings'))
+        require(active_version(self.r.call('cf','GET','/deployments'))==active,'WORKER_CHANGED_DURING_INSPECTION')
+        self.report['worker_diagnostics']=evidence;self.save()
+        return evidence
+
     def invariant(self,baseline,allow_new_version=False):
-        require(profile(self.r.call('cf','GET','/settings'))==baseline['settings'],'WORKER_SETTINGS_CHANGED')
+        current=self.r.call('cf','GET','/settings')
+        try:normalized=profile(current)
+        except Exception:
+            self.compare('settings_format',baseline['settings'],current,'WORKER_SETTINGS_CHANGED')
+            raise
+        self.compare('settings',baseline['settings'],normalized,'WORKER_SETTINGS_CHANGED')
         for path,key in (('/schedules','schedules'),('/subdomain','subdomain')):
-            require(self.r.call('cf','GET',path)==baseline[key],'WORKER_ROUTING_OR_CRON_CHANGED')
+            self.compare(key,baseline[key],self.r.call('cf','GET',path),'WORKER_ROUTING_OR_CRON_CHANGED')
         if not allow_new_version:
             require(active_version(self.r.call('cf','GET','/deployments'))==baseline['active'],'WORKER_DEPLOYMENT_CHANGED')
 
@@ -284,7 +343,7 @@ class Release:
         self.off(self.sha);self.invariant(baseline)
         require(self.main_head()==self.sha,'STALE_MAIN_SHA')
         # latest uploaded must still be the active baseline before strict inheritance.
-        require(self.worker_state()==baseline,'WORKER_BASELINE_CHANGED')
+        require(equivalent(self.worker_state(),baseline),'WORKER_BASELINE_CHANGED')
         source=Path(worker_file).read_bytes();require(0<len(source)<128000,'WORKER_SOURCE_SIZE_INVALID')
         self.report['worker_source_sha256']=hashlib.sha256(source).hexdigest()
         metadata=upload_metadata(baseline['settings'],self.sha)
@@ -296,8 +355,10 @@ class Release:
         self.report['staged_worker_version_id']=candidate;self.save()
         self.invariant(baseline)
         candidate_state=self.r.call('cf','GET','/versions/'+candidate)
-        require(candidate_state.get('id')==candidate and all(candidate_state.get('resources',{}).get(k)==baseline['resources'][k]
-            for k in ('bindings','script_runtime')),'STAGED_WORKER_CONFIG_CHANGED')
+        require(candidate_state.get('id')==candidate,'STAGED_WORKER_VERSION_UNVERIFIED')
+        for key in ('bindings','script_runtime'):
+            self.compare('staged_'+key,baseline['resources'][key],candidate_state.get('resources',{}).get(key),
+                         'STAGED_WORKER_CONFIG_CHANGED')
         self.off(self.sha);require(self.main_head()==self.sha,'STALE_MAIN_SHA')
         self.activate(candidate);self.invariant(baseline,True)
         self.verify_ticks()
@@ -326,7 +387,7 @@ class Release:
         version=self.r.call('cf','GET','/versions/'+old_version)
         require(version['id']==old_version,'ROLLBACK_WORKER_VERSION_UNVERIFIED')
         # No automatic rollback of bindings/runtime to an incompatible profile.
-        require(all(version.get('resources',{}).get(k)==baseline['resources'][k]
+        require(all(equivalent(version.get('resources',{}).get(k),baseline['resources'][k])
             for k in ('bindings','script_runtime')),'ROLLBACK_BINDINGS_OR_RUNTIME_REQUIRE_MANUAL_REVIEW')
         self.report.update(status='ROLLING_BACK',previous_render_commit=current,previous_worker_version_id=baseline['active']);self.save()
         self.activate(old_version);self.invariant(baseline,True)
@@ -336,15 +397,22 @@ class Release:
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--operation',choices=['deploy','rollback'],default='deploy')
+    parser.add_argument('--operation',choices=['deploy','rollback','inspect_worker'],default='deploy')
     parser.add_argument('--sha',required=True);parser.add_argument('--ci-run-id',type=int,default=0)
     parser.add_argument('--rollback-sha',default='');parser.add_argument('--rollback-version',default='')
     parser.add_argument('--rollback-confirmation',default='');parser.add_argument('--execute',action='store_true')
+    parser.add_argument('--inspect-version',default='')
     args=parser.parse_args();remote=None;release=None
     try:
-        require(args.execute and os.getenv('AURA_PRODUCTION_DEPLOY_ENABLED')=='true','DEPLOY_NOT_AUTHORIZED')
-        remote=Remote(os.environ);release=Release(remote,args.sha,'release-results/deployment-report.json')
-        if args.operation=='deploy':release.deploy(args.ci_run_id,Path(__file__).resolve().parents[1]/'deploy/active43-free-worker/worker.mjs')
+        inspection=args.operation=='inspect_worker'
+        require(inspection or args.execute and os.getenv('AURA_PRODUCTION_DEPLOY_ENABLED')=='true','DEPLOY_NOT_AUTHORIZED')
+        remote=Remote(os.environ,read_only=inspection);release=Release(remote,args.sha,'release-results/deployment-report.json')
+        release.report['operation']=args.operation
+        if inspection:
+            release.verify_ci(args.ci_run_id)
+            release.inspect_worker(args.inspect_version or None)
+            release.report['status']='WORKER_INSPECTED_NO_DEPLOYMENT'
+        elif args.operation=='deploy':release.deploy(args.ci_run_id,Path(__file__).resolve().parents[1]/'deploy/active43-free-worker/worker.mjs')
         else:
             release.verify_ci(args.ci_run_id)
             release.rollback(args.rollback_sha,args.rollback_version,args.rollback_confirmation)
@@ -352,9 +420,10 @@ def main():
     except Exception as exc:
         code=str(exc) if isinstance(exc,Blocked) and re.fullmatch('[A-Z0-9_]{1,100}',str(exc)) else 'RELEASE_CONTROLLER_FAILED'
         report=release.report if release else dict(status='BLOCKED',mutations=[])
-        report.update(status='DEPLOY_BLOCKED',code=code,manual_reconciliation_required=bool(report['mutations']))
+        failure_status='INSPECTION_BLOCKED' if args.operation=='inspect_worker' else 'DEPLOY_BLOCKED'
+        report.update(status=failure_status,code=code,manual_reconciliation_required=bool(report['mutations']) or bool(report.get('existing_staged_worker_version_id')))
         Path('release-results').mkdir(exist_ok=True);Path('release-results/deployment-report.json').write_text(json.dumps(report,indent=2)+'\n')
-        print(json.dumps(dict(status='DEPLOY_BLOCKED',code=code)));return 1
+        print(json.dumps(dict(status=failure_status,code=code)));return 1
     finally:
         if remote:remote.close()
     return 0

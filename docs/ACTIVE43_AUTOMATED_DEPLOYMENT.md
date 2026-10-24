@@ -200,3 +200,11 @@ Workflow .yml записан в JSON-подмножестве YAML: его ра�
 syntax/actual job expressions и встроенный Bash проверяются без новой YAML
 runtime-зависимости. Все actions закреплены полными commit SHA; Python и pip
 зависимости — существующими .python-version и ci/requirements.lock.
+
+## WORKER_SETTINGS_CHANGED и оставшаяся staged Version
+
+См. [безопасную диагностику](ACTIVE43_WORKER_SETTINGS_EVIDENCE.md). Новый manual
+operation `inspect_worker` делает только GET, доступен при deploy enabled=false и
+не требует удаления/активации staged версии. Обычный deploy при таком состоянии
+собирает field-level evidence и по-прежнему BLOCKED до review. Никакой автоматической
+коррекции настроек или слепого возобновления POST не предусмотрено.
