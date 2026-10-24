@@ -204,17 +204,16 @@ class Release:
         upload_metadata(settings,self.sha)
         schedules=self.r.call('cf','GET','/schedules')
         require([v['cron'] for v in schedules['schedules']]==[CRON],'CRON_MISMATCH')
-        routes=self.r.call('cf','GET','/routes')
         domain=self.r.call('cf','GET','/subdomain')
         version=self.r.call('cf','GET','/versions/'+active)
         require(version.get('id')==active and isinstance(version.get('resources',{}).get('script_runtime'),dict)
             and 'bindings' in version['resources'],'VERSION_RESOURCES_UNVERIFIED')
-        return dict(active=active,settings=profile(settings),schedules=schedules,routes=routes,subdomain=domain,
+        return dict(active=active,settings=profile(settings),schedules=schedules,subdomain=domain,
                     resources=version['resources'])
 
     def invariant(self,baseline,allow_new_version=False):
         require(profile(self.r.call('cf','GET','/settings'))==baseline['settings'],'WORKER_SETTINGS_CHANGED')
-        for path,key in (('/schedules','schedules'),('/routes','routes'),('/subdomain','subdomain')):
+        for path,key in (('/schedules','schedules'),('/subdomain','subdomain')):
             require(self.r.call('cf','GET',path)==baseline[key],'WORKER_ROUTING_OR_CRON_CHANGED')
         if not allow_new_version:
             require(active_version(self.r.call('cf','GET','/deployments'))==baseline['active'],'WORKER_DEPLOYMENT_CHANGED')
@@ -304,7 +303,8 @@ class Release:
         self.off(self.sha);self.invariant(baseline,True)
         require(active_version(self.r.call('cf','GET','/deployments'))==candidate,'WORKER_VERSION_CHANGED_DURING_VERIFICATION')
         self.report.update(status='DEPLOY_VERIFIED',account_and_history_unchanged=True,
-                           cloudflare_audit_verified=False,http_delivery_verified=False)
+                           cloudflare_audit_verified=False,http_delivery_verified=False,
+                           route_inventory_verified=False,routes_unchanged_by_design=True)
 
     def rollback(self,old_sha,old_version,confirmation):
         require(SHA.fullmatch(old_sha or '') and UUID.fullmatch(old_version or ''),'ROLLBACK_TARGETS_REQUIRED')

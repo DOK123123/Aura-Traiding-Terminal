@@ -23,7 +23,7 @@ merge SHA**. Затем `Aura 4.3 Production Deployment`:
 4. Проверяет **существующий** Worker `aura-ctive43-scheduler`: 100% одна активная
    версия, latest uploaded совпадает с active, Cron `2-59/5 * * * *`, строковые
    bindings saved_mode/true, scheduler secret присутствует. Читает settings,
-   routes, schedules, subdomain и immutable version resources; не публикует их
+   schedules, subdomain и immutable version resources; не публикует их
    значения в логи/artifact. Не поддерживаемые настройки требуют ручного review.
 5. Deploy Render через API с `commitId=<точный SHA>`, без очистки cache/env/БД.
    Ждёт Live, HTTP200 health и совпадение фактического `render_commit` из
@@ -33,7 +33,7 @@ merge SHA**. Затем `Aura 4.3 Production Deployment`:
    `bindings_inherit=strict`; значения secrets не читаются и не отправляются.
    Runtime копируется из текущих настроек, вместо небезопасного repo wrangler
    config. Проверяет неизменность всех binding/runtime ресурсов staged версии и
-   settings/routes/Cron/subdomain. Лишь затем переключает **тот же Worker** на
+   settings/Cron/subdomain. Лишь затем переключает **тот же Worker** на
    новую Version UUID с трафиком 100%. Не вызывает create-script, routes/settings/
    secrets/schedules update, не создаёт Worker или инфраструктуру.
 7. Ждёт до 17,5 минут два **автоматически сохранённых** OFF/COMPLETED tick в соседних
@@ -49,6 +49,11 @@ immutable SQL receipt. Это не независимый Cloudflare audit и н
 что клиент получил HTTP200 и вывел TICK_SAVED: эти поля в отчёте остаются false.
 Независимое подтверждение платформенных логов потребует отдельно разрешённого
 read-only доступа к Cloudflare Observability; такого доступа в задаче нет.
+
+Routes сохраняются по контракту Versions/Deployments API: версия меняется у того
+же имени, routing API вообще не вызывается. Zone-scoped route inventory не
+считывается без дополнительных разрешений/Zone ID; `route_inventory_verified=false`
+явно записывается в отчёт. Это не выдуманная независимая сверка списка routes.
 
 ## Однократная настройка с Android (после разрешения владельца)
 
@@ -72,7 +77,7 @@ production Secrets ручным запускам изменяемых workflow. 
 | Название | Откуда взять |
 |---|---|
 | `AURA_RENDER_API_KEY` | Render Account Settings → API Keys: https://dashboard.render.com/u/settings |
-| `AURA_CLOUDFLARE_API_TOKEN` | https://dash.cloudflare.com/profile/api-tokens → минимальная Editor/Workers Scripts Edit роль для существующего Worker/аккаунта с чтением его метаданных. Не Global API Key; не добавлять Zone Routes Write, если он не нужен для чтения текущих routes. Если API не позволяет такую минимальную область, остановиться и проверить требуемый scope, не расширять до admin автоматически. |
+| `AURA_CLOUDFLARE_API_TOKEN` | https://dash.cloudflare.com/profile/api-tokens → минимальная Editor/Workers Scripts Edit роль для существующего Worker/аккаунта с чтением его метаданных. Не Global API Key; Zone Routes Write не нужен. Если API не позволяет такую минимальную область, остановиться и проверить требуемый scope, не расширять до admin автоматически. |
 | `AURA_TESTNET_VIEW_PASSWORD` | Уже действующий пароль Owner Panel из Render; не создавать новый пароль |
 
 `GITHUB_TOKEN` предоставляет GitHub автоматически (contents/actions read).

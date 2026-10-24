@@ -53,7 +53,6 @@ class Fake:
         if realm=='cf':
             if path=='/settings':return deepcopy(self.settings)
             if path=='/schedules':return {'schedules':[{'cron':d.CRON}]}
-            if path=='/routes':return []
             if path=='/subdomain':return dict(enabled=False,previews_enabled=False)
             if method=='POST' and path=='/versions?bindings_inherit=strict':
                 metadata=json.loads(files['metadata'][1]);self.metadata=metadata;self.upload=files['worker.mjs'][1]
@@ -86,7 +85,8 @@ def test_complete_order_ci_render_exact_sha_worker_existing_preserved_receipts(t
     assert ('aura','GET','/api/health',None) in f.calls[:upload_at]
     assert f.settings==before and f.upload==source.read_bytes()
     assert {b['name'] for b in f.metadata['bindings']}=={b['name'] for b in before['bindings']}
-    assert not any('/tick' in x[2] or '/control' in x[2] or '/initialize' in x[2] for x in f.calls)
+    assert not any('/tick' in x[2] or '/control' in x[2] or '/initialize' in x[2] or x[2]=='/routes' for x in f.calls)
+    assert r.report['routes_unchanged_by_design'] and not r.report['route_inventory_verified']
 
 
 @pytest.mark.parametrize('ci',['skipped','failure',None])
