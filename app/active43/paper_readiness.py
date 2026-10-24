@@ -49,7 +49,7 @@ def scheduler_evidence(rows: list[dict], state: dict, now: int) -> dict:
         if (not match or key in seen or type(created) is not int
             or not int(match[1])*300 <= created < int(match[1])*300+360
             or proof.get('source') != 'CLOUDFLARE_SCHEDULED_REPORTED'
-            or type(at) is not int or at % 300 != 120 or not 0 <= created-at <= 270
+            or type(at) is not int or not 120 <= at % 300 < 300 or not 0 <= created-at <= 270
             or not isinstance(inv,str) or not re.fullmatch('[a-f0-9]{32}',inv)
             or proof.get('status') != 'COMPLETED' or proof.get('mode') != 'OFF'
             or type(proof.get('opened')) is not int or proof['opened'] != 0
