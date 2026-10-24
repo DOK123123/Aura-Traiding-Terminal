@@ -108,3 +108,9 @@ subdomain; post-upload mismatch без activation; безопасное повт
 редактирование неизвестных ключей/значений и ограничения размера диагностики.
 Полные Python/Node regression и exact-head CI запускаются отдельно.
 Стратегии, риск, Worker код, PAPER, Aura4.2/Practice, SQL и Supabase не меняются.
+
+Issue #38 добавляет только доказанную missing/empty flags нормализацию и явные
+EMPTY/NONEMPTY states, сохраняя raw evidence и блокировку staged activation.
+См. [разбор и процедура](ACTIVE43_COMPATIBILITY_FLAGS_ISSUE38.md). Старый отчёт с
+типом array не доказывает, что flags были пусты; исторический root cause остаётся
+неподтверждённым без утраченного baseline.

@@ -13,7 +13,7 @@ import re
 import time
 import uuid
 import httpx
-from scripts.active43_worker_evidence import differences, equivalent
+from scripts.active43_worker_evidence import differences, equivalent, runtime_profile, compatibility_flags_state
 
 REPO='DOK123123/Aura-Traiding-Terminal'
 WORKER='aura-ctive43-scheduler'
@@ -43,14 +43,36 @@ def active_version(data):
     return value
 
 
+def normalized_runtime(value):
+    try:return runtime_profile(value)
+    except ValueError:raise Blocked('WORKER_RUNTIME_FORMAT_UNVERIFIED') from None
+
+
+def resources_profile(resources):
+    require(isinstance(resources,dict),'VERSION_RESOURCES_UNVERIFIED')
+    value=deepcopy(resources)
+    value['script_runtime']=normalized_runtime(value.get('script_runtime'))
+    return value
+
+
+def runtime_comparison(before,after):
+    try:
+        result=differences(normalized_runtime(before),normalized_runtime(after))
+        return dict(result,normalization='CF_OPTIONAL_FLAGS_EMPTY_V1',verified=True)
+    except Blocked:
+        return dict(equal=False,verified=False,normalization='CF_OPTIONAL_FLAGS_EMPTY_V1',
+                    code='WORKER_RUNTIME_FORMAT_UNVERIFIED',values_redacted=True)
+
+
 def profile(settings):
-    value=deepcopy(settings)
+    value=normalized_runtime(settings)
     require(isinstance(value.get('bindings'),list),'BINDING_FORMAT_UNSUPPORTED')
     value['bindings']=sorted(value['bindings'],key=lambda b:b['name'])
     return value
 
 
 def upload_metadata(settings,sha):
+    settings=normalized_runtime(settings)
     bindings=settings['bindings']
     require(len({b['name'] for b in bindings})==len(bindings),'DUPLICATE_BINDINGS')
     by_name={b['name']:b for b in bindings}
@@ -268,7 +290,7 @@ class Release:
         require(version.get('id')==active and isinstance(version.get('resources',{}).get('script_runtime'),dict)
             and 'bindings' in version['resources'],'VERSION_RESOURCES_UNVERIFIED')
         return dict(active=active,settings=profile(settings),schedules=schedules,subdomain=domain,
-                    resources=version['resources'])
+                    resources=resources_profile(version['resources']))
 
     def compare(self,label,before,after,code):
         if equivalent(before,after):return
@@ -313,6 +335,26 @@ class Release:
         # settings snapshot that the failed historic run never persisted.
         evidence['inspection_settings_stable']=differences(current,self.r.call('cf','GET','/settings'))
         require(active_version(self.r.call('cf','GET','/deployments'))==active,'WORKER_CHANGED_DURING_INSPECTION')
+        # Keep raw diffs for forensic context, alongside the narrow semantic rule.
+        active_full=active_data.get('resources',{}).get('script_runtime')
+        staged_full=staged_data.get('resources',{}).get('script_runtime')
+        evidence['compatibility_flags_states']=dict(current=compatibility_flags_state(current),
+            active=compatibility_flags_state(active_full),staged=compatibility_flags_state(staged_full))
+        evidence['normalized_runtime_comparisons']=dict(
+            active_staged=runtime_comparison(active_full,staged_full),
+            current_active=runtime_comparison(active_runtime,current_runtime),
+            current_staged=runtime_comparison(staged_runtime,current_runtime))
+        normalized=evidence['normalized_runtime_comparisons']
+        evidence['flags_representation_equivalent']=(all(v in ('MISSING','EMPTY') for v in evidence['compatibility_flags_states'].values())
+            and all(v.get('verified') is True and v['equal'] for v in normalized.values()))
+        evidence['known_protected_config_matches']=(all(v.get('verified') is True and v['equal'] for v in normalized.values())
+            and evidence['current_cron_matches_expected'] and evidence['inspection_settings_stable']['equal']
+            and protected['bindings']['equal'] and evidence['current_vs_active_bindings']['equal']
+            and evidence['current_vs_staged_bindings']['equal'])
+        evidence['historical_limitations']=['HISTORIC_PRE_UPLOAD_SETTINGS_MISSING','OLD_ARRAY_CONTENT_NOT_LOGGED']
+        evidence['activation_authorized']=False
+        evidence['activation_blockers']=['EXPLICIT_OWNER_AUTHORIZATION_REQUIRED','CURRENT_SETTINGS_BASELINE_REVIEW_REQUIRED',
+                                          'SECRET_VALUES_NOT_OBSERVABLE','STAGED_SOURCE_REVIEW_REQUIRED']
         self.report['worker_diagnostics']=evidence;self.save()
         return evidence
 
@@ -400,7 +442,7 @@ class Release:
         candidate_state=self.r.call('cf','GET','/versions/'+candidate)
         require(candidate_state.get('id')==candidate,'STAGED_WORKER_VERSION_UNVERIFIED')
         for key in ('bindings','script_runtime'):
-            self.compare('staged_'+key,baseline['resources'][key],candidate_state.get('resources',{}).get(key),
+            self.compare('staged_'+key,baseline['resources'][key],resources_profile(candidate_state.get('resources',{})).get(key),
                          'STAGED_WORKER_CONFIG_CHANGED')
         self.off(self.sha);require(self.main_head()==self.sha,'STALE_MAIN_SHA')
         self.activate(candidate);self.invariant(baseline,True)
@@ -430,7 +472,7 @@ class Release:
         version=self.r.call('cf','GET','/versions/'+old_version)
         require(version['id']==old_version,'ROLLBACK_WORKER_VERSION_UNVERIFIED')
         # No automatic rollback of bindings/runtime to an incompatible profile.
-        require(all(equivalent(version.get('resources',{}).get(k),baseline['resources'][k])
+        require(all(equivalent(resources_profile(version.get('resources',{})).get(k),baseline['resources'][k])
             for k in ('bindings','script_runtime')),'ROLLBACK_BINDINGS_OR_RUNTIME_REQUIRE_MANUAL_REVIEW')
         self.report.update(status='ROLLING_BACK',previous_render_commit=current,previous_worker_version_id=baseline['active']);self.save()
         self.activate(old_version);self.invariant(baseline,True)
