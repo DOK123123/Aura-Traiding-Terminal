@@ -185,7 +185,7 @@ def test_actual_workflow_event_expression_blocks_pr_failure_disabled_and_foreign
         fields={'github.ref':'refs/heads/main','vars.AURA_PRODUCTION_DEPLOY_ENABLED':'true','github.event_name':'workflow_run',
             'github.event.workflow_run.conclusion':'success','github.event.workflow_run.event':'push',
             'github.event.workflow_run.head_branch':'main','github.event.workflow_run.head_repository.full_name':d.REPO,
-            'github.repository':d.REPO}
+            'github.repository':d.REPO,'inputs.operation':'deploy'}
         fields.update(overrides);value=expression
         for key in sorted(fields,key=len,reverse=True):value=value.replace(key,repr(fields[key]))
         value=value.replace('&&',' and ').replace('||',' or ')
