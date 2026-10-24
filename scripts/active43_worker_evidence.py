@@ -60,3 +60,32 @@ def differences(before,after,limit=64):
         else:add(path,left,right)
     walk(before,after,'$')
     return dict(equal=equivalent(before,after),changes=changes,truncated=truncated,values_redacted=True)
+
+
+def compatibility_flags_state(runtime):
+    """Only known public schema cardinality, never flag names or binding values."""
+    if not isinstance(runtime,dict):return 'INVALID'
+    if 'compatibility_flags' not in runtime:return 'MISSING'
+    flags=runtime['compatibility_flags']
+    if not isinstance(flags,list) or any(not isinstance(flag,str) or not flag for flag in flags):return 'INVALID'
+    return 'EMPTY' if not flags else 'NONEMPTY'
+
+
+def runtime_profile(runtime):
+    """Fixed date + optional no explicit flags: missing and [] mean no overrides.
+
+    Cloudflare workers-sdk environment.ts @default []; config/validation.ts uses
+    [] for optional compatibility_flags. No other defaults/types/order are changed.
+    """
+    from copy import deepcopy
+    from datetime import date
+    import re
+    if not isinstance(runtime,dict) or not isinstance(runtime.get('compatibility_date'),str) or not re.fullmatch(
+            r'\d{4}-\d{2}-\d{2}',runtime['compatibility_date']):
+        raise ValueError('RUNTIME_DATE_UNVERIFIED')
+    try:date.fromisoformat(runtime['compatibility_date'])
+    except ValueError:raise ValueError('RUNTIME_DATE_UNVERIFIED') from None
+    if compatibility_flags_state(runtime)=='INVALID':raise ValueError('COMPATIBILITY_FLAGS_UNVERIFIED')
+    value=deepcopy(runtime)
+    value.setdefault('compatibility_flags',[])
+    return value
