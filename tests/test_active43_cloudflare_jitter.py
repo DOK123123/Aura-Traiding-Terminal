@@ -26,8 +26,6 @@ def test_cloudflare_scheduled_time_jitter_and_rejections(monkeypatch):
 
         # Isolate attribution validation; no engine or database writes.
         with patch.object(service, 'tick', side_effect=fake_tick) as tick:
-            with patch('app.active43.api.delivery', create=True):
-                pass
             async with httpx.AsyncClient(
                 transport=httpx.ASGITransport(app=app), base_url='http://test'
             ) as client:
