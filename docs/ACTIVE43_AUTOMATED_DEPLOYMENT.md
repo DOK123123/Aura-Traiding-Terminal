@@ -66,7 +66,10 @@ Routes сохраняются по контракту Versions/Deployments API: 
 branches and tags → Selected branches and tags → добавить только branch `main`.
 Не оставлять All branches: без ограничения веток нельзя безопасно выдавать
 production Secrets ручным запускам изменяемых workflow. Job дополнительно
-проверяет github.ref=refs/heads/main; это не замена environment policy.
+проверяет github.ref=refs/heads/main и через GitHub read-only API требует
+единственную environment branch policy `main`; при All branches публикация
+блокируется. Эти API используют встроенный GITHUB_TOKEN с Actions read, новый PAT
+не требуется. Это не замена правильной настройки environment до выдачи Secrets.
 Для первого запуска рекомендуется required reviewer, если он доступен тарифу.
 При обязательном reviewer Actions будет ждать нажатия Approve; это осознанная
 защита, не полностью безусловный auto-deploy. Впоследствии политика одобрения —

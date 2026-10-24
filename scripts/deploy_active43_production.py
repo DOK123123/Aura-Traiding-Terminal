@@ -160,6 +160,14 @@ class Release:
         require(len(required)==1 and required[0].get('conclusion')=='success','REGRESSION_JOB_NOT_SUCCESSFUL')
         for name in ('Run actual regressions with no external network and no production secrets','Upload actual test reports'):
             require(any(s['name']==name and s.get('conclusion')=='success' for s in required[0]['steps']),'REGRESSION_STEP_NOT_SUCCESSFUL')
+        environment=self.r.call('github','GET','/environments/production')
+        policy=environment.get('deployment_branch_policy') or {}
+        require(policy.get('custom_branch_policies') is True and policy.get('protected_branches') is False,
+                'PRODUCTION_ENV_MAIN_ONLY_POLICY_REQUIRED')
+        branches=self.r.call('github','GET','/environments/production/deployment-branch-policies?per_page=100')
+        require(branches.get('total_count')==1 and len(branches.get('branch_policies',[]))==1
+            and branches['branch_policies'][0].get('name')=='main'
+            and branches['branch_policies'][0].get('type','branch')=='branch','PRODUCTION_ENV_MAIN_ONLY_POLICY_REQUIRED')
         self.report['ci_run_id']=run_id
 
     def off(self,expected_commit=None):

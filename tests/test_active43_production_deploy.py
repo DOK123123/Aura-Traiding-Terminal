@@ -29,6 +29,8 @@ class Fake:
             if path=='/commits/main':return {'sha':NEW}
             if path.startswith('/compare/'):return dict(status='ahead',merge_base_commit={'sha':OLD})
             if path=='/actions/workflows/regression.yml':return {'id':42}
+            if path=='/environments/production':return dict(deployment_branch_policy={'custom_branch_policies':True,'protected_branches':False})
+            if path.startswith('/environments/production/deployment-branch-policies'):return dict(total_count=1,branch_policies=[dict(name='main',type='branch')])
             if path=='/actions/runs/17':return dict(head_sha=NEW,head_branch='main',event='push',head_repository={'full_name':d.REPO},workflow_id=42,status='completed',conclusion=self.ci)
             if path.endswith('/jobs?filter=latest&per_page=100'):return dict(total_count=1,jobs=[dict(name=d.CI_JOB,conclusion=self.ci,steps=[dict(name=n,conclusion=self.ci) for n in ('Run actual regressions with no external network and no production secrets','Upload actual test reports')])])
         if realm=='aura':
@@ -275,3 +277,13 @@ def test_embedded_workflow_shell_is_valid_without_executing_it():
     value=json.loads(Path('.github/workflows/production-deploy.yml').read_text())
     for step in value['jobs']['production']['steps']:
         if 'run' in step:subprocess.run(['bash','-n'],input=step['run'],text=True,check=True,capture_output=True)
+
+
+def test_missing_environment_main_policy_blocks_before_any_production_write(tmp_path):
+    f,r,s=release(tmp_path);original=f.call
+    def broken(realm,method,path='',data=None,files=None):
+        if realm=='github' and path=='/environments/production':return dict(deployment_branch_policy=None)
+        return original(realm,method,path,data,files)
+    f.call=broken
+    with pytest.raises(d.Blocked,match='PRODUCTION_ENV_MAIN_ONLY_POLICY_REQUIRED'):r.deploy(17,s)
+    assert not any(x[1]=='POST' for x in f.calls)
