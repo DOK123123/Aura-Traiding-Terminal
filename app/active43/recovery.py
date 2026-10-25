@@ -28,7 +28,18 @@ def history_issue(state: dict, bars: list, now: int) -> dict | None:
     if code is None:
         return None
     missing = next((a.time + step for a, b in zip(bars, bars[1:]) if b.time - a.time != step), None)
-    return dict(code=code, candle_timestamp=(missing if code=='HISTORY_INCOMPLETE' else watermark-step),
+    # Retain bounded, public OHLCV field-level evidence for future incidents.
+    # Historical accounts without an anchor snapshot remain 'UNDETERMINED'.
+    old = state.get('last_anchor_ohlcv')
+    new = prior.data() if prior is not None else None
+    differences = None
+    if code == 'HISTORY_CANDLE_CHANGED' and isinstance(old, dict) and new is not None:
+        if old.get('time') == new['time'] and digest(old) == state['last_bar_hash']:
+            differences = [key for key in ('open','high','low','close','volume')
+                           if old.get(key) != new[key]]
+    return dict(changed_fields=differences, old_anchor_ohlcv=old if differences is not None else None,
+                new_anchor_ohlcv=new if differences is not None else None,
+                code=code, candle_timestamp=(missing if code=='HISTORY_INCOMPLETE' else watermark-step),
                 anchor_timestamp=None if watermark is None else watermark-step,
                 gap_timestamp=missing, source=SOURCE,
                 old_ohlcv_hash=None if code=='HISTORY_INCOMPLETE' else state['last_bar_hash'],
