@@ -5,6 +5,9 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock
 
 import pytest
+import httpx
+
+from app.providers import DataUnavailable
 
 from app.models import Candle
 from app.patterns.history import Archive, Dataset, HistoryService
@@ -130,3 +133,18 @@ def test_end_to_end_old_rest_then_synced_retry_opens_exactly_once(history,tmp_pa
         await service.auto_tick()
         assert archive.bitget.call_count==2 and len(engine.snapshot()['open_positions'])==1
     asyncio.run(run())
+
+
+def test_bitget_429_sets_cooldown_and_prevents_repeat_fetch(history):
+    service, _, _, fresh = history
+    request = httpx.Request('GET', 'https://api.bitget.com/api/v2/mix/market/history-candles')
+    response = httpx.Response(429, request=request, headers={'Retry-After': '120'})
+    service.bitget.side_effect = httpx.HTTPStatusError('rate limited', request=request, response=response)
+    required = fresh[-500:]
+    with pytest.raises(DataUnavailable, match='rate limit'):
+        asyncio.run(service.get(None, 'BTCUSDT', '15m', required_candles=required, required_source=SOURCE))
+    assert service.bitget.call_count == 1
+    with pytest.raises(DataUnavailable, match='cooldown'):
+        asyncio.run(service.get(None, 'BTCUSDT', '15m', required_candles=required, required_source=SOURCE))
+    assert service.bitget.call_count == 1
+    assert service.rate_limited_until[('BTCUSDT', '15m')] > 0
