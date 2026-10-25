@@ -360,6 +360,33 @@ async def bounce_selection_and_cycles(pg):
     assert all(isinstance(x,dict) or isinstance(x,DemoError) and x.code=='CONCURRENT_UPDATE' for x in results)
     saved=await svc.load();assert svc.config==CHOICES['BOUNCE_5M']
     assert saved['state']['balance']==before['state']['balance']=='10000'
+    # The owner readiness probe compares the actual SQL anchor and performs no
+    # ledger writes, even when a fresh public-protocol fixture disagrees.
+    from app.active43 import paper_readiness
+    from dataclasses import replace
+    with patch('app.active43.service.scheduler_configured',return_value=True):
+        await svc.control('START','7'*32,saved['revision'])
+        await svc.control('STOP','8'*32)
+    anchor=market.bars[-1]
+    sql_snapshot="SELECT jsonb_build_array((SELECT jsonb_agg(to_jsonb(a)) FROM public.aura_active43_bitget_account a),(SELECT jsonb_agg(to_jsonb(e) ORDER BY seq) FROM public.aura_active43_bitget_events e))::text;"
+    before_probe=pg.sql(sql_snapshot)
+    with patch.object(paper_readiness,'Market',return_value=market):
+        matching=await paper_readiness.inspect(svc)
+        assert matching['history']['status']=='PASS'
+        market.bars[-1]=replace(anchor,volume=anchor.volume+D(1))
+        with patch('app.active43.service.scheduler_configured',return_value=True):
+            try:await svc.control('START','9'*32,(await svc.store.peek())['revision'])
+            except DemoError as exc:assert exc.code=='HISTORY_CANDLE_CHANGED'
+            else:raise AssertionError('START bypassed a saved history anchor')
+        assert pg.sql(sql_snapshot)==before_probe
+        changed_report=await paper_readiness.inspect(svc)
+        assert changed_report['status']=='BLOCKED'
+        assert changed_report['history']['code']=='HISTORY_CANDLE_CHANGED'
+        assert changed_report['history']['change_classification']=='NUMERIC_VALUES_CHANGED'
+        market.bars[-1]=anchor
+        restored_report=await paper_readiness.inspect(svc)
+        assert restored_report['history']['status']=='PASS'
+    assert pg.sql(sql_snapshot)==before_probe
     # Unchanged deployed Worker saved_mode /tick adopts Bounce after a restart,
     # saves two OFF slots, deduplicates one, and preserves all financial fields.
     cf_bounce=await cloudflare_off_cycles(pg,'saved_mode')
@@ -433,7 +460,7 @@ async def bounce_selection_and_cycles(pg):
     assert await rollback.store.history(kind='CLOSE')==history_before and len(history_before)==1
     await rollback.close()
     cf_rollback=await cloudflare_off_cycles(pg,'saved_mode')
-    return dict(status='PASS',saved_mode_bounce=cf_bounce,saved_mode_donchian_rollback=cf_rollback,rollback_preserves_history=True,atomic_switch=True,ordinary_commit_unchanged=True,financial_tamper_rejected=True,bad_event_rollback=True,forced_after_insert_rollback=True,occupied_off_rejected=True,concurrent_selection=True,cases=cases,production_verified=False)
+    return dict(start_rejects_history_mismatch=True,readiness_anchor_comparison_read_only=True,status='PASS',saved_mode_bounce=cf_bounce,saved_mode_donchian_rollback=cf_rollback,rollback_preserves_history=True,atomic_switch=True,ordinary_commit_unchanged=True,financial_tamper_rejected=True,bad_event_rollback=True,forced_after_insert_rollback=True,occupied_off_rejected=True,concurrent_selection=True,cases=cases,production_verified=False)
 
 
 async def history_recovery_cycles(pg):

@@ -1,0 +1,79 @@
+{
+  "base_main": "49c36f43e8a2b04a9294359db59565f6f0be1cce",
+  "python_passed": 1816,
+  "python_skipped": 3,
+  "javascript_passed": 264,
+  "public_bitget": {
+    "scope": "LOCAL_PUBLIC_BITGET_ONLY_NOT_RENDER",
+    "production_access": false,
+    "orders": 0,
+    "status": "PASS",
+    "code": null,
+    "received_at": 1792938747.6008801,
+    "bars": 1174,
+    "last_closed_at": 1792938600,
+    "age_seconds": 147.6008813381195,
+    "source": "Bitget \u00b7 USDT-M Futures / api.bitget.com",
+    "hash": "9186b7ad916199a6ef04bda5da73c8ffad12d26c6f36f9b993924e77a0103faa",
+    "anchor": {
+      "time": 1792938300,
+      "open": "80327",
+      "high": "80344.6",
+      "low": "80289.7",
+      "close": "80305.8",
+      "volume": "13.3614"
+    },
+    "preview_reason": "BOUNCE_NO_CONFIRMED_REJECTION",
+    "closed_only": true,
+    "contiguous": true,
+    "second_received_at": 1792938749.2277727,
+    "repeat_anchor_issue": null,
+    "repeat_anchor_unchanged": true
+  },
+  "render_public": {
+    "scope": "PRODUCTION_PUBLIC_READ_ONLY_NO_ACCOUNT_ACCESS",
+    "requests": [
+      {
+        "path": "/api/health",
+        "started_at": 1792939200.6425068,
+        "http_status": 200,
+        "received_at": 1792939200.9629333,
+        "fields": {
+          "status": "ok"
+        }
+      },
+      {
+        "path": "/api/market?symbol=BTCUSDT&timeframe=5m&limit=500",
+        "started_at": 1792939200.9629595,
+        "http_status": 200,
+        "received_at": 1792939202.088311,
+        "source": "Bitget \u00b7 USDT-M Futures / api.bitget.com",
+        "timeframe": "5m",
+        "bars": 500,
+        "last_closed_at": 1792939200,
+        "stale": false,
+        "last_candle_time": 1792938900,
+        "last_closed_utc": "2026-10-25T14:40:00+00:00"
+      }
+    ]
+  },
+  "production_account_verified": false,
+  "production_paper_enabled_by_this_task": false,
+  "production_database_writes": 0,
+  "production_tick_calls": 0,
+  "deploy_performed": false,
+  "real_orders": 0,
+  "postgres": {
+    "status": "PASS",
+    "postgresql_verified": true,
+    "rls_verified": true,
+    "checks": 17,
+    "base_cases": 7,
+    "readiness_anchor_comparison_read_only": true,
+    "start_rejects_history_mismatch": true,
+    "legacy_accounts_unchanged": true,
+    "legacy_functions_unchanged": true,
+    "production_access": false,
+    "real_orders": false
+  }
+}

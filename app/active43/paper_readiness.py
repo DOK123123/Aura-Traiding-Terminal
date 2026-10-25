@@ -15,6 +15,7 @@ from .strategies import VERSION, config
 from .selection import CHOICES
 from .service import Service, scheduler_configured
 from .readiness import SAFE_ERRORS
+from .recovery import history_issue
 
 
 def utc(at: int) -> str:
@@ -77,7 +78,7 @@ async def inspect(service: Service) -> dict:
     result = dict(scope=SCOPE,market_source=SOURCE,strategy_version=VERSION,
         purpose='PAPER_START_READINESS',status='BLOCKED',read_only=True,state_changed=False,
         paper_only=True,exchange_execution=False,checked_at=int(service.clock()),
-        errors=[],account=None,market=None,signal=None,scheduler=None,events=[],
+        errors=[],account=None,market=None,history=dict(status='BLOCKED',code='HISTORY_NOT_CHECKED'),signal=None,scheduler=None,events=[],
         production_paper_verified=False)
     try:
         async with asyncio.timeout(45):
@@ -119,6 +120,19 @@ async def inspect(service: Service) -> dict:
                         (bars,decision,service.clock()))
                     if len(bars)<1000 or any(b.time-a.time!=300 for a,b in zip(bars,bars[1:])):
                         raise DemoError('HISTORY_INCOMPLETE')
+                    issue=history_issue(state,bars,received)
+                    result['history']=dict(status='BLOCKED' if issue else 'PASS',source=SOURCE,
+                        anchor_status=issue['code'] if issue else 'NOT_ESTABLISHED' if state['watermark'] is None else 'MATCHED',
+                        code=issue['code'] if issue else None,
+                        anchor_timestamp=None if state['watermark'] is None else state['watermark']-300,
+                        old_ohlcv_hash=state['last_bar_hash'],
+                        new_ohlcv_hash=issue.get('new_ohlcv_hash') if issue else state['last_bar_hash'],
+                        changed_fields=issue.get('changed_fields') if issue else [],
+                        change_classification=issue.get('change_classification','UNDETERMINED') if issue else None,
+                        requires_owner_review=issue is not None,
+                        saved_guard_present=state.get('history_guard') is not None,
+                        checked_at=received,read_only=True)
+                    if issue:result['errors'].append(issue['code'])
                     end=bars[-1].time+300
                     result['market']=dict(status='PASS' if not decision.get('error') else 'BLOCKED',
                         last_open_at=bars[-1].time,last_closed_at=end,last_closed_utc=utc(end),
@@ -129,7 +143,7 @@ async def inspect(service: Service) -> dict:
                     result['signal']=dict(saved_signal=(dict(direction=last['direction'],signal_at=last.get('signal_at'),
                         reason=reason(last.get('reason'))) if last.get('direction') in ('LONG','SHORT') else None),evaluated_at=received,signal_at=decision['signal_at'],
                         direction=decision.get('direction'),strategy_reason=reason(decision.get('reason')),
-                        entry_blocker=risk or ('AUTO_OFF' if state['mode']!='ON' else
+                        entry_blocker=risk or (issue['code'] if issue else None) or ('AUTO_OFF' if state['mode']!='ON' else
                             'POSITION_ALREADY_OPEN' if state['position'] else reason(decision.get('reason'))),
                         production_last_decision=reason(state.get('last_decision')),preview_only=True,
                         stop_loss=decision.get('stop_loss'),take_profit=decision.get('take_profit'))
