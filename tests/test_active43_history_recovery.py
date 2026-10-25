@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from app.active43.service import Service
 from app.active43.core import SOURCE
-from app.active43.recovery import paper_status
+from app.active43.recovery import paper_status,revision_quarantine
 from app.automated.engine import DemoError
 from scripts.verify_active43 import FixtureMarket
 from tests.test_active43 import setup
@@ -235,3 +235,37 @@ def test_stable_revision_never_resumes_after_explicit_owner_stop():
         assert not await store.history(kind='OPEN')
         await svc.close()
     asyncio.run(run())
+
+
+def test_quarantine_counts_distinct_slots_and_rejects_unsafe_state():
+    market,now,store,_=setup()
+    original=store.state
+    step=market.step
+    mark=now[0]//step*step
+    original.update(mode='PAUSED',data_recovery_armed=True,
+                    last_error='HISTORY_CANDLE_CHANGED',watermark=mark)
+    incident=dict(code='HISTORY_CANDLE_CHANGED',
+                  change_classification='NUMERIC_VALUES_CHANGED',
+                  numeric_changed_fields=['close'],
+                  old_ohlcv_hash='old',new_ohlcv_hash='new',
+                  anchor_timestamp=mark-step)
+    first,ok=revision_quarantine(original,dict(incident),now[0])
+    assert not ok and first['revision_observations']==1
+    original['history_guard']=first
+    repeat,ok=revision_quarantine(original,dict(incident),now[0]+1)
+    assert not ok and repeat['revision_observations']==1
+    original['history_guard']=repeat
+    second,ok=revision_quarantine(original,dict(incident),now[0]+step)
+    assert not ok and second['revision_observations']==2
+    original['history_guard']=second
+    third,ok=revision_quarantine(original,dict(incident),now[0]+2*step)
+    assert ok and third['revision_observations']==3
+    for restriction in ('trades','position','pending','pending_exit','off'):
+        unsafe=deepcopy(original)
+        if restriction=='trades':unsafe['trades']=1
+        elif restriction=='position':unsafe['position']={'id':'test'}
+        elif restriction=='pending':unsafe['pending']={'direction':'LONG'}
+        elif restriction=='pending_exit':unsafe['pending_exit']='test'
+        else:unsafe['mode']='OFF'
+        candidate,eligible=revision_quarantine(unsafe,dict(incident),now[0]+2*step)
+        assert not eligible
