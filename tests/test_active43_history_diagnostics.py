@@ -53,3 +53,27 @@ def test_tampered_anchor_is_not_used_as_evidence():
     tampered['last_anchor_ohlcv']['volume'] = '999'
     issue = history_issue(tampered, [bar(volume='2')], 910)
     assert issue['changed_fields'] is None
+
+
+def test_format_only_difference_is_identified_but_not_accepted():
+    original=bar(volume='1.00')
+    issue=history_issue(state(original),[bar(volume='1')],910)
+    assert issue['code']=='HISTORY_CANDLE_CHANGED'
+    assert issue['change_classification']=='DECIMAL_FORMAT_CHANGED'
+    assert issue['numeric_changed_fields']==[] and issue['changed_fields']==['volume']
+    assert issue['old_ohlcv_hash']!=issue['new_ohlcv_hash']
+
+
+def test_numeric_correction_remains_a_real_mismatch():
+    original=bar(volume='1.00')
+    issue=history_issue(state(original),[bar(volume='1.01')],910)
+    assert issue['code']=='HISTORY_CANDLE_CHANGED'
+    assert issue['change_classification']=='NUMERIC_VALUES_CHANGED'
+    assert issue['numeric_changed_fields']==['volume']
+
+
+def test_hash_only_or_tampered_evidence_never_claims_a_format_change():
+    for saved in (dict(state(bar()),last_anchor_ohlcv=None),dict(state(bar()),last_anchor_ohlcv=bar(volume='3').data())):
+        issue=history_issue(saved,[bar(volume='1.00')],910)
+        assert issue['code']=='HISTORY_CANDLE_CHANGED'
+        assert issue['change_classification']=='UNDETERMINED'

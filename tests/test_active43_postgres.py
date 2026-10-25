@@ -15,6 +15,8 @@ def test_actual_sql_transactions_roles_recovery_and_cycles(tmp_path,monkeypatch)
     assert report['POSTGRESQL_VERIFIED'] and report['RLS_VERIFIED']
     assert report['preparation']['owner_readiness_get_byte_identical_sql']
     assert report['bounce']['rollback_preserves_history']
+    assert report['bounce']['readiness_anchor_comparison_read_only']
+    assert report['bounce']['start_rejects_history_mismatch']
     for key in ('saved_mode_bounce','saved_mode_donchian_rollback'):
         assert report['bounce'][key]['operation']=='saved_mode'
         assert report['bounce'][key]['distinct_saved_slots']==2 and report['bounce'][key]['paper_state_unchanged']

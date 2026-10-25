@@ -121,6 +121,8 @@ class Service:
                     if s['emergency']:raise DemoError('EMERGENCY_STOP')
                     bars,decision,now=await self.snapshot()
                     if decision.get('error'):raise DemoError(decision['error'])
+                    issue=history_issue(s,bars,now)
+                    if issue:raise DemoError(issue['code'])
                     mark(s,bars[-1],bars[-1].time+STEPS[self.config['timeframe']])
                     if risk_reason(s):raise DemoError(risk_reason(s))
                     s.update(mode='ON',watermark=bars[-1].time+STEPS[self.config['timeframe']],last_bar_hash=digest(bars[-1].data()),

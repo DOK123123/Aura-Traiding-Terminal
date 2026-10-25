@@ -233,3 +233,73 @@ def test_cloudflare_jittered_receipts_are_accepted_without_weakened_provenance()
     bad=deepcopy(rows)
     bad[0]['payload']['scheduled_delivery']['invocation_id']=bad[1]['payload']['scheduled_delivery']['invocation_id']
     assert pr.scheduler_evidence(bad,store.state,now[0])['status']=='BLOCKED'
+
+
+@pytest.mark.parametrize('damage',['changed','missing'])
+def test_readiness_blocks_saved_anchor_disagreement_without_rebaseline(damage):
+    from app.lab.models import digest
+    from dataclasses import replace
+    from decimal import Decimal
+    def change(m,n,s,v):
+        anchor=m.bars[-1] if damage=='changed' else replace(m.bars[0],time=m.bars[0].time-300)
+        original=replace(anchor,volume=anchor.volume+Decimal(1)) if damage=='changed' else anchor
+        s.state.update(watermark=anchor.time+300,last_bar_hash=digest(original.data()),last_anchor_ohlcv=original.data())
+    r=asyncio.run(probe(change))
+    assert r['status']=='BLOCKED',r
+    assert ('HISTORY_CANDLE_CHANGED' if damage=='changed' else 'HISTORY_CANDLE_MISSING') in r['errors']
+    assert r['history']['status']=='BLOCKED' and r['history']['requires_owner_review']
+
+
+def test_readiness_reports_matching_anchor_read_only():
+    from app.lab.models import digest
+    def change(m,n,s,v):
+        anchor=m.bars[-1]
+        s.state.update(watermark=anchor.time+300,last_bar_hash=digest(anchor.data()),last_anchor_ohlcv=anchor.data())
+    r=asyncio.run(probe(change))
+    assert r['status']=='READY' and r['history']['status']=='PASS'
+    assert r['history']['anchor_status']=='MATCHED'
+
+
+def test_readiness_does_not_accept_decimal_reformatting_or_clear_guard():
+    from dataclasses import replace
+    from decimal import Decimal
+    from app.lab.models import digest
+    from app.active43.core import SOURCE
+    def change(m,n,s,v):
+        anchor=m.bars[-1];old=replace(anchor,volume=Decimal('100.0'))
+        s.state.update(watermark=old.time+300,last_bar_hash=digest(old.data()),last_anchor_ohlcv=old.data())
+        s.state['history_guard']=dict(code='HISTORY_CANDLE_CHANGED',source=SOURCE,old_ohlcv_hash=s.state['last_bar_hash'])
+    r=asyncio.run(probe(change))
+    assert r['status']=='BLOCKED'
+    assert r['history']['change_classification']=='DECIMAL_FORMAT_CHANGED'
+    assert r['signal']['entry_blocker']=='HISTORY_CANDLE_CHANGED'
+
+
+def test_original_anchor_restored_is_ready_without_mutating_saved_guard():
+    from app.lab.models import digest
+    from app.active43.core import SOURCE
+    def change(m,n,s,v):
+        anchor=m.bars[-1]
+        s.state.update(watermark=anchor.time+300,last_bar_hash=digest(anchor.data()),last_anchor_ohlcv=anchor.data())
+        s.state['history_guard']=dict(code='HISTORY_CANDLE_CHANGED',source=SOURCE,old_ohlcv_hash=s.state['last_bar_hash'])
+    r=asyncio.run(probe(change))
+    assert r['status']=='READY' and r['history']['saved_guard_present']
+    assert r['history']['anchor_status']=='MATCHED'
+
+
+def test_probe_restart_and_repeat_preserve_balance_events_and_guard():
+    async def run():
+        from app.lab.models import digest
+        from dataclasses import replace
+        from decimal import Decimal
+        m,n,s,v=prepare();anchor=replace(m.bars[-1],volume=Decimal('99'))
+        s.state.update(watermark=anchor.time+300,last_bar_hash=digest(anchor.data()),last_anchor_ohlcv=anchor.data())
+        before=deepcopy((s.state,s.events,s.revision))
+        for _ in range(2):
+            with patch.object(pr,'Market',return_value=m),patch.object(pr,'scheduler_configured',return_value=True):r=await pr.inspect(v)
+            assert r['status']=='BLOCKED' and r['history']['code']=='HISTORY_CANDLE_CHANGED'
+            assert (s.state,s.events,s.revision)==before
+            await v.close()
+            v=Service(s,cfg=config('SR_BOUNCE','5m'),clock=lambda:n[0])
+        await v.close()
+    asyncio.run(run())

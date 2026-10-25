@@ -4,6 +4,7 @@ Never replace an unverified history anchor. Protection advances its own cursor;
 resuming entries requires the original anchor and a complete fresh snapshot.
 """
 from copy import deepcopy
+from decimal import Decimal, InvalidOperation
 from .core import SOURCE, event, protect, validate
 from .strategies import STEPS
 from app.automated.engine import DemoError, mark, risk_reason
@@ -37,7 +38,22 @@ def history_issue(state: dict, bars: list, now: int) -> dict | None:
         if old.get('time') == new['time'] and digest(old) == state['last_bar_hash']:
             differences = [key for key in ('open','high','low','close','volume')
                            if old.get(key) != new[key]]
-    return dict(changed_fields=differences, old_anchor_ohlcv=old if differences is not None else None,
+    classification = 'UNDETERMINED'
+    numeric_fields = None
+    if differences and set(old)==set(new):
+        try:
+            numeric_fields=[]
+            for key in ('open','high','low','close','volume'):
+                values=(old[key],new[key])
+                if any(not isinstance(v,str) or len(v)>80 for v in values):raise ValueError()
+                a,b=map(Decimal,values)
+                if not a.is_finite() or not b.is_finite():raise ValueError()
+                if a!=b:numeric_fields.append(key)
+            classification='NUMERIC_VALUES_CHANGED' if numeric_fields else 'DECIMAL_FORMAT_CHANGED'
+        except (InvalidOperation,ValueError,TypeError,KeyError):
+            numeric_fields=None
+    # Classification is audit only: raw hash inequality STILL blocks entries.
+    return dict(change_classification=classification,numeric_changed_fields=numeric_fields,changed_fields=differences, old_anchor_ohlcv=old if differences is not None else None,
                 new_anchor_ohlcv=new if differences is not None else None,
                 code=code, candle_timestamp=(missing if code=='HISTORY_INCOMPLETE' else watermark-step),
                 anchor_timestamp=None if watermark is None else watermark-step,
