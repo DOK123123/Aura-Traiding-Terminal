@@ -11,7 +11,7 @@ from .strategies import config,STEPS,VERSION
 from .storage import Store
 from .market import Market,Quotes
 from .evidence import observe,verified
-from .recovery import HISTORY_CODES,LEGACY_HISTORY,history_issue,paper_status,protective_advance,transition
+from .recovery import HISTORY_CODES,LEGACY_HISTORY,history_issue,revision_quarantine,paper_status,protective_advance,transition
 
 logger=logging.getLogger(__name__)
 
@@ -185,7 +185,40 @@ class Service:
                 # Revalidate after CAS retries/time spent waiting for storage.
                 self.checked_snapshot(data)
                 issue=history_issue(s,bars,now)
-                if issue:raise DemoError(issue['code'])
+                if issue:
+                    issue,stable_revision=revision_quarantine(old,issue,now)
+                    if stable_revision and not decision.get('error'):
+                        # A fully flat, never-traded account can discard the
+                        # quarantined interval. No retrospective fills, exits,
+                        # stops or signals are generated from corrected history.
+                        if len(bars)<1000:
+                            raise DemoError('HISTORY_INCOMPLETE')
+                        anchor=bars[-1]
+                        latest=anchor.time+step
+                        mark(s,anchor,latest)
+                        skipped=max(0,(latest-old['watermark'])//step)
+                        s.update(mode='ON',watermark=latest,last_bar_hash=digest(anchor.data()),
+                                 last_anchor_ohlcv=anchor.data(),history_guard=None,
+                                 pending=None,pending_exit=None,data_recovery_armed=False,
+                                 last_error=None,last_source_error=None,last_signal=None,last_check=None,
+                                 last_decision='STABLE_CORRECTION_REBASELINE_WAIT_NEXT_CANDLE',
+                                 recovery_status='STABLE_CORRECTION_RECONCILED',
+                                 last_success_at=now,last_fresh_closed_at=latest,last_price=text(anchor.close),
+                                 missed_candles=s['missed_candles']+skipped,
+                                 protection_watermark=None,protection_bar_hash=None,
+                                 protection_status='FRESH_PROTECTION')
+                        events=[event(s,'HISTORY_REBASELINE',latest,now,
+                            dict(reason='STABLE_CORRECTION_FLAT_ACCOUNT_ONLY',
+                                 prior_watermark=old['watermark'],new_watermark=latest,
+                                 old_anchor_hash=old['last_bar_hash'],
+                                 revised_anchor_hash=issue['new_ohlcv_hash'],
+                                 original_anchor_timestamp=issue['anchor_timestamp'],
+                                 distinct_observations=issue['revision_observations'],
+                                 first_observed_at=issue['revision_first_seen_at'],
+                                 skipped_closed_candles=skipped,no_retroactive_entries=True,
+                                 completed_trades=0,position=None,exchange_execution=False))]
+                        return s,events
+                    raise DemoError(issue['code'])
                 s['history_guard']=None
                 recovering=(s['mode']=='PAUSED' and retry_allowed and not risk_reason(s))
                 if s.get('protection_watermark'):
