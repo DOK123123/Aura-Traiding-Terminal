@@ -77,3 +77,26 @@ def test_hash_only_or_tampered_evidence_never_claims_a_format_change():
         issue=history_issue(saved,[bar(volume='1.00')],910)
         assert issue['code']=='HISTORY_CANDLE_CHANGED'
         assert issue['change_classification']=='UNDETERMINED'
+
+
+def test_production_incident_20261025_late_close_and_volume_revision():
+    """Captured Bitget 5m incident: same timestamp, changed close and BTC volume.
+
+    This regression intentionally documents the current fail-closed behavior;
+    it does not authorize silently accepting a rewritten closed candle.
+    """
+    original = Bar(1792941900, Decimal('80513.1'), Decimal('80551'),
+                   Decimal('80513.1'), Decimal('80545'), Decimal('41.1909'))
+    revised = Bar(1792941900, Decimal('80513.1'), Decimal('80551'),
+                  Decimal('80513.1'), Decimal('80550.4'), Decimal('41.4947'))
+    saved = {'config': {'timeframe': '5m'}, 'watermark': 1792942200,
+             'last_bar_hash': digest(original.data()),
+             'last_anchor_ohlcv': original.data()}
+    incident = history_issue(saved, [revised], 1792942976)
+    assert incident['code'] == 'HISTORY_CANDLE_CHANGED'
+    assert incident['change_classification'] == 'NUMERIC_VALUES_CHANGED'
+    assert incident['numeric_changed_fields'] == ['close', 'volume']
+    assert incident['anchor_timestamp'] == 1792941900
+    assert incident['old_anchor_ohlcv'] == original.data()
+    assert incident['new_anchor_ohlcv'] == revised.data()
+    assert incident['old_ohlcv_hash'] != incident['new_ohlcv_hash']
