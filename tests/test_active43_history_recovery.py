@@ -269,3 +269,23 @@ def test_quarantine_counts_distinct_slots_and_rejects_unsafe_state():
         else:unsafe['mode']='OFF'
         candidate,eligible=revision_quarantine(unsafe,dict(incident),now[0]+2*step)
         assert not eligible
+
+
+def test_revision_quarantine_does_not_rebaseline_incomplete_history():
+    async def run():
+        market,now,store,svc=setup()
+        market.signal=False
+        with patch('app.active43.service.scheduler_configured',return_value=True):
+            await svc.control('START','c'*32,1)
+        original=market.bars[-1]
+        market.bars[-1]=replace(original,volume=original.volume+Decimal('1'))
+        for _ in range(2):
+            market.add();now[0]+=market.step;await svc.tick()
+        market.bars.pop(300)  # Older missing candle while the anchor still differs.
+        market.add();now[0]+=market.step;await svc.tick()
+        assert store.state['mode']=='PAUSED'
+        assert store.state['last_error']=='HISTORY_INCOMPLETE'
+        assert not await store.history(kind='HISTORY_REBASELINE')
+        assert not await store.history(kind='OPEN')
+        await svc.close()
+    asyncio.run(run())
