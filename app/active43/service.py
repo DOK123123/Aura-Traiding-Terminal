@@ -104,6 +104,7 @@ class Service:
                     mark(s,bars[-1],bars[-1].time+STEPS[self.config['timeframe']])
                     if risk_reason(s):raise DemoError(risk_reason(s))
                     s.update(mode='ON',watermark=bars[-1].time+STEPS[self.config['timeframe']],last_bar_hash=digest(bars[-1].data()),
+                             last_anchor_ohlcv=bars[-1].data(),
                              pending=None,pending_exit=None,last_error=None,last_decision='ACTIVATION_BASELINE',recovery_status='OWNER_STARTED',data_recovery_armed=False)
                     s.update(history_guard=None,protection_watermark=None,protection_bar_hash=None,protection_gap=None,
                              last_fresh_closed_at=None,last_source_error=None,protection_status='FRESH_PROTECTION')
@@ -172,6 +173,12 @@ class Service:
                 elif recovering:
                     s.update(mode='ON',data_recovery_armed=False,recovery_status='FRESH_DATA_RECOVERED',last_decision='HISTORY_RECOVERED_WAIT_NEXT_CANDLE')
                 s,events=advance(s,bars,decision,now)
+                # Audit only the last processed closed candle. Never infer a
+                # historical correction from a hash without stored field values.
+                if s.get('watermark') is not None:
+                    anchor=next((b for b in bars if b.time+step==s['watermark']),None)
+                    if anchor is not None and digest(anchor.data())==s['last_bar_hash']:
+                        s['last_anchor_ohlcv']=anchor.data()
                 s.update(history_guard=None,protection_watermark=None,protection_bar_hash=None,
                          last_error=decision.get('error'),last_source_error=None,last_success_at=now,last_fresh_closed_at=bars[-1].time+step,
                          protection_status='FRESH_PROTECTION_GAP' if s.get('protection_gap') else 'FRESH_PROTECTION')
