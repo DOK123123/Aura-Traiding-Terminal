@@ -70,7 +70,7 @@
   const v=view(data,failed);
   for(const k of ['mode','market','storage','strategy','candle','run','saved','signal','reason','balance','equity','realized','pnl','fees','slippage','drawdown','count','win','recovery','position','live','scheduler','success','successfulrun','health','protection','candleage','transition'])out(k).textContent=v[k];
   out('select-strategy').disabled=busy||!v.canSelect;out('choice').disabled=busy||!v.canSelect;
-  out('start').disabled=busy||!v.canStart;out('stop').disabled=!v.canStop;out('emergency').disabled=!v.canStop;out('refresh').disabled=busy;
+  out('rebaseline').disabled=busy||failed||!data?.state||data.state.mode!=='OFF'||data.state.position!==null||data.state.pending!==null||data.state.pending_exit!==null||data.state.data_recovery_armed!==false||!!data.state.emergency||!Number.isInteger(data.revision);out('start').disabled=busy||!v.canStart;out('stop').disabled=!v.canStop;out('emergency').disabled=!v.canStop;out('refresh').disabled=busy;
   out('older').disabled=busy||!data?.history_has_more||!data?.history_cursor;
   out('history').replaceChildren();for(const t of data?.trades||[]){const row=document.createElement('li');row.textContent=`${date(t.exit_time)} · ${t.direction} · ${label(t.exit_reason)} · вход ${num(t.entry_price)} → выход ${num(t.exit_price)} · SL ${num(t.stop_loss)} / TP ${num(t.take_profit)} · ${num(t.realized_pnl)} USDT · комиссии ${num(t.fees)} · ${label(t.reason)}`;out('history').append(row);}
   drawChart();
@@ -119,15 +119,16 @@
   finally{if(run===generation){busy=false;if(!closed){render();if(!failed)quote();}}}
  }
  async function control(action){
-  const urgent=action!=='START';if(closed||(busy&&!urgent))return;
-  if(!window.confirm(action==='START'?'Включить виртуальную Aura 4.3 Bitget Futures? Стратегия не имеет подтверждённого преимущества. Возможны виртуальные убытки. Только отдельный PAPER-портфель.':action==='STOP'?'Запретить новые входы Aura 4.3? Защитные выходы требуют работающего scheduler.':'Установить аварийный запрет входов Aura 4.3? Автоматически он не снимается.'))return;
+  const urgent=action==='STOP'||action==='EMERGENCY';if(closed||busy)return;
+  if(!window.confirm(action==='REBASELINE'?'Обновить контрольную историю Bitget? Только при PAPER OFF и пустом счёте. Старая ошибка сохранится в журнале. Баланс и сделки не сбрасываются. PAPER останется OFF.':action==='START'?'Включить виртуальную Aura 4.3 Bitget Futures? Стратегия не имеет подтверждённого преимущества. Возможны виртуальные убытки. Только отдельный PAPER-портфель.':action==='STOP'?'Запретить новые входы Aura 4.3? Защитные выходы требуют работающего scheduler.':'Установить аварийный запрет входов Aura 4.3? Автоматически он не снимается.'))return;
   if(urgent)controller?.abort();const run=++generation;busy=true;render();
   try{
-   await request('control',{method:'POST',headers:{'Content-Type':'application/json','X-Aura-Paper':'local-only'},body:JSON.stringify({action,request_id:crypto.randomUUID().replace(/-/g,''),expected_revision:action==='START'?data?.revision:null,confirmation:action==='START'?'START EXPERIMENTAL PAPER':''})});
+   await request('control',{method:'POST',headers:{'Content-Type':'application/json','X-Aura-Paper':'local-only'},body:JSON.stringify({action,request_id:crypto.randomUUID().replace(/-/g,''),expected_revision:(action==='START'||action==='REBASELINE')?data?.revision:null,confirmation:action==='START'?'START EXPERIMENTAL PAPER':action==='REBASELINE'?'REBASELINE OFF PAPER ONLY':''})});
    if(run!==generation)return;const b=await request('status');if(run!==generation)return;data=b;failed=false;out('choice').value=b.state?.config?.strategy==='SR_BOUNCE'?'BOUNCE_5M':'DONCHIAN_15M';out('message').textContent='Действие подтверждено. Проверяйте режим, scheduler и сохранённые события.';
   }catch(e){if(run===generation){failed=true;out('message').textContent='Действие не подтверждено: '+(e.name==='AbortError'?'обновите состояние перед повтором':e.message);}}
   finally{if(run===generation){busy=false;if(!closed)render();}}
  }
+ out('rebaseline').addEventListener('click',()=>control('REBASELINE'));
  let diagnosticBusy=false;
  out('diagnose').addEventListener('click',async()=>{
   if(closed||diagnosticBusy)return;diagnosticBusy=true;out('diagnose').disabled=true;
