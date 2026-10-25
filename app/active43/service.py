@@ -191,7 +191,7 @@ class Service:
                         # A fully flat, never-traded account can discard the
                         # quarantined interval. No retrospective fills, exits,
                         # stops or signals are generated from corrected history.
-                        if len(bars)<1000:
+                        if len(bars)<1000 or any(b.time-a.time!=step for a,b in zip(bars,bars[1:])):
                             raise DemoError('HISTORY_INCOMPLETE')
                         anchor=bars[-1]
                         latest=anchor.time+step
