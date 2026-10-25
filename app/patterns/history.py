@@ -6,6 +6,7 @@ from pathlib import Path
 import sqlite3
 import time
 import logging
+import httpx
 
 from ..gold import TradingViewGoldProvider, FAILURES, failure_reason, GoldProvider
 from ..models import Candle, INTERVALS, validate_candles
@@ -55,6 +56,7 @@ class HistoryService:
     def __init__(self, archive=None):
         self.archive = archive or Archive()
         self.cache, self.locks = {}, {}
+        self.rate_limited_until = {}
 
     async def binance(self, client, timeframe, count=10000):
         now, rows = int(time.time()*1000), {}
@@ -110,11 +112,21 @@ class HistoryService:
             if cached and required_candles is not None:
                 logger.info('Historical snapshot refresh required: %s/%s candle=%s',
                             symbol,timeframe,required_candles[-1].time)
+            if time.monotonic() < self.rate_limited_until.get(key, 0):
+                raise DataUnavailable('Bitget rate limit cooldown active; analysis unavailable')
             requested = 10000 if symbol == 'BTCUSDT' else 5000
             note = ''
             async with asyncio.timeout(100):
                 if symbol == 'BTCUSDT':
-                    rows = await self.bitget(client,timeframe,requested)
+                    try:
+                        rows = await self.bitget(client,timeframe,requested)
+                    except httpx.HTTPStatusError as exc:
+                        if exc.response.status_code in (418, 429):
+                            retry = exc.response.headers.get('Retry-After', '')
+                            seconds = min(300, max(60, int(retry))) if retry.isascii() and retry.isdigit() and len(retry) <= 6 else 60
+                            self.rate_limited_until[key] = time.monotonic() + seconds
+                            raise DataUnavailable('Bitget rate limit; retry after cooldown') from None
+                        raise
                     source = SOURCE
                 else:
                     try:
