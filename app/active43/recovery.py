@@ -133,7 +133,7 @@ def transition(old: dict, state: dict, now: int, run_id: str, reason: str | None
     # Include mode changes such as PAUSED -> EMERGENCY even if display class agrees.
     if previous == current and old['mode'] == state['mode']:
         return []
-    cause=reason or ('FRESH_DATA_RECOVERED' if old['mode']=='PAUSED' and state['mode']=='ON' else state['last_error'] or state['last_decision'])
+    cause=reason or ('STABLE_CORRECTION_RECONCILED' if old['mode']=='PAUSED' and state['mode']=='ON' and state.get('last_decision')=='STABLE_CORRECTION_REBASELINE_WAIT_NEXT_CANDLE' else 'FRESH_DATA_RECOVERED' if old['mode']=='PAUSED' and state['mode']=='ON' else state['last_error'] or state['last_decision'])
     body = dict(previous=previous, status=current, previous_mode=old['mode'], mode=state['mode'],
                 reason=cause, detected_at=now, scheduler_run_id=run_id)
     state['last_status_transition'] = body
