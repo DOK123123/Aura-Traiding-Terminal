@@ -15,7 +15,7 @@ from .service import scheduler_configured
 router=APIRouter(prefix='/api/active43',tags=['Aura 4.3 Active Paper virtual only'])
 class Control(BaseModel):
     model_config=ConfigDict(extra='forbid')
-    action:Literal['START','STOP','EMERGENCY']
+    action:Literal['START','STOP','EMERGENCY','REBASELINE']
     request_id:StrictStr=Field(pattern='^[a-f0-9]{32}$')
     expected_revision:StrictInt|None=Field(None,ge=1)
     confirmation:StrictStr=Field('',max_length=80)
@@ -97,6 +97,7 @@ async def trades(request:Request,before:int|None=Query(None,ge=1),limit:int=Quer
 @router.post('/control',dependencies=[Depends(mutation)])
 async def control(request:Request,body:Control):
     if body.action=='START' and (body.confirmation!='START EXPERIMENTAL PAPER' or body.expected_revision is None):raise HTTPException(409,'EXPLICIT_EXPERIMENTAL_CONFIRMATION_REQUIRED',headers=HEADERS)
+    if body.action=='REBASELINE' and (body.confirmation!='REBASELINE OFF PAPER ONLY' or body.expected_revision is None):raise HTTPException(409,'EXPLICIT_OFF_REBASELINE_CONFIRMATION_REQUIRED',headers=HEADERS)
     async def perform():return await svc(request).control(body.action,body.request_id,body.expected_revision)
     return await respond(perform())
 
