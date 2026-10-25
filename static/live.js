@@ -1,4 +1,5 @@
 'use strict';
+let bitgetVisual = null, bitgetVisualState = 'RECONNECTING';
 let marketSocket = null, retryTimer = null, retryDelay = 2000;
 let socketLastMessage = 0, socketOpenedAt = 0, socketHasData = false, reconnectMarket = null;
 let lastLiveReceipt = 0, liveMode = '', lastSourceEvent = null, liveUpdates = 0, feedFailed = false;
@@ -24,6 +25,7 @@ function marketIsFresh() {
 }
 
 function stopMarketLive() {
+  bitgetVisual?.stop(); bitgetVisual=null;
   reconnectMarket = null;
   socketLastMessage = 0; socketOpenedAt = 0;
   invalidateMarketSignal('Данные обновляются; сигнал временно отключён.');
@@ -88,14 +90,28 @@ function applyLive(data) {
   liveUpdates++; $('live-events').textContent = String(liveUpdates);
   $('last-updated').textContent = 'Получено: '+new Date(data.received_at*1000).toISOString().replace('T',' ').slice(0,19)+' UTC';
   marketDataChanged();
+  if(bitgetVisual?.bars.length)drawBitgetVisual(bitgetVisual.bars);
   updateFeedAge();
 }
 
+function drawBitgetVisual(bars) {
+  if(bitgetVisualState==='STALE'||!chart||!currentData||currentData.source!=='Bitget · USDT-M Futures / api.bitget.com')return;
+  const all=[...currentData.candles.filter(b=>b.time<bars[0].time),...bars];
+  candles.setData(all);ema20.setData(window.AuraBitgetLive.ema(all,20));ema50.setData(window.AuraBitgetLive.ema(all,50));
+  volume.setData(all.map(b=>({time:b.time,value:b.volume,color:b.close>=b.open?'#42d6b030':'#fa788b30'})));
+  const b=all.at(-1);$('headline-price').textContent=fmt(b.close);$('price').textContent=fmt(b.close)+' USDT';
+  $('ema20-value').textContent=fmt(window.AuraBitgetLive.ema(all,20).at(-1).value);$('ema50-value').textContent=fmt(window.AuraBitgetLive.ema(all,50).at(-1).value);
+  $('live-candle').textContent=`Текущая · только визуализация ${utc(b.time)} | O ${fmt(b.open)} H ${fmt(b.high)} L ${fmt(b.low)} C ${fmt(b.close)} V ${fmt(b.volume,5)}`;
+  $('live-candle').dataset.time=String(b.time);$('live-candle').dataset.close=String(b.close);$('live-candle').dataset.volume=String(b.volume);
+  // currentData/analysis and market-data-changed remain CLOSED-CANDLE ONLY.
+}
+
 function updateFeedAge() {
+  if(bitgetVisual?.lastLive){$('event-age').textContent='LIVE-событие: '+Math.max(0,Math.floor(Date.now()/1000-bitgetVisual.lastLive))+' с назад · '+bitgetVisualState;}
   if (!lastLiveReceipt) return;
   const age = Math.max(0,Math.floor((Date.now()-lastLiveReceipt)/1000));
   const quoteAge = lastSourceEvent == null ? null : Math.max(0,Math.floor(lastSourceEvent+age));
-  $('event-age').textContent = `Получено ${age} с назад`+(quoteAge == null?' · задержка котировки неизвестна':` · возраст события ${quoteAge} с`);
+  if(!bitgetVisual)$('event-age').textContent = `Получено ${age} с назад`+(quoteAge == null?' · задержка котировки неизвестна':` · возраст события ${quoteAge} с`);
   if (feedFailed) { invalidateMarketSignal('Нет актуальных обновлений; сигнал отключён.'); return; }
   const stale = !marketIsFresh();
   if (stale) {
@@ -103,6 +119,7 @@ function updateFeedAge() {
     $('status').className = 'status warning';
     $('status').textContent = 'Данные устарели / рынок закрыт. Ожидаем актуальные котировки; сигнал отключён.';
   }
+  if(bitgetVisual){$('feed-state').textContent=bitgetVisualState+' · Bitget Futures · '+(stale?'закрытая аналитика не подтверждена':'сигналы только по закрытым свечам');return;}
   $('feed-state').textContent = stale ? 'Задержка / соединение прервано' :
     liveMode === 'streaming' ? 'LIVE · Bitget' :
     liveMode === 'source_stream' ? 'STREAM · XAUUSD · задержка источника неизвестна' :
@@ -121,6 +138,9 @@ setInterval(() => {
 function startMarketLive(id,symbol,tf,limit) {
   if (id !== requestId) return;
   clearTimeout(retryTimer);
+  if(symbol==='BTCUSDT'&&window.AuraBitgetLive&&!bitgetVisual&&!document.hidden){
+    bitgetVisual=new window.AuraBitgetLive.Feed({onStatus:s=>{bitgetVisualState=s;$('feed-state').textContent=s+' · Bitget Futures';},onData:bars=>{if(id===requestId)drawBitgetVisual(bars);}});bitgetVisual.start(tf);
+  }
   const socket = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws/market?symbol=${symbol}&timeframe=${tf}&limit=${limit}`);
   marketSocket = socket;
   socketOpenedAt = Date.now(); socketLastMessage = 0; socketHasData = false;
@@ -161,3 +181,8 @@ function startMarketLive(id,symbol,tf,limit) {
   socket.onerror = reconnect;
 }
 window.addEventListener('pagehide', () => { reconnectMarket=null; clearTimeout(retryTimer); if (marketSocket) {marketSocket.onclose=null; marketSocket.close(); marketSocket=null;} });
+
+// Android background suspension: discard public sockets and resnapshot on return.
+document.addEventListener('visibilitychange',()=>{if(!window.AuraBitgetLive)return;if(document.hidden){stopMarketLive();}else{loadMarket();}});
+window.addEventListener('pageshow',e=>{if(e.persisted&&window.AuraBitgetLive)loadMarket();});
+window.addEventListener('pagehide',()=>{bitgetVisual?.stop();bitgetVisual=null;});
