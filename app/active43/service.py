@@ -93,7 +93,27 @@ class Service:
                     if old['payload'].get('action')!=action:raise DemoError('IDEMPOTENCY_CONFLICT')
                     return dict(duplicate=True,state_saved=True,paper_only=True,exchange_execution=False)
                 before=env['state'];s=deepcopy(before);now=int(self.clock())
-                if action=='START':
+                if action=='REBASELINE':
+                    if expected_revision!=env['revision']:raise DemoError('CONCURRENT_UPDATE')
+                    self.require_empty_off(s)
+                    bars,decision,now=await self.snapshot()
+                    if decision.get('error'):raise DemoError(decision['error'])
+                    step=STEPS[self.config['timeframe']]
+                    if len(bars)<1000 or any(b.time-a.time!=step for a,b in zip(bars,bars[1:])):
+                        raise DemoError('HISTORY_INCOMPLETE')
+                    anchor=bars[-1]
+                    previous_guard=deepcopy(s.get('history_guard'))
+                    s.update(watermark=anchor.time+step,last_bar_hash=digest(anchor.data()),
+                        last_anchor_ohlcv=anchor.data(),history_guard=None,
+                        pending=None,pending_exit=None,data_recovery_armed=False,
+                        last_error=None,last_source_error=None,last_decision='OWNER_OFF_REBASELINE',
+                        recovery_status='OFF_REBASELINED_AWAITING_EXPLICIT_START',
+                        last_fresh_closed_at=anchor.time+step,last_success_at=now)
+                    baseline_event=event(s,'BASELINE',request_id,now,dict(reason='OWNER_OFF_REBASELINE',
+                        old_watermark=before.get('watermark'),new_watermark=s['watermark'],
+                        prior_history_guard=previous_guard,read_only_market=True,
+                        paper_remains_off=True,exchange_execution=False))
+                elif action=='START':
                     if expected_revision!=env['revision']:raise DemoError('CONCURRENT_UPDATE')
                     if not scheduler_configured():raise DemoError('SCHEDULER_NOT_CONFIGURED')
                     if s['mode']=='ON':raise DemoError('ALREADY_ON')
@@ -112,11 +132,15 @@ class Service:
                 elif action=='EMERGENCY':s.update(mode='EMERGENCY',emergency=True,pending=None,pending_exit=None,data_recovery_armed=False,last_decision='EMERGENCY_STOP')
                 else:raise DemoError('INVALID_ACTION')
                 ev=event(s,'CONTROL',request_id,now,dict(action=action));ev['id']=key
+                if action=='REBASELINE':
+                    extra_events=[ev,baseline_event]
+                else:
+                    extra_events=[ev]
                 try:
-                    await self.store.commit(env['revision'],s,[ev]+transition(before,s,now,key,reason={'START':'OWNER_STARTED','STOP':'OWNER_STOP','EMERGENCY':'EMERGENCY_STOP'}[action]),key)
+                    await self.store.commit(env['revision'],s,extra_events+transition(before,s,now,key,reason={'START':'OWNER_STARTED','STOP':'OWNER_STOP','EMERGENCY':'EMERGENCY_STOP','REBASELINE':'OWNER_OFF_REBASELINE'}[action]),key)
                     return dict(duplicate=False,state_saved=True,paper_only=True,exchange_execution=False)
                 except DemoError as exc:
-                    if exc.code!='CONCURRENT_UPDATE' or attempt==2 or action=='START':raise
+                    if exc.code!='CONCURRENT_UPDATE' or attempt==2 or action in ('START','REBASELINE'):raise
     async def initialize(self):
         from .setup import initialize
         return await initialize(self)
