@@ -160,3 +160,78 @@ def test_unobserved_protection_interval_is_disclosed_not_invented():
         assert store.state['position'] and store.state['mode']=='PAUSED'
         await svc.close()
     asyncio.run(run())
+
+
+@pytest.mark.parametrize('tf',['5m','15m'])
+def test_stable_numeric_revision_rebaselines_only_flat_never_traded_after_three_slots(tf):
+    async def run():
+        market,now,store,svc=setup(tf=tf,name='SR_BOUNCE' if tf=='5m' else 'DONCHIAN')
+        market.signal=False
+        with patch('app.active43.service.scheduler_configured',return_value=True):
+            await svc.control('START','c'*32,1)
+        original=market.bars[-1]
+        market.bars[-1]=replace(original,volume=original.volume+Decimal('1'))
+        for expected in (1,2):
+            market.add();now[0]+=market.step
+            result=await svc.tick()
+            assert result['mode']=='PAUSED'
+            assert store.state['history_guard']['revision_observations']==expected
+            assert store.state['pending'] is None
+            assert not store.state['position'] and store.state['trades']==0
+        market.add();now[0]+=market.step
+        recovered=await svc.tick()
+        assert recovered['mode']=='ON'
+        assert store.state['history_guard'] is None
+        assert store.state['last_decision']=='STABLE_CORRECTION_REBASELINE_WAIT_NEXT_CANDLE'
+        assert store.state['watermark']==market.bars[-1].time+market.step
+        assert store.state['last_anchor_ohlcv']==market.bars[-1].data()
+        audit=await store.history(kind='HISTORY_REBASELINE')
+        assert len(audit)==1
+        assert audit[0]['payload']['distinct_observations']==3
+        assert audit[0]['payload']['no_retroactive_entries'] is True
+        assert not await store.history(kind='OPEN')
+        assert not await store.history(kind='CLOSE')
+        assert store.state['balance']=='10000'
+        await svc.close()
+    asyncio.run(run())
+
+
+def test_numeric_revision_changing_during_quarantine_resets_confirmation_count():
+    async def run():
+        market,now,store,svc=setup()
+        market.signal=False
+        with patch('app.active43.service.scheduler_configured',return_value=True):
+            await svc.control('START','c'*32,1)
+        original=market.bars[-1]
+        market.bars[-1]=replace(original,volume=original.volume+Decimal('1'))
+        market.add();now[0]+=market.step;await svc.tick()
+        assert store.state['history_guard']['revision_observations']==1
+        market.bars[-2]=replace(market.bars[-2],volume=original.volume+Decimal('2'))
+        market.add();now[0]+=market.step;await svc.tick()
+        assert store.state['mode']=='PAUSED'
+        assert store.state['history_guard']['revision_observations']==1
+        market.add();now[0]+=market.step;await svc.tick()
+        assert store.state['mode']=='PAUSED'
+        assert store.state['history_guard']['revision_observations']==2
+        await svc.close()
+    asyncio.run(run())
+
+
+def test_stable_revision_never_resumes_after_explicit_owner_stop():
+    async def run():
+        market,now,store,svc=setup()
+        market.signal=False
+        with patch('app.active43.service.scheduler_configured',return_value=True):
+            await svc.control('START','c'*32,1)
+        original=market.bars[-1]
+        market.bars[-1]=replace(original,volume=original.volume+Decimal('1'))
+        market.add();now[0]+=market.step;await svc.tick()
+        assert store.state['mode']=='PAUSED'
+        await svc.control('STOP','d'*32)
+        for _ in range(5):
+            market.add();now[0]+=market.step;await svc.tick()
+        assert store.state['mode']=='OFF'
+        assert not await store.history(kind='HISTORY_REBASELINE')
+        assert not await store.history(kind='OPEN')
+        await svc.close()
+    asyncio.run(run())
