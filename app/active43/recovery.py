@@ -62,6 +62,60 @@ def history_issue(state: dict, bars: list, now: int) -> dict | None:
                 new_ohlcv_hash=digest(prior.data()) if prior and code!='HISTORY_INCOMPLETE' else None, detected_at=now)
 
 
+
+REVISION_QUARANTINE_SLOTS = 3
+
+
+def revision_quarantine(state: dict, issue: dict, now: int) -> tuple[dict, bool]:
+    """Count *distinct closed-bar slots* showing the same real correction.
+
+    Reconciliation is only permitted for a previously owner-started PAUSED
+    paper account with no position, pending execution or completed trades.
+    It never repairs a live position, infers retrospective fills, or acts OFF.
+    The original integrity guard remains in force throughout quarantine.
+    """
+    if (issue.get('code') != 'HISTORY_CANDLE_CHANGED'
+            or issue.get('change_classification') != 'NUMERIC_VALUES_CHANGED'
+            or not issue.get('numeric_changed_fields')
+            or state['mode'] not in ('ON', 'PAUSED')
+            or state['position'] is not None or state.get('pending') is not None
+            or state.get('pending_exit') is not None or state['trades'] != 0
+            or state['emergency'] or risk_reason(state)
+            or (state['mode'] == 'PAUSED'
+                and (not state.get('data_recovery_armed')
+                     or state.get('last_error') != 'HISTORY_CANDLE_CHANGED'))):
+        return issue, False
+
+    step = STEPS[state['config']['timeframe']]
+    slot = now // step
+    previous = state.get('history_guard') or {}
+    same = (previous.get('code') == issue['code']
+            and previous.get('old_ohlcv_hash') == issue['old_ohlcv_hash']
+            and previous.get('new_ohlcv_hash') == issue['new_ohlcv_hash']
+            and previous.get('anchor_timestamp') == issue['anchor_timestamp']
+            and previous.get('change_classification') == 'NUMERIC_VALUES_CHANGED')
+    old_slot = previous.get('revision_last_slot')
+    old_count = previous.get('revision_observations')
+    if (same and type(old_slot) is int and type(old_count) is int
+            and 1 <= old_count <= REVISION_QUARANTINE_SLOTS and slot >= old_slot):
+        count = min(REVISION_QUARANTINE_SLOTS, old_count + (slot > old_slot))
+        first = previous.get('revision_first_seen_at')
+        if type(first) is not int or first > now:
+            first = now
+    else:
+        count, first = 1, now
+    issue.update(revision_observations=count,
+                 revision_first_seen_at=first,
+                 revision_last_slot=slot,
+                 revision_quarantine_required=REVISION_QUARANTINE_SLOTS)
+    # At least two subsequent distinct timeframe slots and a fully closed
+    # corrected anchor; never lift quarantine from repeated requests in one slot.
+    ready = (state['mode'] == 'PAUSED'
+             and count >= REVISION_QUARANTINE_SLOTS
+             and now >= state['watermark'] + 2 * step)
+    return issue, ready
+
+
 def paper_status(state: dict) -> str:
     if state['mode'] == 'OFF':
         return 'PAPER_OFF'
