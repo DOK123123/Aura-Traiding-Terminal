@@ -6,7 +6,8 @@ storage is NOT sufficient for production. Do not expose this module via API
 until authenticated transaction/idempotency handling is implemented.
 """
 import json
-import os
+import hashlib
+import re
 import sqlite3
 from decimal import Decimal
 from pathlib import Path
@@ -26,6 +27,7 @@ class ManualStore:
         db.execute("PRAGMA busy_timeout=10000")
         db.execute("PRAGMA journal_mode=WAL")
         db.execute("CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY CHECK (id=1), data TEXT NOT NULL, version INTEGER NOT NULL)")
+        db.execute("CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, result TEXT NOT NULL)")
         return db
 
     @staticmethod
@@ -88,3 +90,40 @@ class ManualStore:
                 db.execute("UPDATE state SET data=?,version=? WHERE id=1",
                            (payload, current+1))
             return current+1
+
+    def execute(self, request_id, command, arguments, apply_command):
+        """Atomic, idempotent ledger transition. Caller supplies verified quote.
+
+        apply_command(ledger) mutates ledger and returns a JSON-serializable
+        receipt. No exchange requests or await operations inside the lock.
+        """
+        if not isinstance(request_id, str) or not re.fullmatch(r"[a-f0-9]{32}", request_id):
+            raise ValueError("INVALID_REQUEST_ID")
+        fingerprint = hashlib.sha256(json.dumps(
+            [command, arguments], sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")).hexdigest()
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            previous = db.execute(
+                "SELECT fingerprint,result FROM requests WHERE id=?", (request_id,)
+            ).fetchone()
+            if previous:
+                if previous[0] != fingerprint:
+                    raise ValueError("IDEMPOTENCY_CONFLICT")
+                return json.loads(previous[1])
+            row = db.execute("SELECT data,version FROM state WHERE id=1").fetchone()
+            ledger = self.decode(row[0]) if row else ManualPaper()
+            result = apply_command(ledger)
+            receipt = {"request_id": request_id, "command": command,
+                       "version": (row[1] if row else 0) + 1,
+                       "balance": str(ledger.balance), "result": result}
+            encoded = json.dumps(receipt, sort_keys=True)
+            if row:
+                db.execute("UPDATE state SET data=?,version=? WHERE id=1",
+                           (self.encode(ledger), row[1]+1))
+            else:
+                db.execute("INSERT INTO state(id,data,version) VALUES(1,?,1)",
+                           (self.encode(ledger),))
+            db.execute("INSERT INTO requests(id,fingerprint,result) VALUES(?,?,?)",
+                       (request_id, fingerprint, encoded))
+            return receipt
