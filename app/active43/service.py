@@ -6,6 +6,7 @@ from pathlib import Path
 from app.automated.engine import DemoError,risk_reason,mark
 from app.lab.models import digest,money,text
 from app.forward.models import scheduler_secret_valid
+from .candle_integrity import candle_hash,anchor_matches
 from .core import initial,validate,advance,event,SCOPE,POLICY,SOURCE
 from .strategies import config,STEPS,VERSION
 from .storage import Store
@@ -103,7 +104,7 @@ class Service:
                         raise DemoError('HISTORY_INCOMPLETE')
                     anchor=bars[-1]
                     previous_guard=deepcopy(s.get('history_guard'))
-                    s.update(watermark=anchor.time+step,last_bar_hash=digest(anchor.data()),
+                    s.update(watermark=anchor.time+step,last_bar_hash=candle_hash(anchor),
                         last_anchor_ohlcv=anchor.data(),history_guard=None,
                         pending=None,pending_exit=None,data_recovery_armed=False,
                         last_error=None,last_source_error=None,last_decision='OWNER_OFF_REBASELINE',
@@ -125,7 +126,7 @@ class Service:
                     if issue:raise DemoError(issue['code'])
                     mark(s,bars[-1],bars[-1].time+STEPS[self.config['timeframe']])
                     if risk_reason(s):raise DemoError(risk_reason(s))
-                    s.update(mode='ON',watermark=bars[-1].time+STEPS[self.config['timeframe']],last_bar_hash=digest(bars[-1].data()),
+                    s.update(mode='ON',watermark=bars[-1].time+STEPS[self.config['timeframe']],last_bar_hash=candle_hash(bars[-1]),
                              last_anchor_ohlcv=bars[-1].data(),
                              pending=None,pending_exit=None,last_error=None,last_decision='ACTIVATION_BASELINE',recovery_status='OWNER_STARTED',data_recovery_armed=False)
                     s.update(history_guard=None,protection_watermark=None,protection_bar_hash=None,protection_gap=None,
@@ -186,6 +187,8 @@ class Service:
                 self.checked_snapshot(data)
                 issue=history_issue(s,bars,now)
                 if issue:
+                    if issue['code']=='HISTORY_CANDLE_CHANGED' and issue.get('gap_timestamp') is not None:
+                        raise DemoError('HISTORY_INCOMPLETE')
                     issue,stable_revision=revision_quarantine(old,issue,now)
                     if stable_revision and not decision.get('error'):
                         # A fully flat, never-traded account can discard the
@@ -197,7 +200,7 @@ class Service:
                         latest=anchor.time+step
                         mark(s,anchor,latest)
                         skipped=max(0,(latest-old['watermark'])//step)
-                        s.update(mode='ON',watermark=latest,last_bar_hash=digest(anchor.data()),
+                        s.update(mode='ON',watermark=latest,last_bar_hash=candle_hash(anchor),
                                  last_anchor_ohlcv=anchor.data(),history_guard=None,
                                  pending=None,pending_exit=None,data_recovery_armed=False,
                                  last_error=None,last_source_error=None,last_signal=None,last_check=None,
@@ -208,7 +211,8 @@ class Service:
                                  protection_watermark=None,protection_bar_hash=None,
                                  protection_status='FRESH_PROTECTION')
                         events=[event(s,'HISTORY_REBASELINE',latest,now,
-                            dict(reason='STABLE_CORRECTION_FLAT_ACCOUNT_ONLY',
+                            dict(reason='STABLE_VOLUME_CORRECTION_FLAT_ACCOUNT_ONLY',
+                                 accepted_numeric_fields=['volume'],max_relative_volume_increase='0.001',
                                  prior_watermark=old['watermark'],new_watermark=latest,
                                  old_anchor_hash=old['last_bar_hash'],
                                  revised_anchor_hash=issue['new_ohlcv_hash'],
@@ -224,7 +228,7 @@ class Service:
                 if s.get('protection_watermark'):
                     # Protection already accounted for these bars. Do not replay
                     # exits, invent retrospective entries or reuse old signals.
-                    s.update(watermark=bars[-1].time+step,last_bar_hash=digest(bars[-1].data()),pending=None,pending_exit=None)
+                    s.update(watermark=bars[-1].time+step,last_bar_hash=candle_hash(bars[-1]),pending=None,pending_exit=None)
                     s['last_decision']='HISTORY_RECOVERED_WAIT_NEXT_CANDLE'
                 if decision.get('error'):
                     if s['mode']=='ON':s.update(mode='PAUSED',data_recovery_armed=True)
@@ -236,8 +240,14 @@ class Service:
                 # historical correction from a hash without stored field values.
                 if s.get('watermark') is not None:
                     anchor=next((b for b in bars if b.time+step==s['watermark']),None)
-                    if anchor is not None and digest(anchor.data())==s['last_bar_hash']:
+                    if anchor is not None and anchor_matches(s,anchor):
+                        previous_hash=s['last_bar_hash']
+                        s['last_bar_hash']=candle_hash(anchor)
                         s['last_anchor_ohlcv']=anchor.data()
+                        if previous_hash!=s['last_bar_hash'] and old['watermark']==s['watermark']:
+                            events.append(event(s,'HISTORY_NORMALIZED',s['watermark'],now,
+                                dict(reason='EXACT_DECIMAL_EQUIVALENCE',old_anchor_hash=previous_hash,
+                                     new_anchor_hash=s['last_bar_hash'],no_numeric_changes=True)))
                 s.update(history_guard=None,protection_watermark=None,protection_bar_hash=None,
                          last_error=decision.get('error'),last_source_error=None,last_success_at=now,last_fresh_closed_at=bars[-1].time+step,
                          protection_status='FRESH_PROTECTION_GAP' if s.get('protection_gap') else 'FRESH_PROTECTION')
@@ -258,6 +268,9 @@ class Service:
                 s['history_guard']=dict(code=code,candle_timestamp=None if code=='HISTORY_INCOMPLETE' or s['watermark'] is None else s['watermark']-step,
                     source=SOURCE,old_ohlcv_hash=s['last_bar_hash'],new_ohlcv_hash=None,detected_at=now)
             s['data_recovery_armed']=retry_allowed and not risk_reason(s) and (original in RETRYABLE or code in HISTORY_CODES or code=='HISTORY_SOURCE_UNAVAILABLE')
+            if s.get('history_guard') and code!='HISTORY_CANDLE_CHANGED':
+                for field in ('revision_observations','revision_first_seen_at','revision_last_slot','revision_quarantine_required'):
+                    s['history_guard'].pop(field,None)
             if s['mode']=='ON':s['mode']='PAUSED'
             details=dict(reason=code,source_error=original,source=SOURCE,detected_at=now,
                          candle_timestamp=None if code in ('HISTORY_INCOMPLETE','HISTORY_SOURCE_UNAVAILABLE') or s['watermark'] is None else s['watermark']-step,

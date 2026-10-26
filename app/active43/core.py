@@ -8,6 +8,7 @@ from decimal import Decimal as D,ROUND_DOWN,ROUND_UP
 from app.automated import engine as paper
 from app.lab.execution import fee,fill
 from app.lab.models import digest,money,text,precise,LabError
+from .candle_integrity import candle_hash,anchor_matches
 from .strategies import VERSION,STEPS,PARAMETERS,config as make_config
 
 SCOPE='AURA43_ACTIVE_PAPER'
@@ -144,12 +145,12 @@ def advance(old,bars,decision,now):
     if bars[-1].time+step!=latest:raise paper.DemoError('STALE_DATA')
     if decision.get('signal_at')!=latest or decision.get('source')!=SOURCE:raise paper.DemoError('SNAPSHOT_MISMATCH')
     if s['watermark'] is None:
-        s.update(watermark=latest,last_bar_hash=digest(bars[-1].data()),pending=None,last_decision='ACTIVATION_BASELINE')
+        s.update(watermark=latest,last_bar_hash=candle_hash(bars[-1]),pending=None,last_decision='ACTIVATION_BASELINE')
         paper.mark(s,bars[-1],latest);s['last_price']=text(bars[-1].close)
         return s,[event(s,'BASELINE',latest,now,dict(reason='ACTIVATION_BASELINE'))]
     prior=next((b for b in bars if b.time+step==s['watermark']),None)
     if prior is None:raise paper.DemoError('HISTORY_CANDLE_MISSING')
-    if digest(prior.data())!=s['last_bar_hash']:raise paper.DemoError('HISTORY_CANDLE_CHANGED')
+    if not anchor_matches(s,prior):raise paper.DemoError('HISTORY_CANDLE_CHANGED')
     if latest==s['watermark']:return s,[]
     future=[b for b in bars if b.time>=s['watermark']]
     if not future or future[0].time!=s['watermark']:raise paper.DemoError('MISSING_CANDLES')
@@ -186,7 +187,7 @@ def advance(old,bars,decision,now):
     if s['position'] and s['config']['strategy']=='TREND_ATR':
         change=ratchet(s,bars[-1],decision.get('atr'),latest)
         if change:events.append(event(s,'STOP_UPDATE',latest,now,change))
-    s.update(watermark=latest,last_bar_hash=digest(bars[-1].data()),last_price=text(bars[-1].close))
+    s.update(watermark=latest,last_bar_hash=candle_hash(bars[-1]),last_price=text(bars[-1].close))
     if s['position']:
         p=s['position'];exit_flag=decision.get('exit_long') if p['direction']=='LONG' else decision.get('exit_short')
         if exit_flag:s['pending_exit']=p['id']

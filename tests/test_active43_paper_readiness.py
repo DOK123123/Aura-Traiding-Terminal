@@ -260,7 +260,7 @@ def test_readiness_reports_matching_anchor_read_only():
     assert r['history']['anchor_status']=='MATCHED'
 
 
-def test_readiness_does_not_accept_decimal_reformatting_or_clear_guard():
+def test_readiness_accepts_proven_numeric_equivalence_without_clearing_saved_guard():
     from dataclasses import replace
     from decimal import Decimal
     from app.lab.models import digest
@@ -270,9 +270,9 @@ def test_readiness_does_not_accept_decimal_reformatting_or_clear_guard():
         s.state.update(watermark=old.time+300,last_bar_hash=digest(old.data()),last_anchor_ohlcv=old.data())
         s.state['history_guard']=dict(code='HISTORY_CANDLE_CHANGED',source=SOURCE,old_ohlcv_hash=s.state['last_bar_hash'])
     r=asyncio.run(probe(change))
-    assert r['status']=='BLOCKED'
-    assert r['history']['change_classification']=='DECIMAL_FORMAT_CHANGED'
-    assert r['signal']['entry_blocker']=='HISTORY_CANDLE_CHANGED'
+    assert r['status']=='READY' and r['history']['saved_guard_present']
+    assert r['history']['anchor_status']=='MATCHED'
+    assert r['signal']['entry_blocker']=='AUTO_OFF'
 
 
 def test_original_anchor_restored_is_ready_without_mutating_saved_guard():

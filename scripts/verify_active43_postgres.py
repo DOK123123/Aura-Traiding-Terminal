@@ -118,6 +118,60 @@ async def cycle(pg,side,kind,strategy='DONCHIAN'):
     await svc.close()
     return dict(scenario=side+'_'+kind+'_'+strategy,status='PASS',starting_balance='10000',open=p,close=closes[0],final_balance=s['balance'],fees=s['fees'],slippage=s['slippage'],open_count=1,close_count=1,restart_restored=True,update_saved=True,unknown_close_outcome_deduplicated=True)
 
+async def canonical_history_cycles(pg):
+    """Real SQL persistence of numeric normalization and volume-only quarantine."""
+    from dataclasses import replace
+    from decimal import Decimal
+    from app.lab.models import digest
+    from app.active43.core import event
+    results=[]
+    for side in ('LONG','SHORT'):
+        market,now,bridge,store,svc=await setup(pg,side,tf='5m',strategy='SR_BOUNCE')
+        market.signal=False
+        anchor=market.bars[-1]
+        market.bars[-1]=replace(anchor,volume=anchor.volume+Decimal('.01'))
+        for count in (1,2,3):
+            market.add();now[0]+=market.step
+            result=await svc.tick()
+            assert result['mode']==('ON' if count==3 else 'PAUSED')
+            saved=await store.peek()
+            assert (await svc.tick())['duplicate'] and await store.peek()==saved
+            if count==1:
+                await svc.close();docker('restart',pg.name);pg.ready()
+                store=bridge.store(config('SR_BOUNCE','5m'))
+                svc=Service(store,market,config('SR_BOUNCE','5m'),clock=lambda:now[0])
+                assert await store.peek()==saved
+        rows=await store.history(limit=200)
+        assert sum(r['kind']=='HISTORY_REBASELINE' for r in rows)==1
+        assert not [r for r in rows if r['kind'] in ('OPEN','CLOSE')]
+        state=(await store.peek())['state']
+        assert state['balance']=='10000' and state['pending'] is None
+        price_anchor=market.bars[-1];price_hash=state['last_bar_hash']
+        market.bars[-1]=replace(price_anchor,close=Decimal('100.1'))
+        for _ in range(4):
+            market.add();now[0]+=market.step;await svc.tick()
+            state=(await store.peek())['state']
+            assert state['mode']=='PAUSED' and state['last_bar_hash']==price_hash
+        rows=await store.history(limit=200)
+        assert sum(r['kind']=='HISTORY_REBASELINE' for r in rows)==1
+        results.append(dict(side=side,status='PASS',volume_quarantine_restart=True,price_change_blocked=True,duplicate_without_write=True,balance=state['balance']))
+        await svc.close()
+    market,now,bridge,store,svc=await setup(pg,tf='5m',strategy='SR_BOUNCE')
+    market.signal=False;env=await store.peek();state=deepcopy(env['state'])
+    legacy=replace(market.bars[-1],volume=Decimal('100.000'))
+    state.update(last_bar_hash=digest(legacy.data()),last_anchor_ohlcv=legacy.data())
+    ev=event(state,'BASELINE','legacy-numeric-fixture',now[0],dict(reason='TEST_ONLY_LEGACY_NUMERIC_HASH'))
+    await store.commit(env['revision'],state,[ev],ev['id'])
+    await svc.tick();saved=await store.peek()
+    rows=await store.history(limit=100)
+    assert sum(r['kind']=='HISTORY_NORMALIZED' for r in rows)==1
+    await svc.close();docker('restart',pg.name);pg.ready()
+    svc=Service(bridge.store(config('SR_BOUNCE','5m')),market,config('SR_BOUNCE','5m'),clock=lambda:now[0])
+    assert (await svc.tick())['duplicate'] and await svc.store.peek()==saved
+    await svc.close()
+    return dict(status='PASS',cases=results,legacy_normalization_restart_exactly_once=True)
+
+
 async def public_cycle(pg,side,driver='http'):
     """Native Bitget V2 Market -> indicators -> actual SQL -> owner HTTP status.
 
@@ -610,13 +664,15 @@ async def verify(pg):
     checks.append('DIAGNOSTIC_ON_OPEN_POSITION_BYTE_IDENTICAL_LEDGER_AFTER_RESTART')
     await svc.close();history_recovery=await history_recovery_cycles(pg)
     checks.append('HISTORY_PAUSE_FRESH_PROTECTION_RECOVERY_CONCURRENT_TICKS_DATABASE_RESTART_UNKNOWN_CLOSE')
+    numeric_history=await canonical_history_cycles(pg)
+    checks.append('CANONICAL_HISTORY_VOLUME_ONLY_RECOVERY_RESTART_AND_PRICE_REJECTION')
     actual=[await public_cycle(pg,side) for side in ('LONG','SHORT')]
     renders=[await public_cycle(pg,side,driver='render') for side in ('LONG','SHORT')]
     checks.append('RENDER_SCHEDULER_EXISTING_SERVICE_NATIVE_LONG_SHORT_SQL_CYCLES_NO_WEB_TICK')
     assert pg.legacy_hash()==before;checks.append('LEGACY_AUTO42_PRACTICE_SPOT43_BYBIT43_UNCHANGED_ENTIRE_RUN')
     assert pg.legacy_functions_hash()==before_functions
     checks.append('LEGACY_SQL_FUNCTION_DEFINITIONS_UNCHANGED')
-    return dict(checks=checks,cases=cases,history_recovery=history_recovery,native_cycles=actual,render_cycles=renders,preparation=preparation,cloudflare_off_cycles=cloudflare_off,bounce=bounce,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash(),legacy_functions_before_sha256=before_functions,legacy_functions_after_sha256=pg.legacy_functions_hash())
+    return dict(numeric_history=numeric_history,checks=checks,cases=cases,history_recovery=history_recovery,native_cycles=actual,render_cycles=renders,preparation=preparation,cloudflare_off_cycles=cloudflare_off,bounce=bounce,legacy_before_sha256=before,legacy_after_sha256=pg.legacy_hash(),legacy_functions_before_sha256=before_functions,legacy_functions_after_sha256=pg.legacy_functions_hash())
 
 
 def run(output):

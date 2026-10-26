@@ -170,7 +170,7 @@ def test_stable_numeric_revision_rebaselines_only_flat_never_traded_after_three_
         with patch('app.active43.service.scheduler_configured',return_value=True):
             await svc.control('START','c'*32,1)
         original=market.bars[-1]
-        market.bars[-1]=replace(original,volume=original.volume+Decimal('1'))
+        market.bars[-1]=replace(original,volume=original.volume+Decimal('0.01'))
         for expected in (1,2):
             market.add();now[0]+=market.step
             result=await svc.tick()
@@ -203,10 +203,10 @@ def test_numeric_revision_changing_during_quarantine_resets_confirmation_count()
         with patch('app.active43.service.scheduler_configured',return_value=True):
             await svc.control('START','c'*32,1)
         original=market.bars[-1]
-        market.bars[-1]=replace(original,volume=original.volume+Decimal('1'))
+        market.bars[-1]=replace(original,volume=original.volume+Decimal('0.01'))
         market.add();now[0]+=market.step;await svc.tick()
         assert store.state['history_guard']['revision_observations']==1
-        market.bars[-2]=replace(market.bars[-2],volume=original.volume+Decimal('2'))
+        market.bars[-2]=replace(market.bars[-2],volume=original.volume+Decimal('0.02'))
         market.add();now[0]+=market.step;await svc.tick()
         assert store.state['mode']=='PAUSED'
         assert store.state['history_guard']['revision_observations']==1
@@ -224,7 +224,7 @@ def test_stable_revision_never_resumes_after_explicit_owner_stop():
         with patch('app.active43.service.scheduler_configured',return_value=True):
             await svc.control('START','c'*32,1)
         original=market.bars[-1]
-        market.bars[-1]=replace(original,volume=original.volume+Decimal('1'))
+        market.bars[-1]=replace(original,volume=original.volume+Decimal('0.01'))
         market.add();now[0]+=market.step;await svc.tick()
         assert store.state['mode']=='PAUSED'
         await svc.control('STOP','d'*32)
@@ -244,11 +244,11 @@ def test_quarantine_counts_distinct_slots_and_rejects_unsafe_state():
     mark=now[0]//step*step
     original.update(mode='PAUSED',data_recovery_armed=True,
                     last_error='HISTORY_CANDLE_CHANGED',watermark=mark)
-    incident=dict(code='HISTORY_CANDLE_CHANGED',
-                  change_classification='NUMERIC_VALUES_CHANGED',
-                  numeric_changed_fields=['close'],
-                  old_ohlcv_hash='old',new_ohlcv_hash='new',
-                  anchor_timestamp=mark-step)
+    from app.active43.recovery import history_issue
+    from app.lab.models import digest
+    anchor=market.bars[-1]
+    original.update(last_bar_hash=digest(anchor.data()),last_anchor_ohlcv=anchor.data())
+    incident=history_issue(original,[replace(anchor,volume=anchor.volume+Decimal('0.01'))],now[0])
     first,ok=revision_quarantine(original,dict(incident),now[0])
     assert not ok and first['revision_observations']==1
     original['history_guard']=first
@@ -278,7 +278,7 @@ def test_revision_quarantine_does_not_rebaseline_incomplete_history():
         with patch('app.active43.service.scheduler_configured',return_value=True):
             await svc.control('START','c'*32,1)
         original=market.bars[-1]
-        market.bars[-1]=replace(original,volume=original.volume+Decimal('1'))
+        market.bars[-1]=replace(original,volume=original.volume+Decimal('0.01'))
         for _ in range(2):
             market.add();now[0]+=market.step;await svc.tick()
         market.bars.pop(300)  # Older missing candle while the anchor still differs.

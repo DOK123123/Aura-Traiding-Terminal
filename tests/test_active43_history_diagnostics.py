@@ -55,13 +55,9 @@ def test_tampered_anchor_is_not_used_as_evidence():
     assert issue['changed_fields'] is None
 
 
-def test_format_only_difference_is_identified_but_not_accepted():
+def test_format_only_difference_is_exactly_equal_with_verified_legacy_fields():
     original=bar(volume='1.00')
-    issue=history_issue(state(original),[bar(volume='1')],910)
-    assert issue['code']=='HISTORY_CANDLE_CHANGED'
-    assert issue['change_classification']=='DECIMAL_FORMAT_CHANGED'
-    assert issue['numeric_changed_fields']==[] and issue['changed_fields']==['volume']
-    assert issue['old_ohlcv_hash']!=issue['new_ohlcv_hash']
+    assert history_issue(state(original),[bar(volume='1')],910) is None
 
 
 def test_numeric_correction_remains_a_real_mismatch():
@@ -73,7 +69,7 @@ def test_numeric_correction_remains_a_real_mismatch():
 
 
 def test_hash_only_or_tampered_evidence_never_claims_a_format_change():
-    for saved in (dict(state(bar()),last_anchor_ohlcv=None),dict(state(bar()),last_anchor_ohlcv=bar(volume='3').data())):
+    for saved in (dict(state(bar(volume='1.0')),last_anchor_ohlcv=None),dict(state(bar(volume='1.0')),last_anchor_ohlcv=bar(volume='3').data())):
         issue=history_issue(saved,[bar(volume='1.00')],910)
         assert issue['code']=='HISTORY_CANDLE_CHANGED'
         assert issue['change_classification']=='UNDETERMINED'

@@ -1,0 +1,56 @@
+{
+  "base_main": "3bde68712573316dde5365096e586554482f3131",
+  "python_passed": 1843,
+  "python_skipped": 3,
+  "javascript_passed": 264,
+  "canonical_history_tests": 19,
+  "postgres": {
+    "status": "PASS",
+    "checks": 18,
+    "base_trade_cases": 7,
+    "rls_verified": true,
+    "legacy_accounts_unchanged": true,
+    "legacy_functions_unchanged": true,
+    "numeric_history": {
+      "status": "PASS",
+      "cases": [
+        {
+          "side": "LONG",
+          "status": "PASS",
+          "volume_quarantine_restart": true,
+          "price_change_blocked": true,
+          "duplicate_without_write": true,
+          "balance": "10000"
+        },
+        {
+          "side": "SHORT",
+          "status": "PASS",
+          "volume_quarantine_restart": true,
+          "price_change_blocked": true,
+          "duplicate_without_write": true,
+          "balance": "10000"
+        }
+      ],
+      "legacy_normalization_restart_exactly_once": true
+    }
+  },
+  "policy": {
+    "decimal_comparison": "EXACT_NUMERIC_V1_NO_ROUNDING",
+    "price_changes_auto_accepted": false,
+    "volume_only_max_relative_increase": "0.001",
+    "consecutive_confirmation_slots": 3,
+    "flat_never_traded_only": true,
+    "explicit_off_preserved": true,
+    "source_error_resets_count": true
+  },
+  "production_access": false,
+  "production_state_changed": false,
+  "live_bitget_probe_performed": false,
+  "real_orders": 0,
+  "migrations_changed": false,
+  "notes": [
+    "Market/Bitget audit and captured repository incident fixture; no fresh production log claim",
+    "Old hash-only account without a proof of exact values can remain BLOCKED",
+    "Large volume changes and all numeric OHLC changes stay blocked"
+  ]
+}
