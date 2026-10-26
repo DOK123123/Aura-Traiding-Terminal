@@ -7,6 +7,7 @@ import json
 import hashlib
 import re
 import sqlite3
+import os
 from contextlib import contextmanager
 from decimal import Decimal
 from pathlib import Path
@@ -14,15 +15,25 @@ from .core import ManualPaper, Position
 
 
 class ManualStore:
-    def __init__(self, path):
+    def __init__(self, path, *, required_mount=None):
         self.path = Path(path)
+        self.required_mount = Path(required_mount) if required_mount is not None else None
         if not self.path.is_absolute():
             raise ValueError("ABSOLUTE_PATH_REQUIRED")
         if not self.path.parent.is_dir():
             raise ValueError("STORAGE_DIRECTORY_MISSING")
 
+    def check_mount(self):
+        """Never fall back to the underlying ephemeral path after mount loss."""
+        mount = self.required_mount
+        if mount is not None and (not os.path.ismount(mount) or mount.resolve()!=mount
+                                  or not self.path.resolve().is_relative_to(mount)
+                                  or self.path.is_symlink()):
+            raise ValueError('PERSISTENT_DISK_REQUIRED')
+
     @contextmanager
     def _connect(self):
+        self.check_mount()
         db = sqlite3.connect(str(self.path), timeout=10)
         try:
             db.execute("PRAGMA busy_timeout=10000")
@@ -71,6 +82,13 @@ class ManualStore:
 
     @staticmethod
     def decode(payload):
+        try:
+            return ManualStore._decode(payload)
+        except (ValueError,KeyError,TypeError,AttributeError,ArithmeticError):
+            raise ValueError('CORRUPT_JOURNAL') from None
+
+    @staticmethod
+    def _decode(payload):
         data = json.loads(payload)
         ledger = ManualPaper(data["starting_balance"], data["fee_rate"],
                              data["max_risk"], data["max_notional"])

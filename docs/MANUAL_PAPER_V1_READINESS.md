@@ -63,3 +63,27 @@
 6. Три существующих PostgreSQL integration suites локально пропускаются без disposable Docker/PostgreSQL. Это не тесты выбранного Manual Paper SQLite backend. Полный CI проекта требует их выполнения на GitHub runner.
 
 Инструкция выпуска и точные ограничения: [MANUAL_PAPER_V1.md](MANUAL_PAPER_V1.md).
+
+
+## Финальный аудит перед запуском — 26.10.2026
+
+Проверен исходный CI на `507d3fe`: [Regression CI #69](https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/40305977390), **1941 Python + 268 JavaScript, 0 failures/skips**. После изменений ниже требуется CI на новом head; источник окончательного результата — последний head/run в PR #57.
+
+Дополнительные подтверждённые проблемы и исправления:
+
+- Проверка persistent mount ранее выполнялась только при старте. Теперь перед каждым SQLite connect: потеря mount/подмена пути блокирует доступ до создания файла. Тесты подтверждают отсутствие временной базы и восстановление того же баланса после возврата mount.
+- Повреждённая структура JSON (например, список сделок из чисел) могла вызвать AttributeError и завершить защитный цикл. Decode теперь нормализует повреждение в CORRUPT_JOURNAL; API безопасно возвращает 503, а цикл остаётся жив и не меняет счёт.
+- Добавлен `scripts/manual_paper_preflight.py`: read-only конфигурация, проверка mount/прав/существующего журнала, свежий публичный Bitget ticker; без account seed и без Active43. Отдельные offline-тесты проверяют отсутствие записи и вывода секретов.
+
+Финальные отдельные code/security review охватывают эти изменения, актуальные owner/CSRF зависимости, источник/свежесть цены, ограничения риска, позиционный ID, permanent receipts, атомарность SQLite, restart, SL/TP и fail-closed обработку ошибок. Нерешённых подтверждённых Critical/High в Manual Paper не найдено. Утверждение не включает внешний аудит и фактический production mount.
+
+Render прочитан через подключённый инструмент: Free, Virginia, один инстанс, auto-deploy Off, live b721a0c. Health 200. Owner endpoint 401 без авторизации. Публичный market endpoint вернул 500 свежих 1m Bitget Futures candles (`stale=false`). Переменные Manual Paper не прочитаны: env GET отсутствует в инструменте, browser dashboard требует входа. На Free постоянный disk не поддерживается; текущий runtime mount не проверен. В логах Active43 есть HISTORY_CANDLE_CHANGED и RATE_LIMIT; его код, режим и настройки не менялись.
+
+Базовый бюджет выбранной конфигурации — 7.25 USD/месяц при web 0.5c-512mb и disk 1 GB, до налогов/дополнительного расхода. Платные действия, merge и production deploy не выполнялись.
+
+**Пошаговый порядок, настройки, безопасные точки остановки и проверка Android:** [MANUAL_PAPER_LAUNCH_RUNBOOK.md](MANUAL_PAPER_LAUNCH_RUNBOOK.md).
+
+
+Результаты дополнительных offline-проверок перед публикацией: **108 тестов Manual Paper — PASS**, включая 13 новых проверок mount loss, повреждённой структуры и read-only preflight. Полный локальный Python после первых двух исправлений: 1946 passed / 3 existing PostgreSQL skipped / 0 failures; все 268 JavaScript — PASS. Полная проверка всех последующих файлов выполняется GitHub CI для нового head.
+
+Попытка безопасного входа в Dashboard завершилась таймаутом браузерного инструмента и сбросом его сеанса. Результат авторизации не подтверждён, содержимое env не прочитано; отсутствие или конкретные значения Manual Paper переменных не заявляются проверенными. До запуска нужна отдельная сверка таблицы Environment.

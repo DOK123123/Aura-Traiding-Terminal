@@ -403,3 +403,49 @@ def test_market_transport_clock_and_shape_failures(kind):
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
             await fetch_execution_quote(c,clock=lambda:STAMP/1000)
     with pytest.raises(QuoteRejected):asyncio.run(run())
+
+
+def test_runtime_mount_loss_never_creates_ephemeral_database(tmp_path,monkeypatch):
+    path=tmp_path/'manual-paper.sqlite3'
+    store=ManualStore(path,required_mount=tmp_path)
+    monkeypatch.setattr(os.path,'ismount',lambda p:False)
+    for action in [store.load,lambda:store.lookup('a'*32,'OPEN',{}),
+                   lambda:store.execute('a'*32,'OPEN',{},lambda ledger:None)]:
+        with pytest.raises(ValueError,match='PERSISTENT_DISK_REQUIRED'):action()
+    assert not path.exists()
+
+
+def test_runtime_mount_loss_and_return_preserve_balance(tmp_path,monkeypatch):
+    path=tmp_path/'manual-paper.sqlite3'
+    mounted=[True]
+    monkeypatch.setattr(os.path,'ismount',lambda p:mounted[0])
+    store=ManualStore(path,required_mount=tmp_path)
+    ManualCommands(store).open('a'*32,'LONG','0.01','79500','81000',dict(quote(),price='80000'))
+    mounted[0]=False
+    with pytest.raises(ValueError,match='PERSISTENT_DISK_REQUIRED'):store.load()
+    mounted[0]=True
+    ledger,version=ManualStore(path,required_mount=tmp_path).load()
+    assert ledger.balance==Decimal('9999.52') and ledger.position.id=='a'*32 and version==1
+
+
+@pytest.mark.parametrize('mutate',[
+    lambda d:d.update(trades=[1]),lambda d:d.update(trades=None),
+    lambda d:d.update(position=[]),lambda d:d.update(position={'side':'LONG'}),
+    lambda d:d.update(balance='NaN'),lambda d:d.update(realized={}),
+])
+def test_malformed_persisted_state_is_sanitized_and_protection_survives(setup,mutate):
+    client,svc=setup;post(client)
+    with sqlite3.connect(svc.store.path) as db:
+        raw=json.loads(db.execute('SELECT data FROM state').fetchone()[0]);mutate(raw)
+        db.execute('UPDATE state SET data=?',(json.dumps(raw),))
+    r=client.get('/api/manual-paper/state',auth=AUTH)
+    assert r.status_code==503 and r.json()['code']=='CORRUPT_JOURNAL'
+    async def run():
+        task=asyncio.create_task(svc.run_protection())
+        for _ in range(100):
+            if svc.protection_error:break
+            await asyncio.sleep(.001)
+        assert not task.done() and svc.protection_error=='CORRUPT_JOURNAL'
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):await task
+    asyncio.run(run())

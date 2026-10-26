@@ -173,6 +173,6 @@ def configured(client):
             durable=True
         elif mode!='development' or os.getenv('RENDER'):
             raise ValueError('PERSISTENT_DISK_REQUIRED')
-        return Service(ManualStore(path),client=client,durable=durable)
+        return Service(ManualStore(path,required_mount=mount if durable else None),client=client,durable=durable)
     except (ValueError,OSError):
         return Service(error='PERSISTENT_STORAGE_NOT_READY')
