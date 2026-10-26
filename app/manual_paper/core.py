@@ -62,9 +62,9 @@ class ManualPaper:
             raise ValueError("RISK_LIMIT")
         if self.balance < entry_fee:
             raise ValueError("INSUFFICIENT_BALANCE")
-        self.balance -= entry_fee
         if candle_time is not None and (type(candle_time) is not int or candle_time <= 0):
             raise ValueError("INVALID_CANDLE_TIME")
+        self.balance -= entry_fee
         self.position = Position(side, quantity, entry, stop, target, entry_fee, candle_time)
         return self.position
 
