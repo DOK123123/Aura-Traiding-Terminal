@@ -30,7 +30,7 @@ class ManualCommands:
             p = ledger.open(side, price, stop, target, quantity, candle_time=stamp, position_id=request_id)
             return dict(id=p.id, side=p.side, quantity=str(p.quantity), entry=str(p.entry),
                         stop=str(p.stop), target=str(p.target), candle_time=stamp)
-        return self.store.execute(request_id,'OPEN',args,run)
+        return self.store.execute(request_id,'OPEN',args,run,quote_ms=quote.get('time') if isinstance(quote,dict) else None)
 
     def close(self, request_id, quote, position_id=None, reason='MANUAL'):
         args = dict(position_id=position_id, reason=reason)
@@ -46,4 +46,4 @@ class ManualCommands:
                 raise ValueError('QUOTE_BEFORE_ENTRY')
             trade = ledger.close(price, reason=reason, closed_at=stamp)
             return {k:str(v) if hasattr(v,'is_finite') else v for k,v in trade.items()}
-        return self.store.execute(request_id,'CLOSE',args,run)
+        return self.store.execute(request_id,'CLOSE',args,run,quote_ms=quote.get('time') if isinstance(quote,dict) else None)

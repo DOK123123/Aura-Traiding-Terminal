@@ -52,6 +52,10 @@ class Service:
             ledger,version=await self.db(store.load)
         return ledger,version
 
+    async def close(self):
+        if self.store is not None and hasattr(self.store,'close'):
+            await asyncio.to_thread(self.store.close)
+
     async def quote(self):
         self.ready()
         return await fetch_execution_quote(self.client,clock=self.clock)
@@ -101,6 +105,7 @@ class Service:
         result=dict(mode='MANUAL_PAPER',virtual_only=True,real_money_execution='DISABLED',
                     balance=str(ledger.balance),starting_balance='10000',realized_pnl=str(ledger.realized),
                     position=asdict(p) if p else None,version=version,storage_durable=self.durable,
+                    storage_backend=getattr(self.store,'backend','SQLITE'),
                     equity=None,unrealized_pnl=None,position_net_pnl=None,quote=None,market_error=None,
                     protection_checked_at=self.last_check,protection_error=self.protection_error,
                     limits=dict(max_notional='2000',max_risk_pct='0.5',max_positions=1,fee_rate='0.0006',drawdown_limit_pct='10'),
@@ -160,6 +165,11 @@ def configured(client):
         return Service(error='MANUAL_PAPER_DISABLED')
     try:
         mode=os.getenv('AURA_MANUAL_PAPER_STORAGE','')
+        if mode=='supabase':
+            from .supabase_store import SupabaseStore
+            store=SupabaseStore(os.getenv('AURA_MANUAL_PAPER_SUPABASE_URL',''),
+                                os.getenv('AURA_MANUAL_PAPER_SUPABASE_SERVICE_KEY',''))
+            return Service(store,client=client,durable=True)
         raw=os.getenv('AURA_MANUAL_PAPER_DB','')
         path=Path(raw)
         if not raw or not path.is_absolute() or path.name!='manual-paper.sqlite3' or path.is_symlink():

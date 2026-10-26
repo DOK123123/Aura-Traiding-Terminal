@@ -144,7 +144,7 @@ class ManualStore:
                 return json.loads(previous[1])
         return None
 
-    def execute(self, request_id, command, arguments, apply_command):
+    def execute(self, request_id, command, arguments, apply_command, *, quote_ms=None):
         """Atomic, idempotent ledger transition. Caller supplies verified quote.
 
         apply_command(ledger) mutates ledger and returns a JSON-serializable

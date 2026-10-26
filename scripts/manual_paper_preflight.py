@@ -6,6 +6,7 @@ Outputs only safe configuration metadata and public quote status, never secrets.
 import asyncio
 import json
 import os
+import re
 from pathlib import Path
 import sqlite3
 from urllib.parse import quote
@@ -14,6 +15,7 @@ import httpx
 
 from app.manual_paper.bitget import fetch_execution_quote
 from app.manual_paper.store import ManualStore
+from app.manual_paper.supabase_store import SupabaseStore
 
 
 def storage_check(env=None):
@@ -24,6 +26,16 @@ def storage_check(env=None):
     enabled=env.get('AURA_MANUAL_PAPER_ENABLED','').lower()=='true'
     password=env.get('AURA_TESTNET_VIEW_PASSWORD','')
     mode=env.get('AURA_MANUAL_PAPER_STORAGE','')
+    if mode=='supabase':
+        url=env.get('AURA_MANUAL_PAPER_SUPABASE_URL','').strip().rstrip('/')
+        key=env.get('AURA_MANUAL_PAPER_SUPABASE_SERVICE_KEY','').strip()
+        configured=bool(re.fullmatch(r'https://[a-z0-9]{12,40}\.supabase\.co',url)
+                        and 32<=len(key)<=8192 and key.isascii() and key.isprintable())
+        return dict(virtual_only=True,exchange_execution=False,enabled=enabled,
+                    owner_password_configured=len(password)>=12,storage_mode=mode,
+                    storage_configured=configured,journal_read_verified=False,
+                    ready=enabled and len(password)>=12 and configured,
+                    code='CONFIGURED_REMOTE_READ_REQUIRED' if configured else 'CONFIGURATION_INCOMPLETE')
     valid_path=bool(raw and path.is_absolute() and path.name=='manual-paper.sqlite3' and path.parent.is_dir() and not path.is_symlink())
     mounted=bool(mount.is_absolute() and mount!=Path('/') and mount.resolve()==mount and os.path.ismount(mount))
     confined=bool(valid_path and mounted and path.resolve().is_relative_to(mount))
@@ -67,6 +79,19 @@ def storage_check(env=None):
 
 async def preflight(client=None,env=None):
     result=storage_check(env)
+    if result.get('storage_mode')=='supabase' and result['ready']:
+        values=os.environ if env is None else env
+        store=None
+        try:
+            store=SupabaseStore(values.get('AURA_MANUAL_PAPER_SUPABASE_URL',''),
+                                values.get('AURA_MANUAL_PAPER_SUPABASE_SERVICE_KEY',''))
+            ledger,version=await asyncio.to_thread(store.load)
+            result.update(journal_read_verified=ledger is not None,version=version,
+                          code='READY_EXISTING_JOURNAL' if ledger else 'READY_EMPTY_DATABASE_NOT_INITIALIZED')
+        except ValueError:
+            result.update(ready=False,code='STORAGE_READ_FAILED')
+        finally:
+            if store is not None:await asyncio.to_thread(store.close)
     async def check(c):
         try:
             q=await fetch_execution_quote(c)

@@ -72,3 +72,19 @@ def test_probe_refuses_foreign_database_before_reading_portfolio(tmp_path,monkey
     report=storage_check(env)
     assert not report['ready'] and report['code']=='JOURNAL_READ_FAILED'
     assert 'DUMMY_ONLY' not in json.dumps(report)
+
+
+def test_free_supabase_preflight_reads_without_seed_or_secret_output(tmp_path):
+    from unittest.mock import MagicMock
+    env=dict(AURA_MANUAL_PAPER_ENABLED='true',AURA_MANUAL_PAPER_STORAGE='supabase',
+             AURA_MANUAL_PAPER_SUPABASE_URL='https://abcdefghijklmnopqrst.supabase.co',
+             AURA_MANUAL_PAPER_SUPABASE_SERVICE_KEY='DUMMY_ONLY_SUPABASE_KEY_12345678901234567890',
+             AURA_TESTNET_VIEW_PASSWORD='DUMMY_ONLY_OWNER_SECRET')
+    fake=MagicMock();fake.load.return_value=(None,0)
+    with patch('scripts.manual_paper_preflight.SupabaseStore',return_value=fake),patch(
+            'scripts.manual_paper_preflight.fetch_execution_quote',new=AsyncMock(return_value=dict(
+                source='Bitget USDT-M Futures',symbol='BTCUSDT',product='USDT-FUTURES',time=1793007900000))):
+        report=asyncio.run(preflight(client=object(),env=env))
+    assert report['launch_ready'] and not report['journal_read_verified']
+    fake.save.assert_not_called();fake.execute.assert_not_called();fake.close.assert_called_once()
+    assert 'DUMMY_ONLY' not in json.dumps(report)

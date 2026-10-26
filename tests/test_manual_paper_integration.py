@@ -141,9 +141,9 @@ def test_bad_quote_never_mutates(setup,mutation):
 def test_expired_while_waiting_for_storage_transaction(setup):
     client,svc=setup
     original=svc.store.execute
-    def delayed(*args):
+    def delayed(*args,**kwargs):
         svc.clock=lambda:STAMP/1000+6
-        return original(*args)
+        return original(*args,**kwargs)
     svc.store.execute=delayed
     assert post(client).json()['code']=='STALE_QUOTE'
     assert svc.store.load()==(None,0)
@@ -346,8 +346,8 @@ def test_http_service_restart_preserves_account_and_idempotency(tmp_path):
 def test_commit_succeeds_but_reply_lost_replay_does_not_mutate(setup):
     client,svc=setup
     original=svc.store.execute
-    def lost(*args):
-        original(*args)
+    def lost(*args,**kwargs):
+        original(*args,**kwargs)
         raise OSError('dummy simulated connection loss after durable commit')
     svc.store.execute=lost
     r=post(client)

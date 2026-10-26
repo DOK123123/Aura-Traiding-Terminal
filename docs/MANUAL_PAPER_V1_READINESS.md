@@ -1,5 +1,7 @@
 # Manual Paper v1 — отчёт готовности
 
+**Текущий вариант: Render Free + Supabase Free, 0 USD/месяц в пределах квот.** Платный Render disk не требуется. Подробности актуальной реализации и ограничений — в разделе «Бесплатный backend Supabase» ниже и [runbook](MANUAL_PAPER_LAUNCH_RUNBOOK.md). Предыдущие результаты SQLite/платного варианта сохранены как история; они не заменяют проверку последнего SHA PR #57. Код и SQL подготовлены; production deploy и применение рабочей схемы не выполнялись.
+
 Дата: 26 октября 2026. Основа: существующий PR #57, исходный head `6a6470397129f0d72f19920f78bac2d2e3c493a1`. Проект не пересоздавался.
 
 ## Аудит и исправления
@@ -87,3 +89,26 @@ Render прочитан через подключённый инструмент
 Результаты дополнительных offline-проверок перед публикацией: **109 тестов Manual Paper — PASS**, включая 14 новых проверок mount loss, повреждённой структуры и read-only preflight (включая запрет чужой SQLite-схемы). Полный локальный Python после первых двух исправлений: 1946 passed / 3 existing PostgreSQL skipped / 0 failures; все 268 JavaScript — PASS. Полная проверка всех последующих файлов выполняется GitHub CI для нового head.
 
 Попытка безопасного входа в Dashboard завершилась таймаутом браузерного инструмента и сбросом его сеанса. Результат авторизации не подтверждён, содержимое env не прочитано; отсутствие или конкретные значения Manual Paper переменных не заявляются проверенными. До запуска нужна отдельная сверка таблицы Environment.
+
+## Бесплатный backend Supabase — текущий рекомендуемый вариант
+
+Этот раздел и новый launch runbook заменяют требование оплаты SQLite-диска из предыдущих исторических разделов. Теперь можно использовать **Render Free + существующий Supabase Free** в пределах лимитов, без платных услуг. SQLite остаётся дополнительным локальным/persistent-disk backend.
+
+Добавлены отдельный Supabase Store и additive SQL-схема `aura_manual_paper_v1_*`, RLS/ACL для server-only доступа, SECURITY INVOKER RPC, атомарные CAS + permanent receipts, проверка свежести по часам PostgreSQL после ожидания lock, checksum и повтор без рынка при неизвестном результате. Нет автоматического fallback или сброса баланса. Для экономии трафика одинаковые версии возвращают метаданные вместо полного снимка. Payload ограничен 1 MiB с резервом закрытия; все receipts сохраняются.
+
+Существующая Aura проверена **только чтением**: ACTIVE_HEALTHY, PostgreSQL 17, база 17,42 MB, новых Manual Paper таблиц пока 0. Подготовленная SQL-схема в рабочую базу не применялась. Render, его тариф/env и Active43 не менялись. Никаких production-позиций не открывалось.
+
+Добавлены offline HTTP/API тесты Supabase: LONG/SHORT и fees, потерянный ответ после commit, повтор/конфликт ID, cache revalidation, CAS retry, свежесть, source/scope, отсутствие локального fallback, неправильные ответы/HTTP auth/rate errors, redaction, новые secret key и legacy JWT headers. Preflight поддерживает remote read без создания account.
+
+Новый настоящий PostgreSQL harness запускается CI в выделенном labelled Docker container, `network=none`, без production-ключей. Он проверяет SQL-схему и повторное применение на заполненном счёте, RLS/ACL, запрет browser-ролям, отсутствие SECURITY DEFINER, LONG/SHORT/fees, restart, permanent idempotency, конкурентные команды, истечение quote под SQL lock и неизменность существующих Active43 function definitions. HTTP/PostgREST wire проверяется отдельно mocked transport; реальный Supabase gateway ещё не проверен после согласованной установки.
+
+Финальные code/security review: runtime Store/RPC/SQL/Service/lifecycle и UI не имеют доступа к существующему Active43 состоянию; engine/commands и SQLite Store остаются без сетевых клиентов. Server key только на backend, fixed Supabase URL/allowlisted RPC, redirects запрещены, ответы/таймауты ограничены и ошибки санитизированы. Математика риска и owner/CSRF не менялись. Новых подтверждённых нерешённых Critical/High не найдено; runtime/env и post-deploy проверки остаются условиями выпуска.
+
+Бесплатные ограничения: пока Render спит, SL/TP не проверяются; квоты Supabase общие, проект Free может быть приостановлен при неактивности. До запуска нужны отдельное согласование SQL, env и deploy, проверка текущего Active43 перед restart, фактические свежие quotes и телефон. **Платный тариф не требуется для нового backend.**
+
+Актуальный CI должен быть зелёным для последнего SHA PR #57. Детали бесплатного запуска: [MANUAL_PAPER_LAUNCH_RUNBOOK.md](MANUAL_PAPER_LAUNCH_RUNBOOK.md).
+
+
+Отдельный code review бесплатного backend выявил и исправил гонку same-ID между lookup и load: ошибка уже открытой позиции теперь повторно проверяет permanent receipt. Детерминированный offline regression проверяет этот порядок, а настоящий SQL CI отдельно проверяет конкуренцию разных клиентов. Лимит payload протестирован с запретом новых входов и доступным закрытием. Неправильный тип remote payload нормализован в CORRUPT_JOURNAL.
+
+Security review отдельно проверил owner/CSRF на всех mutation routes, отсутствие client price, fixed Bitget/Supabase endpoints, TLS/redirects, хранение server key, отказ browser-ролям, транзакционное сохранение состояния/receipt и DB-clock gate после lock. Реальный Supabase gateway, production env и физическая проверка телефона до согласованного выпуска — NOT RUN. Отдельная проверка синтаксиса всех Python, import app.main, node --check, diff whitespace и поиск секретов в изменениях — PASS. Node 24.22.1 локально вместо CI 24.19.0; один существующий warning Starlette/AnyIO, новых dependencies нет.

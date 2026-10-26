@@ -184,7 +184,7 @@
       <label>Take Profit · USDT<input id="mp-target" inputmode="decimal" type="text" required pattern="[0-9]+([.][0-9]{1,12})?" placeholder="Цена TP"></label>
     </div>
     <div class="mp-actions"><button id="mp-long" disabled>LONG</button><button id="mp-short" disabled>SHORT</button><button id="mp-close" disabled>Закрыть позицию</button><button id="mp-refresh">Обновить</button><button id="mp-retry" hidden>Повторить запрос</button></div>
-    <p class="mp-note">Одна позиция · максимум 2000 USDT · риск до SL с комиссиями ≤0,5% баланса · комиссия 0,06% на сторону · запрет новых входов при просадке 10%. Bid/ask не старше 5 секунд. SL/TP проверяются каждые 5 секунд работающим сервером; при сне или потере связи выход задерживается и убыток может превысить расчётный риск. Funding и глубина стакана не моделируются.</p>
+    <p class="mp-note">Бесплатный Render может засыпать: в это время SL/TP не проверяются. Баланс и журнал в Supabase сохраняются. Одна позиция · максимум 2000 USDT · риск до SL с комиссиями ≤0,5% баланса · комиссия 0,06% на сторону · запрет новых входов при просадке 10%. Bid/ask не старше 5 секунд. SL/TP проверяются каждые 5 секунд работающим сервером; при сне или потере связи выход задерживается и убыток может превысить расчётный риск. Funding и глубина стакана не моделируются.</p>
     <h3>Журнал закрытых виртуальных сделок</h3><ol id="mp-history"></ol>
     <div class="mp-actions"><button id="mp-prev" disabled>Новее</button><button id="mp-next" disabled>Ранее</button></div>
   </details>

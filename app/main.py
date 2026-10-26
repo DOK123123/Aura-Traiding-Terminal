@@ -76,7 +76,10 @@ async def lifespan(app):
                     except asyncio.CancelledError:
                         pass
             finally:
-                await app.state.active43.close()
+                try:
+                    await app.state.manual_paper.close()
+                finally:
+                    await app.state.active43.close()
 
 
 app = FastAPI(title="Trading Terminal", version="0.1.0", lifespan=lifespan)
