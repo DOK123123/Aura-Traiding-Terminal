@@ -30,3 +30,16 @@ def test_invalid_candle_time_does_not_debit_balance():
         ledger.open("LONG","80000","79500","81000","0.01",candle_time=-1)
     assert ledger.balance==ledger.starting_balance
     assert ledger.position is None
+
+
+def test_quote_requires_owner_auth(monkeypatch):
+    monkeypatch.setenv('AURA_TESTNET_VIEW_PASSWORD','long_test_password_123')
+    response=client.get('/api/manual-paper/quote')
+    assert response.status_code==401
+
+
+def test_quote_is_read_only_even_when_owner_logged_in(monkeypatch):
+    monkeypatch.setenv('AURA_TESTNET_VIEW_PASSWORD','long_test_password_123')
+    response=client.get('/api/manual-paper/quote',auth=('aura','long_test_password_123'))
+    assert response.status_code==503  # No market client in isolated test app
+    assert client.post('/api/manual-paper/orders',auth=('aura','long_test_password_123')).status_code==503
