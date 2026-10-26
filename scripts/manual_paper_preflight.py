@@ -43,6 +43,9 @@ def storage_check(env=None):
         # URI mode=ro avoids all schema creation, WAL setup and account seeding.
         db=sqlite3.connect('file:'+quote(str(path))+'?mode=ro',uri=True,timeout=3)
         db.execute('PRAGMA query_only=ON')
+        tables={row[0] for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if tables!={'state','requests'}:
+            raise ValueError('STORAGE_SCOPE_MISMATCH')
         if db.execute('PRAGMA quick_check').fetchone()!=('ok',):
             raise ValueError('CORRUPT_JOURNAL')
         row=db.execute('SELECT data,version FROM state WHERE id=1').fetchone()

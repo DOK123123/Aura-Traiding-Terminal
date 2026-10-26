@@ -60,3 +60,15 @@ def test_nonexistent_directory_and_read_only_path_not_ready(tmp_path,monkeypatch
     assert not storage_check(env)['ready']
     monkeypatch.setattr(os,'access',lambda *a:False)
     assert not storage_check(config(tmp_path))['ready']
+
+
+def test_probe_refuses_foreign_database_before_reading_portfolio(tmp_path,monkeypatch):
+    import sqlite3
+    monkeypatch.setattr(os.path,'ismount',lambda p:p==tmp_path)
+    env=config(tmp_path)
+    with sqlite3.connect(env['AURA_MANUAL_PAPER_DB']) as db:
+        db.execute('CREATE TABLE active43(dummy TEXT)')
+        db.execute("INSERT INTO active43 VALUES('DUMMY_ONLY_MUST_NOT_READ')")
+    report=storage_check(env)
+    assert not report['ready'] and report['code']=='JOURNAL_READ_FAILED'
+    assert 'DUMMY_ONLY' not in json.dumps(report)
