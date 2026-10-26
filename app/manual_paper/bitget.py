@@ -4,8 +4,8 @@ This module is not mounted in production. It fetches two independent
 closed-candle windows, never accepts client-submitted execution prices,
 and fails closed when Bitget changes the returned history.
 """
-import asyncio
-import time
+import httpx
+from app.providers import DataUnavailable
 from .quotes import verified_close, QuoteRejected
 from app.bitget_chart import BitgetProvider
 from app.models import INTERVALS
@@ -24,7 +24,7 @@ async def fetch_verified_quote(client, *, timeframe="15m", now=None):
     try:
         first = await provider.fetch(client, timeframe, count, now_ms=server_ms)
         second = await provider.fetch(client, timeframe, count, now_ms=server_ms)
-    except (ValueError, TimeoutError, OSError) as exc:
+    except (httpx.HTTPError, DataUnavailable, ValueError, TimeoutError, OSError) as exc:
         raise QuoteRejected("MARKET_UNAVAILABLE") from exc
     def snapshot(candles):
         return {
