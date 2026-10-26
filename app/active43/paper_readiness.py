@@ -16,6 +16,7 @@ from .selection import CHOICES
 from .service import Service, scheduler_configured
 from .readiness import SAFE_ERRORS
 from .recovery import history_issue
+from .candle_integrity import candle_hash
 
 
 def utc(at: int) -> str:
@@ -33,7 +34,9 @@ def reason(value: object) -> str:
         'STALE_DATA','STALE_OR_MISMATCHED_DATA','FUTURES_FILTERS_CHANGED',
         'MINIMUM_SIZE_OR_NOTIONAL','RISK_OR_COST_FILTER','INVALID_STOPS_AT_NEXT_OPEN',
         'RISK_LIMIT','TARGET_AFTER_COSTS','POSITION_LIMIT','INVALID_SIGNAL',
-        'FUTURES_FILTERS_UNAVAILABLE','SOURCE_CORRECTION_OR_HISTORY_MISSING'}
+        'FUTURES_FILTERS_UNAVAILABLE','SOURCE_CORRECTION_OR_HISTORY_MISSING',
+        'STABLE_VOLUME_CORRECTION_FLAT_ACCOUNT_ONLY','EXACT_DECIMAL_EQUIVALENCE',
+        'STABLE_CORRECTION_REBASELINE_WAIT_NEXT_CANDLE','STABLE_CORRECTION_RECONCILED'}
     return value if isinstance(value,str) and value in allowed else 'UNCLASSIFIED_DECISION'
 
 
@@ -121,7 +124,9 @@ async def inspect(service: Service) -> dict:
                     if len(bars)<1000 or any(b.time-a.time!=300 for a,b in zip(bars,bars[1:])):
                         raise DemoError('HISTORY_INCOMPLETE')
                     issue=history_issue(state,bars,received)
-                    result['history']=dict(status='BLOCKED' if issue else 'PASS',source=SOURCE,
+                    anchor=next((b for b in bars if b.time+300==state['watermark']),None)
+                    result['history']=dict(comparison='EXACT_NUMERIC_V1',
+                        current_numeric_hash=candle_hash(anchor) if anchor else None,status='BLOCKED' if issue else 'PASS',source=SOURCE,
                         anchor_status=issue['code'] if issue else 'NOT_ESTABLISHED' if state['watermark'] is None else 'MATCHED',
                         code=issue['code'] if issue else None,
                         anchor_timestamp=None if state['watermark'] is None else state['watermark']-300,
@@ -174,7 +179,7 @@ async def inspect(service: Service) -> dict:
                 if result['scheduler']['status']!='PASS':result['errors'].append(result['scheduler']['code'])
                 result['events']=[dict(kind=r['kind'],created_at=r['created_at'],
                     reason=reason(r.get('payload',{}).get('reason'))) for r in rows[:10]
-                    if r.get('kind') in ('OPEN','CLOSE','TICK','SIGNAL','REJECT','DECISION','ERROR','STATE_TRANSITION')]
+                    if r.get('kind') in ('OPEN','CLOSE','TICK','SIGNAL','REJECT','DECISION','ERROR','STATE_TRANSITION','HISTORY_REBASELINE','HISTORY_NORMALIZED')]
             async with asyncio.TaskGroup() as group:
                 group.create_task(market_probe())
                 group.create_task(ledger_probe())

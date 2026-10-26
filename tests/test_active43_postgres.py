@@ -12,6 +12,8 @@ def test_postgres_cli_refuses_render_before_docker(tmp_path,monkeypatch):
 def test_actual_sql_transactions_roles_recovery_and_cycles(tmp_path,monkeypatch):
     monkeypatch.delenv('RENDER',raising=False)
     report=verifier.run(tmp_path/'active43.json')
+    assert report['numeric_history']['status']=='PASS'
+    assert report['numeric_history']['legacy_normalization_restart_exactly_once']
     assert report['POSTGRESQL_VERIFIED'] and report['RLS_VERIFIED']
     assert report['preparation']['owner_readiness_get_byte_identical_sql']
     assert report['bounce']['rollback_preserves_history']

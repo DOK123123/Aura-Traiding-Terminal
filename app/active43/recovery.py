@@ -5,10 +5,12 @@ resuming entries requires the original anchor and a complete fresh snapshot.
 """
 from copy import deepcopy
 from decimal import Decimal, InvalidOperation
+from fractions import Fraction
+from .candle_integrity import anchor_matches,verified_anchor,candle_hash
 from .core import SOURCE, event, protect, validate
 from .strategies import STEPS
 from app.automated.engine import DemoError, mark, risk_reason
-from app.lab.models import digest, LabError
+from app.lab.models import digest, LabError, Bar, precise
 
 HISTORY_CODES = {'HISTORY_CANDLE_MISSING', 'HISTORY_CANDLE_CHANGED', 'HISTORY_INCOMPLETE'}
 LEGACY_HISTORY = 'SOURCE_CORRECTION_OR_HISTORY_MISSING'
@@ -22,7 +24,7 @@ def history_issue(state: dict, bars: list, now: int) -> dict | None:
     if watermark is not None:
         if prior is None:
             code = 'HISTORY_CANDLE_MISSING'
-        elif digest(prior.data()) != state['last_bar_hash']:
+        elif not anchor_matches(state,prior):
             code = 'HISTORY_CANDLE_CHANGED'
     if code is None and any(b.time - a.time != step for a, b in zip(bars, bars[1:])):
         code = 'HISTORY_INCOMPLETE'
@@ -35,7 +37,7 @@ def history_issue(state: dict, bars: list, now: int) -> dict | None:
     new = prior.data() if prior is not None else None
     differences = None
     if code == 'HISTORY_CANDLE_CHANGED' and isinstance(old, dict) and new is not None:
-        if old.get('time') == new['time'] and digest(old) == state['last_bar_hash']:
+        if verified_anchor(state) is not None and old.get('time') == new['time']:
             differences = [key for key in ('open','high','low','close','volume')
                            if old.get(key) != new[key]]
     classification = 'UNDETERMINED'
@@ -53,7 +55,7 @@ def history_issue(state: dict, bars: list, now: int) -> dict | None:
         except (InvalidOperation,ValueError,TypeError,KeyError):
             numeric_fields=None
     # Classification is audit only: raw hash inequality STILL blocks entries.
-    return dict(change_classification=classification,numeric_changed_fields=numeric_fields,changed_fields=differences, old_anchor_ohlcv=old if differences is not None else None,
+    return dict(change_classification=classification,numeric_changed_fields=numeric_fields,new_canonical_ohlcv_hash=candle_hash(prior) if prior else None,changed_fields=differences, old_anchor_ohlcv=old if differences is not None else None,
                 new_anchor_ohlcv=new if differences is not None else None,
                 code=code, candle_timestamp=(missing if code=='HISTORY_INCOMPLETE' else watermark-step),
                 anchor_timestamp=None if watermark is None else watermark-step,
@@ -66,24 +68,45 @@ def history_issue(state: dict, bars: list, now: int) -> dict | None:
 REVISION_QUARANTINE_SLOTS = 3
 
 
+@precise
 def revision_quarantine(state: dict, issue: dict, now: int) -> tuple[dict, bool]:
     """Count *distinct closed-bar slots* showing the same real correction.
 
     Reconciliation is only permitted for a previously owner-started PAUSED
     paper account with no position, pending execution or completed trades.
-    It never repairs a live position, infers retrospective fills, or acts OFF.
+    Only an increasing volume refinement <=0.1%, identical OHLC, three consecutive
+    closed slots and a flat never-traded account qualify. Prices are never
+    automatically accepted. It never repairs a live position or acts OFF.
     The original integrity guard remains in force throughout quarantine.
     """
-    if (issue.get('code') != 'HISTORY_CANDLE_CHANGED'
+    old_anchor=verified_anchor(state)
+    new_anchor=issue.get('new_anchor_ohlcv')
+    volume_ok=False
+    if old_anchor is not None and isinstance(new_anchor,dict):
+        try:
+            if set(new_anchor)!={'time','open','high','low','close','volume'}:raise ValueError()
+            if any(not isinstance(new_anchor[k],str) or len(new_anchor[k])>80 for k in ('open','high','low','close','volume')):raise ValueError()
+            candidate=Bar(new_anchor['time'],*[Decimal(new_anchor[k]) for k in ('open','high','low','close','volume')])
+            candidate.validate(STEPS[state['config']['timeframe']],now)
+            volume_ok=(candidate.time==old_anchor.time
+                and issue.get('source')==SOURCE
+                and issue.get('old_ohlcv_hash')==state['last_bar_hash']
+                and issue.get('new_ohlcv_hash')==digest(candidate.data())
+                and issue.get('new_canonical_ohlcv_hash')==candle_hash(candidate)
+                and all(getattr(candidate,k)==getattr(old_anchor,k) for k in ('open','high','low','close'))
+                and old_anchor.volume>0
+                and 0<Fraction(candidate.volume)-Fraction(old_anchor.volume)<=Fraction(old_anchor.volume)/1000)
+        except (KeyError,InvalidOperation,TypeError,ValueError,LabError):pass
+    if (not volume_ok or issue.get('gap_timestamp') is not None or issue.get('code') != 'HISTORY_CANDLE_CHANGED'
             or issue.get('change_classification') != 'NUMERIC_VALUES_CHANGED'
-            or not issue.get('numeric_changed_fields')
+            or issue.get('numeric_changed_fields') != ['volume']
             or state['mode'] not in ('ON', 'PAUSED')
             or state['position'] is not None or state.get('pending') is not None
             or state.get('pending_exit') is not None or state['trades'] != 0
             or state['emergency'] or risk_reason(state)
             or (state['mode'] == 'PAUSED'
                 and (not state.get('data_recovery_armed')
-                     or state.get('last_error') != 'HISTORY_CANDLE_CHANGED'))):
+                     or state.get('last_error') not in ('HISTORY_CANDLE_CHANGED','HISTORY_INCOMPLETE','HISTORY_SOURCE_UNAVAILABLE')))):
         return issue, False
 
     step = STEPS[state['config']['timeframe']]
@@ -91,13 +114,14 @@ def revision_quarantine(state: dict, issue: dict, now: int) -> tuple[dict, bool]
     previous = state.get('history_guard') or {}
     same = (previous.get('code') == issue['code']
             and previous.get('old_ohlcv_hash') == issue['old_ohlcv_hash']
-            and previous.get('new_ohlcv_hash') == issue['new_ohlcv_hash']
+            and previous.get('new_canonical_ohlcv_hash') == issue.get('new_canonical_ohlcv_hash')
+            and issue.get('new_canonical_ohlcv_hash') is not None
             and previous.get('anchor_timestamp') == issue['anchor_timestamp']
             and previous.get('change_classification') == 'NUMERIC_VALUES_CHANGED')
     old_slot = previous.get('revision_last_slot')
     old_count = previous.get('revision_observations')
     if (same and type(old_slot) is int and type(old_count) is int
-            and 1 <= old_count <= REVISION_QUARANTINE_SLOTS and slot >= old_slot):
+            and 1 <= old_count <= REVISION_QUARANTINE_SLOTS and old_slot <= slot <= old_slot+1):
         count = min(REVISION_QUARANTINE_SLOTS, old_count + (slot > old_slot))
         first = previous.get('revision_first_seen_at')
         if type(first) is not int or first > now:
