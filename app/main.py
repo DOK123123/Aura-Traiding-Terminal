@@ -45,6 +45,8 @@ from .exchange_diagnostics.api import router as diagnostics_router, configured a
 from .practice.api import router as practice_router
 from .practice.service import configured as configured_practice
 from .execution_verification import router as verification_router
+from .manual_paper.api import router as manual_paper_router
+from .manual_paper.service import configured as configured_manual_paper
 
 ROOT = Path(__file__).resolve().parent.parent
 PROVIDERS = {"BTCUSDT": BitgetProvider()}
@@ -55,15 +57,29 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app):
-    # Only the public Bitget market and the isolated Active43 controller start.
+    # Public Bitget, unchanged Active43, and separately configured Manual Paper.
     # Retired ledgers are not constructed, seeded, migrated or repriced.
     async with httpx.AsyncClient(timeout=20, follow_redirects=False) as client:
         app.state.client = client
         app.state.active43 = configured_active43()
+        app.state.manual_paper = configured_manual_paper(client)
+        manual_protection = (asyncio.create_task(app.state.manual_paper.run_protection())
+                             if app.state.manual_paper.store is not None else None)
         try:
             yield
         finally:
-            await app.state.active43.close()
+            try:
+                if manual_protection is not None:
+                    manual_protection.cancel()
+                    try:
+                        await manual_protection
+                    except asyncio.CancelledError:
+                        pass
+            finally:
+                try:
+                    await app.state.manual_paper.close()
+                finally:
+                    await app.state.active43.close()
 
 
 app = FastAPI(title="Trading Terminal", version="0.1.0", lifespan=lifespan)
@@ -80,6 +96,7 @@ app.include_router(bybit_linear_router)
 app.include_router(diagnostics_router)
 app.include_router(verification_router)
 app.include_router(practice_router)
+app.include_router(manual_paper_router)
 FRAME_HEADERS = {
     "X-Frame-Options": "DENY",
     "Content-Security-Policy": "frame-ancestors 'none'",
