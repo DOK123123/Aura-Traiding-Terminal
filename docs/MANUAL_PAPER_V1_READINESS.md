@@ -92,6 +92,10 @@ Render прочитан через подключённый инструмент
 
 ## Бесплатный backend Supabase — текущий рекомендуемый вариант
 
+**CI бесплатного backend — PASS:** [Regression CI #72](https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/40320837030) проверил runtime commit `e12f83672da0bcbec4f9bde5374e98cbbbf2a104`: **1976 Python + 268 JavaScript, 0 failures и 0 skips**. Включены все четыре настоящих PostgreSQL harness, новый Manual Paper — 10 сценариев, в том числе restart, same-ID/different-ID concurrency, RLS/ACL и истечение quote под SQL lock. JUnit/summary загружены артефактом этого run. Один существующий Starlette/AnyIO deprecation warning; не скрыт. Python CI 3.12.15, локально 3.12.14; Node CI 24.19.0, локально 24.22.1.
+
+Дополнительно read-only `get_organization` подтвердил у существующей организации Supabase `plan=free`, `tier=tier_free`. План и платные подписки не менялись. Базовый бюджет нового варианта — **0 USD/месяц в пределах квот**, а не исторические 7,25 USD для SQLite disk.
+
 Этот раздел и новый launch runbook заменяют требование оплаты SQLite-диска из предыдущих исторических разделов. Теперь можно использовать **Render Free + существующий Supabase Free** в пределах лимитов, без платных услуг. SQLite остаётся дополнительным локальным/persistent-disk backend.
 
 Добавлены отдельный Supabase Store и additive SQL-схема `aura_manual_paper_v1_*`, RLS/ACL для server-only доступа, SECURITY INVOKER RPC, атомарные CAS + permanent receipts, проверка свежести по часам PostgreSQL после ожидания lock, checksum и повтор без рынка при неизвестном результате. Нет автоматического fallback или сброса баланса. Для экономии трафика одинаковые версии возвращают метаданные вместо полного снимка. Payload ограничен 1 MiB с резервом закрытия; все receipts сохраняются.
