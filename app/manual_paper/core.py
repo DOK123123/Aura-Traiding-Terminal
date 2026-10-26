@@ -27,6 +27,7 @@ class Position:
     stop: Decimal
     target: Decimal
     entry_fee: Decimal
+    entry_candle_time: int | None = None
 
 
 class ManualPaper:
@@ -43,7 +44,7 @@ class ManualPaper:
         self.trades = []
         self.realized = D("0")
 
-    def open(self, side, entry, stop, target, quantity):
+    def open(self, side, entry, stop, target, quantity, *, candle_time=None):
         if self.position is not None:
             raise ValueError("POSITION_ALREADY_OPEN")
         if side not in ("LONG", "SHORT"):
@@ -62,7 +63,9 @@ class ManualPaper:
         if self.balance < entry_fee:
             raise ValueError("INSUFFICIENT_BALANCE")
         self.balance -= entry_fee
-        self.position = Position(side, quantity, entry, stop, target, entry_fee)
+        if candle_time is not None and (type(candle_time) is not int or candle_time <= 0):
+            raise ValueError("INVALID_CANDLE_TIME")
+        self.position = Position(side, quantity, entry, stop, target, entry_fee, candle_time)
         return self.position
 
     def close(self, price):
@@ -83,7 +86,7 @@ class ManualPaper:
         self.position = None
         return trade
 
-    def on_closed_candle(self, high, low, close):
+    def on_closed_candle(self, high, low, close, *, candle_time=None):
         """Conservative SL-first execution if both levels touched in one candle.
 
         Offline model only; not an exchange stop or guaranteed fill.
@@ -94,6 +97,9 @@ class ManualPaper:
         p = self.position
         if p is None:
             return None
+        if p.entry_candle_time is not None:
+            if type(candle_time) is not int or candle_time <= p.entry_candle_time:
+                raise ValueError("CANDLE_NOT_AFTER_ENTRY")
         stop_hit = low <= p.stop if p.side == "LONG" else high >= p.stop
         target_hit = high >= p.target if p.side == "LONG" else low <= p.target
         if stop_hit:
