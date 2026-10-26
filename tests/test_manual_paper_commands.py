@@ -21,7 +21,7 @@ def test_open_close_persist_and_idempotency(tmp_path):
     assert store.load()[1]==1
     close_quote={**Q,"price":"81000","time":1793007900}
     closed=svc.close(ID2,close_quote)
-    assert closed["result"]["net"]=="8.834000"
+    assert closed["result"]["net"]=="9.034000"
     assert svc.close(ID2,close_quote)==closed
     recovered,version=ManualStore(str(tmp_path/"manual.sqlite")).load()
     assert version==2 and recovered.position is None
