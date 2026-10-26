@@ -161,6 +161,48 @@ async def paper_readiness(request:Request):
         return JSONResponse(await inspect(service),headers=HEADERS)
 
 
+@router.get('/assistant-snapshot',dependencies=[Depends(owner)])
+async def assistant_snapshot(request: Request):
+    """Owner-only, bounded, read-only account/scheduler summary for assistants.
+
+    No market-data claim, trading authority, account mutation or credential output.
+    A 200 response is a diagnostic snapshot, not approval to activate PAPER.
+    """
+    from .deployment_readiness import inspect
+    service=getattr(request.app.state,'active43',None)
+    if service is None:
+        report=dict(status='BLOCKED',checked_at=None,render_commit=None,account=None,
+                    scheduler=None,errors=['ACTIVE43_NOT_CONFIGURED'])
+    elif service.readiness_lock.locked():
+        report=dict(status='BLOCKED',checked_at=None,render_commit=None,account=None,
+                    scheduler=None,errors=['READINESS_BUSY'])
+    else:
+        async with service.readiness_lock:
+            report=await inspect(service)
+    account=report.get('account') or {}
+    scheduler=report.get('scheduler') or {}
+    return JSONResponse(dict(
+        schema_version=1,scope='AURA43_ACTIVE_PAPER',read_only=True,
+        state_changed=False,paper_only=True,exchange_execution=False,
+        trading_control_available=False,market_data_verified=False,
+        signal_verified=False,production_paper_verified=False,
+        readiness_scope='ACCOUNT_AND_SCHEDULE_ONLY',
+        status=report.get('status','BLOCKED'),
+        checked_at=report.get('checked_at'),
+        render_commit=report.get('render_commit'),
+        account=dict(mode=account.get('mode'),balance=account.get('balance'),
+                     open_positions=account.get('open_positions'),
+                     pending_operations=account.get('pending_operations'),
+                     risk_code=account.get('risk_code')) if account else None,
+        scheduler=dict(status=scheduler.get('status','BLOCKED'),
+                       code=scheduler.get('code'),
+                       confirmed_ticks=len(scheduler.get('ticks') or []),
+                       cloudflare_audit_verified=False,
+                       http_delivery_verified=False) if scheduler else None,
+        errors=report.get('errors') or [],
+    ),headers=HEADERS)
+
+
 @router.get('/deployment-readiness',dependencies=[Depends(owner)])
 async def deployment_readiness(request:Request):
     from .deployment_readiness import inspect
