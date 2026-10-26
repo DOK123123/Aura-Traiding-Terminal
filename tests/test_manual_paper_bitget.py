@@ -2,6 +2,15 @@
 from unittest.mock import AsyncMock, patch
 from types import SimpleNamespace
 import pytest
+import asyncio
+from functools import wraps
+
+def offline_async(fn):
+    @wraps(fn)
+    def run(*args, **kwargs):
+        return asyncio.run(fn(*args, **kwargs))
+    return run
+
 from app.manual_paper.bitget import fetch_verified_quote
 from app.manual_paper.quotes import QuoteRejected
 
@@ -12,7 +21,7 @@ def candles(last_close=80100):
                             close=(last_close if i==2 else 80050),
                             volume=21) for i in range(3)]
 
-@pytest.mark.asyncio
+@offline_async
 async def test_double_fetch_verified():
     with patch("app.manual_paper.bitget.BitgetProvider") as cls:
         provider=cls.return_value
@@ -23,7 +32,7 @@ async def test_double_fetch_verified():
         assert provider.fetch.await_count==2
         assert provider.server_time.await_count==2
 
-@pytest.mark.asyncio
+@offline_async
 async def test_changed_history_blocks_quote():
     with patch("app.manual_paper.bitget.BitgetProvider") as cls:
         provider=cls.return_value
@@ -32,7 +41,7 @@ async def test_changed_history_blocks_quote():
         with pytest.raises(QuoteRejected,match="HISTORY_CANDLE_CHANGED"):
             await fetch_verified_quote(object())
 
-@pytest.mark.asyncio
+@offline_async
 async def test_network_error_blocks_quote():
     from app.providers import DataUnavailable
     with patch("app.manual_paper.bitget.BitgetProvider") as cls:

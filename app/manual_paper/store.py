@@ -1,14 +1,13 @@
-"""Isolated SQLite snapshot store for offline manual-paper prototype.
+"""Network-free transactional Manual Paper ledger and permanent request receipts.
 
-No production initialization. Never reuse the retired /api/paper database.
-The caller must supply a dedicated durable filesystem path; Render ephemeral
-storage is NOT sufficient for production. Do not expose this module via API
-until authenticated transaction/idempotency handling is implemented.
+The runtime configuration requires a verified persistent mount on Render.
+SQLite connections are always closed, including failed transactions.
 """
 import json
 import hashlib
 import re
 import sqlite3
+from contextlib import contextmanager
 from decimal import Decimal
 from pathlib import Path
 from .core import ManualPaper, Position
@@ -22,13 +21,31 @@ class ManualStore:
         if not self.path.parent.is_dir():
             raise ValueError("STORAGE_DIRECTORY_MISSING")
 
+    @contextmanager
     def _connect(self):
         db = sqlite3.connect(str(self.path), timeout=10)
-        db.execute("PRAGMA busy_timeout=10000")
-        db.execute("PRAGMA journal_mode=WAL")
-        db.execute("CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY CHECK (id=1), data TEXT NOT NULL, version INTEGER NOT NULL)")
-        db.execute("CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, result TEXT NOT NULL)")
-        return db
+        try:
+            db.execute("PRAGMA busy_timeout=10000")
+            tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            if tables - {'state','requests'}:
+                raise ValueError('STORAGE_SCOPE_MISMATCH')
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("PRAGMA synchronous=FULL")
+            db.execute("CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY CHECK (id=1), data TEXT NOT NULL, version INTEGER NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, result TEXT NOT NULL)")
+            db.execute("CREATE TRIGGER IF NOT EXISTS manual_requests_no_update BEFORE UPDATE ON requests BEGIN SELECT RAISE(ABORT,'APPEND_ONLY'); END")
+            db.execute("CREATE TRIGGER IF NOT EXISTS manual_requests_no_delete BEFORE DELETE ON requests BEGIN SELECT RAISE(ABORT,'APPEND_ONLY'); END")
+            # One SQL statement: two separate reads can straddle another commit.
+            has_state, has_requests = db.execute('SELECT EXISTS(SELECT 1 FROM state), EXISTS(SELECT 1 FROM requests)').fetchone()
+            if not has_state and has_requests:
+                raise ValueError('CORRUPT_JOURNAL')
+            yield db
+            db.commit()
+        except BaseException:
+            db.rollback()
+            raise
+        finally:
+            db.close()
 
     @staticmethod
     def encode(ledger):
@@ -47,8 +64,9 @@ class ManualStore:
                 "target": str(ledger.position.target),
                 "entry_fee": str(ledger.position.entry_fee),
                 "entry_candle_time": ledger.position.entry_candle_time,
+                "id": ledger.position.id,
             },
-            "trades": [{k: str(v) for k, v in t.items()} for t in ledger.trades],
+            "trades": [{k: str(v) if isinstance(v, Decimal) else v for k, v in t.items()} for t in ledger.trades],
         }, sort_keys=True)
 
     @staticmethod
@@ -58,13 +76,14 @@ class ManualStore:
                              data["max_risk"], data["max_notional"])
         ledger.balance = Decimal(data["balance"])
         ledger.realized = Decimal(data["realized"])
-        ledger.trades = [{k: (v if k == "side" else Decimal(v)) for k,v in t.items()}
+        ledger.trades = [{k: (Decimal(v) if k in {"entry","exit","quantity","gross","fees","net","stop","target"} else v) for k,v in t.items()}
                          for t in data["trades"]]
         if data["position"] is not None:
             p = data["position"]
             ledger.position = Position(p["side"], *(Decimal(p[k]) for k in
                 ("quantity", "entry", "stop", "target", "entry_fee")),
-                p["entry_candle_time"])
+                p["entry_candle_time"], p.get("id"))
+        ledger.validate()
         return ledger
 
     def load(self):
@@ -72,11 +91,14 @@ class ManualStore:
             row = db.execute("SELECT data,version FROM state WHERE id=1").fetchone()
             if row is None:
                 return None, 0
+            if type(row[1]) is not int or row[1]<1:
+                raise ValueError("CORRUPT_JOURNAL")
             return self.decode(row[0]), row[1]
 
     def save(self, ledger, expected_version):
         if type(expected_version) is not int or expected_version < 0:
             raise ValueError("INVALID_VERSION")
+        ledger.validate()
         payload = self.encode(ledger)
         with self._connect() as db:
             db.execute("BEGIN IMMEDIATE")
@@ -91,6 +113,19 @@ class ManualStore:
                            (payload, current+1))
             return current+1
 
+    @staticmethod
+    def fingerprint(command, arguments):
+        return hashlib.sha256(json.dumps([command, arguments], sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    def lookup(self, request_id, command, arguments):
+        with self._connect() as db:
+            previous = db.execute("SELECT fingerprint,result FROM requests WHERE id=?", (request_id,)).fetchone()
+            if previous:
+                if previous[0] != self.fingerprint(command, arguments):
+                    raise ValueError("IDEMPOTENCY_CONFLICT")
+                return json.loads(previous[1])
+        return None
+
     def execute(self, request_id, command, arguments, apply_command):
         """Atomic, idempotent ledger transition. Caller supplies verified quote.
 
@@ -99,9 +134,7 @@ class ManualStore:
         """
         if not isinstance(request_id, str) or not re.fullmatch(r"[a-f0-9]{32}", request_id):
             raise ValueError("INVALID_REQUEST_ID")
-        fingerprint = hashlib.sha256(json.dumps(
-            [command, arguments], sort_keys=True, separators=(",", ":")
-        ).encode("utf-8")).hexdigest()
+        fingerprint = self.fingerprint(command, arguments)
         with self._connect() as db:
             db.execute("BEGIN IMMEDIATE")
             previous = db.execute(
@@ -114,6 +147,7 @@ class ManualStore:
             row = db.execute("SELECT data,version FROM state WHERE id=1").fetchone()
             ledger = self.decode(row[0]) if row else ManualPaper()
             result = apply_command(ledger)
+            ledger.validate()
             receipt = {"request_id": request_id, "command": command,
                        "version": (row[1] if row else 0) + 1,
                        "balance": str(ledger.balance), "result": result}

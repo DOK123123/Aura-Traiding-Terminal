@@ -1,7 +1,6 @@
 """Isolated, offline manual-paper accounting prototype. No exchange or database I/O.
 
-Not connected to production API/UI. Every price must be an independently
-validated closed-candle quote before a caller invokes open/mark/close.
+The API supplies server-verified Bitget bid/ask prices. No exchange execution.
 """
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -14,7 +13,8 @@ def number(value):
         result = D(str(value))
     except (InvalidOperation, ValueError):
         raise ValueError("INVALID_NUMBER") from None
-    if not result.is_finite() or result <= 0:
+    if (not result.is_finite() or result <= 0 or not -12 <= result.adjusted() <= 12
+            or len(result.as_tuple().digits) > 28):
         raise ValueError("INVALID_NUMBER")
     return result
 
@@ -28,6 +28,7 @@ class Position:
     target: Decimal
     entry_fee: Decimal
     entry_candle_time: int | None = None
+    id: str | None = None
 
 
 class ManualPaper:
@@ -44,7 +45,7 @@ class ManualPaper:
         self.trades = []
         self.realized = D("0")
 
-    def open(self, side, entry, stop, target, quantity, *, candle_time=None):
+    def open(self, side, entry, stop, target, quantity, *, candle_time=None, position_id=None):
         if self.position is not None:
             raise ValueError("POSITION_ALREADY_OPEN")
         if side not in ("LONG", "SHORT"):
@@ -52,6 +53,8 @@ class ManualPaper:
         entry, stop, target, quantity = map(number, (entry, stop, target, quantity))
         if not ((stop < entry < target) if side == "LONG" else (target < entry < stop)):
             raise ValueError("INVALID_STOPS")
+        if self.balance <= self.starting_balance * D("0.9"):
+            raise ValueError("DRAWDOWN_LIMIT")
         notional = entry * quantity
         if notional > min(self.max_notional, self.balance):
             raise ValueError("POSITION_SIZE_LIMIT")
@@ -65,10 +68,10 @@ class ManualPaper:
         if candle_time is not None and (type(candle_time) is not int or candle_time <= 0):
             raise ValueError("INVALID_CANDLE_TIME")
         self.balance -= entry_fee
-        self.position = Position(side, quantity, entry, stop, target, entry_fee, candle_time)
+        self.position = Position(side, quantity, entry, stop, target, entry_fee, candle_time, position_id)
         return self.position
 
-    def close(self, price):
+    def close(self, price, *, reason="MANUAL", closed_at=None):
         price = number(price)
         position = self.position
         if position is None:
@@ -81,7 +84,9 @@ class ManualPaper:
         self.realized += net
         trade = dict(side=position.side, entry=position.entry, exit=price,
                      quantity=position.quantity, gross=gross,
-                     fees=position.entry_fee + exit_fee, net=net)
+                     fees=position.entry_fee + exit_fee, net=net,
+                     id=position.id, opened_at=position.entry_candle_time,
+                     closed_at=closed_at, reason=reason, stop=position.stop, target=position.target)
         self.trades.append(trade)
         self.position = None
         return trade
@@ -107,3 +112,30 @@ class ManualPaper:
         if target_hit:
             return self.close(p.target)
         return None
+
+    def validate(self):
+        """Reject damaged persisted accounting; never reset a bad journal."""
+        if (self.starting_balance != D('10000') or self.fee_rate != D('0.0006')
+                or self.max_risk != D('0.005') or self.max_notional != D('2000')):
+            raise ValueError('CORRUPT_JOURNAL')
+        if not self.balance.is_finite() or not self.realized.is_finite():
+            raise ValueError('CORRUPT_JOURNAL')
+        total = D('0')
+        for t in self.trades:
+            side, qty, entry, exit_price = t['side'], number(t['quantity']), number(t['entry']), number(t['exit'])
+            if side not in ('LONG','SHORT'):
+                raise ValueError('CORRUPT_JOURNAL')
+            gross = (exit_price-entry)*qty*(1 if side=='LONG' else -1)
+            fees = (entry+exit_price)*qty*self.fee_rate
+            if (t['gross'],t['fees'],t['net']) != (gross,fees,gross-fees):
+                raise ValueError('CORRUPT_JOURNAL')
+            total += t['net']
+        p = self.position
+        if p:
+            if (p.side not in ('LONG','SHORT') or p.entry_fee != p.entry*p.quantity*self.fee_rate
+                    or not ((p.stop < p.entry < p.target) if p.side=='LONG' else (p.target < p.entry < p.stop))):
+                raise ValueError('CORRUPT_JOURNAL')
+            for v in (p.quantity,p.entry,p.stop,p.target,p.entry_fee):
+                number(v)
+        if self.realized != total or self.balance != self.starting_balance+total-(p.entry_fee if p else 0):
+            raise ValueError('CORRUPT_JOURNAL')

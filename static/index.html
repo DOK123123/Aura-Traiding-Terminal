@@ -27,6 +27,8 @@
 <link rel="stylesheet" href="/static/execution_verification.css">
 <link rel="stylesheet" href="/static/alignment.css">
 <link rel="stylesheet" href="/static/live_paper_monitor.css">
+  <link rel="stylesheet" href="/static/manual-paper.css">
+  <script defer src="/static/manual-paper.js"></script>
 </head>
 <body>
 
@@ -159,6 +161,32 @@
       <p><a href="/static/active43-historical-trades.json.gz" download>Скачать исторические сделки выбранного кандидата · НЕ LIVE (JSON.GZ)</a></p>
       <p id="a43-curve-label">Историческая equity не является текущим балансом Paper.</p><canvas id="a43-curve" width="850" height="200" role="img" aria-label="Историческая equity выбранного экспериментального кандидата"></canvas>
     </details>
+  </details>
+
+
+  <details id="manual-paper-panel">
+    <summary>Manual Paper · ручной виртуальный счёт · 10 000 USDT</summary>
+    <p class="mp-note">Отдельный учебный баланс. BTCUSDT · Bitget USDT-M Futures · без плеча и реальных ордеров. Не связан с автоматическим PAPER.</p>
+    <p><a href="/api/paper/login">Войти как владелец</a></p>
+    <p id="mp-status" role="status" aria-live="polite">Откройте панель для чтения счёта.</p>
+    <p id="mp-storage">Чтение баланса не подтверждено</p>
+    <dl class="mp-grid">
+      <div><dt>Баланс USDT</dt><dd id="mp-balance">—</dd></div>
+      <div><dt>Equity с комиссией выхода</dt><dd id="mp-equity">—</dd></div>
+      <div><dt>Реализованный PnL</dt><dd id="mp-realized_pnl">—</dd></div>
+      <div><dt>Net PnL позиции</dt><dd id="mp-pnl">—</dd></div>
+    </dl>
+    <p id="mp-quote">Нет свежей подтверждённой котировки</p>
+    <p id="mp-position">—</p><p id="mp-protection">SL/TP: нет позиции</p>
+    <div class="mp-grid mp-inputs">
+      <label>Объём BTC<input id="mp-quantity" inputmode="decimal" type="text" required pattern="[0-9]+([.][0-9]{1,12})?" placeholder="0.01"></label>
+      <label>Stop Loss · USDT<input id="mp-stop" inputmode="decimal" type="text" required pattern="[0-9]+([.][0-9]{1,12})?" placeholder="Цена SL"></label>
+      <label>Take Profit · USDT<input id="mp-target" inputmode="decimal" type="text" required pattern="[0-9]+([.][0-9]{1,12})?" placeholder="Цена TP"></label>
+    </div>
+    <div class="mp-actions"><button id="mp-long" disabled>LONG</button><button id="mp-short" disabled>SHORT</button><button id="mp-close" disabled>Закрыть позицию</button><button id="mp-refresh">Обновить</button><button id="mp-retry" hidden>Повторить запрос</button></div>
+    <p class="mp-note">Одна позиция · максимум 2000 USDT · риск до SL с комиссиями ≤0,5% баланса · комиссия 0,06% на сторону · запрет новых входов при просадке 10%. Bid/ask не старше 5 секунд. SL/TP проверяются каждые 5 секунд работающим сервером; при сне или потере связи выход задерживается и убыток может превысить расчётный риск. Funding и глубина стакана не моделируются.</p>
+    <h3>Журнал закрытых виртуальных сделок</h3><ol id="mp-history"></ol>
+    <div class="mp-actions"><button id="mp-prev" disabled>Новее</button><button id="mp-next" disabled>Ранее</button></div>
   </details>
 
   <footer><span>Аналитический инструмент · без реальных сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
