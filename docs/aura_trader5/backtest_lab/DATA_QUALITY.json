@@ -1,0 +1,22 @@
+{
+  "real_source": "BITGET_USDT_FUTURES_BTCUSDT",
+  "execution_rows": 175680,
+  "first_utc_epoch": 1780243200,
+  "end_exclusive": 1790784000,
+  "duplicate_rows": 0,
+  "gaps": 0,
+  "rest_archive_comparison_bars": 288,
+  "rest_archive_conflicts": [],
+  "rest_evidence": [
+    {
+      "file": "BTCUSDT_opencheck_1788220800.json",
+      "sha256": "e5d77a03e131cdf6a933d9a2b343511ddf19a96d43e779d8aff7d89fecd079a6"
+    },
+    {
+      "file": "BTCUSDT_opencheck_1788280800.json",
+      "sha256": "99265c0ebfc6c5b271463493fef00b136fee45428c1e4326c9b2f42dda6e34f8"
+    }
+  ],
+  "timestamp_policy": "Numeric UNIX seconds interpreted in UTC without shifts; filename month boundaries UTC+8, not UTC",
+  "publication_time": "ASSUMED_CLOSE_PLUS_2_SECONDS_NOT_OBSERVED"
+}

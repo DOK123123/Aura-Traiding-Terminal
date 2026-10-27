@@ -1,0 +1,30 @@
+{
+  "python_passed": 1929,
+  "python_skipped": 3,
+  "javascript_passed": 279,
+  "new_offline_tests_passed": 36,
+  "python_version": "3.12.14",
+  "node_version": "24.19.0",
+  "code_hash": "474acefc8de51af317ae4e710c3109264ac230fe2be5ea2374c4bef0ff24fdc8",
+  "config_hash": "a652c21ee2148c19ec835db4ae18e96ab36ce789d2d3e55798a2de241ec8c8a4",
+  "verdict": "INSUFFICIENT_EVIDENCE",
+  "regression_scope": "LOCAL_OFFLINE_NO_PRODUCTION",
+  "real_archive_model": {
+    "signals": 1,
+    "base_trades": 1,
+    "source": "BITGET_USDT_FUTURES_BTCUSDT"
+  },
+  "real_orders": 0,
+  "production_calls": 0,
+  "paper_state_changes": 0,
+  "postgres_local": "NOT_RUN_EXISTING_OPT_IN_SUITES",
+  "review": {
+    "code": "PASS: availability, absolute geometry, closed prefix and accounting checks; no unresolved critical/high finding",
+    "security": "PASS: local-only reader, bounded new output, no web/account/client/credential/scheduler access",
+    "remaining": [
+      "Funding/real historical bid-ask and fills unverified",
+      "Independent new OOS unavailable",
+      "Continuous live protective execution not represented by OHLC stop model"
+    ]
+  }
+}
