@@ -30,29 +30,36 @@ def main():
         base=f'http://127.0.0.1:{port}'
         env={k:v for k,v in os.environ.items() if not k.startswith(('AURA_','BYBIT_','BINANCE_','PAPER_','RENDER'))}
         env['PYTHONPATH']=str(ROOT)+os.pathsep+os.environ.get('PYTHONPATH','')
-        api=subprocess.Popen([sys.executable,'tests/manual_trader5_web_fixture.py','--db',str(folder/'manual-paper.sqlite3'),'--port',str(port)],cwd=ROOT,env=env,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
+        api_log=(a.output_dir/'fixture.log').open('wb')
+        chrome_log=(a.output_dir/'chrome.log').open('wb')
+        api=subprocess.Popen([sys.executable,'tests/manual_trader5_web_fixture.py','--db',str(folder/'manual-paper.sqlite3'),'--port',str(port)],cwd=ROOT,env=env,stdout=subprocess.DEVNULL,stderr=api_log)
         chrome=None
         try:
             with httpx.Client(base_url=base,trust_env=False,timeout=3) as client:
                 for _ in range(100):
-                    if api.poll() is not None:raise AssertionError(api.stderr.read().decode())
+                    if api.poll() is not None:raise AssertionError((a.output_dir/'fixture.log').read_text())
                     try:
                         if client.get('/__test/audit').status_code==200:break
                     except httpx.HTTPError:pass
                     time.sleep(.05)
                 else:raise AssertionError('fixture startup timeout')
                 assert client.get('/api/manual-paper/state').status_code==401
-                chrome=subprocess.Popen([a.browser,'--headless','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--no-first-run','--proxy-server=http://127.0.0.1:9','--proxy-bypass-list=127.0.0.1;localhost',f'--user-data-dir={folder}/profile','--remote-debugging-port=0','about:blank'],env={'PATH':os.defpath,'LANG':'C.UTF-8'},stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
+                chrome=subprocess.Popen([a.browser,'--headless','--no-sandbox','--disable-gpu','--disable-extensions','--disable-dev-shm-usage','--disable-background-networking','--no-first-run','--proxy-server=http://127.0.0.1:9','--proxy-bypass-list=127.0.0.1;localhost',f'--user-data-dir={folder}/profile','--remote-debugging-port=0','about:blank'],env={'PATH':os.defpath,'LANG':'C.UTF-8'},stdout=subprocess.DEVNULL,stderr=chrome_log)
                 active=folder/'profile/DevToolsActivePort'
-                for _ in range(100):
+                for _ in range(200):
                     if active.exists():break
-                    if chrome.poll() is not None:raise AssertionError(chrome.stderr.read().decode())
-                    time.sleep(.05)
+                    if chrome.poll() is not None:raise AssertionError((a.output_dir/'chrome.log').read_text())
+                    time.sleep(.1)
+                else:raise AssertionError('Chrome startup timeout: '+(a.output_dir/'chrome.log').read_text()[-6000:])
                 port2=active.read_text().splitlines()[0]
-                pages=httpx.get(f'http://127.0.0.1:{port2}/json/list',trust_env=False).json()
                 # Chrome can list built-in extension background targets first.
                 # They accept CDP but cannot navigate/render a normal page.
-                page=next(p for p in pages if p.get('type')=='page' and p.get('url')=='about:blank')
+                for _ in range(200):
+                    pages=httpx.get(f'http://127.0.0.1:{port2}/json/list',trust_env=False).json()
+                    page=next((p for p in pages if p.get('type')=='page' and p.get('url')=='about:blank'),None)
+                    if page:break
+                    time.sleep(.05)
+                else:raise AssertionError('No normal page target: '+json.dumps(pages))
                 with connect(page['webSocketDebuggerUrl'],proxy=None) as ws:
                     seq=0
                     def call(method,params=None):
@@ -159,6 +166,7 @@ def main():
                     proc.terminate()
                     try:proc.wait(timeout=5)
                     except subprocess.TimeoutExpired:proc.kill();proc.wait()
+            api_log.close();chrome_log.close()
 
 
 if __name__=='__main__':main()
