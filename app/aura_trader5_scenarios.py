@@ -2,6 +2,7 @@
 from math import isfinite
 from decimal import Decimal,localcontext,ROUND_CEILING,ROUND_FLOOR
 from app.models import Candle
+from .aura_trader5_technical import technical_context,evidence_summary
 from .aura_trader5_analysis import Candle as HLC,ema,rsi,atr,fibonacci_levels,risk_plan
 
 SOURCE='Bitget · USDT-M Futures / api.bitget.com'
@@ -31,7 +32,7 @@ def frame_analysis(bars,frame,asof):
     av=atr([HLC(b.high,b.low,b.close) for b in bars]);rs=rsi(closes)
     trend='LONG' if e20-e50>.1*av else 'SHORT' if e50-e20>.1*av else 'NEUTRAL'
     return dict(ema20=e20,ema50=e50,rsi=rs,atr=av,trend=trend,close=closes[-1],
-        last_closed_at=bars[-1].time+step,bars=len(bars))
+        last_closed_at=bars[-1].time+step,bars=len(bars),technical=technical_context(bars,step))
 
 
 def price_step(value,tick,up=False):
@@ -40,7 +41,7 @@ def price_step(value,tick,up=False):
         return float((Decimal(str(value))/Decimal(str(tick))).to_integral_value(rounding=ROUND_CEILING if up else ROUND_FLOOR)*Decimal(str(tick)))
 
 
-def assess(windows,asof,price_tick=.1):
+def _assess(windows,asof,price_tick=.1):
     if type(price_tick) not in (int,float) or not isfinite(price_tick) or price_tick<=0:raise ValueError('INVALID_PRICE_TICK')
     if set(windows)!=set(STEPS):return wait('MISSING_TIMEFRAME',asof)
     frames={frame:frame_analysis(windows[frame],frame,asof) for frame in STEPS}
@@ -93,4 +94,11 @@ def assess(windows,asof,price_tick=.1):
         entry_zone=dict(low=lower,high=upper),reference_entry=entry,stop_loss=stop,take_profit=target,
         gross_rr=abs(target-entry)/distance,net_rr=plan['estimated_rr_after_costs'],
         based_on='CLOSED_5M_AND_PAST_15M_SWING',execution='MANUAL_REVIEW_ONLY'))
+    return result
+
+
+def assess(windows,asof,price_tick=.1):
+    result=_assess(windows,asof,price_tick)
+    if set(result["frames"])==set(STEPS):
+        result["evidence"]=evidence_summary(result["frames"],result["state"],result["scenario"])
     return result

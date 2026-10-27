@@ -23,7 +23,26 @@
   if(scenario&&(!fibonacci||fibonacci.direction!==(state==='LONG'?'up':'down'))){scenario=null;state='WAIT';}
   return {state,scenario,frames:b.frames,fibonacci,reasons:state==='WAIT'&&b.state!=='WAIT'?['План не прошёл проверку геометрии; WAIT.']:reasons,fresh:true,generated:b.generated_at,closed:b.asof_closed_at,valid_until:b.valid_until};
  }
- if(typeof module!=='undefined')module.exports={view,labels};
+ function technicalView(f,tf){
+  const t=f?.technical,step=STEPS[tf],finite=Number.isFinite;
+  if(!t||t.pivot_radius!==2||!['HH_HL','LH_LL','RANGE','UNCONFIRMED'].includes(t.structure)||!t.macd||!['LONG','SHORT','NEUTRAL'].includes(t.macd.bias)||![t.macd.line,t.macd.signal,t.macd.histogram].every(finite)||Math.abs(t.macd.line-t.macd.signal-t.macd.histogram)>1e-7||!Array.isArray(t.swings)||t.swings.length>12||!Array.isArray(t.rsi_divergences)||t.rsi_divergences.length>2)return null;
+  const past=p=>Number.isInteger(p.time)&&p.time>=f.last_closed_at-f.bars*step&&p.time<=f.last_closed_at-3*step&&p.confirmed_at===p.time+3*step;
+  if(!t.swings.every(p=>p&&['HIGH','LOW'].includes(p.kind)&&positive(p.price)&&past(p)))return null;
+  if(!t.rsi_divergences.every(p=>p&&['LONG','SHORT'].includes(p.side)&&Number.isInteger(p.first_at)&&Number.isInteger(p.second_at)&&p.first_at>=f.last_closed_at-f.bars*step&&p.first_at<p.second_at&&past({time:p.second_at,confirmed_at:p.confirmed_at})&&[p.first_rsi,p.second_rsi].every(n=>finite(n)&&n>=0&&n<=100)))return null;
+  if(!t.volume||!finite(t.volume.last)||t.volume.last<0||t.volume.directional!==false||!(t.volume.ratio===null||finite(t.volume.ratio)&&t.volume.ratio>=0))return null;
+  return t;
+ }
+ function contextEvidence(frames,state){
+  const reference=['LONG','SHORT'].includes(state)?state:frames['1h']?.trend;
+  const items=[];
+  for(const tf of Object.keys(STEPS)){
+   const f=frames[tf],t=technicalView(f,tf);if(!t)continue;
+   const entries=[['EMA20/50',f.trend],['MACD histogram',t.macd.bias],['Структура '+t.structure,t.structure==='HH_HL'?'LONG':t.structure==='LH_LL'?'SHORT':'NEUTRAL'],...t.rsi_divergences.map(p=>['RSI-дивергенция',p.side])];
+   for(const [name,side]of entries){const relation=!['LONG','SHORT'].includes(side)||!['LONG','SHORT'].includes(reference)?'NEUTRAL':side===reference?'SUPPORTS':'CONFLICTS';items.push({tf,name,side,relation});}
+  }
+  return {reference,items};
+ }
+ if(typeof module!=='undefined')module.exports={view,labels,technicalView,contextEvidence};
  if(!root.document)return;
  const d=root.document,el=id=>d.getElementById('analyst-'+id);if(!el('refresh'))return;
  let data=null,busy=false,controller=null,timer=null,closed=false,lastRequest=0,generation=0;
@@ -34,7 +53,16 @@
   el('freshness').textContent=v.fresh?'Анализ UTC: '+utc(v.generated)+' · действителен до '+utc(v.valid_until):'Свежесть не подтверждена';
   el('price').textContent=v.fresh?'Ориентир: последнее закрытие BTCUSDT 5m '+num(v.frames['5m'].close)+' USDT · '+utc(v.frames['5m'].last_closed_at)+'. Перед ручным входом проверьте LIVE-цену и спред.':'LIVE-график работает отдельно; устаревший план не используется.';
   el('reasons').replaceChildren();for(const text of v.reasons){const li=d.createElement('li');li.textContent=text;el('reasons').append(li);}
-  el('frames').replaceChildren();for(const tf of Object.keys(STEPS)){const f=v.frames[tf],a=d.createElement('article'),h=d.createElement('h3');h.textContent=tf+' · '+(f?f.trend:'WAIT');a.append(h);const dl=d.createElement('dl');for(const [k,label]of [['rsi','RSI 14'],['ema20','EMA 20'],['ema50','EMA 50'],['atr','ATR 14']]){const row=d.createElement('div'),dt=d.createElement('dt'),dd=d.createElement('dd');dt.textContent=label;dd.textContent=f?num(f[k]):'—';row.append(dt,dd);dl.append(row);}a.append(dl);const at=d.createElement('small');at.textContent=f?'Закрытие '+utc(f.last_closed_at):'Нет проверенной истории';a.append(at);el('frames').append(a);}
+  el('frames').replaceChildren();for(const tf of Object.keys(STEPS)){const f=v.frames[tf],a=d.createElement('article'),h=d.createElement('h3');h.textContent=tf+' · '+(f?f.trend:'WAIT');a.append(h);const dl=d.createElement('dl');for(const [k,label]of [['rsi','RSI 14'],['ema20','EMA 20'],['ema50','EMA 50'],['atr','ATR 14']]){const row=d.createElement('div'),dt=d.createElement('dt'),dd=d.createElement('dd');dt.textContent=label;dd.textContent=f?num(f[k]):'—';row.append(dt,dd);dl.append(row);}a.append(dl);const at=d.createElement('small');at.textContent=f?'Закрытие '+utc(f.last_closed_at):'Нет проверенной истории';a.append(at);
+   const t=technicalView(f,tf);if(t){const box=d.createElement('div');box.className='technical-details';
+    for(const text of ['MACD 12/26/9: '+num(t.macd.line)+' / '+num(t.macd.signal)+' · hist '+num(t.macd.histogram),'Структура: '+t.structure,'Объём: '+num(t.volume.last)+' · к прошлым 20: '+(t.volume.ratio===null?'нет базы':num(t.volume.ratio)+'×'),...t.rsi_divergences.map(p=>'RSI divergence '+p.side+' · подтверждение '+utc(p.confirmed_at))]){const p=d.createElement('p');p.textContent=text;box.append(p);}
+    const pivots=d.createElement('p');pivots.textContent='Последние подтверждённые swing: '+t.swings.slice(-4).map(p=>p.kind+' '+num(p.price)+' ('+utc(p.confirmed_at)+')').join('; ');box.append(pivots);a.append(box);
+   }el('frames').append(a);}
+  const evidence=contextEvidence(v.frames,v.state);el('evidence').replaceChildren();
+  if(!evidence.items.length){const li=d.createElement('li');li.textContent='Расширенный контекст недоступен; подтверждения не выдумываются.';el('evidence').append(li);}
+  for(const item of evidence.items){const li=d.createElement('li');li.className='evidence-'+item.relation.toLowerCase();li.textContent=item.tf+' · '+item.name+' → '+item.side+' · '+({SUPPORTS:'совпадает',CONFLICTS:'противоречит',NEUTRAL:'нейтрально'})[item.relation]+' относительно '+(evidence.reference||'WAIT');el('evidence').append(li);}
+  el('invalidation').textContent=v.scenario?'Сценарий отменён после '+utc(v.valid_until)+', при неполной/устаревшей истории, потере согласования EMA или закрытии 5m за SL '+num(v.scenario.stop_loss)+'. Это условия повторного анализа, не автоматический ордер.':'WAIT: вход не подтверждён. Нужен новый анализ; просроченные уровни не используются.';
+  if(typeof root.dispatchEvent==='function'&&typeof root.CustomEvent==='function')root.dispatchEvent(new root.CustomEvent('aura-analyst-snapshot',{detail:v}));
   el('fib').textContent=v.fibonacci?('Прошлый диапазон '+num(v.fibonacci.low)+' – '+num(v.fibonacci.high)+' USDT\n'+Object.entries(v.fibonacci.levels).map(([k,n])=>num(Number(k)*100)+'%: '+num(n)).join('\n')):'Нет подтверждённого прошлого импульса.';
  }
  async function refresh(){
