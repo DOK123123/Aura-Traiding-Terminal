@@ -96,15 +96,28 @@ def main():
                         control(case=case,bid=None,stale=False)
                         click('analyst-refresh');wait(f"document.getElementById('analyst-state').textContent==='{case if case in ('LONG','SHORT') else 'WAIT'}'")
                         click('mp-refresh');wait("document.getElementById('mp-refresh').disabled===false")
-                    shots=[]
+                    shots=[];call_history=[]
                     def shot(name,selector='#manual-paper-panel'):
                         assert ev('document.documentElement.scrollWidth<=innerWidth')
-                        bounds=ev("(()=>{const r=document.querySelector("+json.dumps(selector)+").getBoundingClientRect();return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height,scale:1};})()")
-                        raw=call('Page.captureScreenshot',dict(format='png',clip=bounds,captureBeyondViewport=True))['data']
+                        if selector=='#mp-confirm-dialog':
+                            assert ev("(()=>{const r=document.getElementById('mp-confirm-dialog').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;})()")
+                            raw=call('Page.captureScreenshot',dict(format='png'))['data']
+                        else:
+                            bounds=ev("(()=>{const r=document.querySelector("+json.dumps(selector)+").getBoundingClientRect();return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height,scale:1};})()")
+                            raw=call('Page.captureScreenshot',dict(format='png',clip=bounds,captureBeyondViewport=True))['data']
                         (a.output_dir/(name+'.png')).write_bytes(base64.b64decode(raw));shots.append(name+'.png')
                     call('Page.enable');call('Network.enable')
                     call('Network.setExtraHTTPHeaders',dict(headers={'Authorization':'Basic '+base64.b64encode(b'aura:dummy-browser-manual-password').decode()}))
-                    call('Page.addScriptToEvaluateOnNewDocument',dict(source=f"window.__clock={stamp};const NativeDate=Date;Date=class extends NativeDate{{static now(){{return window.__clock;}}}};window.__errors=[];addEventListener('error',e=>__errors.push(e.message));window.__calls=[];const nativeFetch=fetch;fetch=(u,o={{}})=>{{__calls.push({{url:String(u),method:o.method||'GET'}});return nativeFetch(u,o);}};"))
+                    init="window.__clock="+str(stamp)+";"+"""
+                    const NativeDate=Date;Date=class extends NativeDate{static now(){return window.__clock;}};
+                    window.__errors=[];addEventListener('error',e=>__errors.push(e.message));
+                    window.__calls=[];const nativeFetch=fetch;
+                    fetch=(u,o={})=>{const url=new URL(String(u),location.href),foreign=url.origin!==location.origin;
+                      __calls.push({url:String(u),method:o.method||'GET',blocked:foreign});
+                      if(foreign)return Promise.reject(Error('OFFLINE_EXTERNAL_REQUEST_BLOCKED'));
+                      return nativeFetch(u,o);};
+                    """
+                    call('Page.addScriptToEvaluateOnNewDocument',dict(source=init))
                     call('Emulation.setDeviceMetricsOverride',dict(width=1440,height=1000,deviceScaleFactor=1,mobile=False))
                     navigation=call('Page.navigate',dict(url=base+'/'));print('Browser navigation:',json.dumps(navigation),flush=True)
                     wait("document.getElementById('analyst-state')?.textContent==='LONG'&&!document.getElementById('mp-long').disabled")
@@ -120,7 +133,7 @@ def main():
                     ev("document.getElementById('mp-confirm').click()")
                     wait("document.getElementById('mp-position').textContent.includes('LONG')")
                     ledger=audit()['ledger'];assert ledger['position']['side']=='LONG' and not ledger['trades']
-                    call('Page.reload');wait("document.getElementById('mp-position')?.textContent.includes('LONG')")
+                    call_history.extend(ev('window.__calls'));call('Page.reload');wait("document.getElementById('mp-position')?.textContent.includes('LONG')")
                     shot('desktop-position')
                     click('mp-close');wait("document.getElementById('mp-confirm-dialog').open");assert audit()['ledger']['position']
                     click('mp-confirm');wait("document.getElementById('mp-position').textContent==='Нет открытой позиции'")
@@ -136,7 +149,7 @@ def main():
                     click('mp-confirm',True);wait("!document.getElementById('mp-retry').hidden&&!document.getElementById('mp-retry').disabled")
                     pending=ev("localStorage.getItem('aura-manual-paper-v1-pending')")
                     assert pending and audit()['ledger']['position']['side']=='SHORT'
-                    version=audit()['version'];call('Page.reload');wait("document.getElementById('mp-retry')?.hidden===false")
+                    version=audit()['version'];call_history.extend(ev('window.__calls'));call('Page.reload');wait("document.getElementById('mp-retry')?.hidden===false")
                     assert audit()['version']==version
                     click('mp-retry',True);wait("document.getElementById('mp-retry').hidden")
                     assert audit()['version']==version and ev("localStorage.getItem('aura-manual-paper-v1-pending')")==None
@@ -153,12 +166,20 @@ def main():
                     control(stale=False,unauthorized=True);click('mp-refresh',True);wait("document.getElementById('mp-status').textContent.includes('владелец')")
                     assert ev("document.getElementById('mp-long').disabled&&document.getElementById('mp-close').disabled")
                     assert ev('window.__errors')==[],ev('window.__errors')
-                    calls=ev('window.__calls')
-                    assert all(c['url'].startswith('/') for c in calls)
+                    calls=call_history+ev('window.__calls')
+                    (a.output_dir/'network.json').write_text(json.dumps(calls,indent=2))
+                    # Existing LIVE chart may attempt its fixed public REST GET.
+                    # The harness blocks it before fetch; namespace also has no egress.
+                    from urllib.parse import urlsplit,parse_qs
+                    for c in calls:
+                        if c['url'].startswith('/'):continue
+                        u=urlsplit(c['url']);q=parse_qs(u.query)
+                        assert c['blocked'] and c['method']=='GET' and u.scheme=='https' and u.netloc=='api.bitget.com' and u.path=='/api/v2/mix/market/candles'
+                        assert q.get('symbol')==['BTCUSDT'] and q.get('productType')==['USDT-FUTURES']
                     writes=[c for c in calls if c['method']=='POST']
                     assert all(c['url'].startswith('/api/manual-paper/') for c in writes)
                     report=dict(status='PASS',scope='SYNTHETIC_LOOPBACK_REAL_CHROME_SQLITE',browser=call('Browser.getVersion'),screenshots=shots,
-                        mobile_viewport=[393,851],touch=True,checks=['LONG/SHORT/WAIT','preview no writes','explicit OPEN/CLOSE confirmation','cancel','duplicate clicks','risk/fees/net PnL','reload persistence','lost-response same-ID retry','SL observed gap','429/history mismatch WAIT','stale quotes','owner 401','no external or Active43 writes'],production_changed=False,physical_android_verified=False)
+                        mobile_viewport=[393,851],touch=True,external_fetches_blocked=True,checks=['LONG/SHORT/WAIT','preview no writes','explicit OPEN/CLOSE confirmation','cancel','duplicate clicks','risk/fees/net PnL','reload persistence','lost-response same-ID retry','SL observed gap','429/history mismatch WAIT','stale quotes','owner 401','no external or Active43 writes'],production_changed=False,physical_android_verified=False)
                     (a.output_dir/'report.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
         finally:
             for proc in (chrome,api):
