@@ -17,23 +17,32 @@ class Candle:
     close: float
 
 
+def _period(period: int) -> None:
+    if type(period) is not int or not 1 <= period <= 10000:
+        raise ValueError("period must be an integer between 1 and 10000")
+
+
+def _finite(value: float) -> bool:
+    try:return type(value) in (int,float) and isfinite(value)
+    except OverflowError:return False
+
+
 def _validate(candles: Sequence[Candle]) -> None:
     if not candles:
         raise ValueError("No candles")
     for c in candles:
-        if not all(isfinite(v) for v in (c.high, c.low, c.close)):
+        if not all(_finite(v) and v>0 for v in (c.high, c.low, c.close)):
             raise ValueError("Non-finite candle")
         if c.low > c.high or not c.low <= c.close <= c.high:
             raise ValueError("Invalid OHLC candle")
 
 
 def ema(values: Sequence[float], period: int) -> float | None:
-    if period < 1:
-        raise ValueError("period must be positive")
+    _period(period)
+    if not all(_finite(v) for v in values):
+        raise ValueError("Non-finite value")
     if len(values) < period:
         return None
-    if not all(isfinite(v) for v in values):
-        raise ValueError("Non-finite value")
     result = sum(values[:period]) / period
     alpha = 2 / (period + 1)
     for value in values[period:]:
@@ -43,12 +52,11 @@ def ema(values: Sequence[float], period: int) -> float | None:
 
 def rsi(closes: Sequence[float], period: int = 14) -> float | None:
     """Wilder RSI, seeded with the first period's average gains/losses."""
-    if period < 1:
-        raise ValueError("period must be positive")
+    _period(period)
+    if not all(_finite(v) for v in closes):
+        raise ValueError("Non-finite value")
     if len(closes) < period + 1:
         return None
-    if not all(isfinite(v) for v in closes):
-        raise ValueError("Non-finite value")
     deltas = [b - a for a, b in zip(closes, closes[1:])]
     gain = sum(max(d, 0) for d in deltas[:period]) / period
     loss = sum(max(-d, 0) for d in deltas[:period]) / period
@@ -62,8 +70,7 @@ def rsi(closes: Sequence[float], period: int = 14) -> float | None:
 
 def atr(candles: Sequence[Candle], period: int = 14) -> float | None:
     """Wilder ATR; first TR uses previous close, so period+1 candles required."""
-    if period < 1:
-        raise ValueError("period must be positive")
+    _period(period)
     _validate(candles)
     if len(candles) < period + 1:
         return None
@@ -79,7 +86,7 @@ def atr(candles: Sequence[Candle], period: int = 14) -> float | None:
 
 def fibonacci_levels(swing_low: float, swing_high: float, direction: str) -> dict[str, float]:
     """Retracement prices measured from the end of an up/down impulse."""
-    if not all(isfinite(v) for v in (swing_low, swing_high)) or swing_high <= swing_low:
+    if not all(_finite(v) and v>0 for v in (swing_low, swing_high)) or swing_high <= swing_low:
         raise ValueError("Invalid swing range")
     if direction not in ("up", "down"):
         raise ValueError("direction must be up or down")
@@ -98,9 +105,9 @@ def risk_plan(entry: float, stop: float, target: float, side: str,
     Returns a planning estimate, not an order size validated against Bitget lot rules.
     """
     vals = (entry, stop, target, account_equity, risk_pct, fee_rate, slippage_rate)
-    if not all(isfinite(v) for v in vals) or min(entry, stop, target, account_equity, risk_pct) <= 0:
+    if not all(_finite(v) for v in vals) or min(entry, stop, target, account_equity, risk_pct) <= 0:
         raise ValueError("Invalid risk inputs")
-    if fee_rate < 0 or slippage_rate < 0 or risk_pct > 100:
+    if not 0 <= fee_rate < 1 or not 0 <= slippage_rate < 1 or risk_pct > 100:
         raise ValueError("Invalid rates")
     if side == "long":
         if not stop < entry < target:
@@ -114,11 +121,17 @@ def risk_plan(entry: float, stop: float, target: float, side: str,
         loss = stop - entry
     else:
         raise ValueError("side must be long or short")
-    per_unit_cost = (entry + stop) * fee_rate + (entry + stop) * slippage_rate
-    per_unit_risk = loss + per_unit_cost
-    budget = account_equity * risk_pct / 100
-    quantity = budget / per_unit_risk
-    estimated_reward = quantity * max(0.0, reward - (entry + target) * (fee_rate + slippage_rate))
+    entry_fill=entry*(1+slippage_rate if side=="long" else 1-slippage_rate)
+    stop_fill=stop*(1-slippage_rate if side=="long" else 1+slippage_rate)
+    target_fill=target*(1-slippage_rate if side=="long" else 1+slippage_rate)
+    sign=1 if side=="long" else -1
+    per_unit_risk=sign*(entry_fill-stop_fill)+(entry_fill+stop_fill)*fee_rate
+    per_unit_reward=sign*(target_fill-entry_fill)-(entry_fill+target_fill)*fee_rate
+    budget=account_equity*risk_pct/100
+    quantity=budget/per_unit_risk
+    estimated_reward=quantity*max(0.0,per_unit_reward)
+    if not all(isfinite(v) for v in (budget,quantity,estimated_reward,per_unit_risk)):
+        raise ValueError("Risk estimate overflow")
     return {
         "risk_budget_usdt": budget,
         "estimated_quantity": quantity,

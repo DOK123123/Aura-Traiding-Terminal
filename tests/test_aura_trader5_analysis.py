@@ -40,3 +40,11 @@ class TestManualAnalysis(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_independent_wilder_and_ema_reference_values():
+    closes=[44.34,44.09,44.15,43.61,44.33,44.83,45.10,45.42,45.84,46.08,45.89,46.03,45.61,46.28,46.28]
+    assert abs(rsi(closes)-70.4641350211)<1e-8
+    assert ema([1,2,3,4,5],3)==4
+    values=[Candle(11,9,10),Candle(13,9,12),Candle(15,11,14),Candle(21,19,20),Candle(23,20,21)]
+    assert abs(atr(values,3)-13/3)<1e-12

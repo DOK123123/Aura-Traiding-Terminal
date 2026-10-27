@@ -6,6 +6,8 @@
   <meta name="description" content="Bitget BTCUSDT USDT-M Futures · аналитика и виртуальный PAPER">
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/aura-analyst.css">
+  <script defer src="/static/aura-analyst.js"></script>
   <link rel="stylesheet" href="/static/patterns.css">
   <script defer src="/static/vendor/lightweight-charts.standalone.production.js"></script>
   <script defer src="/static/active43-live.js"></script>
@@ -33,6 +35,7 @@
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
 <main>
   <div class="page-heading"><div><p class="eyebrow">MARKET OVERVIEW</p><h1>Обзор рынка</h1></div><p class="session">Рынок <span>·</span> UTC</p></div>
+  <nav aria-label="Аналитический помощник"><a class="analyst-jump" href="#aura-analyst">AURA ANALYST · перейти к сценарию ↓</a></nav>
   <section class="toolbar" aria-label="Настройки анализа">
     <div class="instrument-control"><label for="symbol">Инструмент</label><select id="symbol"><option value="BTCUSDT">₿ BTCUSDT</option></select></div>
     <div class="timeframe-control"><span class="control-label">Таймфрейм</span><div class="segmented" id="timeframes" role="group" aria-label="Таймфрейм"><button data-tf="1m" aria-pressed="false">1m</button><button data-tf="5m" aria-pressed="false">5m</button><button data-tf="15m" class="active" aria-pressed="true">15m</button><button data-tf="1h" aria-pressed="false">1h</button></div></div>
@@ -61,6 +64,17 @@
       <details><summary>Как рассчитывается сигнал</summary><p>UP = 50 + 45 × (EMA + RSI + momentum) × D; DOWN = 100 − UP.</p><p>EMA = 0.5 × clip((EMA20 − EMA50) / ATR). RSI = 0.2 × clip((RSI14 − 50) / 25). Momentum = 0.3 × clip((close − close[−10]) / (3 × ATR)). clip ограничивает значение от −1 до 1.</p><p>D = 1 / max(1, σ последних 20 доходностей / σ всей выборки). Повышенная волатильность приближает оценку к 50/50. Диапазон оценки: 5–95%.</p><p id="factor-values">Вклад факторов появится после загрузки.</p><p>Trend определяется разницей EMA20 и EMA50: свыше 0.1 ATR — Bullish, ниже −0.1 ATR — Bearish, иначе Neutral. Горизонт прогноза и калибровка пока не заданы.</p></details>
     </aside>
   </div>
+  <section class="panel analyst" id="aura-analyst" aria-labelledby="analyst-title">
+    <div class="analyst-heading"><div><p class="eyebrow">AURA TRADER 5.0 · MANUAL RESEARCH</p><h2 id="analyst-title">AURA ANALYST</h2><p>BTCUSDT · Bitget USDT-M Futures</p></div><span id="analyst-state" data-state="WAIT" role="status" aria-live="polite">WAIT</span></div>
+    <p class="analyst-warning">Аналитический сценарий для самостоятельной проверки. Ордеры не создаются. Преимущество стратегии не подтверждено. PAPER и торговый счёт не используются.</p>
+    <div class="analyst-actions"><button id="analyst-refresh" type="button">Обновить анализ</button><span id="analyst-freshness">Нет подтверждённых данных</span></div>
+    <div class="analyst-plan" id="analyst-plan" hidden><div><span>Потенциальная зона входа</span><strong id="analyst-entry">—</strong></div><div><span>Stop Loss · ориентир</span><strong id="analyst-stop">—</strong></div><div><span>Take Profit · ориентир</span><strong id="analyst-target">—</strong></div><div><span>Risk / Reward</span><strong id="analyst-rr">—</strong></div></div>
+    <p id="analyst-price">Цена LIVE на графике и цена последнего закрытия для анализа различаются.</p>
+    <div id="analyst-frames" class="analyst-frames"></div>
+    <h3>Причины и подтверждения</h3><ul id="analyst-reasons"><li>Нажмите «Обновить анализ» или дождитесь загрузки.</li></ul>
+    <details><summary>Фибоначчи · прошлый импульс 15m</summary><p id="analyst-fib">Уровни ещё не рассчитаны.</p></details>
+    <p class="analyst-note">Используются только закрытые свечи 5m, 15m, 1h и 4h. Формирующаяся LIVE-свеча не участвует. Модель расходов: комиссия 0,10% и неблагоприятное проскальзывание 0,05% на сторону; funding не включён. Размер позиции и ограничения вашего аккаунта здесь не рассчитываются.</p>
+  </section>
   <section class="modules" aria-labelledby="modules-title"><div class="modules-heading"><h2 id="modules-title">Модули анализа</h2><span>Следующие этапы</span></div><div class="module-grid"><article><span class="module-symbol">⌁</span><h3>Fibonacci</h3><p>Уровни коррекции</p><span class="planned">Запланировано</span></article><article><span class="module-symbol">⇄</span><h3>Divergences</h3><p>Расхождения цены и RSI</p><span class="planned">Запланировано</span></article><article><span class="module-symbol">%</span><h3>Funding rate</h3><p>Ставки финансирования</p><span class="planned">Запланировано</span></article><article><span class="module-symbol">▥</span><h3>Multi-timeframe</h3><p>Анализ таймфреймов</p><span class="planned">Запланировано</span></article><article><span class="module-symbol">∿</span><h3>Elliott Wave</h3><p>Волновая структура</p><span class="planned">Запланировано</span></article></div></section>
   <section class="panel patterns" aria-labelledby="patterns-title">
     <div class="modules-heading"><div><p class="eyebrow">RESEARCH / CLOSED CANDLES</p><h2 id="patterns-title">HISTORICAL ANALOGS</h2></div><span class="tiny-badge">PATTERN ENGINE v1</span></div>

@@ -1,0 +1,282 @@
+{
+  "scope": "SYNTHETIC_OFFLINE_UI_ONLY",
+  "now": 1800000150,
+  "LONG": {
+    "version": "AURA_MANUAL_ANALYST_1",
+    "source": "Bitget \u00b7 USDT-M Futures / api.bitget.com",
+    "symbol": "BTCUSDT",
+    "market": "USDT-M Futures",
+    "state": "LONG",
+    "reasons": [
+      "TREND_5M_15M_1H",
+      "CLOSED_RSI_MOMENTUM",
+      "EMA_FIBONACCI_CONFLUENCE",
+      "CLOSED_CANDLE_CONFIRMATION",
+      "RR_AFTER_COSTS"
+    ],
+    "frames": {
+      "5m": {
+        "ema20": 14692.86081670094,
+        "ema50": 14681.319461930505,
+        "rsi": 55.32319623735773,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14707.25,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "15m": {
+        "ema20": 15525.947262563326,
+        "ema50": 14868.188201197745,
+        "rsi": 100.0,
+        "atr": 79.76895315414724,
+        "trend": "LONG",
+        "close": 16000,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "1h": {
+        "ema20": 14842.5,
+        "ema50": 14617.5,
+        "rsi": 100.0,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14985,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "4h": {
+        "ema20": 14842.5,
+        "ema50": 14617.5,
+        "rsi": 100.0,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14985,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      }
+    },
+    "scenario": {
+      "entry_zone": {
+        "low": 14662.9,
+        "high": 14722.8
+      },
+      "reference_entry": 14722.8,
+      "stop_loss": 14572.9,
+      "take_profit": 15097.5,
+      "gross_rr": 2.499666444296208,
+      "net_rr": 1.7022470428682657,
+      "based_on": "CLOSED_5M_AND_PAST_15M_SWING",
+      "execution": "MANUAL_REVIEW_ONLY"
+    },
+    "fibonacci": {
+      "direction": "up",
+      "low": 12970,
+      "high": 15980,
+      "low_at": 1799945100,
+      "high_at": 1799998200,
+      "levels": {
+        "0.236": 15269.64,
+        "0.382": 14830.18,
+        "0.500": 14475.0,
+        "0.618": 14119.82,
+        "0.786": 13614.14
+      },
+      "lookback_bars": 60,
+      "timeframe": "15m"
+    },
+    "generated_at": 1800000150,
+    "valid_until": 1800000210,
+    "read_only": true,
+    "manual_only": true,
+    "exchange_execution": false,
+    "profitability_verified": false,
+    "price_tick": 0.1,
+    "asof_closed_at": 1800000000,
+    "cost_model": {
+      "fee_per_side": 0.001,
+      "adverse_slippage_per_side": 0.0005,
+      "funding": "NOT_INCLUDED"
+    }
+  },
+  "SHORT": {
+    "version": "AURA_MANUAL_ANALYST_1",
+    "source": "Bitget \u00b7 USDT-M Futures / api.bitget.com",
+    "symbol": "BTCUSDT",
+    "market": "USDT-M Futures",
+    "state": "SHORT",
+    "reasons": [
+      "TREND_5M_15M_1H",
+      "CLOSED_RSI_MOMENTUM",
+      "EMA_FIBONACCI_CONFLUENCE",
+      "CLOSED_CANDLE_CONFIRMATION",
+      "RR_AFTER_COSTS"
+    ],
+    "frames": {
+      "5m": {
+        "ema20": 15307.13918329906,
+        "ema50": 15318.680538069495,
+        "rsi": 44.67680376264227,
+        "atr": 60.0,
+        "trend": "SHORT",
+        "close": 15292.75,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "15m": {
+        "ema20": 14474.052737436674,
+        "ema50": 15131.811798802253,
+        "rsi": 0.0,
+        "atr": 79.76895315414724,
+        "trend": "SHORT",
+        "close": 14000,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "1h": {
+        "ema20": 15157.5,
+        "ema50": 15382.5,
+        "rsi": 0.0,
+        "atr": 60.0,
+        "trend": "SHORT",
+        "close": 15015,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "4h": {
+        "ema20": 15157.5,
+        "ema50": 15382.5,
+        "rsi": 0.0,
+        "atr": 60.0,
+        "trend": "SHORT",
+        "close": 15015,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      }
+    },
+    "scenario": {
+      "entry_zone": {
+        "low": 15277.2,
+        "high": 15337.1
+      },
+      "reference_entry": 15277.2,
+      "stop_loss": 15427.1,
+      "take_profit": 14902.5,
+      "gross_rr": 2.499666444296208,
+      "net_rr": 1.6811414543816037,
+      "based_on": "CLOSED_5M_AND_PAST_15M_SWING",
+      "execution": "MANUAL_REVIEW_ONLY"
+    },
+    "fibonacci": {
+      "direction": "down",
+      "low": 14020,
+      "high": 17030,
+      "low_at": 1799998200,
+      "high_at": 1799945100,
+      "levels": {
+        "0.236": 14730.36,
+        "0.382": 15169.82,
+        "0.500": 15525.0,
+        "0.618": 15880.18,
+        "0.786": 16385.86
+      },
+      "lookback_bars": 60,
+      "timeframe": "15m"
+    },
+    "generated_at": 1800000150,
+    "valid_until": 1800000210,
+    "read_only": true,
+    "manual_only": true,
+    "exchange_execution": false,
+    "profitability_verified": false,
+    "price_tick": 0.1,
+    "asof_closed_at": 1800000000,
+    "cost_model": {
+      "fee_per_side": 0.001,
+      "adverse_slippage_per_side": 0.0005,
+      "funding": "NOT_INCLUDED"
+    }
+  },
+  "WAIT": {
+    "version": "AURA_MANUAL_ANALYST_1",
+    "source": "Bitget \u00b7 USDT-M Futures / api.bitget.com",
+    "symbol": "BTCUSDT",
+    "market": "USDT-M Futures",
+    "state": "WAIT",
+    "reasons": [
+      "RSI_NOT_CONFIRMED"
+    ],
+    "frames": {
+      "5m": {
+        "ema20": 14692.86081670094,
+        "ema50": 14681.319461930505,
+        "rsi": 55.32319623735773,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14707.25,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "15m": {
+        "ema20": 15525.947262563326,
+        "ema50": 14868.188201197745,
+        "rsi": 100.0,
+        "atr": 79.76895315414724,
+        "trend": "LONG",
+        "close": 16000,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "1h": {
+        "ema20": 14842.5,
+        "ema50": 14617.5,
+        "rsi": 100.0,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14985,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "4h": {
+        "ema20": 14842.5,
+        "ema50": 14617.5,
+        "rsi": 100.0,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14985,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      }
+    },
+    "scenario": null,
+    "fibonacci": {
+      "direction": "up",
+      "low": 12970,
+      "high": 15980,
+      "low_at": 1799945100,
+      "high_at": 1799998200,
+      "levels": {
+        "0.236": 15269.64,
+        "0.382": 14830.18,
+        "0.500": 14475.0,
+        "0.618": 14119.82,
+        "0.786": 13614.14
+      },
+      "lookback_bars": 60,
+      "timeframe": "15m"
+    },
+    "generated_at": 1800000150,
+    "valid_until": 1800000210,
+    "read_only": true,
+    "manual_only": true,
+    "exchange_execution": false,
+    "profitability_verified": false,
+    "price_tick": 0.1,
+    "asof_closed_at": 1800000000,
+    "cost_model": {
+      "fee_per_side": 0.001,
+      "adverse_slippage_per_side": 0.0005,
+      "funding": "NOT_INCLUDED"
+    }
+  }
+}
