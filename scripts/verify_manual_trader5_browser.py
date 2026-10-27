@@ -42,7 +42,7 @@ def main():
                     time.sleep(.05)
                 else:raise AssertionError('fixture startup timeout')
                 assert client.get('/api/manual-paper/state').status_code==401
-                chrome=subprocess.Popen([a.browser,'--headless','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--no-first-run','--proxy-server=http://127.0.0.1:9',f'--user-data-dir={folder}/profile','--remote-debugging-port=0','about:blank'],env={'PATH':os.defpath,'LANG':'C.UTF-8'},stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
+                chrome=subprocess.Popen([a.browser,'--headless','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--no-first-run','--proxy-server=http://127.0.0.1:9','--proxy-bypass-list=127.0.0.1;localhost',f'--user-data-dir={folder}/profile','--remote-debugging-port=0','about:blank'],env={'PATH':os.defpath,'LANG':'C.UTF-8'},stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
                 active=folder/'profile/DevToolsActivePort'
                 for _ in range(100):
                     if active.exists():break
@@ -65,10 +65,13 @@ def main():
                         if 'exceptionDetails' in r:raise AssertionError(r['exceptionDetails'])
                         return r['result'].get('value')
                     def wait(expression):
-                        for _ in range(100):
+                        for _ in range(200):
                             if ev(expression):return
                             time.sleep(.04)
-                        raise AssertionError('Browser timeout: '+expression+'\n'+str(ev("document.getElementById('mp-status')?.textContent")))
+                        diagnostic=ev("({url:location.href,title:document.title,status:document.getElementById('mp-status')?.textContent,text:document.body?.innerText.slice(0,5000),errors:window.__errors,calls:window.__calls})")
+                        (a.output_dir/'failure.json').write_text(json.dumps(diagnostic,indent=2))
+                        (a.output_dir/'failure.png').write_bytes(base64.b64decode(call('Page.captureScreenshot',dict(format='png'))['data']))
+                        raise AssertionError('Browser timeout: '+expression+'\n'+json.dumps(diagnostic))
                     def click(id,touch=False):
                         ev(f"document.getElementById('{id}').scrollIntoView({{block:'center'}})")
                         r=ev(f"(()=>{{const r=document.getElementById('{id}').getBoundingClientRect();return {{x:r.x+r.width/2,y:r.y+r.height/2}};}})()")
@@ -89,11 +92,11 @@ def main():
                         bounds=ev("(()=>{const r=document.querySelector("+json.dumps(selector)+").getBoundingClientRect();return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height,scale:1};})()")
                         raw=call('Page.captureScreenshot',dict(format='png',clip=bounds,captureBeyondViewport=True))['data']
                         (a.output_dir/(name+'.png')).write_bytes(base64.b64decode(raw));shots.append(name+'.png')
-                    call('Network.enable')
+                    call('Page.enable');call('Network.enable')
                     call('Network.setExtraHTTPHeaders',dict(headers={'Authorization':'Basic '+base64.b64encode(b'aura:dummy-browser-manual-password').decode()}))
                     call('Page.addScriptToEvaluateOnNewDocument',dict(source=f"window.__clock={stamp};const NativeDate=Date;Date=class extends NativeDate{{static now(){{return window.__clock;}}}};window.__errors=[];addEventListener('error',e=>__errors.push(e.message));window.__calls=[];const nativeFetch=fetch;fetch=(u,o={{}})=>{{__calls.push({{url:String(u),method:o.method||'GET'}});return nativeFetch(u,o);}};"))
                     call('Emulation.setDeviceMetricsOverride',dict(width=1440,height=1000,deviceScaleFactor=1,mobile=False))
-                    call('Page.navigate',dict(url=base+'/'))
+                    navigation=call('Page.navigate',dict(url=base+'/'));print('Browser navigation:',json.dumps(navigation),flush=True)
                     wait("document.getElementById('analyst-state')?.textContent==='LONG'&&!document.getElementById('mp-long').disabled")
                     ev("const b=document.createElement('p');b.textContent='СИНТЕТИЧЕСКИЙ ЛОКАЛЬНЫЙ СТЕНД · НЕ PRODUCTION';document.getElementById('manual-paper-panel').prepend(b)")
                     assert ev("document.querySelectorAll('#chart canvas').length>0")
