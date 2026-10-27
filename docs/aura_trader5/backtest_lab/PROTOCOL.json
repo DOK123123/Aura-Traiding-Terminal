@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "start": 1783296000,
+  "end": 1790784000,
+  "frozen_at": 1793107790,
+  "splits": [
+    60,
+    20,
+    20
+  ],
+  "exposure_registry_complete": false,
+  "prior_exposure": [
+    {
+      "start": 1758627000,
+      "end": 1777548600,
+      "study": "aura-bounce-research-v1",
+      "role": "IS"
+    },
+    {
+      "start": 1777548600,
+      "end": 1783855800,
+      "study": "aura-bounce-research-v1",
+      "role": "Validation"
+    },
+    {
+      "start": 1783855800,
+      "end": 1790163000,
+      "study": "aura-bounce-research-v1",
+      "role": "OOS"
+    },
+    {
+      "start": 1755946800,
+      "end": 1758627000,
+      "study": "aura-bounce-research-v1",
+      "role": "WARMUP_PRICE_EXPOSURE"
+    },
+    {
+      "start": 1615248000,
+      "end": 1653091200,
+      "study": "aura-breakout-retest-v1",
+      "role": "IS"
+    },
+    {
+      "start": 1653091200,
+      "end": 1665705600,
+      "study": "aura-breakout-retest-v1",
+      "role": "Validation"
+    },
+    {
+      "start": 1665705600,
+      "end": 1678320000,
+      "study": "aura-breakout-retest-v1",
+      "role": "OOS"
+    },
+    {
+      "start": 1611648000,
+      "end": 1615248000,
+      "study": "aura-breakout-retest-v1",
+      "role": "WARMUP_PRICE_EXPOSURE"
+    },
+    {
+      "start": 1569888000,
+      "end": 1594857600,
+      "study": "aura-edge-discovery-v1",
+      "role": "IS"
+    },
+    {
+      "start": 1594857600,
+      "end": 1603238400,
+      "study": "aura-edge-discovery-v1",
+      "role": "Validation"
+    },
+    {
+      "start": 1603238400,
+      "end": 1611619200,
+      "study": "aura-edge-discovery-v1",
+      "role": "OOS"
+    },
+    {
+      "start": 1565568000,
+      "end": 1569888000,
+      "study": "aura-edge-discovery-v1",
+      "role": "WARMUP_PRICE_EXPOSURE"
+    },
+    {
+      "start": 1692748800,
+      "end": 1730592000,
+      "study": "aura-strategy-lab-v2",
+      "role": "IS"
+    },
+    {
+      "start": 1730592000,
+      "end": 1743206400,
+      "study": "aura-strategy-lab-v2",
+      "role": "Validation"
+    },
+    {
+      "start": 1743206400,
+      "end": 1755907200,
+      "study": "aura-strategy-lab-v2",
+      "role": "OOS"
+    },
+    {
+      "start": 1678348800,
+      "end": 1692748800,
+      "study": "aura-strategy-lab-v2",
+      "role": "WARMUP_PRICE_EXPOSURE"
+    },
+    {
+      "start": 1789821600,
+      "end": 1792755000,
+      "study": "aura43-bounce30d/bars.json",
+      "role": "PRIOR_RESEARCH_PRICE_SERIES"
+    },
+    {
+      "start": 1761228000,
+      "end": 1792764000,
+      "study": "independent_audit/BTCUSDT_1h.json",
+      "role": "DATA_AUDIT_VIEWED_NO_NEW_STRATEGY_RUN"
+    }
+  ],
+  "prior_registry_sha256": "6b4909cdd6368784c601df0cda265f72769e719933c894d3180111b82b229231",
+  "config": {
+    "starting_balance": "10000",
+    "risk_pct": "0.5",
+    "max_notional": "2000",
+    "daily_loss_pct": "2",
+    "drawdown_pct": "10",
+    "fee_bps": "10",
+    "slippage_bps": "5",
+    "spread_bps": "2",
+    "tick": "0.1",
+    "lot": "0.0001",
+    "min_quantity": "0.0001",
+    "min_notional": "5",
+    "latency_seconds": 5,
+    "window_bars": 200,
+    "max_rows": 500000,
+    "deadline_seconds": 900,
+    "min_trades": 20,
+    "sharpe_min_daily_returns": 30,
+    "strategy": "AURA_MANUAL_ANALYST_1_UNCHANGED"
+  },
+  "analyst_code_hash": "f409b6f65779a261fd8fd679990038b38eb1660242928fbe8c7b53411e82281b",
+  "data_boundary_note": "Corrected before any historical performance run: official month files use UTC+8 partitions; numeric epoch timestamps unchanged. First attempted run blocked with PROTOCOL_RANGE."
+}
