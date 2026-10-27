@@ -67,5 +67,43 @@ jobs:
           path: |
             ci-results/*.xml
             ci-results/summary.json
+            ci-results/manual-trader5-browser/
+          if-no-files-found: error
+          retention-days: 7
+
+  manual-browser:
+    name: Manual Trader desktop + mobile Chrome
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact PR head or pushed main SHA
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Set up repository Python version
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: .python-version
+      - name: Install pinned browser fixture dependencies
+        run: |
+          python -m venv .ci-venv
+          .ci-venv/bin/python -m pip install --no-deps --requirement ci/requirements.lock
+          .ci-venv/bin/python -m pip check
+      - name: Verify actual desktop and mobile UI with loopback only
+        shell: bash
+        run: |
+          python_bin="$PWD/.ci-venv/bin/python"
+          browser_bin="$(command -v google-chrome || command -v chromium || true)"
+          test -n "$browser_bin"
+          runner_uid="$(id -u)"
+          runner_gid="$(id -g)"
+          sudo unshare --net /bin/bash -c 'ip link set lo up; exec setpriv --reuid="$1" --regid="$2" --init-groups "$3" scripts/verify_manual_trader5_browser.py --browser "$4" --output-dir ci-results/manual-trader5-browser' -- "$runner_uid" "$runner_gid" "$python_bin" "$browser_bin"
+      - name: Upload browser evidence and screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: manual-trader5-browser-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ci-results/manual-trader5-browser/
           if-no-files-found: error
           retention-days: 7

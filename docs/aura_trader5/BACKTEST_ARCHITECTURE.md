@@ -1,4 +1,9 @@
-# Manual Analyst — isolated offline replay architecture (design, not deployed)
+# Manual Analyst — isolated offline replay architecture
+
+Implementation: [Aura Backtest Lab 1.0](backtest_lab/README_RU.md) in
+`research/manual_analyst_replay/`. The original design below is preserved;
+its final “Present delivery” paragraph describes the earlier PR #58 stage,
+not the now-implemented offline runner. No deployment or trading is added.
 
 ## Decision
 
@@ -56,7 +61,7 @@ Freeze configs/splits and record reused development/validation/OOS periods befor
 running. No new independent OOS may be declared without provenance. Backtest
 profit alone never establishes a profitable strategy or authorizes trading.
 
-## Present delivery
+## Earlier stage-2 delivery (PR #58 design baseline)
 
 This document is architecture only. There is no new replay runner, historical
 PnL, parameter search or profitability claim. The browser notebook merely

@@ -1,0 +1,17 @@
+{
+  "scope": "PRIOR_PUBLIC_CONTRACT_SNAPSHOT_NOT_HISTORICALLY_EFFECTIVE_RULE_PROOF",
+  "source_file_sha256": "0a11ce51029a3dd64bc3b6ae194752f7b8addfdc88c2277912c59c321c5db69a",
+  "values": {
+    "symbol": "BTCUSDT",
+    "symbolType": "perpetual",
+    "quoteCoin": "USDT",
+    "priceEndStep": "1",
+    "pricePlace": "1",
+    "minTradeNum": "0.0001",
+    "sizeMultiplier": "0.0001",
+    "minTradeUSDT": "5",
+    "takerFeeRate": "0.0006",
+    "fundInterval": "8"
+  },
+  "fee_model_note": "Runner keeps unchanged analyst 10bps per side; public snapshot takerFeeRate is 6bps. This is deliberately conservative, not account fee discovery."
+}

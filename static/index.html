@@ -32,13 +32,15 @@
 <link rel="stylesheet" href="/static/execution_verification.css">
 <link rel="stylesheet" href="/static/alignment.css">
 <link rel="stylesheet" href="/static/live_paper_monitor.css">
+  <link rel="stylesheet" href="/static/manual-paper.css">
+  <script defer src="/static/manual-paper.js"></script>
 </head>
 <body>
 
 <header><a class="brand" href="/"><span class="brand-icon">Ⅲ</span>Trading<span>Terminal</span></a><span class="workspace-label">ANALYTICS WORKSPACE</span><span class="local">LOCAL <span class="version">/ MVP 0.1</span></span></header>
 <main>
-  <div class="page-heading"><div><p class="eyebrow">MARKET OVERVIEW</p><h1>Обзор рынка</h1></div><p class="session">Рынок <span>·</span> UTC</p></div>
-  <nav aria-label="Аналитический помощник"><a class="analyst-jump" href="#aura-analyst">AURA ANALYST · перейти к сценарию ↓</a></nav>
+  <div class="page-heading"><div><p class="eyebrow">MARKET OVERVIEW</p><h1>Aura Manual Trader 5.0</h1></div><p class="session">Рынок <span>·</span> UTC</p></div>
+  <nav aria-label="Аналитический помощник"><a class="analyst-jump" href="#aura-analyst">ANALYST · сценарий ↓</a> <a class="analyst-jump" href="#manual-paper-panel">Ручная виртуальная сделка ↓</a></nav>
   <section class="toolbar" aria-label="Настройки анализа">
     <div class="instrument-control"><label for="symbol">Инструмент</label><select id="symbol"><option value="BTCUSDT">₿ BTCUSDT</option></select></div>
     <div class="timeframe-control"><span class="control-label">Таймфрейм</span><div class="segmented" id="timeframes" role="group" aria-label="Таймфрейм"><button data-tf="1m" aria-pressed="false">1m</button><button data-tf="5m" aria-pressed="false">5m</button><button data-tf="15m" class="active" aria-pressed="true">15m</button><button data-tf="1h" aria-pressed="false">1h</button></div></div>
@@ -74,8 +76,8 @@
     </aside>
   </div>
   <section class="panel analyst" id="aura-analyst" aria-labelledby="analyst-title">
-    <div class="analyst-heading"><div><p class="eyebrow">AURA TRADER 5.0 · MANUAL RESEARCH</p><h2 id="analyst-title">AURA ANALYST</h2><p>BTCUSDT · Bitget USDT-M Futures</p></div><span id="analyst-state" data-state="WAIT" role="status" aria-live="polite">WAIT</span></div>
-    <p class="analyst-warning">Аналитический сценарий для самостоятельной проверки. Ордеры не создаются. Преимущество стратегии не подтверждено. PAPER и торговый счёт не используются.</p>
+    <div class="analyst-heading"><div><p class="eyebrow">AURA MANUAL TRADER 5.0 · АНАЛИТИЧЕСКИЙ ПОМОЩНИК</p><h2 id="analyst-title">AURA ANALYST</h2><p>BTCUSDT · Bitget USDT-M Futures</p></div><span id="analyst-state" data-state="WAIT" role="status" aria-live="polite">WAIT</span></div>
+    <p class="analyst-warning">Аналитический сценарий для самостоятельной проверки. Ордеры не создаются. Преимущество стратегии не подтверждено. Сигнал не открывает сделку. Отдельный виртуальный счёт ниже требует вашего подтверждения.</p>
     <div class="analyst-actions"><button id="analyst-refresh" type="button">Обновить анализ</button><span id="analyst-freshness">Нет подтверждённых данных</span></div>
     <div class="analyst-plan" id="analyst-plan" hidden><div><span>Потенциальная зона входа</span><strong id="analyst-entry">—</strong></div><div><span>Stop Loss · ориентир</span><strong id="analyst-stop">—</strong></div><div><span>Take Profit · ориентир</span><strong id="analyst-target">—</strong></div><div><span>Risk / Reward</span><strong id="analyst-rr">—</strong></div></div>
     <p id="analyst-price">Цена LIVE на графике и цена последнего закрытия для анализа различаются.</p>
@@ -85,6 +87,37 @@
     <details><summary>Фибоначчи · прошлый импульс 15m</summary><p id="analyst-fib">Уровни ещё не рассчитаны.</p></details>
     <p class="analyst-note">Используются только закрытые свечи 5m, 15m, 1h и 4h. Формирующаяся LIVE-свеча не участвует. Модель расходов: комиссия 0,10% и неблагоприятное проскальзывание 0,05% на сторону; funding не включён. Размер позиции и ограничения вашего аккаунта здесь не рассчитываются.</p>
   </section>
+  <details id="manual-paper-panel" open>
+    <summary>Aura Manual Trader 5.0 · виртуальный счёт</summary>
+    <p class="mp-note">Отдельный учебный баланс. BTCUSDT · Bitget USDT-M Futures · без плеча и реальных ордеров. Не связан с автоматическим PAPER.</p>
+    <p><a href="/api/paper/login">Войти как владелец</a></p>
+    <p id="mp-status" role="status" aria-live="polite">Чтение виртуального счёта…</p>
+    <p id="mp-storage">Чтение баланса не подтверждено</p>
+    <dl class="mp-grid">
+      <div><dt>Баланс USDT</dt><dd id="mp-balance">—</dd></div>
+      <div><dt>Equity с комиссией выхода</dt><dd id="mp-equity">—</dd></div>
+      <div><dt>Реализованный PnL</dt><dd id="mp-realized_pnl">—</dd></div>
+      <div><dt>Net PnL позиции</dt><dd id="mp-pnl">—</dd></div>
+    </dl>
+    <p id="mp-quote">Нет свежей подтверждённой котировки</p>
+    <p id="mp-position">—</p><p id="mp-protection">SL/TP: нет позиции</p>
+    <h3>Ручной план → проверка риска → ваше подтверждение</h3>
+    <p id="mp-source">Самостоятельный план · решение принимаете вы</p>
+    <div class="mp-actions"><button id="mp-copy" type="button" disabled>Взять сценарий ANALYST</button><button id="mp-manual" type="button" disabled>Самостоятельный план</button><button id="mp-use-quote" type="button" disabled>Взять ask для LONG</button></div>
+    <div class="mp-grid mp-inputs">
+      <label>Entry · предел цены, USDT<input id="mp-entry" inputmode="decimal" type="text" required pattern="[0-9]+([.][0-9]{1,12})?" placeholder="Максимум LONG / минимум SHORT"></label>
+      <label>Объём BTC<input id="mp-quantity" inputmode="decimal" type="text" required pattern="[0-9]+([.][0-9]{1,12})?" placeholder="0.01"></label>
+      <label>Stop Loss · USDT<input id="mp-stop" inputmode="decimal" type="text" required pattern="[0-9]+([.][0-9]{1,12})?" placeholder="Цена SL"></label>
+      <label>Take Profit · USDT<input id="mp-target" inputmode="decimal" type="text" required pattern="[0-9]+([.][0-9]{1,12})?" placeholder="Цена TP"></label>
+    </div>
+    <div class="mp-actions"><button id="mp-long" disabled>Проверить LONG</button><button id="mp-short" disabled>Проверить SHORT</button><button id="mp-close" disabled>Закрыть позицию</button><button id="mp-refresh">Обновить</button><button id="mp-retry" hidden>Повторить запрос</button></div>
+    <p id="mp-risk" role="status">Расчёт риска и обеих комиссий появится перед подтверждением.</p>
+    <p class="mp-note">Entry ограничивает неблагоприятную цену рыночной виртуальной операции: максимум для LONG, минимум для SHORT. Это не лимитная заявка. ANALYST заполняет только план; WAIT запрещает использование просроченного сценария. Для собственного решения явно выберите «Самостоятельный план».</p>
+    <dialog id="mp-confirm-dialog" aria-labelledby="mp-confirm-title"><h3 id="mp-confirm-title">Подтверждение виртуальной сделки</h3><p id="mp-confirm-text"></p><p id="mp-confirm-status" role="status"></p><div class="mp-actions"><button id="mp-cancel" type="button">Отмена</button><button id="mp-confirm" type="button" disabled>Подтверждаю виртуальную сделку</button></div></dialog>
+    <p class="mp-note">Бесплатный Render может засыпать: в это время SL/TP не проверяются. Баланс и журнал в Supabase сохраняются. Одна позиция · максимум 2000 USDT · риск до SL с комиссиями ≤0,5% баланса · комиссия 0,06% на сторону · запрет новых входов при просадке 10%. Bid/ask не старше 5 секунд. SL/TP проверяются каждые 5 секунд работающим сервером; при сне или потере связи выход задерживается и убыток может превысить расчётный риск. Funding и глубина стакана не моделируются.</p>
+    <h3>Журнал закрытых виртуальных сделок</h3><ol id="mp-history"></ol>
+    <div class="mp-actions"><button id="mp-prev" disabled>Новее</button><button id="mp-next" disabled>Ранее</button></div>
+  </details>
   <section class="panel scenario-journal" id="scenario-journal" aria-labelledby="journal-title"><p class="eyebrow">AURA TRADER 5.0 · LOCAL ONLY</p><h2 id="journal-title">Журнал ручных сценариев</h2><p>Планы и гипотетические исходы — не сделки. Нет доступа к PAPER, Supabase или биржевому счёту. Данные сохраняются только в этом браузере; экспортируйте резервную копию. Не храните ключи и личные данные в заметках.</p><p id="journal-draft">Создайте ручной Entry / SL / TP над графиком.</p><label>Заметка (до 280 символов)<textarea id="journal-notes" maxlength="280" rows="2"></textarea></label><div class="drawing-controls"><button id="journal-save" type="button" disabled>Сохранить план · локально</button><button id="journal-export" type="button">Экспорт JSON</button></div><p id="journal-status" role="status"></p><p>Модель исхода: taker 0,10% + adverse slippage 0,05% на каждую сторону. Funding/спред отдельно не моделируются. Указанная вручную цена выхода не доказательство достижимого исполнения.</p><div id="journal-list"></div></section>
   <section class="modules" aria-labelledby="modules-title"><div class="modules-heading"><h2 id="modules-title">Модули анализа</h2><span>Следующие этапы</span></div><div class="module-grid"><article><span class="module-symbol">⌁</span><h3>Fibonacci</h3><p>Уровни коррекции</p><span class="planned">Ручная разметка + ANALYST</span></article><article><span class="module-symbol">⇄</span><h3>Divergences</h3><p>Подтверждённые swing-pivots · RSI</p><span class="planned">В AURA ANALYST</span></article><article><span class="module-symbol">%</span><h3>Funding rate</h3><p>Ставки финансирования</p><span class="planned">Запланировано</span></article><article><span class="module-symbol">▥</span><h3>Multi-timeframe</h3><p>Закрытые 5m / 15m / 1h / 4h</p><span class="planned">В AURA ANALYST</span></article><article><span class="module-symbol">∿</span><h3>Elliott Wave</h3><p>Волновая структура</p><span class="planned">Запланировано</span></article></div></section>
   <section class="panel patterns" aria-labelledby="patterns-title">
@@ -185,6 +218,9 @@
       <p id="a43-curve-label">Историческая equity не является текущим балансом Paper.</p><canvas id="a43-curve" width="850" height="200" role="img" aria-label="Историческая equity выбранного экспериментального кандидата"></canvas>
     </details>
   </details>
+
+
+
 
   <footer><span>Аналитический инструмент · без реальных сделок</span><span id="last-updated">Данные ещё не загружены</span></footer>
 <p class="score-note">Единственный активный источник: Bitget BTCUSDT USDT-M Futures. Прежние счета, Spot-исследования и золото выведены из активного интерфейса; их данные не удалены. Основной график показывает закрытые свечи; текущая котировка доступна в панели Aura 4.3.</p></main>

@@ -1,0 +1,671 @@
+{
+  "version": "AURA_BACKTEST_LAB_1.0",
+  "source": "BITGET_USDT_FUTURES_BTCUSDT",
+  "data_hash": "f033ece15f9b510212c8267bcc69cbd9603a90f13187025472ccd9a8e7154481",
+  "manifest_sha256": "04f6ae36093884eed0e2c5bc8711e401028e2a6a3c6474823b9ff6dbd3286ab7",
+  "protocol_hash": "ea24078504a3b4f4429e9ccd639def7935e95de3b9704f0d7883d23c6af6fbe3",
+  "config_hash": "a652c21ee2148c19ec835db4ae18e96ab36ce789d2d3e55798a2de241ec8c8a4",
+  "code_hash": "474acefc8de51af317ae4e710c3109264ac230fe2be5ea2374c4bef0ff24fdc8",
+  "config": {
+    "starting_balance": "10000",
+    "risk_pct": "0.5",
+    "max_notional": "2000",
+    "daily_loss_pct": "2",
+    "drawdown_pct": "10",
+    "fee_bps": "10",
+    "slippage_bps": "5",
+    "spread_bps": "2",
+    "tick": "0.1",
+    "lot": "0.0001",
+    "min_quantity": "0.0001",
+    "min_notional": "5",
+    "latency_seconds": 5,
+    "window_bars": 200,
+    "max_rows": 500000,
+    "deadline_seconds": 900,
+    "min_trades": 20,
+    "sharpe_min_daily_returns": 30,
+    "strategy": "AURA_MANUAL_ANALYST_1_UNCHANGED"
+  },
+  "splits": [
+    {
+      "name": "development",
+      "start": 1783296000,
+      "end": 1787788800,
+      "independence": "NOT_INDEPENDENT",
+      "reasons": [
+        "PREVIOUSLY_VIEWED_CALENDAR",
+        "EXPOSURE_REGISTRY_NOT_PROVEN_COMPLETE",
+        "CONFIG_FROZEN_AFTER_PERIOD_STARTED",
+        "ASSUMED_HISTORICAL_AVAILABILITY"
+      ],
+      "prior_exposure_count": 3
+    },
+    {
+      "name": "validation",
+      "start": 1787788800,
+      "end": 1789286400,
+      "independence": "NOT_INDEPENDENT",
+      "reasons": [
+        "PREVIOUSLY_VIEWED_CALENDAR",
+        "EXPOSURE_REGISTRY_NOT_PROVEN_COMPLETE",
+        "CONFIG_FROZEN_AFTER_PERIOD_STARTED",
+        "ASSUMED_HISTORICAL_AVAILABILITY"
+      ],
+      "prior_exposure_count": 2
+    },
+    {
+      "name": "test",
+      "start": 1789286400,
+      "end": 1790784000,
+      "independence": "NOT_INDEPENDENT",
+      "reasons": [
+        "PREVIOUSLY_VIEWED_CALENDAR",
+        "EXPOSURE_REGISTRY_NOT_PROVEN_COMPLETE",
+        "CONFIG_FROZEN_AFTER_PERIOD_STARTED",
+        "ASSUMED_HISTORICAL_AVAILABILITY"
+      ],
+      "prior_exposure_count": 3
+    }
+  ],
+  "decisions": 24960,
+  "signals": 1,
+  "decision_reasons": {
+    "NO_ENTRY_CONFLUENCE": 2882,
+    "RSI_NOT_CONFIRMED": 2607,
+    "TREND_NOT_CONFIRMED": 15219,
+    "NO_ORDERED_SWING": 907,
+    "CONFLICTING_4H_CONTEXT": 3242,
+    "CLOSED_CANDLE_NOT_CONFIRMED": 64,
+    "INSUFFICIENT_RR_AFTER_COSTS": 38,
+    "TREND_5M_15M_1H|CLOSED_RSI_MOMENTUM|EMA_FIBONACCI_CONFLUENCE|CLOSED_CANDLE_CONFIRMATION|RR_AFTER_COSTS": 1
+  },
+  "data_quality": {
+    "execution_rows": 175680,
+    "execution_step": 60,
+    "first": 1780243200,
+    "end": 1790784000,
+    "frames": {
+      "5m": 35136,
+      "15m": 11712,
+      "1h": 2928,
+      "4h": 732
+    },
+    "duplicates": 0,
+    "gaps": 0,
+    "available_at_mode": "ASSUMED_CLOSE_PLUS_DELAY",
+    "data_kind": "REAL_PUBLIC_ARCHIVE"
+  },
+  "runs": {
+    "development-cost1": {
+      "metrics": {
+        "net_profit": "-19.75228134",
+        "return_pct": "-0.19752281",
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "breakeven": 0,
+        "win_rate": "0.00000000",
+        "profit_factor": "0.00000000",
+        "expectancy": "-19.75228134",
+        "max_drawdown_pct": "0.22461272",
+        "max_drawdown_usdt": "22.46737014",
+        "average_win": null,
+        "average_loss": "19.75228134",
+        "realized_risk_reward": null,
+        "total_fees": "3.97558134",
+        "total_slippage_usdt": "2.38650000",
+        "sharpe": null,
+        "sharpe_daily_returns": 52,
+        "sharpe_assumptions": "UTC full-day liquidation-equity returns; sample stdev; sqrt(365), crypto 24/7, zero risk-free rate. Undefined with <20 trades, <30 daily returns, nonpositive equity or zero variance.",
+        "sample_status": "INCONCLUSIVE",
+        "sample_note": "At least 20 trades required for numerical ranking; passing threshold is not statistical proof of profitability.",
+        "final_balance": "9980.24771866",
+        "final_liquidation_equity": "9980.24771866",
+        "long_trades": 1,
+        "average_holding_minutes": "120.00000000",
+        "trades_per_day": "0.01923077",
+        "short_trades": 0
+      },
+      "rejections": {},
+      "open_position": null,
+      "duplicate_signals_ignored": 0,
+      "drawdown_halted": false,
+      "status": "TECHNICAL_REPLAY_ONLY",
+      "real_money_execution": "DISABLED",
+      "funding": "NOT_INCLUDED",
+      "benchmark": {
+        "full_capital": {
+          "net_profit": "2377.71301197",
+          "return_pct": "23.77713012",
+          "fees": "22.37059803",
+          "starting_balance": "10000",
+          "quantity": "0.1569",
+          "funding": "NOT_INCLUDED"
+        },
+        "notional_2000": {
+          "net_profit": "475.84568882",
+          "return_pct": "4.75845689",
+          "fees": "4.47697118",
+          "starting_balance": "10000",
+          "quantity": "0.0314",
+          "funding": "NOT_INCLUDED"
+        },
+        "cash": {
+          "net_profit": "0",
+          "return_pct": "0"
+        }
+      },
+      "cost_multiplier": "1"
+    },
+    "development-cost1.5": {
+      "metrics": {
+        "net_profit": "0",
+        "return_pct": "0.00000000",
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "breakeven": 0,
+        "win_rate": null,
+        "profit_factor": null,
+        "expectancy": null,
+        "max_drawdown_pct": "0.00000000",
+        "max_drawdown_usdt": "0.00000000",
+        "average_win": null,
+        "average_loss": null,
+        "realized_risk_reward": null,
+        "total_fees": "0",
+        "total_slippage_usdt": "0",
+        "sharpe": null,
+        "sharpe_daily_returns": 52,
+        "sharpe_assumptions": "UTC full-day liquidation-equity returns; sample stdev; sqrt(365), crypto 24/7, zero risk-free rate. Undefined with <20 trades, <30 daily returns, nonpositive equity or zero variance.",
+        "sample_status": "INCONCLUSIVE",
+        "sample_note": "At least 20 trades required for numerical ranking; passing threshold is not statistical proof of profitability.",
+        "final_balance": "10000",
+        "final_liquidation_equity": "10000",
+        "long_trades": 0,
+        "average_holding_minutes": null,
+        "trades_per_day": "0.00000000",
+        "short_trades": 0
+      },
+      "rejections": {
+        "RR_AFTER_COSTS": 1
+      },
+      "open_position": null,
+      "duplicate_signals_ignored": 0,
+      "drawdown_halted": false,
+      "status": "TECHNICAL_REPLAY_ONLY",
+      "real_money_execution": "DISABLED",
+      "funding": "NOT_INCLUDED",
+      "benchmark": {
+        "full_capital": {
+          "net_profit": "2358.30945168",
+          "return_pct": "23.58309452",
+          "fees": "33.53342832",
+          "starting_balance": "10000",
+          "quantity": "0.1568",
+          "funding": "NOT_INCLUDED"
+        },
+        "notional_2000": {
+          "net_profit": "472.26349989",
+          "return_pct": "4.72263500",
+          "fees": "6.71524011",
+          "starting_balance": "10000",
+          "quantity": "0.0314",
+          "funding": "NOT_INCLUDED"
+        },
+        "cash": {
+          "net_profit": "0",
+          "return_pct": "0"
+        }
+      },
+      "cost_multiplier": "1.5"
+    },
+    "development-cost2": {
+      "metrics": {
+        "net_profit": "0",
+        "return_pct": "0.00000000",
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "breakeven": 0,
+        "win_rate": null,
+        "profit_factor": null,
+        "expectancy": null,
+        "max_drawdown_pct": "0.00000000",
+        "max_drawdown_usdt": "0.00000000",
+        "average_win": null,
+        "average_loss": null,
+        "realized_risk_reward": null,
+        "total_fees": "0",
+        "total_slippage_usdt": "0",
+        "sharpe": null,
+        "sharpe_daily_returns": 52,
+        "sharpe_assumptions": "UTC full-day liquidation-equity returns; sample stdev; sqrt(365), crypto 24/7, zero risk-free rate. Undefined with <20 trades, <30 daily returns, nonpositive equity or zero variance.",
+        "sample_status": "INCONCLUSIVE",
+        "sample_note": "At least 20 trades required for numerical ranking; passing threshold is not statistical proof of profitability.",
+        "final_balance": "10000",
+        "final_liquidation_equity": "10000",
+        "long_trades": 0,
+        "average_holding_minutes": null,
+        "trades_per_day": "0.00000000",
+        "short_trades": 0
+      },
+      "rejections": {
+        "ENTRY_OUTSIDE_ZONE": 1
+      },
+      "open_position": null,
+      "duplicate_signals_ignored": 0,
+      "drawdown_halted": false,
+      "status": "TECHNICAL_REPLAY_ONLY",
+      "real_money_execution": "DISABLED",
+      "funding": "NOT_INCLUDED",
+      "benchmark": {
+        "full_capital": {
+          "net_profit": "2338.92942870",
+          "return_pct": "23.38929429",
+          "fees": "44.68128130",
+          "starting_balance": "10000",
+          "quantity": "0.1567",
+          "funding": "NOT_INCLUDED"
+        },
+        "notional_2000": {
+          "net_profit": "468.68145540",
+          "return_pct": "4.68681455",
+          "fees": "8.95336460",
+          "starting_balance": "10000",
+          "quantity": "0.0314",
+          "funding": "NOT_INCLUDED"
+        },
+        "cash": {
+          "net_profit": "0",
+          "return_pct": "0"
+        }
+      },
+      "cost_multiplier": "2"
+    },
+    "validation-cost1": {
+      "metrics": {
+        "net_profit": "0",
+        "return_pct": "0.00000000",
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "breakeven": 0,
+        "win_rate": null,
+        "profit_factor": null,
+        "expectancy": null,
+        "max_drawdown_pct": "0.00000000",
+        "max_drawdown_usdt": "0.00000000",
+        "average_win": null,
+        "average_loss": null,
+        "realized_risk_reward": null,
+        "total_fees": "0",
+        "total_slippage_usdt": "0",
+        "sharpe": null,
+        "sharpe_daily_returns": 17,
+        "sharpe_assumptions": "UTC full-day liquidation-equity returns; sample stdev; sqrt(365), crypto 24/7, zero risk-free rate. Undefined with <20 trades, <30 daily returns, nonpositive equity or zero variance.",
+        "sample_status": "INCONCLUSIVE",
+        "sample_note": "At least 20 trades required for numerical ranking; passing threshold is not statistical proof of profitability.",
+        "final_balance": "10000",
+        "final_liquidation_equity": "10000",
+        "long_trades": 0,
+        "average_holding_minutes": null,
+        "trades_per_day": "0.00000000",
+        "short_trades": 0
+      },
+      "rejections": {},
+      "open_position": null,
+      "duplicate_signals_ignored": 0,
+      "drawdown_halted": false,
+      "status": "TECHNICAL_REPLAY_ONLY",
+      "real_money_execution": "DISABLED",
+      "funding": "NOT_INCLUDED",
+      "benchmark": {
+        "full_capital": {
+          "net_profit": "-270.75881088",
+          "return_pct": "-2.70758811",
+          "fees": "19.72841088",
+          "starting_balance": "10000",
+          "quantity": "0.1264",
+          "funding": "NOT_INCLUDED"
+        },
+        "notional_2000": {
+          "net_profit": "-54.19460376",
+          "return_pct": "-0.54194604",
+          "fees": "3.94880376",
+          "starting_balance": "10000",
+          "quantity": "0.0253",
+          "funding": "NOT_INCLUDED"
+        },
+        "cash": {
+          "net_profit": "0",
+          "return_pct": "0"
+        }
+      },
+      "cost_multiplier": "1"
+    },
+    "validation-cost1.5": {
+      "metrics": {
+        "net_profit": "0",
+        "return_pct": "0.00000000",
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "breakeven": 0,
+        "win_rate": null,
+        "profit_factor": null,
+        "expectancy": null,
+        "max_drawdown_pct": "0.00000000",
+        "max_drawdown_usdt": "0.00000000",
+        "average_win": null,
+        "average_loss": null,
+        "realized_risk_reward": null,
+        "total_fees": "0",
+        "total_slippage_usdt": "0",
+        "sharpe": null,
+        "sharpe_daily_returns": 17,
+        "sharpe_assumptions": "UTC full-day liquidation-equity returns; sample stdev; sqrt(365), crypto 24/7, zero risk-free rate. Undefined with <20 trades, <30 daily returns, nonpositive equity or zero variance.",
+        "sample_status": "INCONCLUSIVE",
+        "sample_note": "At least 20 trades required for numerical ranking; passing threshold is not statistical proof of profitability.",
+        "final_balance": "10000",
+        "final_liquidation_equity": "10000",
+        "long_trades": 0,
+        "average_holding_minutes": null,
+        "trades_per_day": "0.00000000",
+        "short_trades": 0
+      },
+      "rejections": {},
+      "open_position": null,
+      "duplicate_signals_ignored": 0,
+      "drawdown_halted": false,
+      "status": "TECHNICAL_REPLAY_ONLY",
+      "real_money_execution": "DISABLED",
+      "funding": "NOT_INCLUDED",
+      "benchmark": {
+        "full_capital": {
+          "net_profit": "-286.31195812",
+          "return_pct": "-2.86311958",
+          "fees": "29.56931812",
+          "starting_balance": "10000",
+          "quantity": "0.1263",
+          "funding": "NOT_INCLUDED"
+        },
+        "notional_2000": {
+          "net_profit": "-57.12637644",
+          "return_pct": "-0.57126376",
+          "fees": "5.89981644",
+          "starting_balance": "10000",
+          "quantity": "0.0252",
+          "funding": "NOT_INCLUDED"
+        },
+        "cash": {
+          "net_profit": "0",
+          "return_pct": "0"
+        }
+      },
+      "cost_multiplier": "1.5"
+    },
+    "validation-cost2": {
+      "metrics": {
+        "net_profit": "0",
+        "return_pct": "0.00000000",
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "breakeven": 0,
+        "win_rate": null,
+        "profit_factor": null,
+        "expectancy": null,
+        "max_drawdown_pct": "0.00000000",
+        "max_drawdown_usdt": "0.00000000",
+        "average_win": null,
+        "average_loss": null,
+        "realized_risk_reward": null,
+        "total_fees": "0",
+        "total_slippage_usdt": "0",
+        "sharpe": null,
+        "sharpe_daily_returns": 17,
+        "sharpe_assumptions": "UTC full-day liquidation-equity returns; sample stdev; sqrt(365), crypto 24/7, zero risk-free rate. Undefined with <20 trades, <30 daily returns, nonpositive equity or zero variance.",
+        "sample_status": "INCONCLUSIVE",
+        "sample_note": "At least 20 trades required for numerical ranking; passing threshold is not statistical proof of profitability.",
+        "final_balance": "10000",
+        "final_liquidation_equity": "10000",
+        "long_trades": 0,
+        "average_holding_minutes": null,
+        "trades_per_day": "0.00000000",
+        "short_trades": 0
+      },
+      "rejections": {},
+      "open_position": null,
+      "duplicate_signals_ignored": 0,
+      "drawdown_halted": false,
+      "status": "TECHNICAL_REPLAY_ONLY",
+      "real_money_execution": "DISABLED",
+      "funding": "NOT_INCLUDED",
+      "benchmark": {
+        "full_capital": {
+          "net_profit": "-301.85280772",
+          "return_pct": "-3.01852808",
+          "fees": "39.39466772",
+          "starting_balance": "10000",
+          "quantity": "0.1262",
+          "funding": "NOT_INCLUDED"
+        },
+        "notional_2000": {
+          "net_profit": "-60.27488712",
+          "return_pct": "-0.60274887",
+          "fees": "7.86644712",
+          "starting_balance": "10000",
+          "quantity": "0.0252",
+          "funding": "NOT_INCLUDED"
+        },
+        "cash": {
+          "net_profit": "0",
+          "return_pct": "0"
+        }
+      },
+      "cost_multiplier": "2"
+    },
+    "test-cost1": {
+      "metrics": {
+        "net_profit": "0",
+        "return_pct": "0.00000000",
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "breakeven": 0,
+        "win_rate": null,
+        "profit_factor": null,
+        "expectancy": null,
+        "max_drawdown_pct": "0.00000000",
+        "max_drawdown_usdt": "0.00000000",
+        "average_win": null,
+        "average_loss": null,
+        "realized_risk_reward": null,
+        "total_fees": "0",
+        "total_slippage_usdt": "0",
+        "sharpe": null,
+        "sharpe_daily_returns": 16,
+        "sharpe_assumptions": "UTC full-day liquidation-equity returns; sample stdev; sqrt(365), crypto 24/7, zero risk-free rate. Undefined with <20 trades, <30 daily returns, nonpositive equity or zero variance.",
+        "sample_status": "INCONCLUSIVE",
+        "sample_note": "At least 20 trades required for numerical ranking; passing threshold is not statistical proof of profitability.",
+        "final_balance": "10000",
+        "final_liquidation_equity": "10000",
+        "long_trades": 0,
+        "average_holding_minutes": null,
+        "trades_per_day": "0.00000000",
+        "short_trades": 0
+      },
+      "rejections": {},
+      "open_position": null,
+      "duplicate_signals_ignored": 0,
+      "drawdown_halted": false,
+      "status": "TECHNICAL_REPLAY_ONLY",
+      "real_money_execution": "DISABLED",
+      "funding": "NOT_INCLUDED",
+      "benchmark": {
+        "full_capital": {
+          "net_profit": "874.78613635",
+          "return_pct": "8.74786136",
+          "fees": "20.87471365",
+          "starting_balance": "10000",
+          "quantity": "0.1295",
+          "funding": "NOT_INCLUDED"
+        },
+        "notional_2000": {
+          "net_profit": "174.95722727",
+          "return_pct": "1.74957227",
+          "fees": "4.17494273",
+          "starting_balance": "10000",
+          "quantity": "0.0259",
+          "funding": "NOT_INCLUDED"
+        },
+        "cash": {
+          "net_profit": "0",
+          "return_pct": "0"
+        }
+      },
+      "cost_multiplier": "1"
+    },
+    "test-cost1.5": {
+      "metrics": {
+        "net_profit": "0",
+        "return_pct": "0.00000000",
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "breakeven": 0,
+        "win_rate": null,
+        "profit_factor": null,
+        "expectancy": null,
+        "max_drawdown_pct": "0.00000000",
+        "max_drawdown_usdt": "0.00000000",
+        "average_win": null,
+        "average_loss": null,
+        "realized_risk_reward": null,
+        "total_fees": "0",
+        "total_slippage_usdt": "0",
+        "sharpe": null,
+        "sharpe_daily_returns": 16,
+        "sharpe_assumptions": "UTC full-day liquidation-equity returns; sample stdev; sqrt(365), crypto 24/7, zero risk-free rate. Undefined with <20 trades, <30 daily returns, nonpositive equity or zero variance.",
+        "sample_status": "INCONCLUSIVE",
+        "sample_note": "At least 20 trades required for numerical ranking; passing threshold is not statistical proof of profitability.",
+        "final_balance": "10000",
+        "final_liquidation_equity": "10000",
+        "long_trades": 0,
+        "average_holding_minutes": null,
+        "trades_per_day": "0.00000000",
+        "short_trades": 0
+      },
+      "rejections": {},
+      "open_position": null,
+      "duplicate_signals_ignored": 0,
+      "drawdown_halted": false,
+      "status": "TECHNICAL_REPLAY_ONLY",
+      "real_money_execution": "DISABLED",
+      "funding": "NOT_INCLUDED",
+      "benchmark": {
+        "full_capital": {
+          "net_profit": "857.43171634",
+          "return_pct": "8.57431716",
+          "fees": "31.28748366",
+          "starting_balance": "10000",
+          "quantity": "0.1294",
+          "funding": "NOT_INCLUDED"
+        },
+        "notional_2000": {
+          "net_profit": "171.61886748",
+          "return_pct": "1.71618867",
+          "fees": "6.26233252",
+          "starting_balance": "10000",
+          "quantity": "0.0259",
+          "funding": "NOT_INCLUDED"
+        },
+        "cash": {
+          "net_profit": "0",
+          "return_pct": "0"
+        }
+      },
+      "cost_multiplier": "1.5"
+    },
+    "test-cost2": {
+      "metrics": {
+        "net_profit": "0",
+        "return_pct": "0.00000000",
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "breakeven": 0,
+        "win_rate": null,
+        "profit_factor": null,
+        "expectancy": null,
+        "max_drawdown_pct": "0.00000000",
+        "max_drawdown_usdt": "0.00000000",
+        "average_win": null,
+        "average_loss": null,
+        "realized_risk_reward": null,
+        "total_fees": "0",
+        "total_slippage_usdt": "0",
+        "sharpe": null,
+        "sharpe_daily_returns": 16,
+        "sharpe_assumptions": "UTC full-day liquidation-equity returns; sample stdev; sqrt(365), crypto 24/7, zero risk-free rate. Undefined with <20 trades, <30 daily returns, nonpositive equity or zero variance.",
+        "sample_status": "INCONCLUSIVE",
+        "sample_note": "At least 20 trades required for numerical ranking; passing threshold is not statistical proof of profitability.",
+        "final_balance": "10000",
+        "final_liquidation_equity": "10000",
+        "long_trades": 0,
+        "average_holding_minutes": null,
+        "trades_per_day": "0.00000000",
+        "short_trades": 0
+      },
+      "rejections": {},
+      "open_position": null,
+      "duplicate_signals_ignored": 0,
+      "drawdown_halted": false,
+      "status": "TECHNICAL_REPLAY_ONLY",
+      "real_money_execution": "DISABLED",
+      "funding": "NOT_INCLUDED",
+      "benchmark": {
+        "full_capital": {
+          "net_profit": "839.42777480",
+          "return_pct": "8.39427775",
+          "fees": "41.65162520",
+          "starting_balance": "10000",
+          "quantity": "0.1292",
+          "funding": "NOT_INCLUDED"
+        },
+        "notional_2000": {
+          "net_profit": "168.27538210",
+          "return_pct": "1.68275382",
+          "fees": "8.34966790",
+          "starting_balance": "10000",
+          "quantity": "0.0259",
+          "funding": "NOT_INCLUDED"
+        },
+        "cash": {
+          "net_profit": "0",
+          "return_pct": "0"
+        }
+      },
+      "cost_multiplier": "2"
+    }
+  },
+  "verdict": "INSUFFICIENT_EVIDENCE",
+  "production_changed": false,
+  "real_money_execution": "DISABLED",
+  "limitations": [
+    "\u0418\u0441\u0442\u043e\u0440\u0438\u044f \u0438 \u0432\u0441\u0435 \u043f\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u0438 \u2014 \u0438\u0441\u0441\u043b\u0435\u0434\u043e\u0432\u0430\u0442\u0435\u043b\u044c\u0441\u043a\u0438\u0435; \u043d\u0435\u0437\u0430\u0432\u0438\u0441\u0438\u043c\u043e\u0441\u0442\u044c test \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u044f\u0435\u0442\u0441\u044f \u043f\u043e\u043b\u043d\u044b\u043c \u043a\u0430\u043b\u0435\u043d\u0434\u0430\u0440\u043d\u044b\u043c \u0440\u0435\u0435\u0441\u0442\u0440\u043e\u043c, \u043d\u0435 \u043d\u043e\u0432\u043e\u0439 \u0431\u0438\u0440\u0436\u0435\u0439/\u0444\u0430\u0439\u043b\u043e\u043c.",
+    "\u0418\u0441\u0442\u043e\u0440\u0438\u0447\u0435\u0441\u043a\u043e\u0435 \u0432\u0440\u0435\u043c\u044f \u043f\u0443\u0431\u043b\u0438\u043a\u0430\u0446\u0438\u0438 \u043d\u0435 \u043d\u0430\u0431\u043b\u044e\u0434\u0430\u043b\u043e\u0441\u044c: close+delay \u2014 \u044f\u0432\u043d\u043e\u0435 \u0434\u043e\u043f\u0443\u0449\u0435\u043d\u0438\u0435 \u0430\u0440\u0445\u0438\u0432\u043d\u043e\u0433\u043e \u043d\u0430\u0431\u043e\u0440\u0430.",
+    "OHLC open \u043d\u0435 \u0433\u0430\u0440\u0430\u043d\u0442\u0438\u0440\u0443\u0435\u0442 Bitget fill: \u0441\u043b\u0435\u0434\u0443\u044e\u0449\u0438\u0439 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b\u0439 \u043c\u0438\u043d\u0443\u0442\u043d\u044b\u0439 open + adverse spread/slippage + tick rounding \u2014 \u043c\u043e\u0434\u0435\u043b\u044c.",
+    "\u041d\u0435\u0442 \u0434\u043e\u0441\u0442\u043e\u0432\u0435\u0440\u043d\u043e\u0439 \u043f\u043e\u043b\u043d\u043e\u0439 \u0441\u043e\u0432\u043c\u0435\u0441\u0442\u043d\u043e\u0439 \u0438\u0441\u0442\u043e\u0440\u0438\u0438 funding + mark prices; funding NOT_INCLUDED. \u0418\u0442\u043e\u0433 \u043d\u0435 \u044f\u0432\u043b\u044f\u0435\u0442\u0441\u044f PnL \u043f\u043e\u0441\u043b\u0435 \u0432\u0441\u0435\u0445 \u0432\u043e\u0437\u043c\u043e\u0436\u043d\u044b\u0445 \u0440\u0430\u0441\u0445\u043e\u0434\u043e\u0432.",
+    "\u041a\u043e\u043d\u0442\u0440\u0430\u043a\u0442\u043d\u044b\u0435 tick/lot/min-notional \u043f\u0440\u0438\u043d\u044f\u0442\u044b \u0444\u0438\u043a\u0441\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u044b\u043c\u0438 \u0434\u043e\u043f\u0443\u0449\u0435\u043d\u0438\u044f\u043c\u0438; \u0438\u0445 \u0438\u0441\u0442\u043e\u0440\u0438\u0447\u0435\u0441\u043a\u0438\u0435 \u0438\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u044f \u0438 \u043b\u0438\u043a\u0432\u0438\u0434\u043d\u043e\u0441\u0442\u044c L2 \u043d\u0435 \u0434\u043e\u043a\u0430\u0437\u0430\u043d\u044b.",
+    "\u0421\u0442\u043e\u043f\u044b \u043c\u043e\u0434\u0435\u043b\u0438\u0440\u0443\u044e\u0442\u0441\u044f \u043f\u043e \u043c\u0438\u043d\u0443\u0442\u043d\u043e\u043c\u0443 OHLC, SL \u0438\u043c\u0435\u0435\u0442 \u043f\u0440\u0438\u043e\u0440\u0438\u0442\u0435\u0442 \u043f\u0440\u0438 SL+TP; \u0433\u044d\u043f \u043c\u043e\u0436\u0435\u0442 \u043f\u0440\u0435\u0432\u044b\u0441\u0438\u0442\u044c \u0440\u0438\u0441\u043a 0.5% \u0438 \u043b\u0438\u043c\u0438\u0442 \u043f\u0440\u043e\u0441\u0430\u0434\u043a\u0438.",
+    "\u0414\u043d\u0435\u0432\u043d\u043e\u0439 \u043b\u0438\u043c\u0438\u0442 \u0438 drawdown guard \u043d\u0430\u0431\u043b\u044e\u0434\u0430\u044e\u0442 modeled minute OPEN marks; \u0437\u0430\u043a\u0440\u044b\u0442\u044b\u0435 marks \u0438\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u044e\u0442\u0441\u044f \u0434\u043b\u044f \u0441\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043a\u0438, \u043d\u0435 \u0434\u043b\u044f \u0440\u0435\u0448\u0435\u043d\u0438\u044f \u043d\u0430 \u0431\u043e\u043b\u0435\u0435 \u0440\u0430\u043d\u043d\u0435\u043c open.",
+    "\u0414\u043d\u0435\u0432\u043d\u0430\u044f \u0431\u0430\u0437\u0430 equity \u0444\u0438\u043a\u0441\u0438\u0440\u0443\u0435\u0442\u0441\u044f \u043f\u0435\u0440\u0432\u044b\u043c \u043c\u0438\u043d\u0443\u0442\u043d\u044b\u043c open UTC-\u0434\u043d\u044f. Guard-\u0432\u044b\u0445\u043e\u0434 \u2014 \u0441\u043b\u0435\u0434\u0443\u044e\u0449\u0438\u0439 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b\u0439 open \u043f\u043e\u0441\u043b\u0435 \u0437\u0430\u0434\u0435\u0440\u0436\u043a\u0438; \u043a\u0440\u0443\u0433\u043b\u043e\u0441\u0443\u0442\u043e\u0447\u043d\u043e\u0435 \u0438\u0441\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u043d\u0435 \u0434\u043e\u043a\u0430\u0437\u0430\u043d\u043e.",
+    "SEGMENT_END_LIQUIDATION_ESTIMATE \u2014 \u043f\u0440\u0438\u043d\u0443\u0434\u0438\u0442\u0435\u043b\u044c\u043d\u0430\u044f \u0431\u0443\u0445\u0433\u0430\u043b\u0442\u0435\u0440\u0441\u043a\u0430\u044f \u043e\u0446\u0435\u043d\u043a\u0430 \u043a\u043e\u043d\u0446\u0430 \u0441\u0435\u0433\u043c\u0435\u043d\u0442\u0430, \u043d\u0435 \u0433\u0430\u0440\u0430\u043d\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u044b\u0439 \u0442\u043e\u0440\u0433\u0443\u0435\u043c\u044b\u0439 close.",
+    "\u041a\u0430\u0436\u0434\u044b\u0439 \u0441\u0435\u0433\u043c\u0435\u043d\u0442 \u043d\u0430\u0447\u0438\u043d\u0430\u0435\u0442 \u0441 10000 USDT, \u043f\u043e\u0437\u0438\u0446\u0438\u0438 \u043d\u0435 \u043f\u0435\u0440\u0435\u043d\u043e\u0441\u044f\u0442\u0441\u044f \u0447\u0435\u0440\u0435\u0437 \u0433\u0440\u0430\u043d\u0438\u0446\u044b. B&H full \u2014 \u0438\u043d\u043e\u0439 \u0440\u0438\u0441\u043a/exposure; capped B&H \u0438 cash \u0434\u0430\u043d\u044b \u043e\u0442\u0434\u0435\u043b\u044c\u043d\u043e.",
+    "\u0421\u0442\u0440\u0435\u0441\u0441 \u0440\u0430\u0441\u0445\u043e\u0434\u043e\u0432 \u043f\u043e\u0432\u0442\u043e\u0440\u043d\u043e \u043f\u0440\u0438\u043c\u0435\u043d\u044f\u0435\u0442 risk/RR guards \u043a \u0442\u0435\u043c \u0436\u0435 frozen signals; \u043d\u0430\u0431\u043e\u0440 \u0438\u0441\u043f\u043e\u043b\u043d\u0435\u043d\u043d\u044b\u0445 \u0441\u0434\u0435\u043b\u043e\u043a \u043c\u043e\u0436\u0435\u0442 \u0440\u0430\u0437\u043b\u0438\u0447\u0430\u0442\u044c\u0441\u044f.",
+    "\u041d\u0435\u0442 \u0440\u0435\u0430\u043b\u044c\u043d\u044b\u0445 \u043a\u043e\u0442\u0438\u0440\u043e\u0432\u043e\u043a bid/ask, L2/liquidations, leverage>1, funding \u0438\u043b\u0438 exchange orders. VectorBT \u043d\u0435 \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d."
+  ]
+}
