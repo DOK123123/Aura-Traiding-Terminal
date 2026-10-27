@@ -50,7 +50,10 @@ def main():
                     time.sleep(.05)
                 port2=active.read_text().splitlines()[0]
                 pages=httpx.get(f'http://127.0.0.1:{port2}/json/list',trust_env=False).json()
-                with connect(pages[0]['webSocketDebuggerUrl'],proxy=None) as ws:
+                # Chrome can list built-in extension background targets first.
+                # They accept CDP but cannot navigate/render a normal page.
+                page=next(p for p in pages if p.get('type')=='page' and p.get('url')=='about:blank')
+                with connect(page['webSocketDebuggerUrl'],proxy=None) as ws:
                     seq=0
                     def call(method,params=None):
                         nonlocal seq
