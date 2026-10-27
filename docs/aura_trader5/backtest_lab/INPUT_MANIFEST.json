@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "data_kind": "REAL_PUBLIC_ARCHIVE",
+  "source": "BITGET_USDT_FUTURES_BTCUSDT",
+  "symbol": "BTCUSDT",
+  "product_type": "USDT-FUTURES",
+  "execution_step": 60,
+  "availability_mode": "ASSUMED_CLOSE_PLUS_DELAY",
+  "publication_delay_seconds": 2,
+  "asof": 1793107519,
+  "files": [
+    {
+      "path": "BTCUSDT_UMCBL_1min_202606.zip",
+      "format": "BITGET_OFFICIAL_MINUTE_ZIP",
+      "sha256": "b40a18269c3fb0de99cc63f5d059d22fe08a9ab50bc4d7bfb21ea0dcfae45228",
+      "source_url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202606.zip"
+    },
+    {
+      "path": "BTCUSDT_UMCBL_1min_202607.zip",
+      "format": "BITGET_OFFICIAL_MINUTE_ZIP",
+      "sha256": "707b5bfca6ac8fd8aa66b5a666bc7336515f5a18633e8d2931ba187962aa8525",
+      "source_url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202607.zip"
+    },
+    {
+      "path": "BTCUSDT_UMCBL_1min_202608.zip",
+      "format": "BITGET_OFFICIAL_MINUTE_ZIP",
+      "sha256": "23221a0117fe180165f40fdd914121d238b506e40482604cc0d14dfaacc452e2",
+      "source_url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202608.zip"
+    },
+    {
+      "path": "BTCUSDT_UMCBL_1min_202609.zip",
+      "format": "BITGET_OFFICIAL_MINUTE_ZIP",
+      "sha256": "968cb16d13c3fd87485feed3a9420a418dc8aa0acd894d434afc0800558f2a31",
+      "source_url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202609.zip"
+    }
+  ],
+  "provenance": {
+    "parent_manifest_sha256": "e1f5ea10201efb1558d05456bb7e8086a61b5b7c5f48694e43890ee33d868e74",
+    "publisher_checksum": "NOT_PUBLISHED",
+    "original_source": "Official Bitget UMCBL minute archives recovered by prior study; locally rehashed; no network download in this runner"
+  }
+}

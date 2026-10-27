@@ -67,5 +67,6 @@ jobs:
           path: |
             ci-results/*.xml
             ci-results/summary.json
+            ci-results/manual-trader5-browser/
           if-no-files-found: error
           retention-days: 7

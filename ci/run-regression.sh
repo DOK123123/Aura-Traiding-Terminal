@@ -10,6 +10,7 @@ export PATH="$(dirname "$node_bin"):$(dirname "$python_bin"):$PATH"
 export AURA_ACTIVE43_VERIFY_POSTGRES=true
 export AURA_AUTO42_VERIFY_POSTGRES=true
 export AURA_PRACTICE_VERIFY_POSTGRES=true
+export AURA_MANUAL_PAPER_VERIFY_POSTGRES=true
 export TZ=UTC
 mkdir -p ci-results
 
@@ -23,3 +24,9 @@ node_status=0
 test "$python_status" -eq 0
 test "$node_status" -eq 0
 "$python_bin" ci/check_results.py ci-results/python.xml ci-results/javascript.xml
+
+# The runner image supplies Chrome. Fail rather than claiming a mobile PASS if
+# it is missing. This script already runs inside the loopback-only namespace.
+browser_bin="$(command -v google-chrome || command -v chromium || true)"
+test -n "$browser_bin"
+"$python_bin" scripts/verify_manual_trader5_browser.py --browser "$browser_bin" --output-dir ci-results/manual-trader5-browser
