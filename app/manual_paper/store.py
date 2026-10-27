@@ -8,6 +8,7 @@ import hashlib
 import re
 import sqlite3
 import os
+import time
 from contextlib import contextmanager
 from decimal import Decimal
 from pathlib import Path
@@ -40,7 +41,20 @@ class ManualStore:
             tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             if tables - {'state','requests'}:
                 raise ValueError('STORAGE_SCOPE_MISMATCH')
-            db.execute("PRAGMA journal_mode=WAL")
+            # Concurrent cold-start connections can get SQLITE_BUSY immediately
+            # while changing journal mode, even with busy_timeout configured.
+            # Retry initialization only; never replay a transaction/command.
+            deadline = time.monotonic() + 10
+            while True:
+                try:
+                    if db.execute('PRAGMA journal_mode').fetchone()[0].lower() != 'wal':
+                        db.execute('PRAGMA journal_mode=WAL')
+                    break
+                except sqlite3.OperationalError as exc:
+                    if (getattr(exc,'sqlite_errorcode',None) not in (sqlite3.SQLITE_BUSY,sqlite3.SQLITE_LOCKED)
+                            or time.monotonic() >= deadline):
+                        raise
+                    time.sleep(.01)
             db.execute("PRAGMA synchronous=FULL")
             db.execute("CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY CHECK (id=1), data TEXT NOT NULL, version INTEGER NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS requests (id TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, result TEXT NOT NULL)")

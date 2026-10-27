@@ -27,17 +27,19 @@
 
 ## Проверки
 
-Локально: Python 2074 PASS, 4 opt-in PostgreSQL NOT RUN; JavaScript 287 PASS. AST всех app/scripts/research/tests, import app.main, JS syntax, diff whitespace: PASS. Python 3.12.14; direct runtime packages соответствуют requirements.txt; certifi 2026.10.23 вместо CI 2026.7.22, Node 24.22.1 вместо CI 24.19.0. Есть прежнее предупреждение Starlette/anyio.
+Локально: Python 2075 PASS, 4 opt-in PostgreSQL NOT RUN; JavaScript 287 PASS. AST всех app/scripts/research/tests, import app.main, JS syntax, diff whitespace: PASS. Python 3.12.14; direct runtime packages соответствуют requirements.txt; certifi 2026.10.23 вместо CI 2026.7.22, Node 24.22.1 вместо CI 24.19.0. Есть прежнее предупреждение Starlette/anyio.
 
-Новые тесты: preview без записи и независимые LONG/SHORT расходы, owner/CSRF, риск/размер, позиция, предел цены, WAIT/TTL/изменённый сценарий/вне зоны, deadline при ожидании lock, replay успешного intent после ошибки источника, независимый ручной план, cleanup failure, cancel/confirm/double click, потерянный ответ/reload, конфликт вкладок и повреждённое локальное хранилище.
+Новые тесты: preview без записи и независимые LONG/SHORT расходы, owner/CSRF, риск/размер, позиция, предел цены, WAIT/TTL/изменённый сценарий/вне зоны, deadline при ожидании lock, replay успешного intent после ошибки источника, независимый ручной план, cleanup failure, cancel/confirm/double click, потерянный ответ/reload, конфликт вкладок и повреждённое локальное хранилище. Отдельно проверена эксклюзивная миллисекундная граница TTL в SQL.
 
 Полный Regression CI запускает все Python/Node suites, четыре disposable PostgreSQL harnesses и реальный Chrome desktop/mobile. Точный SHA и фактический результат — в описании PR. Browser screenshots и report.json сохраняются в артефакте Regression CI, в `manual-trader5-browser/`.
 
 Локальная браузерная проверка **NOT RUN**: бинарный Chrome найден, но среда запрещает необходимый UNIX socket (`Operation not permitted`). Это не считается PASS. Браузерный CI обязателен: используется полный текущий HTML/JS, настоящий LWC, loopback FastAPI и настоящий SQLite, синтетические котировки, zero external network. Проверки: touch 393×851, desktop 1440×1000, OPEN/CLOSE, отмена, PnL/fees, reload, потерянный ответ/retry, protective SL gap, WAIT/429/history mismatch, stale quote, 401 и отсутствие Active43 writes. Физический Android не проверен.
 
+Локальный стресс-тест холодного старта SQLite: **20 новых файлов × 16 одновременных OPEN**, каждый раз ровно одна позиция/квитанция, остальные запросы отклонены POSITION_ALREADY_OPEN. SQLITE_BUSY/LOCKED повторяет только начальную настройку WAL в пределах 10 секунд; торговая транзакция не воспроизводится этим циклом. Отдельный тест принудительно создаёт такую блокировку.
+
 ## Отдельные code / security review passes
 
-Code pass: прослежены публичный analyst → copy → preview → confirm → authenticated API → quote → Decimal → SQL transaction/receipt → state/history; альтернативные WAIT, timeout, repeat и cleanup ветви. Исправлены конфликт lifespan при объединении #57/#58, устаревший copied signal, возможное движение цены после preview и перезапись pending другой вкладкой.
+Code pass: прослежены публичный analyst → copy → preview → confirm → authenticated API → quote → Decimal → SQL transaction/receipt → state/history; альтернативные WAIT, timeout, repeat и cleanup ветви. Исправлены конфликт lifespan при объединении #57/#58, устаревший copied signal, возможное движение цены после preview и перезапись pending другой вкладкой, миллисекундная граница TTL в SQL и конкурирующее включение SQLite WAL при холодном старте.
 
 Security pass: проверены credential boundaries, owner/CSRF/scheme, schema/extra fields, safe DOM, no redirects, permanent request identity, transaction freshness и fail-closed storage. Нет подтверждённых нерешённых Critical/High в изменённой интеграции. Тестовые серверы не импортируются production и слушают только 127.0.0.1. Неизменённые legacy Active43 modules не подвергались новому полному аудиту.
 

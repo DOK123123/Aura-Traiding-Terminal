@@ -43,3 +43,30 @@ def test_do_not_replay_entry_candle():
     assert ledger.position is not None
     trade = ledger.on_closed_candle("81500", "79000", "80000", candle_time=1793007900)
     assert trade["exit"] == ledger.trades[-1]["exit"]
+
+
+def test_cold_start_wal_busy_retries_initialization_only(tmp_path,monkeypatch):
+    import sqlite3
+    from app.manual_paper.commands import ManualCommands
+    from app.manual_paper.store import ManualStore
+    real_connect=sqlite3.connect;attempts=[]
+    class Connection:
+        def __init__(self,*a,**kw):self.inner=real_connect(*a,**kw)
+        def __getattr__(self,name):return getattr(self.inner,name)
+        def execute(self,sql,*a):
+            if sql=='PRAGMA journal_mode=WAL':
+                attempts.append(sql)
+                if len(attempts)==1:
+                    error=sqlite3.OperationalError('dummy cold-start writer lock')
+                    error.sqlite_errorcode=sqlite3.SQLITE_BUSY
+                    raise error
+            return self.inner.execute(sql,*a)
+    monkeypatch.setattr(sqlite3,'connect',Connection)
+    store=ManualStore(tmp_path/'manual-paper.sqlite3')
+    cmd=ManualCommands(store)
+    q={'source':'Bitget USDT-M Futures','time':1793007900000,'price':'80000'}
+    first=cmd.open('a'*32,'LONG','0.01','79500','81000',q)
+    assert cmd.open('a'*32,'LONG','0.01','79500','81000',q)==first
+    ledger,version=store.load()
+    assert len(attempts)==2 and version==1 and str(ledger.balance)=='9999.520000'
+    assert ledger.position.id=='a'*32
