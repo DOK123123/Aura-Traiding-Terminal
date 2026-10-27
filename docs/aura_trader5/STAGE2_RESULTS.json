@@ -1,0 +1,140 @@
+{
+  "stage": 2,
+  "scope": "LOCAL_MANUAL_ANALYSIS_ONLY",
+  "base_main": "b721a0c",
+  "previous_pr_head": "0dfaff776b9e1e03b92122610b364140150ce255",
+  "python_passed": 1893,
+  "python_skipped": 3,
+  "python_warning": "Existing Starlette anyio BlockingPortal deprecation",
+  "javascript_passed": 279,
+  "javascript_skipped": 0,
+  "python_new_tests": 7,
+  "javascript_new_tests": 9,
+  "browser": {
+    "status": "PASS",
+    "scope": "OFFLINE_SYNTHETIC_REAL_CHROMIUM",
+    "screenshots": [
+      "desktop-long.png",
+      "mobile-long.png",
+      "desktop-short.png",
+      "mobile-wait.png",
+      "workspace-desktop.png",
+      "workspace-mobile.png",
+      "context-desktop.png",
+      "journal-mobile.png"
+    ],
+    "mobile_viewport": [
+      393,
+      851
+    ],
+    "desktop_viewport": [
+      1440,
+      1000
+    ],
+    "states": [
+      "LONG",
+      "SHORT",
+      "WAIT"
+    ],
+    "timeframes": [
+      "5m",
+      "15m",
+      "1h",
+      "4h"
+    ],
+    "read_only_requests": true,
+    "android_device_verified": false,
+    "production_changed": false,
+    "workspace_tested": true
+  },
+  "public_bitget": {
+    "scope": "LOCAL_PUBLIC_BITGET_ONLY_NOT_RENDER",
+    "observed_utc": "2026-10-27T11:43:39.745672+00:00",
+    "state": "WAIT",
+    "reasons": [
+      "TREND_NOT_CONFIRMED"
+    ],
+    "frames": {
+      "5m": {
+        "bars": 200,
+        "last_closed_at": 1793101200,
+        "macd": {
+          "line": 52.843179103103466,
+          "signal": 49.64680586432844,
+          "histogram": 3.196373238775024,
+          "bias": "LONG"
+        },
+        "structure": "HH_HL"
+      },
+      "15m": {
+        "bars": 200,
+        "last_closed_at": 1793100600,
+        "macd": {
+          "line": 2.412381765738246,
+          "signal": -28.64121709415964,
+          "histogram": 31.053598859897885,
+          "bias": "LONG"
+        },
+        "structure": "LH_LL"
+      },
+      "1h": {
+        "bars": 200,
+        "last_closed_at": 1793098800,
+        "macd": {
+          "line": -104.31385221690289,
+          "signal": -106.27076726770467,
+          "histogram": 1.9569150508017827,
+          "bias": "LONG"
+        },
+        "structure": "LH_LL"
+      },
+      "4h": {
+        "bars": 200,
+        "last_closed_at": 1793088000,
+        "macd": {
+          "line": -445.6345723399281,
+          "signal": -451.7832086362562,
+          "histogram": 6.14863629632805,
+          "bias": "LONG"
+        },
+        "structure": "RANGE"
+      }
+    }
+  },
+  "reviews": {
+    "code": "PASS: closed-window validation precedes context; pivot availability explicit; bounded original modules; LIVE remains independent if optional drawing attach fails",
+    "security": "PASS: no extra network or account calls; textContent; bounded schema-validated storage; journal exclusive lock and stale-write rejection; no new dependencies; no credentials or production controls",
+    "residual": [
+      "Physical Android Chrome not tested",
+      "Target Render not deployed/tested",
+      "Manual notebook exit is hypothetical, no execution verification",
+      "LocalStorage is not private encrypted cloud storage or multi-device sync",
+      "Drawing edits require one tab; journal writes have exclusive Web Locks",
+      "No profitable edge or historical strategy results established",
+      "Offline backtest architecture only, no new runner implemented"
+    ]
+  },
+  "browser_interactions": [
+    "all four drawing tools with pointer input",
+    "SVG handle drag",
+    "entry/sl/tp editing and autoscale",
+    "journal save + duplicate prevention + hypothetical outcome",
+    "page reload restores drawings and journal",
+    "mobile emulated touch adds level",
+    "annotation deletion leaves reviewed notebook record intact",
+    "optional tool failure does not break original chart"
+  ],
+  "production_changed": false,
+  "paper_controls_called": false,
+  "private_exchange_api_calls": 0,
+  "real_orders": 0,
+  "virtual_trades": 0,
+  "runtime_dependencies_added": 0,
+  "postgres_harness_run_locally": false,
+  "screenshots_sha256": {
+    "journal-mobile.png": "3e08ea22b4fe5c4d3bd948b9369cbff430cbc0b3e73fd0a854ab51fc1b5d6427",
+    "context-desktop.png": "c1a8b5084069ebc90f0f24593d71b3ca2bfb88dadd921e421fc644ff61c70ab8",
+    "workspace-desktop.png": "e546408bb427be7afd1e0d3596cc9bd5e2451b0057d8a74a8e22ea1a8c7644cc",
+    "workspace-mobile.png": "ab5fea0fc9661b9c826223acf070eac89b0e5f0df0d2ac3b08f01e7f87689a15"
+  }
+}

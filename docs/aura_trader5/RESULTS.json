@@ -1,0 +1,150 @@
+{
+  "version": "AURA_MANUAL_ANALYST_1",
+  "base_main": "b721a0c",
+  "original_pr_head": "54369563095e98adfeb30993faa2eab325808d6b",
+  "python_passed": 1886,
+  "python_skipped": 3,
+  "javascript_passed": 270,
+  "analyst_python_tests": 43,
+  "analyst_javascript_tests": 6,
+  "original_pr_tests_passed": 6,
+  "browser_synthetic": {
+    "status": "PASS",
+    "scope": "OFFLINE_SYNTHETIC_REAL_CHROMIUM",
+    "screenshots": [
+      "desktop-long.png",
+      "mobile-long.png",
+      "desktop-short.png",
+      "mobile-wait.png"
+    ],
+    "mobile_viewport": [
+      393,
+      851
+    ],
+    "desktop_viewport": [
+      1440,
+      1000
+    ],
+    "states": [
+      "LONG",
+      "SHORT",
+      "WAIT"
+    ],
+    "timeframes": [
+      "5m",
+      "15m",
+      "1h",
+      "4h"
+    ],
+    "read_only_requests": true,
+    "android_device_verified": false,
+    "production_changed": false
+  },
+  "browser_public_snapshot": {
+    "status": "PASS",
+    "scope": "RECORDED_PUBLIC_SNAPSHOT_NO_LIVE_REQUESTS",
+    "screenshots": [
+      "desktop-public.png",
+      "mobile-public.png"
+    ],
+    "mobile_viewport": [
+      393,
+      851
+    ],
+    "desktop_viewport": [
+      1440,
+      1000
+    ],
+    "states": [
+      "WAIT"
+    ],
+    "timeframes": [
+      "5m",
+      "15m",
+      "1h",
+      "4h"
+    ],
+    "read_only_requests": true,
+    "android_device_verified": false,
+    "production_changed": false
+  },
+  "live_public_bitget": {
+    "scope": "LOCAL_PUBLIC_BITGET_ONLY_NOT_RENDER",
+    "observed_utc": "2026-10-27T10:33:52.902299+00:00",
+    "state": "WAIT",
+    "reasons": [
+      "NO_ENTRY_CONFLUENCE"
+    ],
+    "price_tick": 0.1,
+    "frames": {
+      "5m": {
+        "ema20": 79663.39521148261,
+        "ema50": 79722.2966287581,
+        "rsi": 46.01723982362273,
+        "atr": 86.18091859166952,
+        "trend": "SHORT",
+        "close": 79625.4,
+        "last_closed_at": 1793097000,
+        "bars": 200
+      },
+      "15m": {
+        "ema20": 79726.02059081782,
+        "ema50": 79836.18675821654,
+        "rsi": 44.610953864712336,
+        "atr": 163.19223558573472,
+        "trend": "SHORT",
+        "close": 79625.4,
+        "last_closed_at": 1793097000,
+        "bars": 200
+      },
+      "1h": {
+        "ema20": 79940.31574767194,
+        "ema50": 80173.22345660816,
+        "rsi": 44.44130098676733,
+        "atr": 363.64649844402373,
+        "trend": "SHORT",
+        "close": 79764.0,
+        "last_closed_at": 1793095200,
+        "bars": 200
+      },
+      "4h": {
+        "ema20": 80428.21665926914,
+        "ema50": 81146.78849472156,
+        "rsi": 38.15233677192084,
+        "atr": 752.5003410451636,
+        "trend": "SHORT",
+        "close": 79784.0,
+        "last_closed_at": 1793088000,
+        "bars": 200
+      }
+    },
+    "source": "Bitget \u00b7 USDT-M Futures / api.bitget.com",
+    "read_only": true,
+    "exchange_execution": false
+  },
+  "production_changed": false,
+  "production_deploy": false,
+  "paper_controls_called": false,
+  "real_orders": 0,
+  "new_virtual_trades": 0,
+  "postgres_harness_run": false,
+  "android_device_verified": false,
+  "review": {
+    "code": "PASS: closed causal windows, explicit scenario predicates, bounded independent client/cache/cooldown, exact price tick, recomputed modeled R/R",
+    "security": "PASS: fixed public GET allowlist; no account, credentials or order/control calls; textContent; expiry/generation fail-closed; original trading modules unchanged",
+    "remaining": [
+      "No deployment or target Render API verification",
+      "No physical Android Chrome test",
+      "No evidence of profitable edge; funding/actual spread/account constraints not included"
+    ]
+  },
+  "screenshots_sha256": {
+    "desktop-long-synthetic.png": "e0fcbb83ca49972fb698cd51e431e9d88b25b05b9ddc840286e42e83eb51ddb8",
+    "desktop-short-synthetic.png": "6c88948284c366397adc815b870b9a191dd8f661ef02a0de4d79f167dca44883",
+    "mobile-long-synthetic.png": "c71a3368a0e808b34fa625681758590229d4303236ed87486aef97e7294f238f",
+    "mobile-wait-synthetic.png": "5b3f3e409dd361b136c405f989990e3bf2fc8b01a1e9a3c3feeec7bac756ec3b",
+    "desktop-public-snapshot.png": "0f822c084a06a518ef6035920ca68cb14d09e23c6c48273bb9ef625b9323994b",
+    "mobile-public-snapshot.png": "62662039bb08d331081457e13cd8b258285f0cd6606bb4c6614900793dbd0e63"
+  },
+  "public_screenshot_snapshot_observed_utc": "2026-10-27T10:22:17.434333+00:00"
+}

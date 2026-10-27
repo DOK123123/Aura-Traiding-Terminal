@@ -1,0 +1,804 @@
+{
+  "scope": "SYNTHETIC_OFFLINE_UI_ONLY",
+  "now": 1800000150,
+  "LONG": {
+    "version": "AURA_MANUAL_ANALYST_1",
+    "source": "Bitget \u00b7 USDT-M Futures / api.bitget.com",
+    "symbol": "BTCUSDT",
+    "market": "USDT-M Futures",
+    "state": "LONG",
+    "reasons": [
+      "TREND_5M_15M_1H",
+      "CLOSED_RSI_MOMENTUM",
+      "EMA_FIBONACCI_CONFLUENCE",
+      "CLOSED_CANDLE_CONFIRMATION",
+      "RR_AFTER_COSTS"
+    ],
+    "frames": {
+      "5m": {
+        "ema20": 14692.86081670094,
+        "ema50": 14681.319461930505,
+        "rsi": 55.32319623735773,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14707.25,
+        "last_closed_at": 1800000000,
+        "bars": 200,
+        "technical": {
+          "macd": {
+            "line": 5.682977992220913,
+            "signal": 5.303776744537879,
+            "histogram": 0.3792012476830333,
+            "bias": "LONG"
+          },
+          "structure": "HH_HL",
+          "swings": [
+            {
+              "kind": "HIGH",
+              "price": 14719.25,
+              "time": 1799992500,
+              "index": 175,
+              "confirmed_at": 1799993400
+            },
+            {
+              "kind": "LOW",
+              "price": 14644.0,
+              "time": 1799992800,
+              "index": 176,
+              "confirmed_at": 1799993700
+            },
+            {
+              "kind": "HIGH",
+              "price": 14722.25,
+              "time": 1799993700,
+              "index": 179,
+              "confirmed_at": 1799994600
+            },
+            {
+              "kind": "LOW",
+              "price": 14647.0,
+              "time": 1799994000,
+              "index": 180,
+              "confirmed_at": 1799994900
+            },
+            {
+              "kind": "HIGH",
+              "price": 14725.25,
+              "time": 1799994900,
+              "index": 183,
+              "confirmed_at": 1799995800
+            },
+            {
+              "kind": "LOW",
+              "price": 14650.0,
+              "time": 1799995200,
+              "index": 184,
+              "confirmed_at": 1799996100
+            },
+            {
+              "kind": "HIGH",
+              "price": 14728.25,
+              "time": 1799996100,
+              "index": 187,
+              "confirmed_at": 1799997000
+            },
+            {
+              "kind": "LOW",
+              "price": 14653.0,
+              "time": 1799996400,
+              "index": 188,
+              "confirmed_at": 1799997300
+            },
+            {
+              "kind": "HIGH",
+              "price": 14731.25,
+              "time": 1799997300,
+              "index": 191,
+              "confirmed_at": 1799998200
+            },
+            {
+              "kind": "LOW",
+              "price": 14656.0,
+              "time": 1799997600,
+              "index": 192,
+              "confirmed_at": 1799998500
+            },
+            {
+              "kind": "HIGH",
+              "price": 14734.25,
+              "time": 1799998500,
+              "index": 195,
+              "confirmed_at": 1799999400
+            },
+            {
+              "kind": "LOW",
+              "price": 14659.0,
+              "time": 1799998800,
+              "index": 196,
+              "confirmed_at": 1799999700
+            }
+          ],
+          "rsi_divergences": [
+            {
+              "side": "SHORT",
+              "first_at": 1799997300,
+              "second_at": 1799998500,
+              "confirmed_at": 1799999400,
+              "first_rsi": 55.32319843054799,
+              "second_rsi": 55.32319717259978
+            }
+          ],
+          "volume": {
+            "last": 100,
+            "previous20_mean": 100.0,
+            "ratio": 1.0,
+            "directional": false
+          },
+          "pivot_radius": 2
+        }
+      },
+      "15m": {
+        "ema20": 15525.947262563326,
+        "ema50": 14868.188201197745,
+        "rsi": 100.0,
+        "atr": 79.76895315414724,
+        "trend": "LONG",
+        "close": 16000,
+        "last_closed_at": 1800000000,
+        "bars": 200,
+        "technical": {
+          "macd": {
+            "line": 344.9481017055932,
+            "signal": 342.5910438600777,
+            "histogram": 2.3570578455154987,
+            "bias": "LONG"
+          },
+          "structure": "UNCONFIRMED",
+          "swings": [],
+          "rsi_divergences": [],
+          "volume": {
+            "last": 100,
+            "previous20_mean": 100.0,
+            "ratio": 1.0,
+            "directional": false
+          },
+          "pivot_radius": 2
+        }
+      },
+      "1h": {
+        "ema20": 14842.5,
+        "ema50": 14617.5,
+        "rsi": 100.0,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14985,
+        "last_closed_at": 1800000000,
+        "bars": 200,
+        "technical": {
+          "macd": {
+            "line": 105.0,
+            "signal": 105.0,
+            "histogram": 0.0,
+            "bias": "NEUTRAL"
+          },
+          "structure": "UNCONFIRMED",
+          "swings": [],
+          "rsi_divergences": [],
+          "volume": {
+            "last": 100,
+            "previous20_mean": 100.0,
+            "ratio": 1.0,
+            "directional": false
+          },
+          "pivot_radius": 2
+        }
+      },
+      "4h": {
+        "ema20": 14842.5,
+        "ema50": 14617.5,
+        "rsi": 100.0,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14985,
+        "last_closed_at": 1800000000,
+        "bars": 200,
+        "technical": {
+          "macd": {
+            "line": 105.0,
+            "signal": 105.0,
+            "histogram": 0.0,
+            "bias": "NEUTRAL"
+          },
+          "structure": "UNCONFIRMED",
+          "swings": [],
+          "rsi_divergences": [],
+          "volume": {
+            "last": 100,
+            "previous20_mean": 100.0,
+            "ratio": 1.0,
+            "directional": false
+          },
+          "pivot_radius": 2
+        }
+      }
+    },
+    "scenario": {
+      "entry_zone": {
+        "low": 14662.9,
+        "high": 14722.8
+      },
+      "reference_entry": 14722.8,
+      "stop_loss": 14572.9,
+      "take_profit": 15097.5,
+      "gross_rr": 2.499666444296208,
+      "net_rr": 1.7022470428682657,
+      "based_on": "CLOSED_5M_AND_PAST_15M_SWING",
+      "execution": "MANUAL_REVIEW_ONLY"
+    },
+    "fibonacci": {
+      "direction": "up",
+      "low": 12970,
+      "high": 15980,
+      "low_at": 1799945100,
+      "high_at": 1799998200,
+      "levels": {
+        "0.236": 15269.64,
+        "0.382": 14830.18,
+        "0.500": 14475.0,
+        "0.618": 14119.82,
+        "0.786": 13614.14
+      },
+      "lookback_bars": 60,
+      "timeframe": "15m"
+    },
+    "generated_at": 1800000150,
+    "valid_until": 1800000210,
+    "read_only": true,
+    "manual_only": true,
+    "exchange_execution": false,
+    "profitability_verified": false,
+    "price_tick": 0.1,
+    "asof_closed_at": 1800000000,
+    "cost_model": {
+      "fee_per_side": 0.001,
+      "adverse_slippage_per_side": 0.0005,
+      "funding": "NOT_INCLUDED"
+    },
+    "evidence": {
+      "reference": "LONG",
+      "items": [
+        {
+          "timeframe": "5m",
+          "signal": "EMA20_50",
+          "side": "LONG",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "5m",
+          "signal": "MACD_HISTOGRAM",
+          "side": "LONG",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "5m",
+          "signal": "SWING_STRUCTURE",
+          "side": "LONG",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "5m",
+          "signal": "RSI_DIVERGENCE",
+          "side": "SHORT",
+          "relation": "CONFLICTS"
+        },
+        {
+          "timeframe": "15m",
+          "signal": "EMA20_50",
+          "side": "LONG",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "15m",
+          "signal": "MACD_HISTOGRAM",
+          "side": "LONG",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "15m",
+          "signal": "SWING_STRUCTURE",
+          "side": "NEUTRAL",
+          "relation": "NEUTRAL"
+        },
+        {
+          "timeframe": "1h",
+          "signal": "EMA20_50",
+          "side": "LONG",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "1h",
+          "signal": "MACD_HISTOGRAM",
+          "side": "NEUTRAL",
+          "relation": "NEUTRAL"
+        },
+        {
+          "timeframe": "1h",
+          "signal": "SWING_STRUCTURE",
+          "side": "NEUTRAL",
+          "relation": "NEUTRAL"
+        },
+        {
+          "timeframe": "4h",
+          "signal": "EMA20_50",
+          "side": "LONG",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "4h",
+          "signal": "MACD_HISTOGRAM",
+          "side": "NEUTRAL",
+          "relation": "NEUTRAL"
+        },
+        {
+          "timeframe": "4h",
+          "signal": "SWING_STRUCTURE",
+          "side": "NEUTRAL",
+          "relation": "NEUTRAL"
+        }
+      ],
+      "context_only": true,
+      "invalidation": {
+        "stop_loss": 14572.9,
+        "rules": [
+          "SCENARIO_TTL_EXPIRED",
+          "FRESH_HISTORY_REQUIRED",
+          "EMA_ALIGNMENT_LOST",
+          "CLOSED_5M_BEYOND_STOP"
+        ]
+      },
+      "interpretation": "CONTEXT_NOT_EXTRA_ENTRY_CONFIRMATION",
+      "funding": "NOT_INCLUDED"
+    }
+  },
+  "SHORT": {
+    "version": "AURA_MANUAL_ANALYST_1",
+    "source": "Bitget \u00b7 USDT-M Futures / api.bitget.com",
+    "symbol": "BTCUSDT",
+    "market": "USDT-M Futures",
+    "state": "SHORT",
+    "reasons": [
+      "TREND_5M_15M_1H",
+      "CLOSED_RSI_MOMENTUM",
+      "EMA_FIBONACCI_CONFLUENCE",
+      "CLOSED_CANDLE_CONFIRMATION",
+      "RR_AFTER_COSTS"
+    ],
+    "frames": {
+      "5m": {
+        "ema20": 15307.13918329906,
+        "ema50": 15318.680538069495,
+        "rsi": 44.67680376264227,
+        "atr": 60.0,
+        "trend": "SHORT",
+        "close": 15292.75,
+        "last_closed_at": 1800000000,
+        "bars": 200,
+        "technical": {
+          "macd": {
+            "line": -5.682977992220913,
+            "signal": -5.303776744537879,
+            "histogram": -0.3792012476830333,
+            "bias": "SHORT"
+          },
+          "structure": "LH_LL",
+          "swings": [
+            {
+              "kind": "LOW",
+              "price": 15280.75,
+              "time": 1799992500,
+              "index": 175,
+              "confirmed_at": 1799993400
+            },
+            {
+              "kind": "HIGH",
+              "price": 15356.0,
+              "time": 1799992800,
+              "index": 176,
+              "confirmed_at": 1799993700
+            },
+            {
+              "kind": "LOW",
+              "price": 15277.75,
+              "time": 1799993700,
+              "index": 179,
+              "confirmed_at": 1799994600
+            },
+            {
+              "kind": "HIGH",
+              "price": 15353.0,
+              "time": 1799994000,
+              "index": 180,
+              "confirmed_at": 1799994900
+            },
+            {
+              "kind": "LOW",
+              "price": 15274.75,
+              "time": 1799994900,
+              "index": 183,
+              "confirmed_at": 1799995800
+            },
+            {
+              "kind": "HIGH",
+              "price": 15350.0,
+              "time": 1799995200,
+              "index": 184,
+              "confirmed_at": 1799996100
+            },
+            {
+              "kind": "LOW",
+              "price": 15271.75,
+              "time": 1799996100,
+              "index": 187,
+              "confirmed_at": 1799997000
+            },
+            {
+              "kind": "HIGH",
+              "price": 15347.0,
+              "time": 1799996400,
+              "index": 188,
+              "confirmed_at": 1799997300
+            },
+            {
+              "kind": "LOW",
+              "price": 15268.75,
+              "time": 1799997300,
+              "index": 191,
+              "confirmed_at": 1799998200
+            },
+            {
+              "kind": "HIGH",
+              "price": 15344.0,
+              "time": 1799997600,
+              "index": 192,
+              "confirmed_at": 1799998500
+            },
+            {
+              "kind": "LOW",
+              "price": 15265.75,
+              "time": 1799998500,
+              "index": 195,
+              "confirmed_at": 1799999400
+            },
+            {
+              "kind": "HIGH",
+              "price": 15341.0,
+              "time": 1799998800,
+              "index": 196,
+              "confirmed_at": 1799999700
+            }
+          ],
+          "rsi_divergences": [
+            {
+              "side": "LONG",
+              "first_at": 1799997300,
+              "second_at": 1799998500,
+              "confirmed_at": 1799999400,
+              "first_rsi": 44.67680156945202,
+              "second_rsi": 44.67680282740023
+            }
+          ],
+          "volume": {
+            "last": 100,
+            "previous20_mean": 100.0,
+            "ratio": 1.0,
+            "directional": false
+          },
+          "pivot_radius": 2
+        }
+      },
+      "15m": {
+        "ema20": 14474.052737436674,
+        "ema50": 15131.811798802253,
+        "rsi": 0.0,
+        "atr": 79.76895315414724,
+        "trend": "SHORT",
+        "close": 14000,
+        "last_closed_at": 1800000000,
+        "bars": 200,
+        "technical": {
+          "macd": {
+            "line": -344.9481017055932,
+            "signal": -342.5910438600777,
+            "histogram": -2.3570578455154987,
+            "bias": "SHORT"
+          },
+          "structure": "UNCONFIRMED",
+          "swings": [],
+          "rsi_divergences": [],
+          "volume": {
+            "last": 100,
+            "previous20_mean": 100.0,
+            "ratio": 1.0,
+            "directional": false
+          },
+          "pivot_radius": 2
+        }
+      },
+      "1h": {
+        "ema20": 15157.5,
+        "ema50": 15382.5,
+        "rsi": 0.0,
+        "atr": 60.0,
+        "trend": "SHORT",
+        "close": 15015,
+        "last_closed_at": 1800000000,
+        "bars": 200,
+        "technical": {
+          "macd": {
+            "line": -105.0,
+            "signal": -105.0,
+            "histogram": 0.0,
+            "bias": "NEUTRAL"
+          },
+          "structure": "UNCONFIRMED",
+          "swings": [],
+          "rsi_divergences": [],
+          "volume": {
+            "last": 100,
+            "previous20_mean": 100.0,
+            "ratio": 1.0,
+            "directional": false
+          },
+          "pivot_radius": 2
+        }
+      },
+      "4h": {
+        "ema20": 15157.5,
+        "ema50": 15382.5,
+        "rsi": 0.0,
+        "atr": 60.0,
+        "trend": "SHORT",
+        "close": 15015,
+        "last_closed_at": 1800000000,
+        "bars": 200,
+        "technical": {
+          "macd": {
+            "line": -105.0,
+            "signal": -105.0,
+            "histogram": 0.0,
+            "bias": "NEUTRAL"
+          },
+          "structure": "UNCONFIRMED",
+          "swings": [],
+          "rsi_divergences": [],
+          "volume": {
+            "last": 100,
+            "previous20_mean": 100.0,
+            "ratio": 1.0,
+            "directional": false
+          },
+          "pivot_radius": 2
+        }
+      }
+    },
+    "scenario": {
+      "entry_zone": {
+        "low": 15277.2,
+        "high": 15337.1
+      },
+      "reference_entry": 15277.2,
+      "stop_loss": 15427.1,
+      "take_profit": 14902.5,
+      "gross_rr": 2.499666444296208,
+      "net_rr": 1.6811414543816037,
+      "based_on": "CLOSED_5M_AND_PAST_15M_SWING",
+      "execution": "MANUAL_REVIEW_ONLY"
+    },
+    "fibonacci": {
+      "direction": "down",
+      "low": 14020,
+      "high": 17030,
+      "low_at": 1799998200,
+      "high_at": 1799945100,
+      "levels": {
+        "0.236": 14730.36,
+        "0.382": 15169.82,
+        "0.500": 15525.0,
+        "0.618": 15880.18,
+        "0.786": 16385.86
+      },
+      "lookback_bars": 60,
+      "timeframe": "15m"
+    },
+    "generated_at": 1800000150,
+    "valid_until": 1800000210,
+    "read_only": true,
+    "manual_only": true,
+    "exchange_execution": false,
+    "profitability_verified": false,
+    "price_tick": 0.1,
+    "asof_closed_at": 1800000000,
+    "cost_model": {
+      "fee_per_side": 0.001,
+      "adverse_slippage_per_side": 0.0005,
+      "funding": "NOT_INCLUDED"
+    },
+    "evidence": {
+      "reference": "SHORT",
+      "items": [
+        {
+          "timeframe": "5m",
+          "signal": "EMA20_50",
+          "side": "SHORT",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "5m",
+          "signal": "MACD_HISTOGRAM",
+          "side": "SHORT",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "5m",
+          "signal": "SWING_STRUCTURE",
+          "side": "SHORT",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "5m",
+          "signal": "RSI_DIVERGENCE",
+          "side": "LONG",
+          "relation": "CONFLICTS"
+        },
+        {
+          "timeframe": "15m",
+          "signal": "EMA20_50",
+          "side": "SHORT",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "15m",
+          "signal": "MACD_HISTOGRAM",
+          "side": "SHORT",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "15m",
+          "signal": "SWING_STRUCTURE",
+          "side": "NEUTRAL",
+          "relation": "NEUTRAL"
+        },
+        {
+          "timeframe": "1h",
+          "signal": "EMA20_50",
+          "side": "SHORT",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "1h",
+          "signal": "MACD_HISTOGRAM",
+          "side": "NEUTRAL",
+          "relation": "NEUTRAL"
+        },
+        {
+          "timeframe": "1h",
+          "signal": "SWING_STRUCTURE",
+          "side": "NEUTRAL",
+          "relation": "NEUTRAL"
+        },
+        {
+          "timeframe": "4h",
+          "signal": "EMA20_50",
+          "side": "SHORT",
+          "relation": "SUPPORTS"
+        },
+        {
+          "timeframe": "4h",
+          "signal": "MACD_HISTOGRAM",
+          "side": "NEUTRAL",
+          "relation": "NEUTRAL"
+        },
+        {
+          "timeframe": "4h",
+          "signal": "SWING_STRUCTURE",
+          "side": "NEUTRAL",
+          "relation": "NEUTRAL"
+        }
+      ],
+      "context_only": true,
+      "invalidation": {
+        "stop_loss": 15427.1,
+        "rules": [
+          "SCENARIO_TTL_EXPIRED",
+          "FRESH_HISTORY_REQUIRED",
+          "EMA_ALIGNMENT_LOST",
+          "CLOSED_5M_BEYOND_STOP"
+        ]
+      },
+      "interpretation": "CONTEXT_NOT_EXTRA_ENTRY_CONFIRMATION",
+      "funding": "NOT_INCLUDED"
+    }
+  },
+  "WAIT": {
+    "version": "AURA_MANUAL_ANALYST_1",
+    "source": "Bitget \u00b7 USDT-M Futures / api.bitget.com",
+    "symbol": "BTCUSDT",
+    "market": "USDT-M Futures",
+    "state": "WAIT",
+    "reasons": [
+      "RSI_NOT_CONFIRMED"
+    ],
+    "frames": {
+      "5m": {
+        "ema20": 14692.86081670094,
+        "ema50": 14681.319461930505,
+        "rsi": 55.32319623735773,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14707.25,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "15m": {
+        "ema20": 15525.947262563326,
+        "ema50": 14868.188201197745,
+        "rsi": 100.0,
+        "atr": 79.76895315414724,
+        "trend": "LONG",
+        "close": 16000,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "1h": {
+        "ema20": 14842.5,
+        "ema50": 14617.5,
+        "rsi": 100.0,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14985,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      },
+      "4h": {
+        "ema20": 14842.5,
+        "ema50": 14617.5,
+        "rsi": 100.0,
+        "atr": 60.0,
+        "trend": "LONG",
+        "close": 14985,
+        "last_closed_at": 1800000000,
+        "bars": 200
+      }
+    },
+    "scenario": null,
+    "fibonacci": {
+      "direction": "up",
+      "low": 12970,
+      "high": 15980,
+      "low_at": 1799945100,
+      "high_at": 1799998200,
+      "levels": {
+        "0.236": 15269.64,
+        "0.382": 14830.18,
+        "0.500": 14475.0,
+        "0.618": 14119.82,
+        "0.786": 13614.14
+      },
+      "lookback_bars": 60,
+      "timeframe": "15m"
+    },
+    "generated_at": 1800000150,
+    "valid_until": 1800000210,
+    "read_only": true,
+    "manual_only": true,
+    "exchange_execution": false,
+    "profitability_verified": false,
+    "price_tick": 0.1,
+    "asof_closed_at": 1800000000,
+    "cost_model": {
+      "fee_per_side": 0.001,
+      "adverse_slippage_per_side": 0.0005,
+      "funding": "NOT_INCLUDED"
+    }
+  }
+}

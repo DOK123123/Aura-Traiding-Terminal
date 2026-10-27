@@ -21,6 +21,13 @@ function initializeChart() {
   ema50 = chart.addSeries(L.LineSeries, {color: '#a295fa', lineWidth: 1, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false});
   volume = chart.addSeries(L.HistogramSeries, {priceFormat: {type: 'volume'}, priceScaleId: 'volume', lastValueVisible: false, priceLineVisible: false});
   volume.priceScale().applyOptions({scaleMargins: {top: .86, bottom: 0}});
+  try {
+    window.AuraChartTools?.attach({chart, series:candles, getContext:()=>({symbol:$('symbol').value,timeframe,candles:currentData?.candles||[]})});
+  } catch (_) {
+    // Optional manual tools must never prevent the existing LIVE chart loading.
+    const status = document.getElementById('drawing-status');
+    if (status) status.textContent = 'Ручные инструменты недоступны. LIVE-график работает отдельно; сделки не создаются.';
+  }
   chart.subscribeCrosshairMove(param => {
     const c = param.seriesData.get(candles);
     if (!c) { $('ohlcv').textContent = 'Наведите курсор на свечу для просмотра OHLCV'; return; }
@@ -31,6 +38,7 @@ function initializeChart() {
 
 function clearData() {
   currentData = null;
+  window.AuraChartTools?.refresh?.();
   metricIds.forEach(id => { $(id).textContent = '—'; $(id).classList.remove('positive', 'negative'); });
   $('trend').textContent = '—'; $('trend').className = 'trend';
   $('headline-return').textContent = '— за выборку'; $('headline-return').className = '';

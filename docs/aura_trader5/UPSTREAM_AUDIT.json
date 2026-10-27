@@ -1,0 +1,160 @@
+{
+  "scope": "READ_ONLY_LICENSE_AND_MANIFEST_REVIEW_NO_CODE_IMPORTED",
+  "projects": [
+    {
+      "repository": "Mouses007/Crypto-Trading-Journal",
+      "commit": "a51d161a9a756bb001e9a32f95fbf2d314d8618a",
+      "reviewed_utc": "2026-10-27",
+      "metadata": {
+        "license": {
+          "key": "gpl-3.0",
+          "name": "GNU General Public License v3.0",
+          "spdx_id": "GPL-3.0",
+          "url": "https://api.github.com/licenses/gpl-3.0",
+          "node_id": "MDc6TGljZW5zZTk="
+        },
+        "pushed_at": "2026-10-22T08:10:16Z",
+        "updated_at": "2026-10-22T08:10:20Z",
+        "archived": false,
+        "open_issues_count": 0,
+        "default_branch": "master"
+      },
+      "inspected_files": {
+        "LICENSE": {
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+          "url": "https://github.com/Mouses007/Crypto-Trading-Journal/blob/a51d161a9a756bb001e9a32f95fbf2d314d8618a/LICENSE"
+        },
+        "README.md": {
+          "sha256": "25329ea920105ac89af757eb2497f258e43b68fa7a8e773e26b4bf11ec92f6c6",
+          "url": "https://github.com/Mouses007/Crypto-Trading-Journal/blob/a51d161a9a756bb001e9a32f95fbf2d314d8618a/README.md"
+        },
+        "package.json": {
+          "sha256": "94a56864d03d69450e87f42ad4296a00bfcb782021de7583c7517d683bb10c72",
+          "url": "https://github.com/Mouses007/Crypto-Trading-Journal/blob/a51d161a9a756bb001e9a32f95fbf2d314d8618a/package.json"
+        }
+      }
+    },
+    {
+      "repository": "Pa55w0rd/Crypto-Trading-Journal",
+      "commit": "6cdbf417b3ad45fb04eb94d728794746fde0469e",
+      "reviewed_utc": "2026-10-27",
+      "metadata": {
+        "license": null,
+        "pushed_at": "2024-02-29T10:24:38Z",
+        "updated_at": "2026-06-22T07:11:54Z",
+        "archived": false,
+        "open_issues_count": 0,
+        "default_branch": "main"
+      },
+      "inspected_files": {
+        "README.md": {
+          "sha256": "8f79e839108f22ef4eabefdd12b4693b7a5890354fa96e632201e7358115bd91",
+          "url": "https://github.com/Pa55w0rd/Crypto-Trading-Journal/blob/6cdbf417b3ad45fb04eb94d728794746fde0469e/README.md"
+        }
+      }
+    },
+    {
+      "repository": "dylanpersonguy/OpenCharts",
+      "commit": "d3fc63cc002e6e651801be6e952e7514e58fa5fe",
+      "reviewed_utc": "2026-10-27",
+      "metadata": {
+        "license": {
+          "key": "mit",
+          "name": "MIT License",
+          "spdx_id": "MIT",
+          "url": "https://api.github.com/licenses/mit",
+          "node_id": "MDc6TGljZW5zZTEz"
+        },
+        "pushed_at": "2026-10-14T05:11:34Z",
+        "updated_at": "2026-10-27T02:43:54Z",
+        "archived": false,
+        "open_issues_count": 5,
+        "default_branch": "main"
+      },
+      "inspected_files": {
+        "LICENSE": {
+          "sha256": "4e3de143ab2b0c61371052d2b5a1442e64217d4440da182a4ed5d9e89abe253e",
+          "url": "https://github.com/dylanpersonguy/OpenCharts/blob/d3fc63cc002e6e651801be6e952e7514e58fa5fe/LICENSE"
+        },
+        "README.md": {
+          "sha256": "0e789bc7def536d757892ebfa4bd9817265b62d6b09d3a0155db4479ec17aedb",
+          "url": "https://github.com/dylanpersonguy/OpenCharts/blob/d3fc63cc002e6e651801be6e952e7514e58fa5fe/README.md"
+        },
+        "package.json": {
+          "sha256": "5027ffa7313500fd92a011bd7bd024a9a7478b34c4a5f374470469a59147b1f7",
+          "url": "https://github.com/dylanpersonguy/OpenCharts/blob/d3fc63cc002e6e651801be6e952e7514e58fa5fe/package.json"
+        }
+      }
+    },
+    {
+      "repository": "polakowo/vectorbt",
+      "commit": "8e30b8ce102f302bec0c0226e05b59714453bebd",
+      "reviewed_utc": "2026-10-27",
+      "metadata": {
+        "license": {
+          "key": "other",
+          "name": "Other",
+          "spdx_id": "NOASSERTION",
+          "url": null,
+          "node_id": "MDc6TGljZW5zZTA="
+        },
+        "pushed_at": "2026-10-23T12:07:43Z",
+        "updated_at": "2026-10-27T09:05:22Z",
+        "archived": false,
+        "open_issues_count": 134,
+        "default_branch": "master"
+      },
+      "inspected_files": {
+        "LICENSE.md": {
+          "sha256": "a914859a115b70e80956a3cbd613139ad74c04e5d1bd38da8bcc16725822ec84",
+          "url": "https://github.com/polakowo/vectorbt/blob/8e30b8ce102f302bec0c0226e05b59714453bebd/LICENSE.md"
+        },
+        "README.md": {
+          "sha256": "f28357c134eaf63bcb32c5f67cb66553ecfba9663a8d0b27c016057828bccecf",
+          "url": "https://github.com/polakowo/vectorbt/blob/8e30b8ce102f302bec0c0226e05b59714453bebd/README.md"
+        },
+        "pyproject.toml": {
+          "sha256": "bc7835b5cdcee90e18344ddb77106e039e6e2f46ce4185286b1f15f669be8ebc",
+          "url": "https://github.com/polakowo/vectorbt/blob/8e30b8ce102f302bec0c0226e05b59714453bebd/pyproject.toml"
+        },
+        "setup.py": {
+          "sha256": "ccb3f666c6fd0bd1505548cfb5fd36743b3340b7d634183245e020b9b1c5d71d",
+          "url": "https://github.com/polakowo/vectorbt/blob/8e30b8ce102f302bec0c0226e05b59714453bebd/setup.py"
+        }
+      }
+    },
+    {
+      "repository": "xgboosted/pandas-ta-classic",
+      "commit": "9715f2445f0c39b79cf3dec5e2c341b89d69e182",
+      "reviewed_utc": "2026-10-27",
+      "metadata": {
+        "license": {
+          "key": "mit",
+          "name": "MIT License",
+          "spdx_id": "MIT",
+          "url": "https://api.github.com/licenses/mit",
+          "node_id": "MDc6TGljZW5zZTEz"
+        },
+        "pushed_at": "2026-10-23T12:55:54Z",
+        "updated_at": "2026-10-23T12:55:56Z",
+        "archived": false,
+        "open_issues_count": 2,
+        "default_branch": "main"
+      },
+      "inspected_files": {
+        "LICENSE": {
+          "sha256": "c24a2595fb468d1c68384a6df162a6c01ff53baf7411d750c45cc5276b8a3701",
+          "url": "https://github.com/xgboosted/pandas-ta-classic/blob/9715f2445f0c39b79cf3dec5e2c341b89d69e182/LICENSE"
+        },
+        "README.md": {
+          "sha256": "28988d8029ca7640001fc1e59c2a736f8bc61c4ae1a60c2fc39f9c9069d7c4a3",
+          "url": "https://github.com/xgboosted/pandas-ta-classic/blob/9715f2445f0c39b79cf3dec5e2c341b89d69e182/README.md"
+        },
+        "pyproject.toml": {
+          "sha256": "51a0a01d07782ab17fa9dc71a42d91f9b2a8c6ea1824d8a0bed43f456cd14a30",
+          "url": "https://github.com/xgboosted/pandas-ta-classic/blob/9715f2445f0c39b79cf3dec5e2c341b89d69e182/pyproject.toml"
+        }
+      }
+    }
+  ]
+}

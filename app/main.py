@@ -13,6 +13,8 @@ from fastapi import FastAPI, HTTPException, Query, WebSocket
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from .aura_trader5_api import router as analyst_router
+from .aura_trader5_service import AnalystService
 from .indicators import analyze
 from .models import Candle, INTERVALS, validate_candles, data_fresh
 from .providers import DataUnavailable
@@ -60,13 +62,18 @@ async def lifespan(app):
     async with httpx.AsyncClient(timeout=20, follow_redirects=False) as client:
         app.state.client = client
         app.state.active43 = configured_active43()
+        app.state.aura_analyst = AnalystService()
         try:
             yield
         finally:
-            await app.state.active43.close()
+            try:
+                await app.state.aura_analyst.close()
+            finally:
+                await app.state.active43.close()
 
 
 app = FastAPI(title="Trading Terminal", version="0.1.0", lifespan=lifespan)
+app.include_router(analyst_router)
 app.include_router(patterns_router)
 app.include_router(testnet_router)
 app.include_router(bybit_demo_router)
