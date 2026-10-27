@@ -42,7 +42,9 @@ class ManualCommands:
         # Supabase checks quote_ms after waiting for its transaction lock. Fence
         # it by the scenario deadline too, without changing the RPC/schema.
         if expires_at_ms is not None and quote_ms is not None:
-            quote_ms = min(quote_ms, expires_at_ms - 5000)
+            # SQL floors its clock to milliseconds and accepts age <= 5000.
+            # Subtract one extra ms so expiry is exclusive even at that edge.
+            quote_ms = min(quote_ms, expires_at_ms - 5001)
         return self.store.execute(request_id,'OPEN',args,run,quote_ms=quote_ms)
 
     def close(self, request_id, quote, position_id=None, reason='MANUAL'):

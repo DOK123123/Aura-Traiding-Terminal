@@ -100,7 +100,8 @@ def test_deadline_rechecked_inside_sqlite_lock_and_passed_to_postgres_store(setu
         return original(*a,**kw)
     s.store.execute=delayed
     assert post(c,body=body).json()['code']=='STALE_ANALYST'
-    assert observed==[STAMP-4000]
+    assert observed==[STAMP-4001]
+    assert observed[0]+5000 == STAMP+1000-1  # Last accepted DB ms precedes TTL.
     assert s.store.load()==(None,0)
 
 
