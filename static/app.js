@@ -165,26 +165,61 @@ window.addEventListener('aura-manual-market',event=>{
  if(document.body.dataset.liveManual!=='true')return;
  const snapshot=event.detail,now=Date.now()/1000,w=snapshot?.windows?.[timeframe];
  const fresh=snapshot?.status==='LIVE'&&window.AuraManualLiveAnalysis?.quoteFresh(snapshot.quote,now);
- $('feed-state').textContent=fresh?'LIVE':snapshot?.status||'STALE';
- if(!fresh||!w){$('chart-overlay').hidden=false;$('chart-overlay').textContent='STALE · рекомендации заблокированы';$('headline-price').textContent='—';return;}
+ $('feed-state').textContent=fresh?'LIVE':w?.bars?.length?'HISTORY ONLY · '+(snapshot?.status||'STALE'):snapshot?.status||'STALE';
+ if(!w?.bars?.length){
+  // Keep the last integrity-checked candles visible on transient reconnects.
+  const hasHistory=Boolean(currentData?.candles?.length);
+  $('chart-overlay').hidden=hasHistory;
+  if(!hasHistory)$('chart-overlay').textContent='STALE · подтверждённой истории пока нет';
+  $('status').className='status warning';
+  $('status').textContent='Нет свежих котировок. История'+(hasHistory?' сохранена на экране.':' ещё не загружена.')+' Рекомендации заблокированы.';
+  $('event-age').textContent='Bid/Ask не подтверждены';
+  if(!hasHistory)$('headline-price').textContent='—';
+  return;
+ }
  if(!chart)initializeChart();
  try{
-  window.AuraManualLiveAnalysis.windowCheck(w.bars,window.AuraManualLiveAnalysis.STEPS[timeframe],now);
-  currentData={symbol:'BTCUSDT',timeframe,candles:w.bars};
-  candles.setData(w.bars);ema20.setData(window.AuraBitgetLive.ema(w.bars,20));ema50.setData(window.AuraBitgetLive.ema(w.bars,50));
-  volume.setData(w.bars.map(b=>({time:b.time,value:b.volume,color:b.close>=b.open?'#42d6b055':'#fa788b55'})));
-  if(manualChartFrame!==timeframe){chart.timeScale().setVisibleLogicalRange({from:Math.max(0,w.bars.length-100),to:w.bars.length+4});manualChartFrame=timeframe;}
-  $('headline-price').textContent=fmt(snapshot.quote.last);$('price').textContent=fmt(snapshot.quote.last);
-  $('event-age').textContent='Возраст котировки '+Math.max(0,now-snapshot.quote.time).toFixed(1)+' с';
-  $('chart-overlay').hidden=true;$('source').textContent='Bitget USDT-M Futures · публичный WebSocket';
-  $('live-candle').textContent='Формируется '+timeframe+' · '+utc(w.bars.at(-1).time)+' · V '+fmt(w.bars.at(-1).volume);
-  $('status').textContent='LIVE: текущая свеча предварительная; закрытые подтверждения в AURA ANALYST.';
-  $('last-updated').textContent='Последнее получение UTC: '+utc(w.received_at);
-  const m=window.AuraManualLiveAnalysis.metrics(w.bars);
-  for(const [id,key]of [['ema20-value','ema20'],['ema50-value','ema50'],['rsi','rsi'],['atr','atr']])$(id).textContent=fmt(m[key]);
-  $('trend').textContent=m.trend+' · предварительно';$('count').textContent=w.bars.length;
-  document.dispatchEvent(new CustomEvent('market-data-changed'));window.AuraChartTools?.refresh?.();
- }catch{$('chart-overlay').hidden=false;$('chart-overlay').textContent='История не прошла проверку';}
+  const step=window.AuraManualLiveAnalysis.STEPS[timeframe];
+  const closed=window.AuraManualLiveAnalysis.windowCheck(w.bars,step,now);
+  const bars=fresh?w.bars:closed; // Never display forming candles as current without verified bid/ask.
+  currentData={symbol:'BTCUSDT',timeframe,candles:bars};
+  candles.setData(bars);ema20.setData(window.AuraBitgetLive.ema(bars,20));ema50.setData(window.AuraBitgetLive.ema(bars,50));
+  volume.setData(bars.map(b=>({time:b.time,value:b.volume,color:b.close>=b.open?'#42d6b055':'#fa788b55'})));
+  if(manualChartFrame!==timeframe){chart.timeScale().setVisibleLogicalRange({from:Math.max(0,bars.length-100),to:bars.length+4});manualChartFrame=timeframe;}
+  $('chart-overlay').hidden=true;
+  if(fresh){
+   $('headline-price').textContent=fmt(snapshot.quote.last);$('price').textContent=fmt(snapshot.quote.last);
+   $('headline-return').textContent='текущая котировка Bitget';
+   $('event-age').textContent='Возраст котировки '+Math.max(0,now-snapshot.quote.time).toFixed(1)+' с';
+   $('source').textContent='Bitget USDT-M Futures · публичный WebSocket';
+   $('live-candle').textContent='Формируется '+timeframe+' · '+utc(w.bars.at(-1).time)+' · V '+fmt(w.bars.at(-1).volume);
+   $('status').className='status';
+   $('status').textContent='LIVE: текущая свеча предварительная; закрытые подтверждения в AURA ANALYST.';
+   const m=window.AuraManualLiveAnalysis.metrics(bars);
+   for(const [id,key]of [['ema20-value','ema20'],['ema50-value','ema50'],['rsi','rsi'],['atr']])$(id).textContent=fmt(m[key]);
+   $('trend').textContent=m.trend+' · предварительно';
+   document.dispatchEvent(new CustomEvent('market-data-changed'));
+  }else{
+   const last=closed.at(-1);
+   $('headline-price').textContent=fmt(last.close);
+   $('headline-return').textContent='последнее закрытие · НЕ LIVE';
+   $('price').textContent='— (нет свежей котировки)';
+   $('event-age').textContent='Bid/Ask не подтверждены';
+   $('source').textContent='Bitget USDT-M Futures · проверенная история · НЕ LIVE';
+   $('live-candle').textContent='Последняя закрытая '+timeframe+' · '+utc(last.time)+' · C '+fmt(last.close);
+   $('status').className='status warning';
+   $('status').textContent='HISTORY ONLY: показаны только закрытые свечи. Нет свежего LIVE-потока; сигналы и входы заблокированы.';
+   $('trend').textContent='— (нет LIVE)';
+  }
+  $('last-updated').textContent=fresh?'Последнее получение UTC: '+utc(w.received_at):'История загружена · нет подтверждённой свежей котировки';
+  $('count').textContent=bars.length;
+  window.AuraChartTools?.refresh?.();
+ }catch(error){
+  $('chart-overlay').hidden=false;
+  $('chart-overlay').textContent='История не прошла проверку: '+String(error?.message||'INVALID_HISTORY').slice(0,90);
+  $('status').className='status warning';
+  $('status').textContent='История отклонена, торговые сигналы заблокированы.';
+ }
 });
 window.addEventListener('aura-manual-position',event=>{
  if(!candles)return;for(const line of manualPriceLines)candles.removePriceLine(line);manualPriceLines=[];
