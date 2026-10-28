@@ -107,6 +107,7 @@ function drawBitgetVisual(bars) {
 }
 
 function updateFeedAge() {
+  if (document.body?.dataset?.liveManual === "true") return;
   if(bitgetVisual?.lastLive){$('event-age').textContent='LIVE-событие: '+Math.max(0,Math.floor(Date.now()/1000-bitgetVisual.lastLive))+' с назад · '+bitgetVisualState;}
   if (!lastLiveReceipt) return;
   const age = Math.max(0,Math.floor((Date.now()-lastLiveReceipt)/1000));

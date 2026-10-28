@@ -10,6 +10,7 @@ export PATH="$(dirname "$node_bin"):$(dirname "$python_bin"):$PATH"
 export AURA_ACTIVE43_VERIFY_POSTGRES=true
 export AURA_AUTO42_VERIFY_POSTGRES=true
 export AURA_PRACTICE_VERIFY_POSTGRES=true
+export AURA_MANUAL_PAPER_VERIFY_POSTGRES=true
 export TZ=UTC
 mkdir -p ci-results
 

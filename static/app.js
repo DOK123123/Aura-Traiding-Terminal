@@ -55,6 +55,13 @@ function signed(id, value, suffix = '%') {
 }
 
 async function loadMarket() {
+  if (document.body.dataset.liveManual === "true") {
+    stopMarketLive(); clearData(); $("limit").disabled=true; $("limit").options[0].text="200 + формирующаяся"; if (!chart) initializeChart();
+    $("chart-subtitle").textContent="Bitget USDT-M Futures · "+timeframe+" · LIVE";
+    $("chart-overlay").hidden=false; $("chart-overlay").textContent="Восстановление публичного LIVE-потока…";
+    window.dispatchEvent(new CustomEvent("aura-manual-chart-frame",{detail:timeframe}));
+    return;
+  }
   stopMarketLive();
   controller?.abort();
   controller = new AbortController();
@@ -140,10 +147,10 @@ if (document.modelContext?.registerTool) {
   try {
     Promise.resolve(document.modelContext.registerTool({
       name: 'configure_market_analysis', description: 'Выбрать рынок, таймфрейм и глубину, загрузить и показать анализ.',
-      inputSchema: {type: 'object', properties: {symbol: {enum: ['BTCUSDT']}, timeframe: {enum: ['1m','5m','15m','1h']}, limit: {enum: [500,2000]}}, required: ['symbol','timeframe','limit'], additionalProperties: false},
+      inputSchema: {type: 'object', properties: {symbol: {enum: ['BTCUSDT']}, timeframe: {enum: ['1m','5m','15m','1h','4h']}, limit: {enum: [500,2000]}}, required: ['symbol','timeframe','limit'], additionalProperties: false},
       annotations: {readOnlyHint: false, untrustedContentHint: true},
       async execute(input) {
-        if (!input || !['BTCUSDT'].includes(input.symbol) || !['1m','5m','15m','1h'].includes(input.timeframe) || ![500,2000].includes(input.limit)) throw new Error('Invalid market parameters');
+        if (!input || !['BTCUSDT'].includes(input.symbol) || !['1m','5m','15m','1h','4h'].includes(input.timeframe) || ![500,2000].includes(input.limit)) throw new Error('Invalid market parameters');
         $('symbol').value = input.symbol; $('limit').value = String(input.limit); selectTimeframe(input.timeframe);
         return await loadMarket();
       }
@@ -151,3 +158,54 @@ if (document.modelContext?.registerTool) {
   } catch (_) { /* Optional browser API. */ }
 }
 loadMarket();
+
+// Browser-only public feed, never an execution price or Active43 input.
+let manualChartFrame=null,manualPriceLines=[];
+window.addEventListener('aura-manual-market',event=>{
+ if(document.body.dataset.liveManual!=='true')return;
+ const snapshot=event.detail,now=Date.now()/1000,w=snapshot?.windows?.[timeframe];
+ const fresh=snapshot?.status==='LIVE'&&window.AuraManualLiveAnalysis?.quoteFresh(snapshot.quote,now);
+ $('feed-state').textContent=fresh?'LIVE':snapshot?.status||'STALE';
+ if(!fresh||!w){$('chart-overlay').hidden=false;$('chart-overlay').textContent='STALE · рекомендации заблокированы';$('headline-price').textContent='—';return;}
+ if(!chart)initializeChart();
+ try{
+  window.AuraManualLiveAnalysis.windowCheck(w.bars,window.AuraManualLiveAnalysis.STEPS[timeframe],now);
+  currentData={symbol:'BTCUSDT',timeframe,candles:w.bars};
+  candles.setData(w.bars);ema20.setData(window.AuraBitgetLive.ema(w.bars,20));ema50.setData(window.AuraBitgetLive.ema(w.bars,50));
+  volume.setData(w.bars.map(b=>({time:b.time,value:b.volume,color:b.close>=b.open?'#42d6b055':'#fa788b55'})));
+  if(manualChartFrame!==timeframe){chart.timeScale().setVisibleLogicalRange({from:Math.max(0,w.bars.length-100),to:w.bars.length+4});manualChartFrame=timeframe;}
+  $('headline-price').textContent=fmt(snapshot.quote.last);$('price').textContent=fmt(snapshot.quote.last);
+  $('event-age').textContent='Возраст котировки '+Math.max(0,now-snapshot.quote.time).toFixed(1)+' с';
+  $('chart-overlay').hidden=true;$('source').textContent='Bitget USDT-M Futures · публичный WebSocket';
+  $('live-candle').textContent='Формируется '+timeframe+' · '+utc(w.bars.at(-1).time)+' · V '+fmt(w.bars.at(-1).volume);
+  $('status').textContent='LIVE: текущая свеча предварительная; закрытые подтверждения в AURA ANALYST.';
+  $('last-updated').textContent='Последнее получение UTC: '+utc(w.received_at);
+  const m=window.AuraManualLiveAnalysis.metrics(w.bars);
+  for(const [id,key]of [['ema20-value','ema20'],['ema50-value','ema50'],['rsi','rsi'],['atr','atr']])$(id).textContent=fmt(m[key]);
+  $('trend').textContent=m.trend+' · предварительно';$('count').textContent=w.bars.length;
+  document.dispatchEvent(new CustomEvent('market-data-changed'));window.AuraChartTools?.refresh?.();
+ }catch{$('chart-overlay').hidden=false;$('chart-overlay').textContent='История не прошла проверку';}
+});
+window.addEventListener('aura-manual-position',event=>{
+ if(!candles)return;for(const line of manualPriceLines)candles.removePriceLine(line);manualPriceLines=[];
+ const p=event.detail;if(!p)return;
+ for(const [key,title,color]of [['entry','Manual Entry','#f4c779'],['stop','Manual SL','#fa788b'],['target','Manual TP','#42d6b0']]){
+  const price=Number(p[key]);if(Number.isFinite(price)&&price>0)manualPriceLines.push(candles.createPriceLine({price,title,color,lineWidth:2}));
+ }
+});
+let manualMarkers=null,manualTrades=[];
+function drawManualHistory(){
+ if(!candles||!currentData?.candles?.length||!window.LightweightCharts.createSeriesMarkers)return;
+ const step=window.AuraManualLiveAnalysis?.STEPS[timeframe];if(!step)return;
+ const first=currentData.candles[0].time,last=currentData.candles.at(-1).time,marks=[];
+ for(const t of manualTrades){
+  for(const [key,exit]of [['opened_at',false],['closed_at',true]]){
+   const at=Number(t[key]);if(!Number.isFinite(at)||at<=0)continue;
+   const time=Math.floor(at/1000/step)*step;if(time<first||time>last)continue;
+   marks.push({time,position:exit?'aboveBar':t.side==='LONG'?'belowBar':'aboveBar',color:exit?'#f4c779':t.side==='LONG'?'#42d6b0':'#fa788b',shape:exit?'circle':t.side==='LONG'?'arrowUp':'arrowDown',text:(exit?'CLOSE':'OPEN '+t.side)+' · Manual Paper'});
+  }
+ }
+ marks.sort((a,b)=>a.time-b.time);if(!manualMarkers)manualMarkers=window.LightweightCharts.createSeriesMarkers(candles,marks);else manualMarkers.setMarkers(marks);
+}
+window.addEventListener('aura-manual-history',event=>{manualTrades=Array.isArray(event.detail)?event.detail:[];drawManualHistory();});
+window.addEventListener('aura-manual-market',drawManualHistory);
