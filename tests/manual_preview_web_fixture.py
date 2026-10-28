@@ -18,4 +18,6 @@ class DummyService(Service):
 main.PreviewStore=Store;main.Service=DummyService
 async def _offline_probe(client):pass
 main._preview_probe_history=_offline_probe
+async def _offline_ws_probe(app):pass
+main._preview_probe_ws=_offline_ws_probe
 if __name__=='__main__':uvicorn.run(main.app,host='127.0.0.1',port=int(os.environ['MANUAL_PREVIEW_TEST_PORT']),log_level='error')
