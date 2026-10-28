@@ -3,7 +3,9 @@ import asyncio
 from contextlib import asynccontextmanager
 import os
 import secrets
-from fastapi import Depends,FastAPI,HTTPException,Request
+import json
+import websockets
+from fastapi import Depends,FastAPI,HTTPException,Request,WebSocket
 from fastapi.responses import HTMLResponse,FileResponse,JSONResponse,RedirectResponse
 from app.paper.api import owner,basic,HEADERS
 from app.manual_paper.api import router as manual_router
@@ -29,9 +31,11 @@ async def preview_owner(request:Request):
 async def lifespan(app):
     config=parse(os.environ)  # Fails BEFORE constructing any HTTP or storage client.
     app.state.preview_config=config
+    app.state.preview_ws_token=secrets.token_urlsafe(32)
     store=PreviewStore(config);task=None
     try:
         async with httpx.AsyncClient(timeout=10,follow_redirects=False) as client:
+            app.state.preview_public_client=client
             app.state.aura_analyst=AnalystService()
             app.state.preview_store=store
             app.state.manual_paper=Service(store if config.manual_enabled else None,client=client,durable=True,
@@ -69,12 +73,93 @@ async def isolate(request,call_next):
     for k,v in {**HEADERS,'X-Frame-Options':'DENY','Referrer-Policy':'no-referrer','Content-Security-Policy':"frame-ancestors 'none'"}.items():response.headers[k]=v
     return response
 
+
+# Fixed, public-market-only proxy for browsers where Bitget cross-origin REST/WS is blocked.
+# No private exchange endpoints, credentials, trading orders, or user-supplied upstream URLs.
+_PREVIEW_MARKET='https://api.bitget.com/api/v2/mix/market/candles'
+_PREVIEW_WS='wss://ws.bitget.com/v2/ws/public'
+_PREVIEW_CHANNELS=('candle1m','candle5m','candle15m','candle1H','candle4H','ticker')
+_PREVIEW_SUBSCRIBE={'op':'subscribe','args':[{'instType':'USDT-FUTURES','instId':'BTCUSDT','channel':ch} for ch in _PREVIEW_CHANNELS]}
+
+@app.get('/api/preview/bitget/candles')
+async def preview_public_candles(request:Request):
+    qp=request.query_params
+    if (set(qp.keys())!={'symbol','productType','granularity','limit'}
+            or qp.get('symbol')!='BTCUSDT' or qp.get('productType')!='USDT-FUTURES'
+            or qp.get('granularity') not in {'1m','5m','15m','1H','4H'}
+            or qp.get('limit')!='201'):
+        raise HTTPException(400,'PUBLIC_MARKET_QUERY_FORBIDDEN')
+    try:
+        async with request.app.state.preview_public_client.stream(
+            'GET',_PREVIEW_MARKET,
+            params=dict(symbol='BTCUSDT',productType='USDT-FUTURES',
+                        granularity=qp['granularity'],limit='201'),
+            timeout=8,follow_redirects=False) as response:
+            if response.status_code!=200:raise ValueError('UPSTREAM_HTTP')
+            data=bytearray()
+            async for chunk in response.aiter_bytes():
+                data.extend(chunk)
+                if len(data)>160000:raise ValueError('UPSTREAM_LIMIT')
+        value=json.loads(data)
+        if (not isinstance(value,dict) or value.get('code')!='00000'
+                or not isinstance(value.get('data'),list) or not 101<=len(value['data'])<=201):
+            raise ValueError('UPSTREAM_FORMAT')
+        return JSONResponse(value,headers={'Cache-Control':'no-store'})
+    except (httpx.HTTPError,ValueError,TypeError,TimeoutError):
+        return JSONResponse({'code':'PUBLIC_MARKET_UNAVAILABLE'},status_code=503,
+                            headers={'Cache-Control':'no-store'})
+
+@app.websocket('/ws/preview/bitget')
+async def preview_public_stream(ws:WebSocket):
+    token=ws.query_params.get('token','')
+    correct=ws.app.state.preview_ws_token
+    expected_origin='https://'+ws.headers.get('host','')
+    if (not token or not secrets.compare_digest(token,correct)
+            or ws.headers.get('origin')!=expected_origin):
+        await ws.close(code=1008)
+        return
+    await ws.accept()
+    try:
+        async with websockets.connect(_PREVIEW_WS,open_timeout=8,close_timeout=3,
+                                      max_size=1048576,ping_interval=20) as upstream:
+            await upstream.send(json.dumps(_PREVIEW_SUBSCRIBE,separators=(',',':')))
+            async def bitget_to_browser():
+                async for msg in upstream:
+                    if not isinstance(msg,str) or len(msg)>1048576:break
+                    await ws.send_text(msg)
+            async def browser_to_bitget():
+                while True:
+                    msg=await ws.receive_text()
+                    if msg=='ping':
+                        await ws.send_text('pong')
+                        continue
+                    # Browser Hub sends its fixed subscribe request. Server already subscribed.
+                    try:
+                        if json.loads(msg)==_PREVIEW_SUBSCRIBE:continue
+                    except (TypeError,ValueError):pass
+                    break
+            async def keepalive():
+                while True:
+                    await asyncio.sleep(20)
+                    await upstream.send('ping')
+            tasks=[asyncio.create_task(f()) for f in (bitget_to_browser,browser_to_bitget,keepalive)]
+            try:
+                await asyncio.wait(tasks,return_when=asyncio.FIRST_COMPLETED)
+            finally:
+                for task in tasks:task.cancel()
+                await asyncio.gather(*tasks,return_exceptions=True)
+    except Exception:
+        # Safe failure: client Hub invalidates ALL quotes and retries. Never synthesize prices.
+        pass
+    try:await ws.close(code=1001)
+    except (RuntimeError,OSError):pass
+
 @app.get('/api/health')
 async def health():
     return {'status':'ok','scope':'ISOLATED_MANUAL_PREVIEW','exchange_execution':False,'active43_controller_enabled':False,'automatic_entry_scheduler_enabled':False}
 
 @app.get('/')
-async def index():return HTMLResponse(page())
+async def index(request:Request):return HTMLResponse(page(request.app.state.preview_ws_token),headers={'Cache-Control':'no-store'})
 
 @app.get('/api/paper/login')
 async def login():return RedirectResponse('/',303)
