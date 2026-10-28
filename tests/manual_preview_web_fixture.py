@@ -16,4 +16,6 @@ class DummyService(Service):
         bid=Decimal(os.getenv('MANUAL_PREVIEW_TEST_BID','80000'))
         return dict(source='Bitget USDT-M Futures',symbol='BTCUSDT',product='USDT-FUTURES',time=int(time.time()*1000)-20,bid=bid,ask=bid+1,price=bid,bid_size=Decimal('1'),ask_size=Decimal('1'))
 main.PreviewStore=Store;main.Service=DummyService
+async def _offline_probe(client):pass
+main._preview_probe_history=_offline_probe
 if __name__=='__main__':uvicorn.run(main.app,host='127.0.0.1',port=int(os.environ['MANUAL_PREVIEW_TEST_PORT']),log_level='error')
