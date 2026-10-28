@@ -29,7 +29,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def main():
     if os.getenv('RENDER'):raise ValueError('LOCAL_OFFLINE_ONLY')
-    parser=argparse.ArgumentParser();parser.add_argument('--output-dir',type=Path,required=True);args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--output-dir',type=Path,required=True);parser.add_argument('--preview',action='store_true');args=parser.parse_args()
     args.output_dir.mkdir(parents=True,exist_ok=False)
     fixture=json.loads((ROOT/'tests/fixtures/manual_live_synthetic.json').read_text());now=fixture['now']
     closed=json.loads((ROOT/'tests/fixtures/aura_analyst_synthetic.json').read_text())['LONG']
@@ -42,7 +42,7 @@ def main():
         return {ok:true,json:async()=>({code:'00000',requestTime:Date.now(),data:__fixture.snapshots.LONG.windows[tf].bars.map(b=>[String(b.time*1000),b.open,b.high,b.low,b.close,b.volume,'0'])})};
       }
       if(String(url).startsWith('/api/manual-paper/')){if(options.method==='POST')window.__posts++;return nativeFetch(url,{...options,headers:{...options.headers,Authorization:'Basic '+btoa('aura:DUMMY_ONLY_BROWSER_OWNER_PASSWORD')}});}
-      if(url==='/api/analyst')return {ok:true,json:async()=>__closed};
+      if(url==='/api/analyst'){window.__analystCredentialMode=options.credentials;return {ok:true,json:async()=>__closed};}
       return {ok:false,status:503,json:async()=>({code:'OFFLINE_FIXTURE_ONLY'})};
     };
     window.WebSocket=class{
@@ -66,8 +66,26 @@ def main():
         folder=Path(raw);boot=time.monotonic();svc=Service(ManualStore(folder/'manual-paper.sqlite3'),clock=lambda:now+time.monotonic()-boot)
         def quote():return dict(source='Bitget USDT-M Futures',symbol='BTCUSDT',product='USDT-FUTURES',time=int(svc.clock()*1000)-1000,bid=Decimal('14712.15'),ask=Decimal('14712.35'),price=Decimal('14712.25'),bid_size=Decimal('1'),ask_size=Decimal('1'))
         svc.quote=AsyncMock(side_effect=quote);api=FastAPI();api.include_router(router);api.state.manual_paper=svc
+        html=(ROOT/'static/index.html').read_text()
+        if args.preview:
+            from app.manual_preview.main import app as preview_app
+            from app.manual_preview.config import Config
+            from app.manual_preview.page import page
+            from contextlib import asynccontextmanager
+            @asynccontextmanager
+            async def fixture_lifespan(app):
+                app.state.preview_config=Config(password,'abcdefghijklmnopqrst','https://abcdefghijklmnopqrst.supabase.co','sb_secret_DUMMY_ONLY_BROWSER_123456789',True)
+                app.state.manual_paper=svc
+                task=asyncio.create_task(svc.run_protection());app.state.preview_protection_task=task
+                try:yield
+                finally:
+                    task.cancel()
+                    try:await task
+                    except asyncio.CancelledError:pass
+            api=preview_app;api.router.lifespan_context=fixture_lifespan
+            html=page()
         (folder/'static').symlink_to(ROOT/'static',target_is_directory=True)
-        (folder/'index.html').write_text((ROOT/'static/index.html').read_text().replace('<head>','<head><script>'+bootstrap+'</script>',1))
+        (folder/'index.html').write_text(html.replace('<head>','<head><script>'+bootstrap+'</script>',1))
         with TestClient(api) as client:
           class Handler(SimpleHTTPRequestHandler):
             def log_message(self,*args):pass
@@ -114,6 +132,7 @@ def main():
                 call('Page.navigate',dict(url=f'http://127.0.0.1:{server.server_port}/'))
                 wait("document.getElementById('ml-state')?.textContent==='LONG'&&document.querySelectorAll('canvas').length>0")
                 assert evaluate('document.documentElement.scrollWidth<=innerWidth')
+                assert evaluate('window.__analystCredentialMode')==('same-origin' if args.preview else 'omit')
                 assert evaluate('window.__posts')==0
                 evaluate("document.getElementById('ml-profile').value='MODERATE';document.getElementById('ml-profile').dispatchEvent(new Event('change'))")
                 wait("document.getElementById('ml-profile-note').textContent.startsWith('Умеренный')&&document.querySelectorAll('#ml-potentials details').length===2")
@@ -156,7 +175,7 @@ def main():
                 evaluate("Object.defineProperty(document,'hidden',{value:false,configurable:true});document.dispatchEvent(new Event('visibilitychange'))")
                 wait("document.getElementById('ml-status').textContent==='LIVE'")
                 assert evaluate('window.__historyCalls')>=calls+5
-              report=dict(status='PASS',desktop=True,mobile_touch_emulation=True,physical_android_chrome=False,background_resnapshot=True,user_only_open_close=True,double_click_deduplicated=True,profile_switch_no_orders=True,conditional_long_short_visible=True,committed_virtual_trades=[t['id'] for t in svc.store.load()[0].trades],production_changed=False)
+              report=dict(status='PASS',isolated_preview=args.preview,desktop=True,mobile_touch_emulation=True,physical_android_chrome=False,background_resnapshot=True,user_only_open_close=True,double_click_deduplicated=True,profile_switch_no_orders=True,conditional_long_short_visible=True,committed_virtual_trades=[t['id'] for t in svc.store.load()[0].trades],production_changed=False)
               (args.output_dir/'report.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
           finally:
             server.shutdown();server.server_close();proc.terminate()

@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "isolated_preview": true,
+  "desktop": true,
+  "mobile_touch_emulation": true,
+  "physical_android_chrome": false,
+  "background_resnapshot": true,
+  "user_only_open_close": true,
+  "double_click_deduplicated": true,
+  "profile_switch_no_orders": true,
+  "conditional_long_short_visible": true,
+  "committed_virtual_trades": [
+    "f4d32febd1d215c19333225c7306dea5",
+    "45166a89975b55efd7dc1162d940c9e9"
+  ],
+  "production_changed": false
+}

@@ -39,7 +39,7 @@
  }
  async function http(path,body){
   const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),15000);
-  try{const r=await fetch(path,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',redirect:'error',headers:body?{'Content-Type':'application/json','X-Aura-Paper':'local-only'}:{},body:body?JSON.stringify(body):undefined,signal:abort.signal});const data=await r.json();if(!r.ok){const e=new Error(r.status===401?'Войдите как владелец':messages[data.code]||data.code||`HTTP ${r.status}`);e.status=r.status;throw e;}return data;}finally{clearTimeout(timer);}
+  try{const r=await fetch(path,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',redirect:'error',headers:body?{'Content-Type':'application/json','X-Aura-Paper':'local-only',...(document.body?.dataset?.manualPreview==='true'?{'X-Aura-Preview-Confirm':'manual-virtual'}:{})}:{},body:body?JSON.stringify(body):undefined,signal:abort.signal});const data=await r.json();if(!r.ok){const e=new Error(r.status===401?'Войдите как владелец':messages[data.code]||data.code||`HTTP ${r.status}`);e.status=r.status;throw e;}return data;}finally{clearTimeout(timer);}
  }
  async function refresh(){
   if(busy)return;const gen=++generation;
@@ -66,7 +66,7 @@
  for(const side of ['LONG','SHORT'])el(side.toLowerCase()).addEventListener('click',()=>{
   if(!model(state).canOpen||pending||busy)return;
   const fields=['quantity','stop','target'];if(fields.some(k=>!el(k).checkValidity())){fields.forEach(k=>el(k).reportValidity());return;}
-  if(typeof window!=='undefined'&&!window.confirm(side+' · только виртуальная сделка. Подтвердить открытие?'))return;
+  if(typeof window!=='undefined'&&!window.confirm(side+' · только виртуальная сделка. '+(document.body?.dataset?.manualPreview==='true'?'Открыть и разрешить автоматические защитные SL/TP, пока preview-сервер работает?':'Подтвердить открытие?')))return;
   send({path:'/api/manual-paper/orders',body:{request_id:requestId(),side,quantity:el('quantity').value,stop:el('stop').value,target:el('target').value}});
  });
  el('close').addEventListener('click',()=>{if(model(state).canClose&&!pending&&!busy&&(typeof window==='undefined'||window.confirm('Закрыть виртуальную позицию?')))send({path:'/api/manual-paper/positions/'+state.position.id+'/close',body:{request_id:requestId()}});});

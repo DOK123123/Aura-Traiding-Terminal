@@ -21,7 +21,7 @@ test('only one separate virtual position; no real mode accepted',()=>{
 
 // Execute the actual UI script with a minimal DOM. Simulate response loss after
 // a server commit, then reload the browser and retry the retained request ID.
-function browser(saved,fetch,storageDenied=false){
+function browser(saved,fetch,storageDenied=false,preview=false){
  const elements=new Map();
  function element(id){if(!elements.has(id))elements.set(id,{id,value:'',textContent:'',disabled:false,hidden:false,open:true,events:{},addEventListener(k,fn){this.events[k]=fn;},checkValidity(){return true;},reportValidity(){},replaceChildren(){},append(){}});return elements.get(id);}
  const timers=[];
@@ -29,8 +29,9 @@ function browser(saved,fetch,storageDenied=false){
   localStorage:{getItem:k=>saved[k]||null,setItem:(k,v)=>{if(storageDenied)throw new Error("storage blocked");saved[k]=v;},removeItem:k=>delete saved[k]},
   crypto:{getRandomValues:b=>b.fill(7)},Uint8Array,AbortController,setTimeout,clearTimeout,
   setInterval:fn=>timers.push(fn),fetch,Date,Number,JSON,Error};
+ if(preview){context.document.body={dataset:{manualPreview:'true'}};context.window={confirm:()=>false,dispatchEvent(){}};context.CustomEvent=class{constructor(name,options){this.type=name;this.detail=options.detail;}};}
  vm.runInNewContext(fs.readFileSync('static/manual-paper.js','utf8'),context);
- return {elements,element,timers};
+ return {elements,element,timers,window:context.window};
 }
 const response=data=>({ok:true,status:200,json:async()=>data});
 test('lost response and page reload preserve the exact intent; no duplicate new ID',async()=>{
@@ -56,4 +57,14 @@ test('write blocked when intent cannot be persisted',async()=>{
 });
 test('nonfinite or boolean bid/ask cannot enable any operation',()=>{
  for(const bad of [Infinity,'Infinity',NaN,true,''])assert.equal(model({...s,quote:{...q,bid:bad,ask:bad}},now).canOpen,false);
+});
+
+test('preview cancellation prevents POST; confirmed action carries preview and CSRF acknowledgement',async()=>{
+ const calls=[];const b=browser({},async(path,opt)=>{calls.push({path,opt});return response(opt.method==='POST'?{request_id:JSON.parse(opt.body).request_id}:{...s,quote:{...q,time:Date.now()},trades:[]});},false,true);
+ b.element('manual-paper-panel').events.toggle();await new Promise(r=>setImmediate(r));
+ for(const [id,value]of [['quantity','0.01'],['stop','79500'],['target','81000']])b.element('mp-'+id).value=value;
+ b.element('mp-long').events.click();await new Promise(r=>setImmediate(r));
+ assert.equal(calls.filter(c=>c.opt.method==='POST').length,0);
+ b.window.confirm=()=>true;b.element('mp-long').events.click();await new Promise(r=>setImmediate(r));
+ const post=calls.find(c=>c.opt.method==='POST');assert.equal(post.opt.headers['X-Aura-Preview-Confirm'],'manual-virtual');assert.equal(post.opt.headers['X-Aura-Paper'],'local-only');
 });
