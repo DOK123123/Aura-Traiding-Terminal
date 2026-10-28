@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 import os
 import secrets
 import json
+import logging
+import time
 import websockets
 from fastapi import Depends,FastAPI,HTTPException,Request,WebSocket
 from fastapi.responses import HTMLResponse,FileResponse,JSONResponse,RedirectResponse
@@ -36,6 +38,7 @@ async def lifespan(app):
     try:
         async with httpx.AsyncClient(timeout=10,follow_redirects=False) as client:
             app.state.preview_public_client=client
+            app.state.preview_market_probe=asyncio.create_task(_preview_probe_history(client))
             app.state.aura_analyst=AnalystService()
             app.state.preview_store=store
             app.state.manual_paper=Service(store if config.manual_enabled else None,client=client,durable=True,
@@ -49,7 +52,10 @@ async def lifespan(app):
                         task.cancel()
                         try:await task
                         except asyncio.CancelledError:pass
-                finally:await app.state.aura_analyst.close()
+                finally:
+                    app.state.preview_market_probe.cancel()
+                    await asyncio.gather(app.state.preview_market_probe,return_exceptions=True)
+                    await app.state.aura_analyst.close()
     finally:await asyncio.to_thread(store.close)
 
 app=FastAPI(title='Isolated Aura Manual Preview',lifespan=lifespan,docs_url=None,redoc_url=None,openapi_url=None)
@@ -73,6 +79,59 @@ async def isolate(request,call_next):
     for k,v in {**HEADERS,'X-Frame-Options':'DENY','Referrer-Policy':'no-referrer','Content-Security-Policy':"frame-ancestors 'none'"}.items():response.headers[k]=v
     return response
 
+
+
+_preview_log=logging.getLogger('aura.preview.market')
+_preview_quality_seen=set()
+
+def _preview_history_quality(body,granularity,now=None):
+    """Read-only clone of browser REST integrity checks, returns a safe reason code."""
+    now=time.time() if now is None else now
+    steps={'1m':60,'5m':300,'15m':900,'1H':3600,'4H':14400}
+    step=steps.get(granularity)
+    try:
+        rows=body['data']
+        if (body.get('code')!='00000' or not isinstance(rows,list) or not 101<=len(rows)<=201):
+            return 'BAD_SIZE_OR_CODE'
+        request_at=float(body['requestTime'])/1000
+        if not 0<=now-request_at<=10:return 'STALE_REQUEST_TIME'
+        times=[]
+        for r in rows:
+            if not isinstance(r,list) or len(r)<7:return 'INVALID_ROW'
+            t=float(r[0])/1000
+            vals=list(map(float,r[1:6]))
+            o,h,l,c,v=vals
+            if (not t.is_integer() or t%step or t>now or min(o,h,l,c)<=0
+                    or v<0 or l>min(o,c) or h<max(o,c)):
+                return 'INVALID_ROW_VALUES_OR_TIME'
+            times.append(int(t))
+        times.sort()
+        if len(times)!=len(set(times)):return 'DUPLICATE_CANDLES'
+        if any(b-a!=step for a,b in zip(times,times[1:])):return 'HISTORY_GAP'
+        closed=[t for t in times if t+step<=now]
+        if not closed or closed[-1]+step!=int(now//step)*step:
+            return 'STALE_CLOSED_HISTORY'
+        return 'PASS'
+    except (KeyError,TypeError,ValueError,IndexError,OverflowError,ZeroDivisionError):
+        return 'INVALID_HISTORY_RESPONSE'
+
+async def _preview_probe_history(client):
+    """One safe public-only startup probe; never reads accounts or creates orders."""
+    for granularity in ('1m','5m','15m','1H','4H'):
+        try:
+            response=await client.get(
+                _PREVIEW_MARKET,params={'symbol':'BTCUSDT','productType':'USDT-FUTURES',
+                                        'granularity':granularity,'limit':201},timeout=8,
+                follow_redirects=False)
+            response.raise_for_status()
+            if len(response.content)>160000:raise ValueError('response limit')
+            body=response.json()
+            quality=_preview_history_quality(body,granularity)
+            _preview_log.warning('PREVIEW_HISTORY_PROBE frame=%s quality=%s rows=%d',
+                                 granularity,quality,len(body.get('data',[])))
+        except (httpx.HTTPError,ValueError,TypeError,TimeoutError) as exc:
+            _preview_log.warning('PREVIEW_HISTORY_PROBE frame=%s error=%s',
+                                 granularity,type(exc).__name__)
 
 # Fixed, public-market-only proxy for browsers where Bitget cross-origin REST/WS is blocked.
 # No private exchange endpoints, credentials, trading orders, or user-supplied upstream URLs.
@@ -104,6 +163,11 @@ async def preview_public_candles(request:Request):
         if (not isinstance(value,dict) or value.get('code')!='00000'
                 or not isinstance(value.get('data'),list) or not 101<=len(value['data'])<=201):
             raise ValueError('UPSTREAM_FORMAT')
+        frame=qp['granularity']
+        quality=_preview_history_quality(value,frame)
+        if quality!='PASS' or frame not in _preview_quality_seen:
+            _preview_quality_seen.add(frame)
+            _preview_log.warning('PREVIEW_HISTORY_REQUEST frame=%s quality=%s rows=%d',frame,quality,len(value['data']))
         return JSONResponse(value,headers={'Cache-Control':'no-store'})
     except (httpx.HTTPError,ValueError,TypeError,TimeoutError):
         return JSONResponse({'code':'PUBLIC_MARKET_UNAVAILABLE'},status_code=503,
