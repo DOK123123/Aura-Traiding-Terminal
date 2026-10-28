@@ -24,7 +24,14 @@
   const entries=history.add(view),sig=entries.at(-1)?.signature;if(sig!==lastHistory){lastHistory=sig;el('history').replaceChildren();for(const e of entries.slice().reverse()){const li=d.createElement('li');li.textContent=utc(e.at)+' · '+(A.PROFILES[e.profile]||'Консервативный')+' · '+e.state+' · '+e.reasons.map(text).join(' ');el('history').append(li);}}
   root.dispatchEvent(new CustomEvent('aura-manual-market',{detail:snapshot}));
  }
- const hub=new F.Hub({onData:v=>{snapshot=v;render(v.status!=='LIVE');},onStatus:()=>{}});root.AuraManualLiveHub=hub;
+ const options={onData:v=>{snapshot=v;render(v.status!=='LIVE');},onStatus:()=>{}};
+ if(d.body?.dataset?.manualPreview==='true'){
+  // Only preview routes use the same-origin public relay. Production is unchanged.
+  const token=d.querySelector('meta[name="aura-preview-ws-token"]')?.content||'';
+  options.fetcher=(url,init)=>root.fetch('/api/preview/bitget/candles'+url.slice(F.REST.length),{...init,credentials:'same-origin'});
+  options.socket=()=>new root.WebSocket((root.location.protocol==='https:'?'wss:':'ws:')+'//'+root.location.host+'/ws/preview/bitget?token='+encodeURIComponent(token));
+ }
+ const hub=new F.Hub(options);root.AuraManualLiveHub=hub;
  el('copy').addEventListener('click',()=>{render(true);if(!view.scenario||view.valid_until<=Date.now()/1000)return;const p=view.scenario;for(const [id,value]of [['entry',p.reference_entry],['stop',p.stop_loss],['target',p.take_profit]])d.getElementById('mp-'+id).value=value.toFixed(1);d.getElementById('manual-paper-panel').open=true;d.getElementById('mp-status').textContent='Скопирован '+view.state+' · предварительный план. Проверьте количество и подтвердите BUY/SELL отдельно. Сделка не создана.';});
  el('profile').addEventListener('change',()=>render(true));
  root.addEventListener('aura-manual-chart-frame',()=>render(true));
