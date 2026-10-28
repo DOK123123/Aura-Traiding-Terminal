@@ -39,6 +39,8 @@ async def lifespan(app):
         async with httpx.AsyncClient(timeout=10,follow_redirects=False) as client:
             app.state.preview_public_client=client
             app.state.preview_market_probe=asyncio.create_task(_preview_probe_history(client))
+            app.state.preview_ws_diag={'probe':'PROBE_PENDING','last_stage':'PROBE_PENDING','counts':{}}
+            app.state.preview_ws_probe=asyncio.create_task(_preview_probe_ws(app))
             app.state.aura_analyst=AnalystService()
             app.state.preview_store=store
             app.state.manual_paper=Service(store if config.manual_enabled else None,client=client,durable=True,
@@ -54,7 +56,8 @@ async def lifespan(app):
                         except asyncio.CancelledError:pass
                 finally:
                     app.state.preview_market_probe.cancel()
-                    await asyncio.gather(app.state.preview_market_probe,return_exceptions=True)
+                    app.state.preview_ws_probe.cancel()
+                    await asyncio.gather(app.state.preview_market_probe,app.state.preview_ws_probe,return_exceptions=True)
                     await app.state.aura_analyst.close()
     finally:await asyncio.to_thread(store.close)
 
@@ -132,6 +135,63 @@ async def _preview_probe_history(client):
         except (httpx.HTTPError,ValueError,TypeError,TimeoutError) as exc:
             _preview_log.warning('PREVIEW_HISTORY_PROBE frame=%s error=%s',
                                  granularity,type(exc).__name__)
+
+
+# Diagnostic telemetry contains only fixed stage codes and counts, never owner secrets,
+# WS query tokens, exchange data, client addresses, or third-party exception text.
+def _preview_ws_mark(app,code):
+    allowed={
+        'PROBE_PENDING','PROBE_CONNECTED','PROBE_SUBSCRIBED','PROBE_ACK','PROBE_TICKER',
+        'PROBE_TIMEOUT','PROBE_CONNECT_FAILED','PROBE_NO_TICKER','PROBE_BAD_REPLY',
+        'BROWSER_ATTEMPT','BROWSER_REJECT_TOKEN','BROWSER_REJECT_ORIGIN',
+        'BROWSER_ACCEPTED','UPSTREAM_CONNECTED','UPSTREAM_SUBSCRIBED',
+        'UPSTREAM_EVENT','UPSTREAM_FAILED','BROWSER_CLOSED'
+    }
+    if code not in allowed:code='UPSTREAM_FAILED'
+    state=getattr(app.state,'preview_ws_diag',None)
+    if state is None:
+        state={'probe':'PROBE_PENDING','last_stage':'PROBE_PENDING','counts':{}}
+        app.state.preview_ws_diag=state
+    state['last_stage']=code
+    state['counts'][code]=state['counts'].get(code,0)+1
+    if code.startswith('PROBE_'):state['probe']=code
+    # One event log per stage occurrence. Avoid logging any WS URL including token.
+    if state['counts'][code]<=3:
+        _preview_log.warning('PREVIEW_WS_DIAG stage=%s count=%d',code,state['counts'][code])
+
+async def _preview_probe_ws(app):
+    """Non-trading startup probe of Bitget's fixed public ticker endpoint only."""
+    _preview_ws_mark(app,'PROBE_PENDING')
+    try:
+        async with asyncio.timeout(13):
+            async with websockets.connect(_PREVIEW_WS,open_timeout=8,close_timeout=2,max_size=1048576,ping_interval=20) as sock:
+                _preview_ws_mark(app,'PROBE_CONNECTED')
+                await sock.send(json.dumps({'op':'subscribe','args':[{'instType':'USDT-FUTURES','instId':'BTCUSDT','channel':'ticker'}]},separators=(',',':')))
+                _preview_ws_mark(app,'PROBE_SUBSCRIBED')
+                for _ in range(8):
+                    msg=await asyncio.wait_for(sock.recv(),timeout=7)
+                    if not isinstance(msg,str) or len(msg)>1048576:
+                        _preview_ws_mark(app,'PROBE_BAD_REPLY');return
+                    if msg=='pong':continue
+                    try:data=json.loads(msg)
+                    except (TypeError,ValueError):
+                        _preview_ws_mark(app,'PROBE_BAD_REPLY');return
+                    if data.get('event')=='error':
+                        _preview_ws_mark(app,'PROBE_BAD_REPLY');return
+                    if data.get('event')=='subscribe':
+                        _preview_ws_mark(app,'PROBE_ACK');continue
+                    if (data.get('arg',{}).get('channel')=='ticker'
+                            and data.get('arg',{}).get('instId')=='BTCUSDT'
+                            and data.get('arg',{}).get('instType')=='USDT-FUTURES'
+                            and data.get('action') in {'snapshot','update'}
+                            and isinstance(data.get('data'),list)):
+                        _preview_ws_mark(app,'PROBE_TICKER');return
+                _preview_ws_mark(app,'PROBE_NO_TICKER')
+    except (TimeoutError,asyncio.TimeoutError):
+        _preview_ws_mark(app,'PROBE_TIMEOUT')
+    except asyncio.CancelledError:raise
+    except Exception:
+        _preview_ws_mark(app,'PROBE_CONNECT_FAILED')
 
 # Fixed, public-market-only proxy for browsers where Bitget cross-origin REST/WS is blocked.
 # No private exchange endpoints, credentials, trading orders, or user-supplied upstream URLs.
@@ -218,6 +278,19 @@ async def preview_public_stream(ws:WebSocket):
         pass
     try:await ws.close(code=1001)
     except (RuntimeError,OSError):pass
+
+
+@app.get('/api/preview/ws-diagnostics')
+async def preview_ws_diagnostics(request:Request):
+    state=getattr(request.app.state,'preview_ws_diag',{})
+    return JSONResponse({
+        'scope':'ISOLATED_MANUAL_PREVIEW',
+        'read_only':True,
+        'live_verified':state.get('counts',{}).get('UPSTREAM_EVENT',0)>0,
+        'probe':state.get('probe','PROBE_PENDING'),
+        'last_stage':state.get('last_stage','PROBE_PENDING'),
+        'counts':dict(state.get('counts',{})),
+    },headers={'Cache-Control':'no-store'})
 
 @app.get('/api/health')
 async def health():
