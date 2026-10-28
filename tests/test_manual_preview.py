@@ -219,3 +219,31 @@ def test_actual_preview_uvicorn_restart_keeps_account(tmp_path):
             state=client.get('/api/manual-paper/state').json();assert state['position'] is None and state['history_total']==1
             assert Decimal(state['balance'])==Decimal('10000')+Decimal(state['trades'][0]['net'])
         finally:p.terminate();p.wait(timeout=10)
+
+
+def test_preview_chart_bridge_scope_and_auth(preview):
+    # No private exchange API, no production access, no writable preview market route.
+    assert preview.get('/api/preview/bitget/candles').status_code == 401
+    assert preview.get('/api/preview/bitget/candles',auth=AUTH).status_code == 400
+    assert preview.get('/api/preview/bitget/candles?symbol=ETHUSDT&productType=USDT-FUTURES&granularity=1m&limit=201',auth=AUTH).status_code == 400
+    assert preview.post('/api/preview/bitget/candles',auth=AUTH).status_code == 403
+    page_response=preview.get('/',auth=AUTH)
+    assert 'name="aura-preview-ws-token"' in page_response.text
+    assert main.app.state.preview_ws_token in page_response.text
+    assert main.app.state.preview_ws_token not in preview.get('/api/health').text
+
+
+def test_preview_fixed_public_candles_relay(preview):
+    # Mocked public-only Bitget transport. Never contact real market during CI.
+    calls=[]
+    def handler(req):
+        calls.append((req.method,str(req.url)))
+        bars=[[str(1_760_000_000_000+i*60_000),'100','101','99','100','1','2'] for i in range(101)]
+        return httpx.Response(200,json={'code':'00000','requestTime':1_760_000_000_000,'data':bars})
+    main.app.state.preview_public_client=httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    response=preview.get('/api/preview/bitget/candles?symbol=BTCUSDT&productType=USDT-FUTURES&granularity=1m&limit=201',auth=AUTH)
+    assert response.status_code == 200
+    assert response.json()['code']=='00000'
+    assert len(calls)==1
+    assert calls[0][0]=='GET'
+    assert calls[0][1]=='https://api.bitget.com/api/v2/mix/market/candles?symbol=BTCUSDT&productType=USDT-FUTURES&granularity=1m&limit=201'
