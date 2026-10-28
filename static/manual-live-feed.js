@@ -7,7 +7,7 @@
  function merge(bars,data,step,now){if(!Array.isArray(data)||!data.length||data.length>1000)throw Error('INVALID_STREAM');const out=bars.slice();for(const r of data){const b=row(r,step,now),last=out.at(-1);if(!last)throw Error('NEEDS_HISTORY');if(b.time<last.time){const old=out.find(x=>x.time===b.time);if(old&&['open','high','low','close','volume'].some(k=>old[k]!==b[k]))throw Error('CLOSED_HISTORY_CHANGED');continue;}if(b.time>last.time+step)throw Error('STREAM_GAP');if(b.time===last.time){if(b.open!==last.open||b.high<last.high||b.low>last.low||b.volume<last.volume)throw Error('CANDLE_ROLLBACK');out[out.length-1]=b;}else out.push(b);}return out.slice(-201);}
  class Hub{
   constructor({fetcher=root.fetch?.bind(root),socket=u=>new root.WebSocket(u),clock=()=>Date.now()/1000,timers=root,onData=()=>{},onStatus=()=>{}}={}){Object.assign(this,{fetcher,socket,clock,timers,onData,onStatus});this.generation=0;this.windows={};this.running=false;this.retry=0;this.updates=0;this.diagnostic='START';}
-  emit(){this.onData({windows:this.windows,quote:this.quote,status:this.status,updates:this.updates,diagnostic:this.diagnostic});}
+  emit(){try{this.onData({windows:this.windows,quote:this.quote,status:this.status,updates:this.updates,diagnostic:this.diagnostic});}catch{this.diagnostic='UI_RENDER_ERROR';}}
   setStatus(s){this.status=s;this.onStatus(s);this.emit();}
   start(){this.stop();this.running=true;this.connect();}
   stop(){this.running=false;this.generation++;this.abort?.abort();this.ws?.close();this.timers.clearInterval(this.watch);this.timers.clearTimeout(this.reconnect);this.windows={};this.quote=null;this.setStatus('STALE');}
