@@ -168,6 +168,7 @@ async def preview_public_candles(request:Request):
         if quality!='PASS' or frame not in _preview_quality_seen:
             _preview_quality_seen.add(frame)
             _preview_log.warning('PREVIEW_HISTORY_REQUEST frame=%s quality=%s rows=%d',frame,quality,len(value['data']))
+        if quality!='PASS':raise ValueError('UNVERIFIED_UPSTREAM_HISTORY')
         return JSONResponse(value,headers={'Cache-Control':'no-store'})
     except (httpx.HTTPError,ValueError,TypeError,TimeoutError):
         return JSONResponse({'code':'PUBLIC_MARKET_UNAVAILABLE'},status_code=503,
