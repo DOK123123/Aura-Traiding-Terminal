@@ -1,0 +1,25 @@
+{
+  "mode": "LOCAL_CAPTURE_REPLAY",
+  "posts": 0,
+  "requests": 34,
+  "report": [
+    {
+      "mobile": false,
+      "historyBars": 200,
+      "liveBars": 201,
+      "update": true,
+      "disconnectPreservesHistory": true,
+      "recovery": true,
+      "errors": []
+    },
+    {
+      "mobile": true,
+      "historyBars": 200,
+      "liveBars": 201,
+      "update": true,
+      "disconnectPreservesHistory": true,
+      "recovery": true,
+      "errors": []
+    }
+  ]
+}

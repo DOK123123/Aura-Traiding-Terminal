@@ -17,12 +17,19 @@ def page(ws_token=''):
     marker='  <section class="panel scenario-journal"'
     if source.count(marker)!=1:raise ValueError('PREVIEW_PAGE_STRUCTURE_CHANGED')
     source=source[:source.index(marker)]
+    # app.js starts loading immediately: its history parser must already exist.
+    app_script='  <script defer src="/static/app.js"></script>'
+    source=source.replace(app_script+'\n','')
+    feed_script='  <script defer src="/static/manual-live-feed.js"></script>'
+    source=source.replace(feed_script,feed_script+'\n'+app_script)
     source=re.sub(r'<script[^>]+src="/static/([^\"]+)"[^>]*></script>',lambda m:m[0] if m[1] in ASSETS else '',source)
     source=re.sub(r'<link[^>]+href="/static/([^\"]+)"[^>]*>',lambda m:m[0] if m[1] in ASSETS else '',source)
     source=source.replace('<body data-live-manual="true">','<body data-live-manual="true" data-manual-preview="true"><p class="analyst-warning" role="status">ИЗОЛИРОВАННЫЙ PREVIEW · отдельный виртуальный счёт · не production. Вход и ручное закрытие только после подтверждения. SL/TP разрешаются при открытии и выполняются автоматически только пока сервер работает.</p>')
     source=source.replace('<title>Aura Trading Terminal — Bitget BTCUSDT Futures</title>','<title>ISOLATED PREVIEW · Aura Live Manual Trader 5.0</title>')
     source=source.replace('</head>','<meta name="aura-preview-ws-token" content="'+escape(ws_token,quote=True)+'"><script defer src="/static/preview-status.js"></script></head>')
     source=source.replace('<main>','<main><section class="panel"><button id="preview-check" type="button">Проверить preview · только чтение</button><p id="preview-check-result" role="status">Изоляция БД ещё не проверена. Manual Paper выключен по умолчанию.</p></section>',1)
-    source+='\n<footer>PREVIEW ONLY · нет Active43, scheduler и реальных ордеров</footer></main></body></html>'
+    # The shared chart writes this timestamp during reset AND every render.
+    # The original footer was below the excluded panels; preserve its DOM contract.
+    source+='\n<footer><span>PREVIEW ONLY · нет Active43, scheduler и реальных ордеров</span><span id="last-updated">Данные ещё не загружены</span></footer></main></body></html>'
     if '/api/active43' in source or 'id="active43-panel"' in source:raise ValueError('PREVIEW_PAGE_SCOPE_ERROR')
     return source

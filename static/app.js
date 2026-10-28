@@ -221,11 +221,13 @@ let manualChartFrame=null,manualPriceLines=[];
 window.addEventListener('aura-manual-market',event=>{
  if(document.body.dataset.liveManual!=='true')return;
  const snapshot=event.detail,now=Date.now()/1000,w=snapshot?.windows?.[timeframe];
+ $('live-events').textContent=String(snapshot?.updates||0);
  const fresh=snapshot?.status==='LIVE'&&window.AuraManualLiveAnalysis?.quoteFresh(snapshot.quote,now);
  $('feed-state').textContent=fresh?'LIVE':w?.bars?.length?'HISTORY ONLY · '+(snapshot?.status||'STALE'):snapshot?.status||'STALE';
  if(!w?.bars?.length){
   // Keep the last integrity-checked candles visible on transient reconnects.
   const hasHistory=Boolean(currentData?.candles?.length);
+  if(hasHistory)$('feed-state').textContent='HISTORY ONLY · '+(snapshot?.status||'STALE');
   $('chart-overlay').hidden=hasHistory;
   if(!hasHistory)$('chart-overlay').textContent='STALE · подтверждённой истории пока нет';
   $('status').className='status warning';
@@ -272,10 +274,12 @@ window.addEventListener('aura-manual-market',event=>{
   $('count').textContent=bars.length;
   window.AuraChartTools?.refresh?.();
  }catch(error){
-  $('chart-overlay').hidden=false;
-  $('chart-overlay').textContent='История не прошла проверку: '+String(error?.message||'INVALID_HISTORY').slice(0,90);
+  const reason=['INCOMPLETE_HISTORY','INVALID_HISTORY','STALE_HISTORY'].includes(error?.message)?error.message:'CHART_RENDER_FAILED';
+  console.warn('AURA_CHART_DIAGNOSTIC',reason);
+  $('chart-overlay').hidden=Boolean(currentData?.candles?.length);
+  $('chart-overlay').textContent='История не прошла проверку: '+reason;
   $('status').className='status warning';
-  $('status').textContent='История отклонена, торговые сигналы заблокированы.';
+  $('status').textContent='График: '+reason+'. Торговые сигналы заблокированы.';
  }
 });
 window.addEventListener('aura-manual-position',event=>{

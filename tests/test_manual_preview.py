@@ -254,13 +254,32 @@ def test_preview_fixed_public_candles_relay(preview):
 def test_preview_history_integrity_diagnostics():
     step=60
     at=1760000000//step*step+25
-    base=at-200*step
+    base=at//step*step-200*step
     bars=[[str((base+i*step)*1000),'100','101','99','100','1','2'] for i in range(201)]
     body={'code':'00000','requestTime':at*1000,'data':bars}
     assert main._preview_history_quality(body,'1m',at)=='PASS'
     assert main._preview_history_quality(body,'1m',at+11)=='STALE_REQUEST_TIME'
     bad={**body,'data':bars[:-3]+bars[-2:]}
     assert main._preview_history_quality(bad,'1m',at)=='HISTORY_GAP'
+    unaligned={**body,'data':[[str(int(r[0])+25000),*r[1:]] for r in bars]}
+    assert main._preview_history_quality(unaligned,'1m',at)=='INVALID_ROW_VALUES_OR_TIME'
+
+
+def test_preview_preserves_chart_dom_and_dependency_order():
+    """The reduced page must keep every shared-chart DOM target, including footer."""
+    import re
+    from html.parser import HTMLParser
+    class Elements(HTMLParser):
+        def __init__(self):super().__init__();self.ids=[]
+        def handle_starttag(self,tag,attrs):
+            self.ids.extend(value for name,value in attrs if name=='id')
+    html=page()
+    elements=Elements();elements.feed(html)
+    source=(Path(__file__).parents[1]/'static/app.js').read_text()
+    targets=set(re.findall(r'''\$\(['"]([^'"]+)['"]\)''',source))
+    assert targets<=set(elements.ids)
+    assert elements.ids.count('last-updated')==1
+    assert html.index('manual-live-analysis.js')<html.index('manual-live-feed.js')<html.index('/static/app.js')<html.index('manual-live-ui.js')
 
 
 def test_preview_rejects_unverified_public_history(preview):

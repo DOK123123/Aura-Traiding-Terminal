@@ -1,6 +1,14 @@
 const {test}=require('node:test'),a=require('node:assert/strict'),fs=require('node:fs');
 const A=require('../static/manual-live-analysis.js'),F=require('../static/manual-live-feed.js'),fixture=require('./fixtures/manual_live_synthetic.json'),now=fixture.now;
 const clone=x=>structuredClone(x),row=b=>[String(b.time*1000),b.open,b.high,b.low,b.close,b.volume,'0'];
+test('captured public Bitget REST response yields 200 closed candles without relaxing integrity',()=>{
+ const body=require('./fixtures/manual_preview_bitget_15m.json'),at=body.requestTime/1000+1;
+ const bars=F.history(body,'15m',at),closed=A.windowCheck(bars,900,at);
+ a.equal(bars.length,201);a.equal(closed.length,200);
+ a.ok(closed.every(b=>Number.isFinite(b.close)&&b.time%900===0));
+ const bad=clone(body);bad.data[0][0]=String(Number(bad.data[0][0])+25000);
+ a.throws(()=>F.history(bad,'15m',at),/INVALID_CANDLE/);
+});
 test('independent Python primitives match JS closed EMA/RSI/ATR/MACD on LONG/SHORT and every frame',()=>{
  for(const side of ['LONG','SHORT'])for(const tf of Object.keys(A.STEPS)){const bars=fixture.snapshots[side].windows[tf].bars.slice(0,-1),m=A.metrics(bars),r=fixture.reference[side+tf];for(const k of ['ema20','ema50','rsi','atr'])a.ok(Math.abs(m[k]-r[k])<1e-9,k);for(const [key,value]of [['macd',r.macd.line],['macd_signal',r.macd.signal],['histogram',r.macd.histogram]])a.ok(Math.abs(m[key]-value)<1e-9);}
 });
@@ -33,7 +41,7 @@ const tick={arg:{instType:'USDT-FUTURES',instId:'BTCUSDT',channel:'ticker'},acti
 test('actual Hub subscription, fresh current candles + bid/ask => LIVE; disconnect/timeout => STALE and resnapshot',async()=>{
  const h=harness(historyFetch);h.hub.start();await new Promise(r=>setImmediate(r));const ws=h.sockets[0];ws.onopen();const sub=JSON.parse(ws.sent[0]);a.equal(sub.args.length,6);a.ok(sub.args.every(x=>x.instType==='USDT-FUTURES'&&x.instId==='BTCUSDT'));
  for(const [tf,channel]of Object.entries(F.CHANNELS))ws.onmessage({data:JSON.stringify({arg:{instType:'USDT-FUTURES',instId:'BTCUSDT',channel},action:'snapshot',ts:now*1000,data:[row(fixture.snapshots.LONG.windows[tf].bars.at(-1))]})});
- ws.onmessage({data:JSON.stringify(tick)});a.equal(h.hub.status,'LIVE');a.equal(A.analyze({status:h.hub.status,windows:h.hub.windows,quote:h.hub.quote},now).state,'LONG');
+ ws.onmessage({data:JSON.stringify(tick)});a.equal(h.hub.status,'LIVE');a.equal(h.hub.updates,6);a.equal(A.analyze({status:h.hub.status,windows:h.hub.windows,quote:h.hub.quote},now).state,'LONG');
  h.setNow(now+16);h.intervals[0]();a.equal(h.hub.status,'STALE');a.equal(h.hub.quote,null);h.hub.stop();
 });
 test('REST outage, bad ticker and stop/start generations cannot preserve stale actionable data',async()=>{
