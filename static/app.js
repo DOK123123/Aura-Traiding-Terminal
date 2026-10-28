@@ -223,11 +223,12 @@ window.addEventListener('aura-manual-market',event=>{
  const snapshot=event.detail,now=Date.now()/1000,w=snapshot?.windows?.[timeframe];
  $('live-events').textContent=String(snapshot?.updates||0);
  const fresh=snapshot?.status==='LIVE'&&window.AuraManualLiveAnalysis?.quoteFresh(snapshot.quote,now);
- $('feed-state').textContent=fresh?'LIVE':w?.bars?.length?'HISTORY ONLY · '+(snapshot?.status||'STALE'):snapshot?.status||'STALE';
+ const debugCode=/^[A-Z_]+$/.test(snapshot?.diagnostic||'')?snapshot.diagnostic:'NO_DIAG';
+ $('feed-state').textContent=(fresh?'LIVE':w?.bars?.length?'HISTORY ONLY · '+(snapshot?.status||'STALE'):snapshot?.status||'STALE')+(fresh?'':' · '+debugCode);
  if(!w?.bars?.length){
   // Keep the last integrity-checked candles visible on transient reconnects.
   const hasHistory=Boolean(currentData?.candles?.length);
-  if(hasHistory)$('feed-state').textContent='HISTORY ONLY · '+(snapshot?.status||'STALE');
+  if(hasHistory)$('feed-state').textContent='HISTORY ONLY · '+(snapshot?.status||'STALE')+' · '+debugCode;
   $('chart-overlay').hidden=hasHistory;
   if(!hasHistory)$('chart-overlay').textContent='STALE · подтверждённой истории пока нет';
   $('status').className='status warning';
