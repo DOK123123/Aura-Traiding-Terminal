@@ -4,6 +4,7 @@ const fmt = (value, digits = 2) => Number(value).toLocaleString('en-US', {minimu
 const utc = time => new Date(time * 1000).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
 let timeframe = '15m', chart, candles, ema20, ema50, volume;
 let controller, requestId = 0, currentData = null;
+let previewHistoryGeneration = 0;
 const metricIds = ['price','rsi','atr','return','volatility','momentum','count','up','down','headline-price','ema20-value','ema50-value'];
 
 function initializeChart() {
@@ -54,12 +55,68 @@ function signed(id, value, suffix = '%') {
   $(id).className = value > 0 ? 'positive' : value < 0 ? 'negative' : '';
 }
 
+// PREVIEW ONLY: independent, integrity-checked closed history for visual reference.
+// Not a LIVE quote, signal source, execution price or authorization to trade.
+async function loadPreviewClosedHistory(tf,generation) {
+ const STEPS=window.AuraManualLiveAnalysis?.STEPS;
+ const feed=window.AuraManualLiveFeed;
+ if(!STEPS?.[tf]||!feed?.history)return;
+ try{
+  const granularity=({'1h':'1H','4h':'4H'})[tf]||tf;
+  const u='/api/preview/bitget/candles?symbol=BTCUSDT&productType=USDT-FUTURES&granularity='+granularity+'&limit=201';
+  const response=await fetch(u,{credentials:'same-origin',cache:'no-store',redirect:'error'});
+  if(!response.ok)throw Error('HISTORY_HTTP_'+response.status);
+  const data=await response.json();
+  // Source timestamp is used solely to parse the server-validated historical snapshot.
+  // NEVER use it to pass live bid/ask or authorise manual/automatic entries.
+  const sourceNow=Number(data.requestTime)/1000+0.001;
+  if(!Number.isFinite(sourceNow))throw Error('INVALID_SOURCE_TIME');
+  const bars=feed.history(data,tf,sourceNow);
+  const closed=window.AuraManualLiveAnalysis.windowCheck(bars,STEPS[tf],sourceNow);
+  if(generation!==previewHistoryGeneration||timeframe!==tf||document.body.dataset.manualPreview!=='true')return;
+  if(!closed.length)throw Error('NO_CONFIRMED_CLOSED_CANDLES');
+  // A healthy live feed owns the display; this fallback never overwrites LIVE candles.
+  if(window.AuraManualLiveHub?.status==='LIVE')return;
+  if(!chart)initializeChart();
+  currentData={symbol:'BTCUSDT',timeframe:tf,candles:closed};
+  candles.setData(closed);
+  ema20.setData(window.AuraBitgetLive.ema(closed,20));
+  ema50.setData(window.AuraBitgetLive.ema(closed,50));
+  volume.setData(closed.map(b=>({time:b.time,value:b.volume,color:b.close>=b.open?'#42d6b055':'#fa788b55'})));
+  chart.timeScale().setVisibleLogicalRange({from:Math.max(0,closed.length-100),to:closed.length+4});
+  const last=closed.at(-1);
+  $('chart-overlay').hidden=true;
+  $('headline-price').textContent=fmt(last.close);
+  $('headline-return').textContent='закрытая свеча · НЕ LIVE';
+  $('chart-subtitle').textContent='BTCUSDT · '+tf+' · история, НЕ LIVE';
+  $('source').textContent='Bitget USDT-M Futures · серверная проверка свечей';
+  $('last-updated').textContent='Закрытая свеча UTC: '+utc(last.time+STEPS[tf]);
+  $('live-candle').textContent='Последнее закрытие · '+tf+' · C '+fmt(last.close);
+  $('feed-state').textContent='HISTORY ONLY · LIVE НЕ ПОДТВЕРЖДЁН';
+  $('event-age').textContent='Свежие bid/ask отсутствуют';
+  $('status').className='status warning';
+  $('status').textContent='Проверенная история загружена. LIVE-поток не подтверждён; рекомендации и входы заблокированы.';
+  $('count').textContent=String(closed.length);
+  window.AuraChartTools?.refresh?.();
+ }catch(e){
+  if(generation!==previewHistoryGeneration)return;
+  $('chart-overlay').hidden=Boolean(currentData?.candles?.length);
+  if(!currentData?.candles?.length)$('chart-overlay').textContent='История недоступна: '+String(e?.message||'ERROR').slice(0,75);
+  $('status').className='status warning';
+  $('status').textContent='Нет подтверждённой истории для графика. Входы заблокированы.';
+ }
+}
+
 async function loadMarket() {
   if (document.body.dataset.liveManual === "true") {
     stopMarketLive(); clearData(); $("limit").disabled=true; $("limit").options[0].text="200 + формирующаяся"; if (!chart) initializeChart();
     $("chart-subtitle").textContent="Bitget USDT-M Futures · "+timeframe+" · LIVE";
     $("chart-overlay").hidden=false; $("chart-overlay").textContent="Восстановление публичного LIVE-потока…";
     window.dispatchEvent(new CustomEvent("aura-manual-chart-frame",{detail:timeframe}));
+    if (document.body.dataset.manualPreview === "true") {
+      const generation=++previewHistoryGeneration;
+      void loadPreviewClosedHistory(timeframe,generation);
+    }
     return;
   }
   stopMarketLive();
