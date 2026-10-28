@@ -12,7 +12,7 @@
  function windowCheck(b,step,now){if(!Array.isArray(b)||b.length<101||b.length>301)throw Error('INCOMPLETE_HISTORY');for(let i=0;i<b.length;i++){const x=b[i];if(!Number.isInteger(x.time)||x.time%step||x.time>now||!['open','high','low','close','volume'].every(k=>finite(x[k]))||Math.min(x.open,x.high,x.low,x.close)<=0||x.volume<0||x.low>Math.min(x.open,x.close)||x.high<Math.max(x.open,x.close)||i&&x.time-b[i-1].time!==step)throw Error('INVALID_HISTORY');}const closed=b.filter(x=>x.time+step<=now);if(closed.at(-1)?.time+step!==Math.floor(now/step)*step)throw Error('STALE_HISTORY');return closed;}
  function quoteFresh(q,now){return q&&q.source==='BITGET_USDT_FUTURES_BTCUSDT'&&[q.bid,q.ask,q.last,q.time,q.received_at].every(finite)&&q.bid>0&&q.ask>=q.bid&&(q.ask-q.bid)/q.bid<=.005&&q.last>=q.bid*.99&&q.last<=q.ask*1.01&&now-q.time>=0&&now-q.time<=5&&now-q.received_at>=0&&now-q.received_at<=5;}
  function risk(entry,stop,target,long,spread=0){const slip=.0005,fee=.001,sign=long?1:-1,e=entry*(1+sign*slip),s=stop*(1-sign*slip)-sign*spread/2,t=target*(1-sign*slip)-sign*spread/2,loss=sign*(e-s)+(e+s)*fee,gain=sign*(t-e)-(e+t)*fee;return {net_rr:Math.max(0,gain)/loss,gross_rr:Math.abs(target-entry)/Math.abs(entry-stop),fee_per_side:fee,slippage_per_side:slip,spread,funding:'NOT_INCLUDED'};}
- function analyze(snapshot,now){const out={version:VERSION,state:'WAIT',preliminary:true,scenario:null,frames:{},reasons:[],evidence:[],generated_at:now,valid_until:now,read_only:true};
+ function legacyAnalyze(snapshot,now){const out={version:VERSION,state:'WAIT',preliminary:true,scenario:null,frames:{},reasons:[],evidence:[],generated_at:now,valid_until:now,read_only:true};
  try{
   if(!finite(now)||snapshot.status!=='LIVE'||!quoteFresh(snapshot.quote,now))throw Error('STALE_MARKET');
   const closed={};for(const [tf,step]of Object.entries(STEPS)){const w=snapshot.windows?.[tf];if(!finite(w?.received_at)||!finite(w?.event_at)||now-w.received_at<0||now-w.received_at>10||now-w.event_at<0||now-w.event_at>10)throw Error('STALE_STREAM_'+tf);closed[tf]=windowCheck(w.bars,step,now);const current=w.bars.at(-1);if(current.time!==Math.floor(now/step)*step)throw Error('FORMING_CANDLE_MISSING_'+tf);out.frames[tf]={confirmed:metrics(closed[tf]),preliminary:metrics(w.bars),context:context(closed[tf],step),last_closed_at:closed[tf].at(-1).time+step};}
@@ -39,6 +39,70 @@
   out.state=side;out.scenario={reference_entry:entry,entry_zone:{low:lower,high:upper},stop_loss:stop,take_profit:target,...cost};out.reasons=['CLOSED_TREND_ALIGNED','LIVE_CONFLUENCE_PRELIMINARY','LIVE_CANDLE_PRELIMINARY','PARTIAL_VOLUME_PRELIMINARY'];
  }catch(e){out.state='WAIT';out.scenario=null;out.reasons=[e.message||'INVALID_DATA'];}return out;
  }
- class History{constructor(limit=100){this.limit=limit;this.items=[];}add(v){const signature=JSON.stringify([v.state,v.reasons]);if(this.items.at(-1)?.signature!==signature)this.items.push({signature,at:v.generated_at,state:v.state,reasons:[...v.reasons]});this.items=this.items.slice(-this.limit);return this.items;}}
- const api={STEPS,VERSION,ema,rsi,atr,metrics,swings,context,windowCheck,quoteFresh,risk,analyze,History};root.AuraManualLiveAnalysis=api;if(typeof module!=='undefined')module.exports=api;
+
+ const PROFILES=Object.freeze({CONSERVATIVE:'Консервативный',MODERATE:'Умеренный'});
+ function evaluateSide(snapshot,base,now,side,profile){
+  const f=base.frames,long=side==='LONG',live=f['5m'].preliminary,bars=snapshot.windows['5m'].bars,closed=bars.slice(0,-1),last=bars.at(-1),previous=closed.at(-1),av=live.atr,checks=[],warnings=[];
+  const check=(code,passed,actual,required)=>{checks.push({code,passed:!!passed,kind:'ENTRY_CONDITION',actual,required});};
+  const trendAligned=['5m','15m','1h'].every(tf=>f[tf].confirmed.trend===side),conflict=!['NEUTRAL',side].includes(f['4h'].confirmed.trend),strength=f['1h'].confirmed.atr>0?Math.abs(f['1h'].confirmed.ema20-f['1h'].confirmed.ema50)/f['1h'].confirmed.atr:0;
+  check('CLOSED_TREND_NOT_ALIGNED',trendAligned,['5m','15m','1h'].map(tf=>tf+':'+f[tf].confirmed.trend).join(', '),'5m/15m/1h '+side);
+  if(profile==='CONSERVATIVE')check('CONFLICTING_4H',!conflict,f['4h'].confirmed.trend,side+' / NEUTRAL');
+  else if(conflict){warnings.push('CONFLICTING_4H');check('COUNTER_4H_STRENGTH_REQUIRED',strength>=.5,strength,'|EMA20−EMA50| / ATR 1h ≥ 0.5');}
+  check('LIVE_MOMENTUM_NOT_CONFIRMED',live.trend===side&&(long?52<=live.rsi&&live.rsi<=68:32<=live.rsi&&live.rsi<=48),{trend:live.trend,rsi:live.rsi},long?'EMA LONG; RSI 52–68':'EMA SHORT; RSI 32–48');
+  const h=snapshot.windows['15m'].bars.slice(0,-1).slice(-60),lows=h.map(x=>x.low),highs=h.map(x=>x.high),low=Math.min(...lows),high=Math.max(...highs),ordered=high>low&&(long?lows.indexOf(low)<highs.indexOf(high):highs.indexOf(high)<lows.indexOf(low)),fib=r=>long?high-(high-low)*r:low+(high-low)*r;
+  let lower=live.ema20-.5*av,upper=live.ema20+.5*av;
+  if(profile==='CONSERVATIVE'){
+   check('NO_PAST_ORDERED_SWING',ordered,ordered,'Последовательный прошлый импульс 15m');
+   if(ordered){lower=Math.max(lower,Math.min(fib(.382),fib(.618)));upper=Math.min(upper,Math.max(fib(.382),fib(.618)));}
+   else{lower=null;upper=null;}
+  }else if(!ordered)warnings.push('FIBONACCI_NOT_CONFIRMED');
+  const entry=long?snapshot.quote.ask:snapshot.quote.bid,zone=finite(lower)&&finite(upper)&&lower<upper&&lower>0;
+  if(profile==='MODERATE'&&ordered&&!(entry>=Math.min(fib(.382),fib(.618))-.25*av&&entry<=Math.max(fib(.382),fib(.618))+.25*av))warnings.push('FIBONACCI_NOT_ALIGNED');
+  check('NO_LIVE_ENTRY_CONFLUENCE',zone&&entry>=lower-.25*av&&entry<=upper+.25*av,entry,zone?{low:lower-.25*av,high:upper+.25*av}:null);
+  const recovery=zone&&(long?last.close>last.open&&last.close>previous.close+.05*av&&last.low<=upper:last.close<last.open&&last.close<previous.close-.05*av&&last.high>=lower);
+  check('PROVISIONAL_CANDLE_NOT_CONFIRMED',recovery,{open:last.open,close:last.close,previous_close:previous.close},long?{close_above:Math.max(last.open,previous.close+.05*av),touch_below:upper}:{close_below:Math.min(last.open,previous.close-.05*av),touch_above:lower});
+  const mean=closed.slice(-20).reduce((sum,b)=>sum+b.volume,0)/20,fraction=Math.max(.1,Math.min(1,(now-last.time)/300)),ratio=mean>0?last.volume/(mean*fraction):null;
+  check('PARTIAL_VOLUME_NOT_SUPPORTING',ratio!==null&&ratio>=1,ratio,'Частичный объём / ожидание по времени ≥ 1');
+  check('LIVE_MACD_CONFLICT',long?live.histogram>0:live.histogram<0,live.histogram,long?'MACD histogram > 0':'MACD histogram < 0');
+  let scenario=null;
+  if(zone&&av>0){
+   const recent=bars.slice(-3),stop=long?Math.min(...recent.map(x=>x.low-.25*av),lower-1.5*av):Math.max(...recent.map(x=>x.high+.25*av),upper+1.5*av),distance=Math.abs(entry-stop),projection=long?entry+2.5*distance:entry-2.5*distance,target=profile==='CONSERVATIVE'?(long?Math.min(high,projection):Math.max(low,projection)):projection,cost=risk(entry,stop,target,long,snapshot.quote.ask-snapshot.quote.bid),minRR=profile==='MODERATE'&&conflict?2:1.5;
+   const geometry=[entry,stop,target,cost.net_rr].every(finite)&&Math.min(entry,stop,target)>0&&(long?stop<entry&&entry<target:target<entry&&entry<stop);
+   check('INSUFFICIENT_RR_AFTER_COSTS',geometry&&cost.net_rr>=minRR,cost.net_rr,'net R/R ≥ '+minRR);
+   if(geometry)scenario={reference_entry:entry,entry_zone:{low:lower-.25*av,high:upper+.25*av},confluence_zone:{low:lower,high:upper},stop_loss:stop,take_profit:target,...cost,min_net_rr:minRR,target_kind:profile==='MODERATE'?'ATR_PROJECTION':'PAST_EXTREME_CAPPED'};
+  }else check('INSUFFICIENT_RR_AFTER_COSTS',false,null,'Корректные уровни и net R/R ≥ 1.5');
+  if(profile==='MODERATE')warnings.push('TARGET_IS_PROJECTION');
+  const structure=f['5m'].context.structure;
+  if(long?structure==='LH_LL':structure==='HH_HL')warnings.push('CONFLICTING_5M_STRUCTURE');
+  if(f['5m'].context.divergence.some(d=>d.side!==side))warnings.push('CONFLICTING_RSI_DIVERGENCE');
+  return {side,profile,actionable:checks.every(c=>c.passed)&&scenario!==null,checks,warnings,scenario,conditions_met:checks.filter(c=>c.passed).length,conditions_total:checks.length,conditional_only:true};
+ }
+ function analyzeProfiles(snapshot,now){
+  const base=legacyAnalyze(snapshot,now),result={};
+  const valid=base.valid_until>now&&Object.keys(base.frames).length===5;
+  for(const profile of Object.keys(PROFILES)){
+   const value={...base,profile,profile_version:'LIVE_PROFILES_1',hard_blocks:[],blockers:[],warnings:[],potentials:[],nearest:null};
+   if(!valid){value.hard_blocks=[...base.reasons];value.blockers=[...base.reasons];result[profile]=value;continue;}
+   const potentials=['LONG','SHORT'].map(side=>evaluateSide(snapshot,base,now,side,profile)),reference=base.frames['1h'].confirmed.trend;
+   value.potentials=potentials;
+   // Rank condition progress only; never a calibrated probability or an order.
+   value.nearest=potentials.slice().sort((a,b)=>b.conditions_met/b.conditions_total-a.conditions_met/a.conditions_total||Number(b.side===reference)-Number(a.side===reference))[0];
+   const chosen=potentials.find(p=>p.side===reference),actionable=chosen?.actionable===true;
+   value.blockers=(chosen||value.nearest).checks.filter(c=>!c.passed).map(c=>c.code);
+   value.warnings=[...(chosen||value.nearest).warnings];
+   if(profile==='CONSERVATIVE'&&base.scenario&&chosen?.actionable)value.scenario=chosen.scenario;
+   if(profile==='MODERATE'){
+    value.state=actionable?reference:'WAIT';value.scenario=actionable?chosen.scenario:null;
+    value.reasons=actionable?['CLOSED_TREND_ALIGNED','EMA_PULLBACK_PRELIMINARY','LIVE_CANDLE_PRELIMINARY','PARTIAL_VOLUME_PRELIMINARY']:value.blockers;
+   }
+   result[profile]=value;
+  }
+  return result;
+ }
+ function analyze(snapshot,now,profile='CONSERVATIVE'){
+  if(!Object.hasOwn(PROFILES,profile)){const v=legacyAnalyze(snapshot,now);return {...v,state:'WAIT',scenario:null,profile,hard_blocks:['INVALID_PROFILE'],blockers:['INVALID_PROFILE'],warnings:[],potentials:[],nearest:null,reasons:['INVALID_PROFILE']};}
+  return analyzeProfiles(snapshot,now)[profile];
+ }
+ class History{constructor(limit=100){this.limit=limit;this.items=[];}add(v){const signature=JSON.stringify([v.profile||'CONSERVATIVE',v.state,v.reasons,v.warnings||[]]);if(this.items.at(-1)?.signature!==signature)this.items.push({signature,at:v.generated_at,profile:v.profile||'CONSERVATIVE',state:v.state,reasons:[...v.reasons]});this.items=this.items.slice(-this.limit);return this.items;}}
+ const api={STEPS,VERSION,ema,rsi,atr,metrics,swings,context,windowCheck,quoteFresh,risk,legacyAnalyze,analyzeProfiles,analyze,evaluateSide,PROFILES,History};root.AuraManualLiveAnalysis=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);

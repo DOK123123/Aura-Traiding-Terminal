@@ -1,0 +1,13 @@
+{
+  "frozen_at": "2026-10-28T12:39:21.048947+00:00",
+  "base_protocol_sha256": "aabf8500c64d6a36599685d86204647d61310cc75bef3eb07fc20d06f7ce36b9",
+  "purpose": "Coverage audit after primary sparse-cadence exploratory result; no strategy or cost changes; not independent validation",
+  "observation_minute_offsets": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "sample": "Exactly the same fixed July6\u2013September30 2026 period. Full 1m proxy, not 2Hz quote replay."
+}

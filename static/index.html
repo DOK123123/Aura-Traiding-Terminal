@@ -82,6 +82,11 @@
   <section class="panel analyst manual-live" id="aura-live-analyst" aria-labelledby="ml-title">
     <div class="analyst-heading"><div><p class="eyebrow">AURA LIVE MANUAL TRADER 5.0 · BITGET FUTURES</p><h2 id="ml-title">AURA LIVE ANALYST</h2><p>BTCUSDT · USDT-M Futures · только ручные виртуальные действия</p></div><strong id="ml-state" data-state="WAIT" role="status">WAIT</strong></div>
     <p><b id="ml-status" role="status">RECONNECTING</b> · <span id="ml-time">Нет свежих данных</span></p>
+    <label>Профиль ручной аналитики <select id="ml-profile"><option value="CONSERVATIVE">Консервативный · прежние условия</option><option value="MODERATE">Умеренный · EMA-откат, повышенный риск контртренда</option></select></label>
+    <p id="ml-profile-note">Профиль не меняет риск счёта и не открывает сделки.</p>
+    <p class="analyst-note">Оба профиля: расчётная комиссия 0,10% и неблагоприятное проскальзывание 0,05% на сторону, текущий спред. Funding не включён. Это консервативнее Manual Paper fee 0,06%; реальные комиссии аккаунта здесь не проверены.</p>
+    <h3>Жёсткие запреты качества данных</h3><ul id="ml-hard-blocks"></ul><h3>Предупреждения о риске</h3><ul id="ml-warnings"></ul>
+    <h3>Ближайшие потенциальные сценарии · не команда на вход</h3><p id="ml-nearest"></p><div id="ml-potentials"></div>
     <p id="ml-quote">Bid / Ask: не подтверждены</p><p id="ml-explanation" aria-live="polite">Ожидается публичный поток Bitget.</p>
     <p class="analyst-warning">LIVE-сценарий предварительный: формирующаяся свеча и рекомендация могут измениться или исчезнуть. Подтверждения — не вероятность прибыли. Автоматических входов нет; реальных ордеров нет.</p>
     <p id="ml-plan">Entry / SL / TP: WAIT</p><p id="ml-cancel">При потере данных рекомендация блокируется.</p>

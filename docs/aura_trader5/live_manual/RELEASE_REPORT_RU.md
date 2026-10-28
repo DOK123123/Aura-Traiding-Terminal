@@ -1,5 +1,8 @@
 # AURA LIVE MANUAL TRADER 5.0 — проверка выпуска
 
+Исторический отчёт первой итерации на `1f8975b`. Новая проверка профилей,
+WAIT, нескольких периодов и режимов: [profiles/REPORT_RU.md](profiles/REPORT_RU.md).
+
 Проверялось локально 28 октября 2026. Production, PAPER, Render, Supabase,
 Cloudflare и main не менялись. Active43 и Practice код/настройки не изменены.
 

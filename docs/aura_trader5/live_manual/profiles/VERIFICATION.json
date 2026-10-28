@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-28T12:55:36.402225+00:00",
+  "python_full": {
+    "passed": 2036,
+    "skipped": 4,
+    "reason": "Four opt-in disposable PostgreSQL suites; remote CI must run all"
+  },
+  "javascript_full": {
+    "passed": 305,
+    "skipped": 0
+  },
+  "new_profile_tests": 9,
+  "browser": {
+    "status": "PASS",
+    "desktop": true,
+    "mobile_touch_emulation": true,
+    "physical_android_chrome": false,
+    "background_resnapshot": true,
+    "user_only_open_close": true,
+    "double_click_deduplicated": true,
+    "profile_switch_no_orders": true,
+    "conditional_long_short_visible": true,
+    "committed_virtual_trades": [
+      "fd1002c072f5b9d7bf64f001a23d9cba",
+      "a19795637cc37c7cf21fa2f50d586be8"
+    ],
+    "production_changed": false
+  },
+  "ci": "Exact final head result recorded in Draft PR #62 body",
+  "production_modified": false,
+  "active43_changed": false,
+  "independent_oos": false
+}

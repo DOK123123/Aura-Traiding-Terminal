@@ -115,6 +115,12 @@ def main():
                 wait("document.getElementById('ml-state')?.textContent==='LONG'&&document.querySelectorAll('canvas').length>0")
                 assert evaluate('document.documentElement.scrollWidth<=innerWidth')
                 assert evaluate('window.__posts')==0
+                evaluate("document.getElementById('ml-profile').value='MODERATE';document.getElementById('ml-profile').dispatchEvent(new Event('change'))")
+                wait("document.getElementById('ml-profile-note').textContent.startsWith('Умеренный')&&document.querySelectorAll('#ml-potentials details').length===2")
+                assert evaluate('window.__posts')==0
+                evaluate("document.getElementById('ml-profile').scrollIntoView()")
+                (args.output_dir/(name+'-moderate.png')).write_bytes(base64.b64decode(call('Page.captureScreenshot',dict(format='png'))['data']))
+                evaluate("document.getElementById('ml-profile').value='CONSERVATIVE';document.getElementById('ml-profile').dispatchEvent(new Event('change'))")
                 # Realtime price/candle update without navigation or refresh.
                 before=evaluate("document.getElementById('headline-price').textContent")
                 evaluate("(()=>{__fixture.snapshots.LONG.quote={...__fixture.snapshots.LONG.quote,bid:14712.2,ask:14712.4,last:14712.3};const w=AuraManualLiveHub.ws,arg={instType:'USDT-FUTURES',instId:'BTCUSDT',channel:'ticker'};w.onmessage({data:JSON.stringify({arg,action:'update',ts:Date.now(),data:[{bidPr:14712.2,askPr:14712.4,lastPr:14712.3,ts:Date.now()}]})});})()")
@@ -150,7 +156,7 @@ def main():
                 evaluate("Object.defineProperty(document,'hidden',{value:false,configurable:true});document.dispatchEvent(new Event('visibilitychange'))")
                 wait("document.getElementById('ml-status').textContent==='LIVE'")
                 assert evaluate('window.__historyCalls')>=calls+5
-              report=dict(status='PASS',desktop=True,mobile_touch_emulation=True,physical_android_chrome=False,background_resnapshot=True,user_only_open_close=True,double_click_deduplicated=True,committed_virtual_trades=[t['id'] for t in svc.store.load()[0].trades],production_changed=False)
+              report=dict(status='PASS',desktop=True,mobile_touch_emulation=True,physical_android_chrome=False,background_resnapshot=True,user_only_open_close=True,double_click_deduplicated=True,profile_switch_no_orders=True,conditional_long_short_visible=True,committed_virtual_trades=[t['id'] for t in svc.store.load()[0].trades],production_changed=False)
               (args.output_dir/'report.json').write_text(json.dumps(report,indent=2));print(json.dumps(report))
           finally:
             server.shutdown();server.server_close();proc.terminate()
