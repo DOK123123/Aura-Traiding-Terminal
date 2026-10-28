@@ -290,3 +290,18 @@ def test_preview_rejects_unverified_public_history(preview):
     response=preview.get('/api/preview/bitget/candles?symbol=BTCUSDT&productType=USDT-FUTURES&granularity=1m&limit=201',auth=AUTH)
     assert response.status_code==503
     assert response.json()['code']=='PUBLIC_MARKET_UNAVAILABLE'
+
+
+def test_preview_ws_diagnostics_scoped_and_read_only(preview):
+    assert preview.get('/api/preview/ws-diagnostics').status_code==401
+    payload=preview.get('/api/preview/ws-diagnostics',auth=AUTH).json()
+    assert payload['scope']=='ISOLATED_MANUAL_PREVIEW'
+    assert payload['read_only'] is True
+    assert payload['probe']=='PROBE_PENDING'
+    main._preview_ws_mark(preview.app,'BROWSER_ATTEMPT')
+    main._preview_ws_mark(preview.app,'BROWSER_REJECT_ORIGIN')
+    r=preview.get('/api/preview/ws-diagnostics',auth=AUTH)
+    assert r.status_code==200
+    assert r.json()['counts']['BROWSER_REJECT_ORIGIN']==1
+    assert preview.post('/api/preview/ws-diagnostics',auth=AUTH).status_code==403
+
