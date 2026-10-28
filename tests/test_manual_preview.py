@@ -239,8 +239,9 @@ def test_preview_fixed_public_candles_relay(preview):
     calls=[]
     def handler(req):
         calls.append((req.method,str(req.url)))
-        bars=[[str(1_760_000_000_000+i*60_000),'100','101','99','100','1','2'] for i in range(101)]
-        return httpx.Response(200,json={'code':'00000','requestTime':1_760_000_000_000,'data':bars})
+        now=time.time();current=int(now//60)*60
+        bars=[[str((current-200*60+i*60)*1000),'100','101','99','100','1','2'] for i in range(201)]
+        return httpx.Response(200,json={'code':'00000','requestTime':int(now*1000),'data':bars})
     main.app.state.preview_public_client=httpx.AsyncClient(transport=httpx.MockTransport(handler))
     response=preview.get('/api/preview/bitget/candles?symbol=BTCUSDT&productType=USDT-FUTURES&granularity=1m&limit=201',auth=AUTH)
     assert response.status_code == 200
@@ -260,3 +261,12 @@ def test_preview_history_integrity_diagnostics():
     assert main._preview_history_quality(body,'1m',at+11)=='STALE_REQUEST_TIME'
     bad={**body,'data':bars[:-3]+bars[-2:]}
     assert main._preview_history_quality(bad,'1m',at)=='HISTORY_GAP'
+
+
+def test_preview_rejects_unverified_public_history(preview):
+    def handler(req):
+        return httpx.Response(200,json={'code':'00000','requestTime':int(time.time()*1000),'data':[]})
+    main.app.state.preview_public_client=httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    response=preview.get('/api/preview/bitget/candles?symbol=BTCUSDT&productType=USDT-FUTURES&granularity=1m&limit=201',auth=AUTH)
+    assert response.status_code==503
+    assert response.json()['code']=='PUBLIC_MARKET_UNAVAILABLE'
