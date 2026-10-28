@@ -49,3 +49,18 @@ test('official WS initial 500-row snapshot is accepted without dropping retained
 test('network timeout aborts all REST requests, never creates an actionable snapshot',async()=>{
  const h=harness((url,opt)=>new Promise((resolve,reject)=>opt.signal.addEventListener('abort',()=>reject(Error('timeout')))));h.hub.start();h.timeouts[0]();await new Promise(r=>setImmediate(r));a.equal(h.hub.status,'STALE');a.equal(h.hub.quote,null);a.equal(h.sockets.length,0);h.hub.stop();
 });
+
+test('preview provides validated HISTORY ONLY candles before websocket confirms fresh ticker',async()=>{
+ const h=harness(historyFetch),seen=[];
+ h.hub.onData=s=>seen.push({status:s.status,frames:Object.keys(s.windows||{}),quote:!!s.quote});
+ h.hub.start();await new Promise(r=>setImmediate(r));
+ a.ok(seen.some(s=>s.status==='RECONNECTING'&&s.frames.length===5&&!s.quote));
+ a.equal(h.sockets.length,1);
+ // Market decisions remain WAIT until ticker and all WS frames pass integrity checks.
+ const hist=seen.find(s=>s.frames.length===5);
+ a.equal(hist.status,'RECONNECTING');
+ const source=fs.readFileSync('static/app.js','utf8');
+ a.match(source,/const bars=fresh\?w\.bars:closed/);
+ a.match(source,/HISTORY ONLY: показаны только закрытые свечи/);
+ h.hub.stop();
+});
