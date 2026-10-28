@@ -14,7 +14,7 @@ def main():
         for category in ['first_wait','all_failed','warnings']:
             for code,count in r[category].items():rows.append(dict(profile=profile,segment=segment,category=category,code=code,count=count,observations=r['observations'],percent=count/r['observations']*100))
     with (a.output/'wait-reasons.csv').open('w') as f:
-        w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
+        w=csv.DictWriter(f,fieldnames=list(rows[0]),lineterminator="\n");w.writeheader();w.writerows(rows)
     raw=io.BytesIO()
     with gzip.GzipFile(fileobj=raw,mode='wb',mtime=0,filename='') as gz:
         with tarfile.open(fileobj=gz,mode='w|') as t:
