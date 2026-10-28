@@ -91,6 +91,7 @@ def preview(tmp_path,monkeypatch):
         def verify_scope(self):return True
         def close(self):pass
     monkeypatch.setattr(main,'PreviewStore',lambda config:ReadGuard())
+    monkeypatch.setattr(main,'_preview_probe_history',AsyncMock(return_value=None))
     with TestClient(main.app) as client:
         yield client
 
@@ -247,3 +248,15 @@ def test_preview_fixed_public_candles_relay(preview):
     assert len(calls)==1
     assert calls[0][0]=='GET'
     assert calls[0][1]=='https://api.bitget.com/api/v2/mix/market/candles?symbol=BTCUSDT&productType=USDT-FUTURES&granularity=1m&limit=201'
+
+
+def test_preview_history_integrity_diagnostics():
+    step=60
+    at=1760000000//step*step+25
+    base=at-200*step
+    bars=[[str((base+i*step)*1000),'100','101','99','100','1','2'] for i in range(201)]
+    body={'code':'00000','requestTime':at*1000,'data':bars}
+    assert main._preview_history_quality(body,'1m',at)=='PASS'
+    assert main._preview_history_quality(body,'1m',at+11)=='STALE_REQUEST_TIME'
+    bad={**body,'data':bars[:-3]+bars[-2:]}
+    assert main._preview_history_quality(bad,'1m',at)=='HISTORY_GAP'
