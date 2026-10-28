@@ -92,6 +92,7 @@ def preview(tmp_path,monkeypatch):
         def close(self):pass
     monkeypatch.setattr(main,'PreviewStore',lambda config:ReadGuard())
     monkeypatch.setattr(main,'_preview_probe_history',AsyncMock(return_value=None))
+    monkeypatch.setattr(main,'_preview_probe_ws',AsyncMock(return_value=None))
     with TestClient(main.app) as client:
         yield client
 
