@@ -196,7 +196,7 @@ window.addEventListener('aura-manual-market',event=>{
    $('status').className='status';
    $('status').textContent='LIVE: текущая свеча предварительная; закрытые подтверждения в AURA ANALYST.';
    const m=window.AuraManualLiveAnalysis.metrics(bars);
-   for(const [id,key]of [['ema20-value','ema20'],['ema50-value','ema50'],['rsi','rsi'],['atr']])$(id).textContent=fmt(m[key]);
+   for(const [id,key]of [['ema20-value','ema20'],['ema50-value','ema50'],['rsi','rsi'],['atr','atr']])$(id).textContent=fmt(m[key]);
    $('trend').textContent=m.trend+' · предварительно';
    document.dispatchEvent(new CustomEvent('market-data-changed'));
   }else{
