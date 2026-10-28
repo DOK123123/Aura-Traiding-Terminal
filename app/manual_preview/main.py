@@ -236,21 +236,30 @@ async def preview_public_candles(request:Request):
 
 @app.websocket('/ws/preview/bitget')
 async def preview_public_stream(ws:WebSocket):
+    _preview_ws_mark(ws.app,'BROWSER_ATTEMPT')
     token=ws.query_params.get('token','')
     correct=ws.app.state.preview_ws_token
     expected_origin='https://'+ws.headers.get('host','')
-    if (not token or not secrets.compare_digest(token,correct)
-            or ws.headers.get('origin')!=expected_origin):
+    if not token or not secrets.compare_digest(token,correct):
+        _preview_ws_mark(ws.app,'BROWSER_REJECT_TOKEN')
+        await ws.close(code=1008)
+        return
+    if ws.headers.get('origin')!=expected_origin:
+        _preview_ws_mark(ws.app,'BROWSER_REJECT_ORIGIN')
         await ws.close(code=1008)
         return
     await ws.accept()
+    _preview_ws_mark(ws.app,'BROWSER_ACCEPTED')
     try:
         async with websockets.connect(_PREVIEW_WS,open_timeout=8,close_timeout=3,
                                       max_size=1048576,ping_interval=20) as upstream:
+            _preview_ws_mark(ws.app,'UPSTREAM_CONNECTED')
             await upstream.send(json.dumps(_PREVIEW_SUBSCRIBE,separators=(',',':')))
+            _preview_ws_mark(ws.app,'UPSTREAM_SUBSCRIBED')
             async def bitget_to_browser():
                 async for msg in upstream:
                     if not isinstance(msg,str) or len(msg)>1048576:break
+                    _preview_ws_mark(ws.app,'UPSTREAM_EVENT')
                     await ws.send_text(msg)
             async def browser_to_bitget():
                 while True:
@@ -275,7 +284,8 @@ async def preview_public_stream(ws:WebSocket):
                 await asyncio.gather(*tasks,return_exceptions=True)
     except Exception:
         # Safe failure: client Hub invalidates ALL quotes and retries. Never synthesize prices.
-        pass
+        _preview_ws_mark(ws.app,'UPSTREAM_FAILED')
+    _preview_ws_mark(ws.app,'BROWSER_CLOSED')
     try:await ws.close(code=1001)
     except (RuntimeError,OSError):pass
 
@@ -286,7 +296,7 @@ async def preview_ws_diagnostics(request:Request):
     return JSONResponse({
         'scope':'ISOLATED_MANUAL_PREVIEW',
         'read_only':True,
-        'live_verified':state.get('counts',{}).get('UPSTREAM_EVENT',0)>0,
+        'upstream_messages_seen':state.get('counts',{}).get('UPSTREAM_EVENT',0),
         'probe':state.get('probe','PROBE_PENDING'),
         'last_stage':state.get('last_stage','PROBE_PENDING'),
         'counts':dict(state.get('counts',{})),
