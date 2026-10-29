@@ -18,6 +18,7 @@ from app.aura_trader5_service import AnalystService
 from .config import parse
 from .store import PreviewStore
 from .page import page,ROOT,ASSETS
+from .history import archive_history,public_history,bounds as history_bounds
 import httpx
 
 
@@ -38,6 +39,7 @@ async def lifespan(app):
     try:
         async with httpx.AsyncClient(timeout=10,follow_redirects=False) as client:
             app.state.preview_public_client=client
+            app.state.preview_replay_lock=asyncio.Lock()
             app.state.preview_market_probe=asyncio.create_task(_preview_probe_history(client))
             app.state.preview_ws_diag={'probe':'PROBE_PENDING','last_stage':'PROBE_PENDING','counts':{}}
             app.state.preview_ws_probe=asyncio.create_task(_preview_probe_ws(app))
@@ -335,3 +337,26 @@ async def readiness(request:Request):
     result['manual_operations_ready']=config.manual_enabled and result['protection_worker']=='ACTIVE' and result['supabase']=='ISOLATED_SCOPE_CONFIRMED' and result['bitget']=='CONNECTED'
     result['ready']=result['supabase']=='ISOLATED_SCOPE_CONFIRMED' and result['bitget']=='CONNECTED'
     return result
+
+@app.get('/api/preview/bitget/history')
+async def preview_replay_history(request:Request):
+    qp=request.query_params
+    try:
+        if set(qp)!={'timeframe','start','end','source'} or qp['source'] not in {'archive','bitget'}:
+            raise ValueError('INVALID_REPLAY_QUERY')
+        if not qp['start'].isdigit() or not qp['end'].isdigit() or len(qp['start'])>12 or len(qp['end'])>12:
+            raise ValueError('INVALID_REPLAY_PERIOD')
+        start,end=int(qp['start']),int(qp['end']);now=time.time()
+        history_bounds(qp['timeframe'],start,end,now)
+    except ValueError as exc:
+        return JSONResponse({'code':str(exc)},400,headers={'Cache-Control':'no-store'})
+    lock=request.app.state.preview_replay_lock
+    if lock.locked():return JSONResponse({'code':'REPLAY_BUSY'},429,headers={'Retry-After':'5'})
+    try:
+        async with lock:
+            if qp['source']=='archive':
+                result=await asyncio.to_thread(archive_history,qp['timeframe'],start,end,now)
+            else:result=await public_history(request.app.state.preview_public_client,qp['timeframe'],start,end,now)
+        return JSONResponse(result,headers={'Cache-Control':'no-store'})
+    except (httpx.HTTPError,ValueError,TypeError,KeyError,OverflowError,OSError,TimeoutError):
+        return JSONResponse({'code':'REPLAY_HISTORY_UNAVAILABLE_OR_INVALID'},503,headers={'Cache-Control':'no-store'})
