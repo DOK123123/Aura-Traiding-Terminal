@@ -20,7 +20,7 @@ function pause(){running=false;generation++;clearTimeout(timer);if(replay&&repla
 function controls(){for(const k of ['play','pause','next','signal','json','csv'])el(k).disabled=!replay||loading||(['play','next','signal'].includes(k)&&replay.done);for(const k of ['source','start','end','tf','load'])el(k).disabled=loading;}
 function draw(){
  if(!replay)return;
- if(!chart){chart=window.LightweightCharts.createChart(el('chart'),{autoSize:true,height:300,layout:{background:{color:'#101720'},textColor:'#c5d2e4'},timeScale:{timeVisible:true},handleScroll:true,handleScale:true});series=chart.addSeries(window.LightweightCharts.CandlestickSeries);}
+ if(!chart){chart=window.LightweightCharts.createChart(el('chart'),{autoSize:true,height:300,layout:{background:{color:'#101720'},textColor:'#c5d2e4'},timeScale:{timeVisible:true},handleScroll:true,handleScale:true});series=chart.addSeries(window.LightweightCharts.CandlestickSeries,{autoscaleInfoProvider:base=>{const info=base(),signal=replay?.latest.find(x=>['LONG','SHORT'].includes(x.state));if(!info?.priceRange||!signal)return info;return {...info,priceRange:{minValue:Math.min(info.priceRange.minValue,signal.entry,signal.stop,signal.target),maxValue:Math.max(info.priceRange.maxValue,signal.entry,signal.stop,signal.target)}};}});}
  series.setData(replay.visible);for(const line of lines)series.removePriceLine(line);lines=[];
  const selected=replay.latest.find(x=>['LONG','SHORT'].includes(x.state));
  if(selected)for(const [k,label,color]of [['entry','Replay Entry','#f4c779'],['stop','Replay SL','#fa788b'],['target','Replay TP','#42d6b0']])lines.push(series.createPriceLine({price:selected[k],title:label,color,lineWidth:1,lineStyle:2}));
@@ -64,5 +64,5 @@ el('load').addEventListener('click',async()=>{
 });
 for(const format of ['json','csv'])el(format).addEventListener('click',()=>{if(!replay)return;const report=replay.report(),blob=new Blob([format==='json'?JSON.stringify(report,null,2):R.csv(report)],{type:format==='json'?'application/json':'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='aura-historical-replay.'+format;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){pause();render();}});window.addEventListener('pagehide',()=>{pause();abort?.abort();});
-window.AuraReplayUI={get model(){return replay;},get running(){return running;}};controls();
+window.AuraReplayUI={get model(){return replay;},get running(){return running;},get levels(){const x=replay?.latest.find(v=>['LONG','SHORT'].includes(v.state));return x&&series?['entry','stop','target'].map(key=>({key,price:x[key],y:series.priceToCoordinate(x[key])})):[];}};controls();
 })();
