@@ -1,0 +1,8 @@
+{
+  "static/manual-strategies.js": "73852054fe7d41144f9d2232f30f5f9eeb7333504d5b96d7d9da7f92d897dc70",
+  "static/manual-live-analysis.js": "ea81e67619c918b24ccf7402d86d7a620ce8c0799c33652581c33689e7138a91",
+  "static/trade-outcomes.js": "5e89830e4bde2cf4dee87276704b598c5225a1bcead88f5f66e868825ae05bb2",
+  "static/historical-replay.js": "0d0c86e23a1ef671073fed9769f53c24034520127b9b47e544272349c0bad612",
+  "app/manual_preview/main.py": "da4ca87c63ad113d2dd9a32f039fa6a7b959e5cd92c14584df72c29edd8c02ff",
+  "app/manual_preview/page.py": "caf081218f575d5b0f759e439ed85681799357f14432f82929e709ffbc930c0c"
+}
