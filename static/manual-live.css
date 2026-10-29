@@ -1,2 +1,10 @@
 #ml-state{font-size:2rem;padding:12px;border:1px solid #768294;border-radius:12px}#ml-state[data-state=LONG]{color:#42d6b0}#ml-state[data-state=SHORT]{color:#fa788b}.manual-live{margin-top:18px}#ml-history{max-height:240px;overflow:auto}.manual-live button,#manual-paper-panel button{min-height:46px;touch-action:manipulation}#manual-paper-panel{border:1px solid #354257;padding:16px;border-radius:12px;margin:18px 0}#ml-explanation{font-size:1.1rem}#ml-frames article{min-width:0;overflow-wrap:anywhere}.live-preliminary{color:#f4c779}.live-conflict{color:#fa788b}.live-confirmed{color:#42d6b0}#ml-quote,#ml-time{overflow-wrap:anywhere}@media(max-width:640px){.manual-live .analyst-heading{flex-wrap:wrap}.manual-live .analyst-frames{grid-template-columns:1fr}#ml-state{font-size:1.7rem}#manual-paper-panel .mp-actions{display:grid;grid-template-columns:1fr 1fr}.mp-inputs{grid-template-columns:1fr!important}}
 #ml-potentials{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#ml-potentials details{border:1px solid #354257;border-radius:10px;padding:12px;overflow-wrap:anywhere}#ml-warnings{color:#f4c779}#ml-hard-blocks{color:#fa788b}#ml-profile{min-height:46px;max-width:100%}@media(max-width:700px){#ml-potentials{grid-template-columns:1fr}}
+
+/* Isolated preview signal panel; no selectors alter the production layout. */
+#aura-signal-center { grid-column: 1 / -1; min-width: 0; overflow-wrap: anywhere; }
+#aura-signal-center .signal-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+#aura-signal-center article { min-width: 0; padding: 12px; border: 1px solid #35425a; border-radius: 10px; }
+#aura-signal-center button { min-height: 44px; white-space: normal; }
+#aura-signal-center label { display: inline-flex; align-items: center; min-height: 44px; margin-right: 12px; }
+@media(max-width: 1000px) { #aura-signal-center .signal-cards { grid-template-columns: 1fr; } }

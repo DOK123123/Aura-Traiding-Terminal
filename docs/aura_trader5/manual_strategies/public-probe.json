@@ -1,0 +1,47 @@
+{
+  "scope": "DEVELOPMENT_PUBLIC_NETWORK_ONLY",
+  "production_changed": false,
+  "rest": {
+    "1m": {
+      "http_status": 200,
+      "code": "00000",
+      "rows": 201,
+      "duration_ms": 4098
+    },
+    "5m": {
+      "http_status": 200,
+      "code": "00000",
+      "rows": 201,
+      "duration_ms": 241
+    },
+    "15m": {
+      "http_status": 200,
+      "code": "00000",
+      "rows": 201,
+      "duration_ms": 176
+    },
+    "1H": {
+      "http_status": 200,
+      "code": "00000",
+      "rows": 201,
+      "duration_ms": 170
+    },
+    "4H": {
+      "http_status": 200,
+      "code": "00000",
+      "rows": 201,
+      "duration_ms": 178
+    }
+  },
+  "websocket": {
+    "received": {
+      "candle1m": 3,
+      "candle5m": 3,
+      "candle15m": 3,
+      "candle1H": 3,
+      "candle4H": 3,
+      "ticker": 25
+    },
+    "messages": 40
+  }
+}

@@ -356,3 +356,14 @@ function drawManualHistory(){
 }
 window.addEventListener('aura-manual-history',event=>{manualTrades=Array.isArray(event.detail)?event.detail:[];drawManualHistory();});
 window.addEventListener('aura-manual-market',drawManualHistory);
+
+// Preview-only closed-candle scenario levels; no account or execution events.
+let scenarioPriceLines=[];
+window.addEventListener('aura-manual-scenario',event=>{
+ if(document.body.dataset.manualPreview!=='true'||!candles)return;
+ for(const line of scenarioPriceLines)candles.removePriceLine(line);scenarioPriceLines=[];
+ const s=event.detail;if(!s||s.tf!==timeframe||!s.fresh||!['LONG','SHORT'].includes(s.state))return;
+ for(const [key,title,color]of [['entry','Scenario Entry','#f4c779'],['stop','Scenario SL','#fa788b'],['target','Scenario TP','#42d6b0']]){
+  if(Number.isFinite(s[key])&&s[key]>0)scenarioPriceLines.push(candles.createPriceLine({price:s[key],title:s.name+' '+title,color,lineWidth:1,lineStyle:2}));
+ }
+});
