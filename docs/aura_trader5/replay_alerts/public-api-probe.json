@@ -1,0 +1,17 @@
+{
+  "source": "BITGET_PUBLIC_HISTORY_API",
+  "start": 1790812800,
+  "end": 1791417600,
+  "timeframe": "15m",
+  "quote_model": {
+    "full_spread_bps": 2,
+    "slippage_bps_per_side": 5,
+    "fee_bps_per_side": 10,
+    "historical_bid_ask": false,
+    "funding": "NOT_MODELED"
+  },
+  "sha256": "c8cb9b8b5b90fba33aaf11b58e4b8411c0a8d6f0e0620b0eceab6e0dcca8aba1",
+  "bars": 872,
+  "scope": "DEVELOPMENT_READ_ONLY_PUBLIC_NETWORK",
+  "orders": 0
+}

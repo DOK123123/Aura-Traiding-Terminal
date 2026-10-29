@@ -9,7 +9,7 @@ for(const [id,name]of Object.entries(E.names)){const label=document.createElemen
 const exportButton=document.createElement('button');exportButton.type='button';exportButton.textContent='Скачать журнал observer';exportButton.addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([JSON.stringify({version:F.VERSION,items:observer.items},null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='aura-forward-observer.json';a.click();URL.revokeObjectURL(url);});log.append(exportButton);
 function renderHistory(){history.replaceChildren();for(const x of observer.items.slice(-100).reverse()){const li=document.createElement('li');li.textContent=new Date(x.detected_at*1000).toISOString()+' · '+x.strategy+' '+x.tf+' '+x.side+' · '+x.outcome+' · '+(x.pnl_fraction===null?'исход не определён':(100*x.pnl_fraction).toFixed(3)+'% после расходов');history.append(li);}}
 function render(snapshot,now){
- const rows=E.analyze(snapshot,now),visible=rows.filter(x=>enabled.has(x.strategy));observer.update(snapshot,rows,now);cards.replaceChildren();
+ const rows=E.analyze(snapshot,now);window.dispatchEvent(new CustomEvent('aura-manual-signals',{detail:{rows,now,snapshot}}));const visible=rows.filter(x=>enabled.has(x.strategy));observer.update(snapshot,rows,now);cards.replaceChildren();
  state.textContent='NO_VALIDATED_EDGE · '+(snapshot.status==='LIVE'?'Свежесть проверяется отдельно для каждой стратегии':'STALE · вход заблокирован')+(observer.error?' · '+observer.error:'');
  let selected=null;
  for(const x of visible){

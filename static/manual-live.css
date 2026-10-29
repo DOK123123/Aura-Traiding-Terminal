@@ -8,3 +8,14 @@
 #aura-signal-center button { min-height: 44px; white-space: normal; }
 #aura-signal-center label { display: inline-flex; align-items: center; min-height: 44px; margin-right: 12px; }
 @media(max-width: 1000px) { #aura-signal-center .signal-cards { grid-template-columns: 1fr; } }
+
+#aura-notifications, #aura-replay-panel { grid-column: 1 / -1; min-width: 0; overflow-wrap: anywhere; }
+#aura-replay-panel summary { min-height: 44px; cursor: pointer; }
+#aura-replay .replay-controls, #aura-notifications .replay-controls, .replay-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+#aura-replay label { display: grid; gap: 5px; min-width: 0; }
+#aura-replay select, #aura-replay input, #aura-replay button, #aura-notifications button, #aura-notifications label { min-height: 44px; max-width: 100%; }
+#aura-replay button, #aura-notifications button { white-space: normal; }
+#rp-chart { width: 100%; min-width: 0; height: 300px; margin-top: 12px; }
+#rp-progress { width: 100%; }
+#aura-replay ol { max-height: 320px; overflow: auto; }
+@media(max-width: 600px) { #aura-replay .replay-controls > label { width: 100%; } .replay-actions > button { flex: 1 1 45%; } }

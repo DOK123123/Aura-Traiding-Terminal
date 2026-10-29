@@ -58,6 +58,22 @@ function evaluate(b,step,now,{spread=0,multiplier=1}={}){
    cancel:'Истечение свечного срока, выход за зону входа, пересечение SL/TP или недостоверные данные.'};
  });
 }
+function atQuote(x,q,now,live){
+ const reasons=[...x.rejection];let rr=x.net_rr,costs=x.costs;
+ if(x.setup!=='WAIT'){
+  if(!live)reasons.push('STALE_OR_UNVERIFIED_MARKET');
+  else{
+   const entry=x.setup==='LONG'?q.ask:q.bid;
+   if(now>=x.valid_until)reasons.push('EXPIRED');
+   if(entry<x.zone.low||entry>x.zone.high)reasons.push('OUTSIDE_ENTRY_ZONE');
+   const geometry=x.setup==='LONG'?x.stop<entry&&entry<x.target:x.target<entry&&entry<x.stop;
+   costs=cost(entry,x.stop,x.target,x.setup,q.ask-q.bid);
+   rr=costs.net_rr;if(!geometry||!finite(rr)||rr<1.5)reasons.push('LIVE_NET_RR_BELOW_1_5');
+  }
+ }
+ return {...x,fresh:live,quote_age:q?now-q.time:null,net_rr:rr,costs,
+  state:x.setup==='WAIT'?'WAIT':reasons.length?'REJECTED':x.setup,rejection:reasons,detected_at:now};
+}
 function analyze(snapshot,now,enabled=Object.keys(names)){
  const rows=[];
  for(const tf of ['15m','1h','4h']){
@@ -65,25 +81,11 @@ function analyze(snapshot,now,enabled=Object.keys(names)){
    const live=A.chartQuote(snapshot,tf,now).live;
    for(const x of evaluate(snapshot.windows?.[tf]?.bars,A.STEPS[tf],now)){
     if(!enabled.includes(x.strategy))continue;
-    const reasons=[...x.rejection];let rr=x.net_rr;
-    if(x.setup!=='WAIT'){
-     if(!live)reasons.push('STALE_OR_UNVERIFIED_MARKET');
-     else{
-      const q=snapshot.quote,entry=x.setup==='LONG'?q.ask:q.bid;
-      if(now>=x.valid_until)reasons.push('EXPIRED');
-      if(entry<x.zone.low||entry>x.zone.high)reasons.push('OUTSIDE_ENTRY_ZONE');
-      const geometry=x.setup==='LONG'?x.stop<entry&&entry<x.target:x.target<entry&&entry<x.stop;
-      // entry is already the executable ask/bid; spread is paid again only on exit.
-      const fees=cost(entry,x.stop,x.target,x.setup,q.ask-q.bid);
-      rr=fees.net_rr;if(!geometry||!finite(rr)||rr<1.5)reasons.push('LIVE_NET_RR_BELOW_1_5');
-     }
-    }
-    rows.push({...x,tf,fresh:live,quote_age:snapshot?.quote?now-snapshot.quote.time:null,net_rr:rr,
-     state:x.setup==='WAIT'?'WAIT':reasons.length?'REJECTED':x.setup,rejection:reasons,detected_at:now});
+    rows.push({...atQuote(x,snapshot.quote,now,live),tf});
    }
   }catch(e){for(const strategy of enabled)if(names[strategy])rows.push({strategy,name:names[strategy],tf,state:'REJECTED',setup:null,edge:'UNVALIDATED',edge_summary:'NO_VALIDATED_EDGE',fresh:false,reasons:['Анализ заблокирован: '+e.message],rejection:['DATA_UNAVAILABLE'],technical_strength:null});}
  }
  return rows;
 }
-const api={VERSION,names,cost,candidates,evaluate,analyze};root.AuraManualStrategies=api;if(typeof module!=='undefined')module.exports=api;
+const api={VERSION,names,cost,candidates,evaluate,atQuote,analyze};root.AuraManualStrategies=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);

@@ -305,3 +305,26 @@ def test_preview_ws_diagnostics_scoped_and_read_only(preview):
     assert r.json()['counts']['BROWSER_REJECT_ORIGIN']==1
     assert preview.post('/api/preview/ws-diagnostics',auth=AUTH).status_code==403
 
+
+
+def test_replay_history_requires_owner_and_has_no_write_path(preview):
+    path='/api/preview/bitget/history?timeframe=15m&start=1790812800&end=1790899200&source=archive'
+    assert preview.get(path).status_code==401
+    response=preview.get(path,auth=AUTH)
+    assert response.status_code==200
+    assert response.json()['scope']=='HISTORICAL_REPLAY_ONLY'
+    assert response.json()['statistical_result']=='NOT_EVALUATED'
+    assert len(response.json()['bars'])==296
+    assert preview.post(path,auth=AUTH).status_code==403
+    assert preview.app.state.manual_paper.store is None
+    assert preview.get(path+'&url=https://example.invalid',auth=AUTH).status_code==400
+    for asset in ('historical-replay.js','replay-ui.js','signal-alerts.js'):
+        assert preview.get('/static/'+asset,auth=AUTH).status_code==200
+
+
+def test_replay_busy_does_not_queue_unbounded_requests(preview):
+    class Busy:
+        def locked(self):return True
+    preview.app.state.preview_replay_lock=Busy()
+    path='/api/preview/bitget/history?timeframe=15m&start=1790812800&end=1790899200&source=archive'
+    assert preview.get(path,auth=AUTH).status_code==429
