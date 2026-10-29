@@ -72,3 +72,26 @@ test('preview provides validated HISTORY ONLY candles before websocket confirms 
  a.match(source,/HISTORY ONLY: показаны только закрытые свечи/);
  h.hub.stop();
 });
+
+test('delayed public message is ignored without disconnecting valid LIVE stream',async()=>{
+ const h=harness(historyFetch);h.hub.start();await new Promise(r=>setImmediate(r));
+ const ws=h.sockets[0];ws.onopen();
+ const stale={...tick,ts:(now-20)*1000};
+ ws.onmessage({data:JSON.stringify(stale)});
+ a.equal(h.hub.status,'RECONNECTING');
+ a.equal(h.hub.updates,0);a.equal(h.hub.ignoredStale,1);
+ a.equal(h.hub.quote,null);
+ a.equal(h.hub.diagnostic,'STALE_EVENT_IGNORED');
+ const staleInner=structuredClone(tick);staleInner.data[0].ts=(now-20)*1000;
+ ws.onmessage({data:JSON.stringify(staleInner)});
+ a.equal(h.hub.updates,0);a.equal(h.hub.ignoredStale,2);
+ for(const [tf,channel] of Object.entries(F.CHANNELS)){
+  const bar=fixture.snapshots.LONG.windows[tf].bars.at(-1);
+  ws.onmessage({data:JSON.stringify({arg:{instType:'USDT-FUTURES',instId:'BTCUSDT',channel},action:'snapshot',ts:now*1000,data:[row(bar)]})});
+ }
+ ws.onmessage({data:JSON.stringify(tick)});
+ a.equal(h.hub.status,'LIVE');
+ a.equal(h.hub.updates,6);
+ a.equal(h.hub.ignoredStale,2);
+ h.hub.stop();
+});
