@@ -9,7 +9,7 @@ ASSETS=frozenset({'styles.css','aura-analyst.css','aura-analyst.js',
     'vendor/lightweight-charts.standalone.production.js','active43-live.js','live.js',
     'aura-scenario-journal.js','aura-chart-tools.js','app.js','aura-workspace.css',
     'manual-paper.css','manual-paper.js','manual-live.css','manual-live-analysis.js',
-    'manual-live-feed.js','manual-live-ui.js','strategy-engine.js','manual-strategies.js','forward-observer.js','signal-center.js','historical-replay.js','replay-ui.js','signal-alerts.js','preview-status.js','favicon.svg'})
+    'manual-live-feed.js','manual-live-ui.js','strategy-engine.js','manual-strategies.js','forward-observer.js','signal-center.js','trade-outcomes.js','historical-replay.js','replay-ui.js','signal-alerts.js','preview-status.js','favicon.svg'})
 
 
 def page(ws_token=''):
@@ -26,7 +26,7 @@ def page(ws_token=''):
     source=re.sub(r'<link[^>]+href="/static/([^\"]+)"[^>]*>',lambda m:m[0] if m[1] in ASSETS else '',source)
     source=source.replace('<body data-live-manual="true">','<body data-live-manual="true" data-manual-preview="true"><p class="analyst-warning" role="status">ИЗОЛИРОВАННЫЙ PREVIEW · отдельный виртуальный счёт · не production. Вход и ручное закрытие только после подтверждения. SL/TP разрешаются при открытии и выполняются автоматически только пока сервер работает.</p>')
     source=source.replace('<title>Aura Trading Terminal — Bitget BTCUSDT Futures</title>','<title>ISOLATED PREVIEW · Aura Live Manual Trader 5.0</title>')
-    source=source.replace('</head>','<script defer src="/static/strategy-engine.js"></script><script defer src="/static/manual-strategies.js"></script><script defer src="/static/forward-observer.js"></script><script defer src="/static/signal-center.js"></script><script defer src="/static/historical-replay.js"></script><script defer src="/static/replay-ui.js"></script><script defer src="/static/signal-alerts.js"></script></head>')
+    source=source.replace('</head>','<script defer src="/static/strategy-engine.js"></script><script defer src="/static/manual-strategies.js"></script><script defer src="/static/forward-observer.js"></script><script defer src="/static/signal-center.js"></script><script defer src="/static/trade-outcomes.js"></script><script defer src="/static/historical-replay.js"></script><script defer src="/static/replay-ui.js"></script><script defer src="/static/signal-alerts.js"></script></head>')
     source=source.replace('<main>','<main><section class="panel" id="aura-notifications"></section><details class="panel" id="aura-replay-panel"><summary>Проверка стратегий · открыть Historical Replay</summary><section id="aura-replay"></section></details><section class="panel" id="aura-signal-center"></section>',1)
     source=source.replace('</head>','<meta name="aura-preview-ws-token" content="'+escape(ws_token,quote=True)+'"><script defer src="/static/preview-status.js"></script></head>')
     source=source.replace('<main>','<main><section class="panel"><button id="preview-check" type="button">Проверить preview · только чтение</button><p id="preview-check-result" role="status">Изоляция БД ещё не проверена. Manual Paper выключен по умолчанию.</p></section>',1)

@@ -318,7 +318,7 @@ def test_replay_history_requires_owner_and_has_no_write_path(preview):
     assert preview.post(path,auth=AUTH).status_code==403
     assert preview.app.state.manual_paper.store is None
     assert preview.get(path+'&url=https://example.invalid',auth=AUTH).status_code==400
-    for asset in ('historical-replay.js','replay-ui.js','signal-alerts.js'):
+    for asset in ('trade-outcomes.js','historical-replay.js','replay-ui.js','signal-alerts.js'):
         assert preview.get('/static/'+asset,auth=AUTH).status_code==200
 
 
