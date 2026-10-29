@@ -1,0 +1,1583 @@
+{
+  "scope": "BOUNDED_REAL_PUBLIC_FORWARD_CAPTURE",
+  "source": "Bitget BTCUSDT USDT-M public REST/WS",
+  "capture_sha256": "c6f7dcce2d026885024edb72685794b863d48ea24f9168b486c6c14bf730e724",
+  "first_received_at": 1793294223.2562578,
+  "last_received_at": 1793294249.5570877,
+  "live_events": 254,
+  "quote_events": 184,
+  "decision_states": {
+    "REJECTED": 9,
+    "WAIT": 2340
+  },
+  "diagnostics": {
+    "REST_FETCH": 1,
+    "BEFORE_EMIT": 1,
+    "WS_EVENT": 259
+  },
+  "observations": [],
+  "events": [
+    {
+      "received_at": 1793294223.748316,
+      "status": "RECONNECTING",
+      "rows": []
+    },
+    {
+      "received_at": 1793294223.748316,
+      "status": "RECONNECTING",
+      "rows": []
+    },
+    {
+      "received_at": 1793294228.8247797,
+      "status": "RECONNECTING",
+      "rows": []
+    },
+    {
+      "received_at": 1793294228.956532,
+      "status": "RECONNECTING",
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.0004606,
+      "status": "RECONNECTING",
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.1365182,
+      "status": "RECONNECTING",
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.1370347,
+      "status": "RECONNECTING",
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.137274,
+      "status": "LIVE",
+      "quote_at": 1793294228.509,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.137288,
+      "status": "LIVE",
+      "quote_at": 1793294228.612,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.1372979,
+      "status": "LIVE",
+      "quote_at": 1793294228.716,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.1373072,
+      "status": "LIVE",
+      "quote_at": 1793294228.819,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.1373165,
+      "status": "LIVE",
+      "quote_at": 1793294228.819,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.1373227,
+      "status": "LIVE",
+      "quote_at": 1793294228.819,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.1373272,
+      "status": "LIVE",
+      "quote_at": 1793294228.819,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.137333,
+      "status": "LIVE",
+      "quote_at": 1793294228.819,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.1373374,
+      "status": "LIVE",
+      "quote_at": 1793294228.819,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.1373432,
+      "status": "LIVE",
+      "quote_at": 1793294228.927,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.1374495,
+      "status": "LIVE",
+      "quote_at": 1793294229.033,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.240632,
+      "status": "LIVE",
+      "quote_at": 1793294229.149,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.343904,
+      "status": "LIVE",
+      "quote_at": 1793294229.252,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.442219,
+      "status": "LIVE",
+      "quote_at": 1793294229.356,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.5596447,
+      "status": "LIVE",
+      "quote_at": 1793294229.46,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.6514223,
+      "status": "LIVE",
+      "quote_at": 1793294229.566,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.766715,
+      "status": "LIVE",
+      "quote_at": 1793294229.675,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.8697708,
+      "status": "LIVE",
+      "quote_at": 1793294229.786,
+      "rows": []
+    },
+    {
+      "received_at": 1793294229.9930038,
+      "status": "LIVE",
+      "quote_at": 1793294229.9,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.0954883,
+      "status": "LIVE",
+      "quote_at": 1793294230.008,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.1971567,
+      "status": "LIVE",
+      "quote_at": 1793294230.112,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.3063147,
+      "status": "LIVE",
+      "quote_at": 1793294230.217,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.362259,
+      "status": "LIVE",
+      "quote_at": 1793294230.217,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.3646965,
+      "status": "LIVE",
+      "quote_at": 1793294230.217,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.3653452,
+      "status": "LIVE",
+      "quote_at": 1793294230.217,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.3675523,
+      "status": "LIVE",
+      "quote_at": 1793294230.217,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.3718529,
+      "status": "LIVE",
+      "quote_at": 1793294230.217,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.4119635,
+      "status": "LIVE",
+      "quote_at": 1793294230.325,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.5409548,
+      "status": "LIVE",
+      "quote_at": 1793294230.456,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.6532238,
+      "status": "LIVE",
+      "quote_at": 1793294230.561,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.7573235,
+      "status": "LIVE",
+      "quote_at": 1793294230.668,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.861912,
+      "status": "LIVE",
+      "quote_at": 1793294230.773,
+      "rows": []
+    },
+    {
+      "received_at": 1793294230.9658124,
+      "status": "LIVE",
+      "quote_at": 1793294230.878,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.079642,
+      "status": "LIVE",
+      "quote_at": 1793294230.989,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.1927924,
+      "status": "LIVE",
+      "quote_at": 1793294231.105,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.2999268,
+      "status": "LIVE",
+      "quote_at": 1793294231.212,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.383864,
+      "status": "LIVE",
+      "quote_at": 1793294231.212,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.383911,
+      "status": "LIVE",
+      "quote_at": 1793294231.212,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.383931,
+      "status": "LIVE",
+      "quote_at": 1793294231.212,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.3884113,
+      "status": "LIVE",
+      "quote_at": 1793294231.212,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.393558,
+      "status": "LIVE",
+      "quote_at": 1793294231.212,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.431016,
+      "status": "LIVE",
+      "quote_at": 1793294231.34,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.5311346,
+      "status": "LIVE",
+      "quote_at": 1793294231.446,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.635608,
+      "status": "LIVE",
+      "quote_at": 1793294231.55,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.7398984,
+      "status": "LIVE",
+      "quote_at": 1793294231.654,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.849961,
+      "status": "LIVE",
+      "quote_at": 1793294231.76,
+      "rows": []
+    },
+    {
+      "received_at": 1793294231.9770434,
+      "status": "LIVE",
+      "quote_at": 1793294231.868,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.0732558,
+      "status": "LIVE",
+      "quote_at": 1793294231.975,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.2768452,
+      "status": "LIVE",
+      "quote_at": 1793294232.078,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.2769794,
+      "status": "LIVE",
+      "quote_at": 1793294232.182,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.3735018,
+      "status": "LIVE",
+      "quote_at": 1793294232.286,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.4558618,
+      "status": "LIVE",
+      "quote_at": 1793294232.286,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.455936,
+      "status": "LIVE",
+      "quote_at": 1793294232.286,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.455945,
+      "status": "LIVE",
+      "quote_at": 1793294232.286,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.462951,
+      "status": "LIVE",
+      "quote_at": 1793294232.286,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.4629903,
+      "status": "LIVE",
+      "quote_at": 1793294232.286,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.4854324,
+      "status": "LIVE",
+      "quote_at": 1793294232.39,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.5801272,
+      "status": "LIVE",
+      "quote_at": 1793294232.496,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.753058,
+      "status": "LIVE",
+      "quote_at": 1793294232.606,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.7972772,
+      "status": "LIVE",
+      "quote_at": 1793294232.712,
+      "rows": []
+    },
+    {
+      "received_at": 1793294232.911934,
+      "status": "LIVE",
+      "quote_at": 1793294232.817,
+      "rows": []
+    },
+    {
+      "received_at": 1793294233.0262759,
+      "status": "LIVE",
+      "quote_at": 1793294232.926,
+      "rows": []
+    },
+    {
+      "received_at": 1793294233.1254177,
+      "status": "LIVE",
+      "quote_at": 1793294233.032,
+      "rows": []
+    },
+    {
+      "received_at": 1793294233.2417023,
+      "status": "LIVE",
+      "quote_at": 1793294233.147,
+      "rows": []
+    },
+    {
+      "received_at": 1793294233.339061,
+      "status": "LIVE",
+      "quote_at": 1793294233.252,
+      "rows": []
+    },
+    {
+      "received_at": 1793294233.4508138,
+      "status": "LIVE",
+      "quote_at": 1793294233.364,
+      "rows": []
+    },
+    {
+      "received_at": 1793294233.5528274,
+      "status": "LIVE",
+      "quote_at": 1793294233.468,
+      "rows": []
+    },
+    {
+      "received_at": 1793294233.68566,
+      "status": "LIVE",
+      "quote_at": 1793294233.575,
+      "rows": []
+    },
+    {
+      "received_at": 1793294233.7697446,
+      "status": "LIVE",
+      "quote_at": 1793294233.684,
+      "rows": []
+    },
+    {
+      "received_at": 1793294233.8878627,
+      "status": "LIVE",
+      "quote_at": 1793294233.796,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.0001404,
+      "status": "LIVE",
+      "quote_at": 1793294233.902,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.1113224,
+      "status": "LIVE",
+      "quote_at": 1793294234.012,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.2205398,
+      "status": "LIVE",
+      "quote_at": 1793294234.117,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.3149443,
+      "status": "LIVE",
+      "quote_at": 1793294234.223,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.4279647,
+      "status": "LIVE",
+      "quote_at": 1793294234.223,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.4280026,
+      "status": "LIVE",
+      "quote_at": 1793294234.223,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.4280174,
+      "status": "LIVE",
+      "quote_at": 1793294234.223,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.4280233,
+      "status": "LIVE",
+      "quote_at": 1793294234.223,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.4280596,
+      "status": "LIVE",
+      "quote_at": 1793294234.223,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.4280674,
+      "status": "LIVE",
+      "quote_at": 1793294234.326,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.519515,
+      "status": "LIVE",
+      "quote_at": 1793294234.434,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.6286309,
+      "status": "LIVE",
+      "quote_at": 1793294234.543,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.7406716,
+      "status": "LIVE",
+      "quote_at": 1793294234.653,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.8573155,
+      "status": "LIVE",
+      "quote_at": 1793294234.757,
+      "rows": []
+    },
+    {
+      "received_at": 1793294234.947965,
+      "status": "LIVE",
+      "quote_at": 1793294234.861,
+      "rows": []
+    },
+    {
+      "received_at": 1793294235.0750804,
+      "status": "LIVE",
+      "quote_at": 1793294234.965,
+      "rows": []
+    },
+    {
+      "received_at": 1793294235.1762307,
+      "status": "LIVE",
+      "quote_at": 1793294235.073,
+      "rows": []
+    },
+    {
+      "received_at": 1793294235.2857394,
+      "status": "LIVE",
+      "quote_at": 1793294235.2,
+      "rows": []
+    },
+    {
+      "received_at": 1793294235.394238,
+      "status": "LIVE",
+      "quote_at": 1793294235.306,
+      "rows": []
+    },
+    {
+      "received_at": 1793294235.5056145,
+      "status": "LIVE",
+      "quote_at": 1793294235.412,
+      "rows": []
+    },
+    {
+      "received_at": 1793294235.6039095,
+      "status": "LIVE",
+      "quote_at": 1793294235.519,
+      "rows": []
+    },
+    {
+      "received_at": 1793294235.708943,
+      "status": "LIVE",
+      "quote_at": 1793294235.622,
+      "rows": []
+    },
+    {
+      "received_at": 1793294235.811642,
+      "status": "LIVE",
+      "quote_at": 1793294235.726,
+      "rows": []
+    },
+    {
+      "received_at": 1793294235.9394627,
+      "status": "LIVE",
+      "quote_at": 1793294235.846,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.0420907,
+      "status": "LIVE",
+      "quote_at": 1793294235.942,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.1419837,
+      "status": "LIVE",
+      "quote_at": 1793294236.056,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.2323127,
+      "status": "LIVE",
+      "quote_at": 1793294236.056,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.236089,
+      "status": "LIVE",
+      "quote_at": 1793294236.056,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.23717,
+      "status": "LIVE",
+      "quote_at": 1793294236.056,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.2400975,
+      "status": "LIVE",
+      "quote_at": 1793294236.056,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.245452,
+      "status": "LIVE",
+      "quote_at": 1793294236.056,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.2503216,
+      "status": "LIVE",
+      "quote_at": 1793294236.167,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.3555577,
+      "status": "LIVE",
+      "quote_at": 1793294236.271,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.4595525,
+      "status": "LIVE",
+      "quote_at": 1793294236.375,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.563891,
+      "status": "LIVE",
+      "quote_at": 1793294236.478,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.6698966,
+      "status": "LIVE",
+      "quote_at": 1793294236.585,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.9148486,
+      "status": "LIVE",
+      "quote_at": 1793294236.702,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.9149017,
+      "status": "LIVE",
+      "quote_at": 1793294236.81,
+      "rows": []
+    },
+    {
+      "received_at": 1793294236.999732,
+      "status": "LIVE",
+      "quote_at": 1793294236.914,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.103499,
+      "status": "LIVE",
+      "quote_at": 1793294237.019,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.2110806,
+      "status": "LIVE",
+      "quote_at": 1793294237.123,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.3162017,
+      "status": "LIVE",
+      "quote_at": 1793294237.23,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.405253,
+      "status": "LIVE",
+      "quote_at": 1793294237.23,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.4145832,
+      "status": "LIVE",
+      "quote_at": 1793294237.23,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.4174256,
+      "status": "LIVE",
+      "quote_at": 1793294237.23,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.4224093,
+      "status": "LIVE",
+      "quote_at": 1793294237.334,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.437974,
+      "status": "LIVE",
+      "quote_at": 1793294237.334,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.4393806,
+      "status": "LIVE",
+      "quote_at": 1793294237.334,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.5355873,
+      "status": "LIVE",
+      "quote_at": 1793294237.449,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.6416512,
+      "status": "LIVE",
+      "quote_at": 1793294237.557,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.7481089,
+      "status": "LIVE",
+      "quote_at": 1793294237.663,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.9172857,
+      "status": "LIVE",
+      "quote_at": 1793294237.768,
+      "rows": []
+    },
+    {
+      "received_at": 1793294237.9625704,
+      "status": "LIVE",
+      "quote_at": 1793294237.876,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.0889535,
+      "status": "LIVE",
+      "quote_at": 1793294238.002,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.205482,
+      "status": "LIVE",
+      "quote_at": 1793294238.108,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.3050146,
+      "status": "LIVE",
+      "quote_at": 1793294238.215,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.4182796,
+      "status": "LIVE",
+      "quote_at": 1793294238.32,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.5103521,
+      "status": "LIVE",
+      "quote_at": 1793294238.424,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.6130428,
+      "status": "LIVE",
+      "quote_at": 1793294238.424,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.6148045,
+      "status": "LIVE",
+      "quote_at": 1793294238.424,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.617235,
+      "status": "LIVE",
+      "quote_at": 1793294238.532,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.6197515,
+      "status": "LIVE",
+      "quote_at": 1793294238.532,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.6344028,
+      "status": "LIVE",
+      "quote_at": 1793294238.532,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.634437,
+      "status": "LIVE",
+      "quote_at": 1793294238.532,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.7336087,
+      "status": "LIVE",
+      "quote_at": 1793294238.646,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.8536801,
+      "status": "LIVE",
+      "quote_at": 1793294238.755,
+      "rows": []
+    },
+    {
+      "received_at": 1793294238.9481878,
+      "status": "LIVE",
+      "quote_at": 1793294238.861,
+      "rows": []
+    },
+    {
+      "received_at": 1793294239.0630846,
+      "status": "LIVE",
+      "quote_at": 1793294238.968,
+      "rows": []
+    },
+    {
+      "received_at": 1793294239.1664476,
+      "status": "LIVE",
+      "quote_at": 1793294239.072,
+      "rows": []
+    },
+    {
+      "received_at": 1793294239.269855,
+      "status": "LIVE",
+      "quote_at": 1793294239.178,
+      "rows": []
+    },
+    {
+      "received_at": 1793294239.379097,
+      "status": "LIVE",
+      "quote_at": 1793294239.288,
+      "rows": []
+    },
+    {
+      "received_at": 1793294239.4991457,
+      "status": "LIVE",
+      "quote_at": 1793294239.404,
+      "rows": []
+    },
+    {
+      "received_at": 1793294239.6083822,
+      "status": "LIVE",
+      "quote_at": 1793294239.519,
+      "rows": []
+    },
+    {
+      "received_at": 1793294239.712437,
+      "status": "LIVE",
+      "quote_at": 1793294239.625,
+      "rows": []
+    },
+    {
+      "received_at": 1793294239.8157747,
+      "status": "LIVE",
+      "quote_at": 1793294239.729,
+      "rows": []
+    },
+    {
+      "received_at": 1793294239.9473932,
+      "status": "LIVE",
+      "quote_at": 1793294239.858,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.059044,
+      "status": "LIVE",
+      "quote_at": 1793294239.964,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.1583233,
+      "status": "LIVE",
+      "quote_at": 1793294240.071,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.2639859,
+      "status": "LIVE",
+      "quote_at": 1793294240.178,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.3694024,
+      "status": "LIVE",
+      "quote_at": 1793294240.283,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.4035673,
+      "status": "LIVE",
+      "quote_at": 1793294240.283,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.4063892,
+      "status": "LIVE",
+      "quote_at": 1793294240.283,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.4089773,
+      "status": "LIVE",
+      "quote_at": 1793294240.283,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.4104514,
+      "status": "LIVE",
+      "quote_at": 1793294240.283,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.423115,
+      "status": "LIVE",
+      "quote_at": 1793294240.283,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.4728177,
+      "status": "LIVE",
+      "quote_at": 1793294240.386,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.59741,
+      "status": "LIVE",
+      "quote_at": 1793294240.493,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.6963315,
+      "status": "LIVE",
+      "quote_at": 1793294240.609,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.803332,
+      "status": "LIVE",
+      "quote_at": 1793294240.714,
+      "rows": []
+    },
+    {
+      "received_at": 1793294240.91036,
+      "status": "LIVE",
+      "quote_at": 1793294240.819,
+      "rows": []
+    },
+    {
+      "received_at": 1793294241.0239255,
+      "status": "LIVE",
+      "quote_at": 1793294240.926,
+      "rows": []
+    },
+    {
+      "received_at": 1793294241.1191483,
+      "status": "LIVE",
+      "quote_at": 1793294241.03,
+      "rows": []
+    },
+    {
+      "received_at": 1793294241.2242794,
+      "status": "LIVE",
+      "quote_at": 1793294241.137,
+      "rows": []
+    },
+    {
+      "received_at": 1793294241.3408628,
+      "status": "LIVE",
+      "quote_at": 1793294241.254,
+      "rows": []
+    },
+    {
+      "received_at": 1793294241.505005,
+      "status": "LIVE",
+      "quote_at": 1793294241.358,
+      "rows": []
+    },
+    {
+      "received_at": 1793294241.5561986,
+      "status": "LIVE",
+      "quote_at": 1793294241.463,
+      "rows": []
+    },
+    {
+      "received_at": 1793294241.6526582,
+      "status": "LIVE",
+      "quote_at": 1793294241.567,
+      "rows": []
+    },
+    {
+      "received_at": 1793294241.7624032,
+      "status": "LIVE",
+      "quote_at": 1793294241.673,
+      "rows": []
+    },
+    {
+      "received_at": 1793294241.869472,
+      "status": "LIVE",
+      "quote_at": 1793294241.783,
+      "rows": []
+    },
+    {
+      "received_at": 1793294241.9879014,
+      "status": "LIVE",
+      "quote_at": 1793294241.901,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.092975,
+      "status": "LIVE",
+      "quote_at": 1793294242.005,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.1944,
+      "status": "LIVE",
+      "quote_at": 1793294242.11,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.215715,
+      "status": "LIVE",
+      "quote_at": 1793294242.11,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.2157578,
+      "status": "LIVE",
+      "quote_at": 1793294242.11,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.2205727,
+      "status": "LIVE",
+      "quote_at": 1793294242.11,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.2206247,
+      "status": "LIVE",
+      "quote_at": 1793294242.11,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.2242424,
+      "status": "LIVE",
+      "quote_at": 1793294242.11,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.4046602,
+      "status": "LIVE",
+      "quote_at": 1793294242.215,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.420761,
+      "status": "LIVE",
+      "quote_at": 1793294242.322,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.5198536,
+      "status": "LIVE",
+      "quote_at": 1793294242.433,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.6371963,
+      "status": "LIVE",
+      "quote_at": 1793294242.546,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.7619696,
+      "status": "LIVE",
+      "quote_at": 1793294242.674,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.8637516,
+      "status": "LIVE",
+      "quote_at": 1793294242.779,
+      "rows": []
+    },
+    {
+      "received_at": 1793294242.976672,
+      "status": "LIVE",
+      "quote_at": 1793294242.883,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.074013,
+      "status": "LIVE",
+      "quote_at": 1793294242.987,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.1776295,
+      "status": "LIVE",
+      "quote_at": 1793294243.093,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.30824,
+      "status": "LIVE",
+      "quote_at": 1793294243.205,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.3628676,
+      "status": "LIVE",
+      "quote_at": 1793294243.205,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.3653183,
+      "status": "LIVE",
+      "quote_at": 1793294243.205,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.3664312,
+      "status": "LIVE",
+      "quote_at": 1793294243.205,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.3724298,
+      "status": "LIVE",
+      "quote_at": 1793294243.205,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.3764815,
+      "status": "LIVE",
+      "quote_at": 1793294243.205,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.406611,
+      "status": "LIVE",
+      "quote_at": 1793294243.319,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.5239472,
+      "status": "LIVE",
+      "quote_at": 1793294243.424,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.622025,
+      "status": "LIVE",
+      "quote_at": 1793294243.531,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.722652,
+      "status": "LIVE",
+      "quote_at": 1793294243.635,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.82793,
+      "status": "LIVE",
+      "quote_at": 1793294243.739,
+      "rows": []
+    },
+    {
+      "received_at": 1793294243.9532878,
+      "status": "LIVE",
+      "quote_at": 1793294243.854,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.051286,
+      "status": "LIVE",
+      "quote_at": 1793294243.959,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.1550388,
+      "status": "LIVE",
+      "quote_at": 1793294244.065,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.2558513,
+      "status": "LIVE",
+      "quote_at": 1793294244.17,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.3703156,
+      "status": "LIVE",
+      "quote_at": 1793294244.276,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.4762294,
+      "status": "LIVE",
+      "quote_at": 1793294244.388,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.58456,
+      "status": "LIVE",
+      "quote_at": 1793294244.498,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.6955426,
+      "status": "LIVE",
+      "quote_at": 1793294244.603,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.7440202,
+      "status": "LIVE",
+      "quote_at": 1793294244.603,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.7468183,
+      "status": "LIVE",
+      "quote_at": 1793294244.603,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.746833,
+      "status": "LIVE",
+      "quote_at": 1793294244.603,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.7518694,
+      "status": "LIVE",
+      "quote_at": 1793294244.603,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.7518857,
+      "status": "LIVE",
+      "quote_at": 1793294244.603,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.802721,
+      "status": "LIVE",
+      "quote_at": 1793294244.711,
+      "rows": []
+    },
+    {
+      "received_at": 1793294244.8999755,
+      "status": "LIVE",
+      "quote_at": 1793294244.815,
+      "rows": []
+    },
+    {
+      "received_at": 1793294245.0091646,
+      "status": "LIVE",
+      "quote_at": 1793294244.92,
+      "rows": []
+    },
+    {
+      "received_at": 1793294245.121327,
+      "status": "LIVE",
+      "quote_at": 1793294245.026,
+      "rows": []
+    },
+    {
+      "received_at": 1793294245.236594,
+      "status": "LIVE",
+      "quote_at": 1793294245.151,
+      "rows": []
+    },
+    {
+      "received_at": 1793294245.3638923,
+      "status": "LIVE",
+      "quote_at": 1793294245.257,
+      "rows": []
+    },
+    {
+      "received_at": 1793294245.4501028,
+      "status": "LIVE",
+      "quote_at": 1793294245.362,
+      "rows": []
+    },
+    {
+      "received_at": 1793294245.5542715,
+      "status": "LIVE",
+      "quote_at": 1793294245.466,
+      "rows": []
+    },
+    {
+      "received_at": 1793294245.6564016,
+      "status": "LIVE",
+      "quote_at": 1793294245.572,
+      "rows": []
+    },
+    {
+      "received_at": 1793294245.7647216,
+      "status": "LIVE",
+      "quote_at": 1793294245.68,
+      "rows": []
+    },
+    {
+      "received_at": 1793294245.8723688,
+      "status": "LIVE",
+      "quote_at": 1793294245.786,
+      "rows": []
+    },
+    {
+      "received_at": 1793294245.9847429,
+      "status": "LIVE",
+      "quote_at": 1793294245.892,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.1207788,
+      "status": "LIVE",
+      "quote_at": 1793294246.004,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.198334,
+      "status": "LIVE",
+      "quote_at": 1793294246.108,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.2963383,
+      "status": "LIVE",
+      "quote_at": 1793294246.211,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.4009087,
+      "status": "LIVE",
+      "quote_at": 1793294246.315,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.434506,
+      "status": "LIVE",
+      "quote_at": 1793294246.315,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.4345798,
+      "status": "LIVE",
+      "quote_at": 1793294246.315,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.4345875,
+      "status": "LIVE",
+      "quote_at": 1793294246.315,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.4345942,
+      "status": "LIVE",
+      "quote_at": 1793294246.315,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.4346673,
+      "status": "LIVE",
+      "quote_at": 1793294246.315,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.5056958,
+      "status": "LIVE",
+      "quote_at": 1793294246.421,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.631809,
+      "status": "LIVE",
+      "quote_at": 1793294246.543,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.7414541,
+      "status": "LIVE",
+      "quote_at": 1793294246.647,
+      "rows": []
+    },
+    {
+      "received_at": 1793294246.8424556,
+      "status": "LIVE",
+      "quote_at": 1793294246.755,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.013918,
+      "status": "LIVE",
+      "quote_at": 1793294246.862,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.054225,
+      "status": "LIVE",
+      "quote_at": 1793294246.968,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.2420187,
+      "status": "LIVE",
+      "quote_at": 1793294247.146,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.3219705,
+      "status": "LIVE",
+      "quote_at": 1793294247.229,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.4280095,
+      "status": "LIVE",
+      "quote_at": 1793294247.337,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.4942124,
+      "status": "LIVE",
+      "quote_at": 1793294247.337,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.4942482,
+      "status": "LIVE",
+      "quote_at": 1793294247.337,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.4942555,
+      "status": "LIVE",
+      "quote_at": 1793294247.337,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.4942663,
+      "status": "LIVE",
+      "quote_at": 1793294247.337,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.4942713,
+      "status": "LIVE",
+      "quote_at": 1793294247.337,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.5693667,
+      "status": "LIVE",
+      "quote_at": 1793294247.445,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.6330886,
+      "status": "LIVE",
+      "quote_at": 1793294247.548,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.74172,
+      "status": "LIVE",
+      "quote_at": 1793294247.652,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.850778,
+      "status": "LIVE",
+      "quote_at": 1793294247.761,
+      "rows": []
+    },
+    {
+      "received_at": 1793294247.958091,
+      "status": "LIVE",
+      "quote_at": 1793294247.869,
+      "rows": []
+    },
+    {
+      "received_at": 1793294248.0598102,
+      "status": "LIVE",
+      "quote_at": 1793294247.975,
+      "rows": []
+    },
+    {
+      "received_at": 1793294248.18152,
+      "status": "LIVE",
+      "quote_at": 1793294248.089,
+      "rows": []
+    },
+    {
+      "received_at": 1793294248.291442,
+      "status": "LIVE",
+      "quote_at": 1793294248.203,
+      "rows": []
+    },
+    {
+      "received_at": 1793294248.3941545,
+      "status": "LIVE",
+      "quote_at": 1793294248.308,
+      "rows": []
+    }
+  ],
+  "orders": 0,
+  "edge": "UNVALIDATED",
+  "verdict": "INSUFFICIENT_EVIDENCE"
+}

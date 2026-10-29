@@ -1,0 +1,447 @@
+{
+  "verdict": "INSUFFICIENT_EVIDENCE",
+  "input_sha256": "d91d36e93f92b40cfce5b908393cb9ccc118ef9d439daca92b58b1ba1323599b",
+  "coverage": [
+    {
+      "tf": "15m",
+      "bars": 2688
+    },
+    {
+      "tf": "1h",
+      "bars": 672
+    },
+    {
+      "tf": "4h",
+      "bars": 168
+    }
+  ],
+  "assumptions": {
+    "cost_multiplier": 2,
+    "fee_per_side": 0.001,
+    "slippage_and_half_spread": 0.0006,
+    "funding": "NOT_MODELED",
+    "fees": "CONSERVATIVE_ASSUMPTION_NOT_ACCOUNT_TARIFF",
+    "execution": "NEXT_BAR_OPEN",
+    "ambiguous_bar": "STOP_FIRST",
+    "position": "ONE_PER_STRATEGY_TIMEFRAME",
+    "regimes": "MONTHLY_FIXED_RULES_NO_RETUNING",
+    "prior_data": "POTENTIALLY_REUSED_NOT_UNTOUCHED"
+  },
+  "evaluation_after_oct1": {
+    "TREND_ATR:1h": {
+      "trades": 1,
+      "net_return": -0.010153363419239558,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.010153363419239527,
+      "max_drawdown": 0.010153363419239558,
+      "mean_planned_net_rr": 1.5331292340858433
+    },
+    "DONCHIAN:1h": {
+      "trades": 1,
+      "net_return": -0.00771701491243082,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.007717014912430793,
+      "max_drawdown": 0.00771701491243082,
+      "mean_planned_net_rr": 1.5373220825962437
+    },
+    "VOLUME:1h": {
+      "trades": 1,
+      "net_return": -0.00771701491243082,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.007717014912430793,
+      "max_drawdown": 0.00771701491243082,
+      "mean_planned_net_rr": 1.5373220825962437
+    },
+    "SUPERTREND:1h": {
+      "trades": 1,
+      "net_return": -0.00771701491243082,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.007717014912430793,
+      "max_drawdown": 0.00771701491243082,
+      "mean_planned_net_rr": 1.5373220825962437
+    },
+    "TREND_ATR:4h": {
+      "trades": 4,
+      "net_return": -0.07902575221683172,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.02031598901520996,
+      "max_drawdown": 0.07902575221683172,
+      "mean_planned_net_rr": 1.5942938554057533
+    },
+    "EMA_ADX:4h": {
+      "trades": 5,
+      "net_return": -0.10061733941555795,
+      "profit_factor": 0.0061884281349401955,
+      "win_rate": 0.2,
+      "expectancy": -0.02092685842910908,
+      "max_drawdown": 0.10120295412875935,
+      "mean_planned_net_rr": 1.5967697577436613
+    },
+    "PULLBACK:4h": {
+      "trades": 2,
+      "net_return": -0.051000570113772126,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.02583375200906618,
+      "max_drawdown": 0.051000570113772126,
+      "mean_planned_net_rr": 1.585734137614365
+    },
+    "DONCHIAN:4h": {
+      "trades": 2,
+      "net_return": -0.031401638401199805,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.015783745400944703,
+      "max_drawdown": 0.031401638401199805,
+      "mean_planned_net_rr": 1.5836398285235895
+    },
+    "SUPERTREND:4h": {
+      "trades": 2,
+      "net_return": -0.020379860935286986,
+      "profit_factor": 0.1864795774388951,
+      "win_rate": 0.5,
+      "expectancy": -0.010132078064130235,
+      "max_drawdown": 0.024909216248641175,
+      "mean_planned_net_rr": 1.5944858693630355
+    },
+    "VOLUME:4h": {
+      "trades": 2,
+      "net_return": -0.03246892391654599,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.016320965114969197,
+      "max_drawdown": 0.03246892391654599,
+      "mean_planned_net_rr": 1.593803815653279
+    }
+  },
+  "weekly_counts": {
+    "TREND_ATR:1h:2963": 1,
+    "DONCHIAN:1h:2963": 1,
+    "VOLUME:1h:2963": 1,
+    "SUPERTREND:1h:2963": 1,
+    "TREND_ATR:4h:2963": 2,
+    "EMA_ADX:4h:2963": 3,
+    "PULLBACK:4h:2963": 2,
+    "DONCHIAN:4h:2963": 1,
+    "SUPERTREND:4h:2963": 1,
+    "VOLUME:4h:2963": 1,
+    "TREND_ATR:4h:2964": 2,
+    "EMA_ADX:4h:2964": 2,
+    "SUPERTREND:4h:2964": 1,
+    "DONCHIAN:4h:2964": 1,
+    "VOLUME:4h:2964": 1
+  },
+  "monthly": {
+    "TREND_ATR:1h:2026-10": {
+      "trades": 1,
+      "net_return": -0.010153363419239558,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.010153363419239527,
+      "max_drawdown": 0.010153363419239558,
+      "mean_planned_net_rr": 1.5331292340858433
+    },
+    "DONCHIAN:1h:2026-10": {
+      "trades": 1,
+      "net_return": -0.00771701491243082,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.007717014912430793,
+      "max_drawdown": 0.00771701491243082,
+      "mean_planned_net_rr": 1.5373220825962437
+    },
+    "VOLUME:1h:2026-10": {
+      "trades": 1,
+      "net_return": -0.00771701491243082,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.007717014912430793,
+      "max_drawdown": 0.00771701491243082,
+      "mean_planned_net_rr": 1.5373220825962437
+    },
+    "SUPERTREND:1h:2026-10": {
+      "trades": 1,
+      "net_return": -0.00771701491243082,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.007717014912430793,
+      "max_drawdown": 0.00771701491243082,
+      "mean_planned_net_rr": 1.5373220825962437
+    },
+    "TREND_ATR:4h:2026-10": {
+      "trades": 4,
+      "net_return": -0.07902575221683172,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.02031598901520996,
+      "max_drawdown": 0.07902575221683172,
+      "mean_planned_net_rr": 1.5942938554057533
+    },
+    "EMA_ADX:4h:2026-10": {
+      "trades": 5,
+      "net_return": -0.10061733941555795,
+      "profit_factor": 0.0061884281349401955,
+      "win_rate": 0.2,
+      "expectancy": -0.02092685842910908,
+      "max_drawdown": 0.10120295412875935,
+      "mean_planned_net_rr": 1.5967697577436613
+    },
+    "PULLBACK:4h:2026-10": {
+      "trades": 2,
+      "net_return": -0.051000570113772126,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.02583375200906618,
+      "max_drawdown": 0.051000570113772126,
+      "mean_planned_net_rr": 1.585734137614365
+    },
+    "DONCHIAN:4h:2026-10": {
+      "trades": 2,
+      "net_return": -0.031401638401199805,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.015783745400944703,
+      "max_drawdown": 0.031401638401199805,
+      "mean_planned_net_rr": 1.5836398285235895
+    },
+    "SUPERTREND:4h:2026-10": {
+      "trades": 2,
+      "net_return": -0.020379860935286986,
+      "profit_factor": 0.1864795774388951,
+      "win_rate": 0.5,
+      "expectancy": -0.010132078064130235,
+      "max_drawdown": 0.024909216248641175,
+      "mean_planned_net_rr": 1.5944858693630355
+    },
+    "VOLUME:4h:2026-10": {
+      "trades": 2,
+      "net_return": -0.03246892391654599,
+      "profit_factor": 0,
+      "win_rate": 0,
+      "expectancy": -0.016320965114969197,
+      "max_drawdown": 0.03246892391654599,
+      "mean_planned_net_rr": 1.593803815653279
+    }
+  },
+  "portfolio": "NOT_MODELED",
+  "overall_counts": {
+    "trades": 21
+  },
+  "trades": [
+    {
+      "tf": "1h",
+      "strategy": "TREND_ATR",
+      "side": "SHORT",
+      "at": 1792076400,
+      "end": 1792134000,
+      "pnl": -0.010153363419239527,
+      "reason": "TIMEOUT",
+      "rr": 1.5331292340858433
+    },
+    {
+      "tf": "1h",
+      "strategy": "DONCHIAN",
+      "side": "LONG",
+      "at": 1792080000,
+      "end": 1792137600,
+      "pnl": -0.007717014912430793,
+      "reason": "TIMEOUT",
+      "rr": 1.5373220825962437
+    },
+    {
+      "tf": "1h",
+      "strategy": "VOLUME",
+      "side": "LONG",
+      "at": 1792080000,
+      "end": 1792137600,
+      "pnl": -0.007717014912430793,
+      "reason": "TIMEOUT",
+      "rr": 1.5373220825962437
+    },
+    {
+      "tf": "1h",
+      "strategy": "SUPERTREND",
+      "side": "LONG",
+      "at": 1792080000,
+      "end": 1792137600,
+      "pnl": -0.007717014912430793,
+      "reason": "TIMEOUT",
+      "rr": 1.5373220825962437
+    },
+    {
+      "tf": "4h",
+      "strategy": "TREND_ATR",
+      "side": "SHORT",
+      "at": 1792267200,
+      "end": 1792396800,
+      "pnl": -0.025148015122073705,
+      "reason": "SL",
+      "rr": 1.5731101740307385
+    },
+    {
+      "tf": "4h",
+      "strategy": "EMA_ADX",
+      "side": "SHORT",
+      "at": 1792267200,
+      "end": 1792396800,
+      "pnl": -0.025148015122073705,
+      "reason": "SL",
+      "rr": 1.5731101740307385
+    },
+    {
+      "tf": "4h",
+      "strategy": "PULLBACK",
+      "side": "SHORT",
+      "at": 1792339200,
+      "end": 1792382400,
+      "pnl": -0.02516379790193657,
+      "reason": "SL",
+      "rr": 1.5734183123400818
+    },
+    {
+      "tf": "4h",
+      "strategy": "TREND_ATR",
+      "side": "SHORT",
+      "at": 1792411200,
+      "end": 1792598400,
+      "pnl": -0.02604711159757061,
+      "reason": "SL",
+      "rr": 1.5899822656472282
+    },
+    {
+      "tf": "4h",
+      "strategy": "EMA_ADX",
+      "side": "SHORT",
+      "at": 1792425600,
+      "end": 1792584000,
+      "pnl": -0.026503706116195794,
+      "reason": "SL",
+      "rr": 1.5980499628886482
+    },
+    {
+      "tf": "4h",
+      "strategy": "PULLBACK",
+      "side": "SHORT",
+      "at": 1792425600,
+      "end": 1792584000,
+      "pnl": -0.026503706116195794,
+      "reason": "SL",
+      "rr": 1.5980499628886482
+    },
+    {
+      "tf": "4h",
+      "strategy": "DONCHIAN",
+      "side": "LONG",
+      "at": 1792584000,
+      "end": 1792670400,
+      "pnl": -0.024909216248641126,
+      "reason": "SL",
+      "rr": 1.5708607752928232
+    },
+    {
+      "tf": "4h",
+      "strategy": "SUPERTREND",
+      "side": "LONG",
+      "at": 1792584000,
+      "end": 1792670400,
+      "pnl": -0.024909216248641126,
+      "reason": "SL",
+      "rr": 1.5708607752928232
+    },
+    {
+      "tf": "4h",
+      "strategy": "VOLUME",
+      "side": "LONG",
+      "at": 1792598400,
+      "end": 1792641600,
+      "pnl": -0.025983655676690115,
+      "reason": "SL",
+      "rr": 1.5911887495522021
+    },
+    {
+      "tf": "4h",
+      "strategy": "EMA_ADX",
+      "side": "LONG",
+      "at": 1792598400,
+      "end": 1792641600,
+      "pnl": -0.025983655676690115,
+      "reason": "SL",
+      "rr": 1.5911887495522021
+    },
+    {
+      "tf": "4h",
+      "strategy": "TREND_ATR",
+      "side": "LONG",
+      "at": 1792641600,
+      "end": 1792699200,
+      "pnl": -0.027650469122414444,
+      "reason": "SL",
+      "rr": 1.6191739004309287
+    },
+    {
+      "tf": "4h",
+      "strategy": "EMA_ADX",
+      "side": "LONG",
+      "at": 1792641600,
+      "end": 1792699200,
+      "pnl": -0.027650469122414444,
+      "reason": "SL",
+      "rr": 1.6191739004309287
+    },
+    {
+      "tf": "4h",
+      "strategy": "SUPERTREND",
+      "side": "SHORT",
+      "at": 1792670400,
+      "end": 1792900800,
+      "pnl": 0.004645060120380657,
+      "reason": "TIMEOUT",
+      "rr": 1.618110963433248
+    },
+    {
+      "tf": "4h",
+      "strategy": "DONCHIAN",
+      "side": "SHORT",
+      "at": 1792857600,
+      "end": 1793088000,
+      "pnl": -0.006658274553248281,
+      "reason": "TIMEOUT",
+      "rr": 1.596418881754356
+    },
+    {
+      "tf": "4h",
+      "strategy": "VOLUME",
+      "side": "SHORT",
+      "at": 1792857600,
+      "end": 1793088000,
+      "pnl": -0.006658274553248281,
+      "reason": "TIMEOUT",
+      "rr": 1.596418881754356
+    },
+    {
+      "tf": "4h",
+      "strategy": "EMA_ADX",
+      "side": "SHORT",
+      "at": 1792872000,
+      "end": 1793102400,
+      "pnl": 0.0006515538918286674,
+      "reason": "TIMEOUT",
+      "rr": 1.602326001815789
+    },
+    {
+      "tf": "4h",
+      "strategy": "TREND_ATR",
+      "side": "SHORT",
+      "at": 1792886400,
+      "end": 1793116800,
+      "pnl": -0.0024183602187811,
+      "reason": "TIMEOUT",
+      "rr": 1.5949090815141176
+    }
+  ]
+}

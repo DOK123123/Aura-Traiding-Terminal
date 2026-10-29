@@ -1,0 +1,45 @@
+{
+  "services": [
+    {
+      "type": "web",
+      "name": "aura-manual-trader5-isolated-preview",
+      "runtime": "python",
+      "plan": "free",
+      "branch": "feature/aura-live-manual-trader5",
+      "autoDeployTrigger": "off",
+      "buildCommand": "pip install --no-deps --requirement ci/requirements.lock && pip check",
+      "startCommand": "python -m uvicorn app.manual_preview.main:app --host 0.0.0.0 --port $PORT --workers 1 --proxy-headers --forwarded-allow-ips '*'",
+      "healthCheckPath": "/api/health",
+      "envVars": [
+        {
+          "key": "PYTHON_VERSION",
+          "value": "3.12.14"
+        },
+        {
+          "key": "AURA_PREVIEW_ONLY",
+          "value": "true"
+        },
+        {
+          "key": "AURA_PREVIEW_MANUAL_ENABLED",
+          "value": "false"
+        },
+        {
+          "key": "AURA_PREVIEW_OWNER_PASSWORD",
+          "sync": false
+        },
+        {
+          "key": "AURA_PREVIEW_PROJECT_REF",
+          "sync": false
+        },
+        {
+          "key": "AURA_PREVIEW_SUPABASE_URL",
+          "sync": false
+        },
+        {
+          "key": "AURA_PREVIEW_SUPABASE_SERVICE_KEY",
+          "sync": false
+        }
+      ]
+    }
+  ]
+}

@@ -67,7 +67,7 @@
  }
  async function refresh(){
   if(busy||closed||d.hidden)return;const run=++generation;busy=true;lastRequest=Date.now();el('refresh').disabled=true;data=null;render();controller=new AbortController();const own=controller,timeout=setTimeout(()=>own.abort(),40000);
-  try{const r=await root.fetch('/api/analyst',{method:'GET',credentials:'omit',cache:'no-store',redirect:'error',signal:own.signal});if(!r.ok)throw Error('UNAVAILABLE');const b=await r.json();if(!closed&&run===generation){data=b;render();}}
+  try{const r=await root.fetch('/api/analyst',{method:'GET',credentials:'omit',...(d.body?.dataset?.manualPreview==='true'?{credentials:'same-origin'}:{}),cache:'no-store',redirect:'error',signal:own.signal});if(!r.ok)throw Error('UNAVAILABLE');const b=await r.json();if(!closed&&run===generation){data=b;render();}}
   catch{if(run===generation){data=null;if(!closed)render();}}
   finally{clearTimeout(timeout);if(run===generation){controller=null;busy=false;if(!closed)el('refresh').disabled=false;}}
  }

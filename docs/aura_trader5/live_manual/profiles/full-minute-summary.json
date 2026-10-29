@@ -1,0 +1,1931 @@
+{
+  "protocol": {
+    "version": "LIVE_PROFILES_1",
+    "frozen_at": "2026-10-28T12:31:19.696307+00:00",
+    "baseline_sha": "1f8975b2359d4875d10ac19d995bdcfcf0db6b23",
+    "profiles": {
+      "CONSERVATIVE": "Exact prior LIVE rules: three-frame closed EMA alignment, non-opposing 4h, EMA/Fibonacci confluence, RSI52..68/32..48, body recovery, partial volume >=1, MACD, netRR>=1.5",
+      "MODERATE": "EMA20 pullback within .5 ATR plus .25 ATR quote tolerance; same closed5m/15m/1h alignment, RSI/body/volume/MACD gates; projected TP2.5R with ATR/recent stop; Fibonacci context warning. Opposing4h is warning only when abs(EMA20-EMA50)/ATR on closed1h >=.5 and netRR>=2; otherwise blocked. Normal netRR>=1.5."
+    },
+    "limits": {
+      "risk_fraction": 0.005,
+      "max_notional": 2000,
+      "daily_loss_fraction": 0.02,
+      "initial_capital_drawdown_fraction": 0.1,
+      "starting_balance": 10000
+    },
+    "costs": {
+      "fee_per_side": 0.001,
+      "slippage_per_side": 0.0005,
+      "spread_bps": 2,
+      "funding": "NOT_INCLUDED",
+      "stress_multipliers": [
+        1,
+        1.5,
+        2
+      ]
+    },
+    "sample": {
+      "start": "2026-07-06T00:00:00Z",
+      "end_exclusive": "2026-09-30T16:00:00Z",
+      "observation_minute_offsets": [
+        1,
+        4
+      ],
+      "publication_delay_assumed_seconds": 3,
+      "execution_delay_min_seconds": 60,
+      "split_labels": "July / August / September; all reused exploratory; no candidate selection on these slices"
+    },
+    "regimes": "Causal closed1h: HIGH_VOL if ATR/close>=.01, else TREND_UP/DOWN if abs(EMA20-EMA50)/ATR>=.5 and trend nonneutral, otherwise RANGE. No future regime classification.",
+    "independent_oos": "NOT_AVAILABLE: incomplete exposure registry and all local minute archive calendar previously viewed. New exchange or new file is not independent OOS.",
+    "prior_exposure_registry_sha256": "6b4909cdd6368784c601df0cda265f72769e719933c894d3180111b82b229231",
+    "prior_exposures": [
+      {
+        "study": "aura-bounce-research-v1",
+        "role": "IS",
+        "start": 1758627000,
+        "end_exclusive": 1777548600,
+        "start_utc": "2025-09-23T11:30:00+00:00",
+        "end_utc": "2026-04-30T11:30:00+00:00",
+        "source": "Bitget USDT-M Futures BTCUSDT public historical-candles",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-bounce-research-v1/preregistration.json",
+        "evidence_sha256": "a57392c4f33254713d0418a56bb7e41c4c7f980868b02c59e7ec8d35bab0ff04",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-bounce-research-v1",
+        "role": "Validation",
+        "start": 1777548600,
+        "end_exclusive": 1783855800,
+        "start_utc": "2026-04-30T11:30:00+00:00",
+        "end_utc": "2026-07-12T11:30:00+00:00",
+        "source": "Bitget USDT-M Futures BTCUSDT public historical-candles",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-bounce-research-v1/preregistration.json",
+        "evidence_sha256": "a57392c4f33254713d0418a56bb7e41c4c7f980868b02c59e7ec8d35bab0ff04",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-bounce-research-v1",
+        "role": "OOS",
+        "start": 1783855800,
+        "end_exclusive": 1790163000,
+        "start_utc": "2026-07-12T11:30:00+00:00",
+        "end_utc": "2026-09-23T11:30:00+00:00",
+        "source": "Bitget USDT-M Futures BTCUSDT public historical-candles",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-bounce-research-v1/preregistration.json",
+        "evidence_sha256": "a57392c4f33254713d0418a56bb7e41c4c7f980868b02c59e7ec8d35bab0ff04",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-bounce-research-v1",
+        "role": "WARMUP_PRICE_EXPOSURE",
+        "start": 1755946800,
+        "end_exclusive": 1758627000,
+        "start_utc": "2025-08-23T11:00:00+00:00",
+        "end_utc": "2025-09-23T11:30:00+00:00",
+        "source": "Bitget USDT-M Futures BTCUSDT public historical-candles",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-bounce-research-v1/preregistration.json",
+        "evidence_sha256": "a57392c4f33254713d0418a56bb7e41c4c7f980868b02c59e7ec8d35bab0ff04",
+        "usage": "INDICATOR_WARMUP_NOT_INDEPENDENT"
+      },
+      {
+        "study": "aura-breakout-retest-v1",
+        "role": "IS",
+        "start": 1615248000,
+        "end_exclusive": 1653091200,
+        "start_utc": "2021-03-09T00:00:00+00:00",
+        "end_utc": "2022-05-21T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public OHLCV",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-breakout-retest-v1/preregistration.json",
+        "evidence_sha256": "2cecc7c8e9fbe50c08e59e944228625b2a3a27613ef4fdc6088f6cb09b705a74",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-breakout-retest-v1",
+        "role": "Validation",
+        "start": 1653091200,
+        "end_exclusive": 1665705600,
+        "start_utc": "2022-05-21T00:00:00+00:00",
+        "end_utc": "2022-10-14T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public OHLCV",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-breakout-retest-v1/preregistration.json",
+        "evidence_sha256": "2cecc7c8e9fbe50c08e59e944228625b2a3a27613ef4fdc6088f6cb09b705a74",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-breakout-retest-v1",
+        "role": "OOS",
+        "start": 1665705600,
+        "end_exclusive": 1678320000,
+        "start_utc": "2022-10-14T00:00:00+00:00",
+        "end_utc": "2023-03-09T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public OHLCV",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-breakout-retest-v1/preregistration.json",
+        "evidence_sha256": "2cecc7c8e9fbe50c08e59e944228625b2a3a27613ef4fdc6088f6cb09b705a74",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-breakout-retest-v1",
+        "role": "WARMUP_PRICE_EXPOSURE",
+        "start": 1611648000,
+        "end_exclusive": 1615248000,
+        "start_utc": "2021-01-26T08:00:00+00:00",
+        "end_utc": "2021-03-09T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public OHLCV",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-breakout-retest-v1/preregistration.json",
+        "evidence_sha256": "2cecc7c8e9fbe50c08e59e944228625b2a3a27613ef4fdc6088f6cb09b705a74",
+        "usage": "INDICATOR_WARMUP_NOT_INDEPENDENT"
+      },
+      {
+        "study": "aura-edge-discovery-v1",
+        "role": "IS",
+        "start": 1569888000,
+        "end_exclusive": 1594857600,
+        "start_utc": "2019-10-01T00:00:00+00:00",
+        "end_utc": "2020-07-16T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public 5m OHLC base BTC and quote USDT turnover; causal aggregation15m/1h/4h",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-edge-discovery-v1/preregistration.json",
+        "evidence_sha256": "8d7cbb413a34c7af8c68f72a3f6e5c2fb0d522c559a8d3a5ccd3f7e13e0e2fc2",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-edge-discovery-v1",
+        "role": "Validation",
+        "start": 1594857600,
+        "end_exclusive": 1603238400,
+        "start_utc": "2020-07-16T00:00:00+00:00",
+        "end_utc": "2020-10-21T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public 5m OHLC base BTC and quote USDT turnover; causal aggregation15m/1h/4h",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-edge-discovery-v1/preregistration.json",
+        "evidence_sha256": "8d7cbb413a34c7af8c68f72a3f6e5c2fb0d522c559a8d3a5ccd3f7e13e0e2fc2",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-edge-discovery-v1",
+        "role": "OOS",
+        "start": 1603238400,
+        "end_exclusive": 1611619200,
+        "start_utc": "2020-10-21T00:00:00+00:00",
+        "end_utc": "2021-01-26T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public 5m OHLC base BTC and quote USDT turnover; causal aggregation15m/1h/4h",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-edge-discovery-v1/preregistration.json",
+        "evidence_sha256": "8d7cbb413a34c7af8c68f72a3f6e5c2fb0d522c559a8d3a5ccd3f7e13e0e2fc2",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-edge-discovery-v1",
+        "role": "WARMUP_PRICE_EXPOSURE",
+        "start": 1565568000,
+        "end_exclusive": 1569888000,
+        "start_utc": "2019-08-12T00:00:00+00:00",
+        "end_utc": "2019-10-01T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public 5m OHLC base BTC and quote USDT turnover; causal aggregation15m/1h/4h",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-edge-discovery-v1/preregistration.json",
+        "evidence_sha256": "8d7cbb413a34c7af8c68f72a3f6e5c2fb0d522c559a8d3a5ccd3f7e13e0e2fc2",
+        "usage": "INDICATOR_WARMUP_NOT_INDEPENDENT"
+      },
+      {
+        "study": "aura-strategy-lab-v2",
+        "role": "IS",
+        "start": 1692748800,
+        "end_exclusive": 1730592000,
+        "start_utc": "2023-08-23T00:00:00+00:00",
+        "end_utc": "2024-11-03T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public OHLCV",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-strategy-lab-v2/preregistration.json",
+        "evidence_sha256": "3453c8769637e1313f1dd894ee66267c7bff77898ea7188098b6b3c6c64f15f2",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-strategy-lab-v2",
+        "role": "Validation",
+        "start": 1730592000,
+        "end_exclusive": 1743206400,
+        "start_utc": "2024-11-03T00:00:00+00:00",
+        "end_utc": "2025-03-29T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public OHLCV",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-strategy-lab-v2/preregistration.json",
+        "evidence_sha256": "3453c8769637e1313f1dd894ee66267c7bff77898ea7188098b6b3c6c64f15f2",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-strategy-lab-v2",
+        "role": "OOS",
+        "start": 1743206400,
+        "end_exclusive": 1755907200,
+        "start_utc": "2025-03-29T00:00:00+00:00",
+        "end_utc": "2025-08-23T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public OHLCV",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-strategy-lab-v2/preregistration.json",
+        "evidence_sha256": "3453c8769637e1313f1dd894ee66267c7bff77898ea7188098b6b3c6c64f15f2",
+        "usage": "BACKTEST_RESEARCH"
+      },
+      {
+        "study": "aura-strategy-lab-v2",
+        "role": "WARMUP_PRICE_EXPOSURE",
+        "start": 1678348800,
+        "end_exclusive": 1692748800,
+        "start_utc": "2023-03-09T08:00:00+00:00",
+        "end_utc": "2023-08-23T00:00:00+00:00",
+        "source": "Bitget BTCUSDT USDT-M Perpetual Futures public OHLCV",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-strategy-lab-v2/preregistration.json",
+        "evidence_sha256": "3453c8769637e1313f1dd894ee66267c7bff77898ea7188098b6b3c6c64f15f2",
+        "usage": "INDICATOR_WARMUP_NOT_INDEPENDENT"
+      },
+      {
+        "study": "aura43-bounce30d/bars.json",
+        "role": "PRIOR_RESEARCH_PRICE_SERIES",
+        "start": 1789821600,
+        "end_exclusive": 1792755000,
+        "start_utc": "2026-09-19T12:40:00+00:00",
+        "end_utc": "2026-10-23T11:30:00+00:00",
+        "source": "BITGET",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura43-bounce30d/bars.json",
+        "evidence_sha256": "8e4538a9868e33a22c2875c34f5d9a130d540a68290855f65a25c44e87d9202e",
+        "usage": "PRICE_EXPOSURE"
+      },
+      {
+        "study": "independent_audit/BTCUSDT_1h.json",
+        "role": "DATA_AUDIT_VIEWED_NO_NEW_STRATEGY_RUN",
+        "start": 1761228000,
+        "end_exclusive": 1792764000,
+        "start_utc": "2025-10-23T14:00:00+00:00",
+        "end_utc": "2026-10-23T14:00:00+00:00",
+        "source": "BITGET",
+        "symbol": "BTCUSDT",
+        "evidence": "/workspace/artifacts/aura-independent-audit-v1/market_data/BTCUSDT_1h.json",
+        "evidence_sha256": "53e88704ba37b78d098aeec3ae984cd913cb97b15a4f451d0f6f843e1361ce05",
+        "usage": "PRICE_EXPOSURE"
+      }
+    ],
+    "selection": "Two fixed profiles only. No search or post-results parameter changes. Conservative remains UI default. Quality and frequency are separate; no profitability claim."
+  },
+  "protocol_sha256": "aabf8500c64d6a36599685d86204647d61310cc75bef3eb07fc20d06f7ce36b9",
+  "code_sha256": {
+    "static/manual-live-analysis.js": "0aa2514271e7e6ff41d3a47afe4f4cbd5be7697a68d7761b1b2510dec904c484",
+    "research/live_manual/profiles/run.cjs": "2855bf5d0a2824fb9d7f4c886922355eb995278a3d32b579a60eee1fde91ed0a",
+    "research/live_manual/profiles/model.cjs": "7c367c4e590d1ebb76c28a8df805b2b55a3b389b758166c6f71c2871950f833c"
+  },
+  "cadence_audit": {
+    "frozen_at": "2026-10-28T12:39:21.048947+00:00",
+    "base_protocol_sha256": "aabf8500c64d6a36599685d86204647d61310cc75bef3eb07fc20d06f7ce36b9",
+    "purpose": "Coverage audit after primary sparse-cadence exploratory result; no strategy or cost changes; not independent validation",
+    "observation_minute_offsets": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "sample": "Exactly the same fixed July6–September30 2026 period. Full 1m proxy, not 2Hz quote replay."
+  },
+  "observation_offsets": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "quantiles": {
+    "CONSERVATIVE": {
+      "atr_pct": {
+        "n": 124800,
+        "p10": 0.048303296297965335,
+        "p50": 0.11679413305014377,
+        "p90": 0.2241292294868713
+      },
+      "net_rr": {
+        "n": 25409,
+        "p10": 0,
+        "p50": 0.18587868675269473,
+        "p90": 0.7637719149575405
+      },
+      "all_other_checks_pass_rr": {
+        "n": 4,
+        "p10": 0.06832433714030495,
+        "p50": 0.12900992890251728,
+        "p90": 0.354190984894642
+      },
+      "rr_only_block": 4
+    },
+    "MODERATE": {
+      "atr_pct": {
+        "n": 124800,
+        "p10": 0.048303296297965335,
+        "p50": 0.11679413305014377,
+        "p90": 0.2241292294868713
+      },
+      "net_rr": {
+        "n": 124800,
+        "p10": 0,
+        "p50": 0.49528595686819044,
+        "p90": 1.3025313459198617
+      },
+      "all_other_checks_pass_rr": {
+        "n": 105,
+        "p10": 0.34561838087743996,
+        "p50": 0.8667466486501482,
+        "p90": 1.1792217822472177
+      },
+      "rr_only_block": 105
+    }
+  },
+  "input_manifest": {
+    "sources": [
+      {
+        "file": "BTCUSDT_UMCBL_1min_202606.zip",
+        "sha256": "b40a18269c3fb0de99cc63f5d059d22fe08a9ab50bc4d7bfb21ea0dcfae45228",
+        "url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202606.zip"
+      },
+      {
+        "file": "BTCUSDT_UMCBL_1min_202607.zip",
+        "sha256": "707b5bfca6ac8fd8aa66b5a666bc7336515f5a18633e8d2931ba187962aa8525",
+        "url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202607.zip"
+      },
+      {
+        "file": "BTCUSDT_UMCBL_1min_202608.zip",
+        "sha256": "23221a0117fe180165f40fdd914121d238b506e40482604cc0d14dfaacc452e2",
+        "url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202608.zip"
+      },
+      {
+        "file": "BTCUSDT_UMCBL_1min_202609.zip",
+        "sha256": "968cb16d13c3fd87485feed3a9420a418dc8aa0acd894d434afc0800558f2a31",
+        "url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202609.zip"
+      }
+    ],
+    "rows": 175680,
+    "first": 1780243200,
+    "end_exclusive": 1790784000,
+    "gaps": 0,
+    "duplicates": 0,
+    "input_manifest_sha256": "04f6ae36093884eed0e2c5bc8711e401028e2a6a3c6474823b9ff6dbd3286ab7"
+  },
+  "observations": 124800,
+  "legacyDisagreements": 0,
+  "withdrawals": {},
+  "stats": {
+    "CONSERVATIVE/ALL": {
+      "observations": 124800,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 124800
+      },
+      "first_wait": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 14621,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 15298,
+        "CLOSED_TREND_NOT_ALIGNED": 76095,
+        "NO_PAST_ORDERED_SWING": 2140,
+        "CONFLICTING_4H": 16210,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 319,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 101,
+        "LIVE_MACD_CONFLICT": 12,
+        "INSUFFICIENT_RR_AFTER_COSTS": 4
+      },
+      "all_failed": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 115467,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 118306,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 93986,
+        "LIVE_MACD_CONFLICT": 62955,
+        "INSUFFICIENT_RR_AFTER_COSTS": 124700,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 88983,
+        "CLOSED_TREND_NOT_ALIGNED": 76095,
+        "NO_PAST_ORDERED_SWING": 46186,
+        "CONFLICTING_4H": 36894
+      },
+      "warnings": {
+        "CONFLICTING_RSI_DIVERGENCE": 11960,
+        "CONFLICTING_5M_STRUCTURE": 37259
+      },
+      "conflicting_4h": 36894,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-07": {
+      "observations": 37440,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 37440
+      },
+      "first_wait": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 4048,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 4020,
+        "CLOSED_TREND_NOT_ALIGNED": 23640,
+        "NO_PAST_ORDERED_SWING": 492,
+        "CONFLICTING_4H": 5165,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 54,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 17,
+        "LIVE_MACD_CONFLICT": 3,
+        "INSUFFICIENT_RR_AFTER_COSTS": 1
+      },
+      "all_failed": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 35024,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 35820,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 28095,
+        "LIVE_MACD_CONFLICT": 18964,
+        "INSUFFICIENT_RR_AFTER_COSTS": 37440,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 27245,
+        "CLOSED_TREND_NOT_ALIGNED": 23640,
+        "NO_PAST_ORDERED_SWING": 15039,
+        "CONFLICTING_4H": 11027
+      },
+      "warnings": {
+        "CONFLICTING_RSI_DIVERGENCE": 3871,
+        "CONFLICTING_5M_STRUCTURE": 10911
+      },
+      "conflicting_4h": 11027,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/TREND_UP": {
+      "observations": 44700,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 44700
+      },
+      "first_wait": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 8314,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 7881,
+        "CLOSED_TREND_NOT_ALIGNED": 23495,
+        "NO_PAST_ORDERED_SWING": 1239,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 72,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 31,
+        "LIVE_MACD_CONFLICT": 5,
+        "CONFLICTING_4H": 3660,
+        "INSUFFICIENT_RR_AFTER_COSTS": 3
+      },
+      "all_failed": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 41760,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 42650,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 33836,
+        "LIVE_MACD_CONFLICT": 23201,
+        "INSUFFICIENT_RR_AFTER_COSTS": 44700,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 31010,
+        "CLOSED_TREND_NOT_ALIGNED": 23495,
+        "NO_PAST_ORDERED_SWING": 14775,
+        "CONFLICTING_4H": 5400
+      },
+      "warnings": {
+        "CONFLICTING_RSI_DIVERGENCE": 4850,
+        "CONFLICTING_5M_STRUCTURE": 12960
+      },
+      "conflicting_4h": 5400,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-07/TREND_UP": {
+      "observations": 13620,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 13620
+      },
+      "first_wait": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 2463,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 2287,
+        "CLOSED_TREND_NOT_ALIGNED": 7835,
+        "NO_PAST_ORDERED_SWING": 432,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 21,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 6,
+        "LIVE_MACD_CONFLICT": 1,
+        "CONFLICTING_4H": 575
+      },
+      "all_failed": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 12693,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 12982,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 10229,
+        "LIVE_MACD_CONFLICT": 7264,
+        "INSUFFICIENT_RR_AFTER_COSTS": 13620,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 9873,
+        "CLOSED_TREND_NOT_ALIGNED": 7835,
+        "NO_PAST_ORDERED_SWING": 4845,
+        "CONFLICTING_4H": 900
+      },
+      "warnings": {
+        "CONFLICTING_RSI_DIVERGENCE": 1585,
+        "CONFLICTING_5M_STRUCTURE": 4050
+      },
+      "conflicting_4h": 900,
+      "only_4h_block": 0
+    },
+    "MODERATE/ALL": {
+      "observations": 124800,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 124800
+      },
+      "first_wait": {
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 5979,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 2309,
+        "NO_LIVE_ENTRY_CONFLUENCE": 13898,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 20429,
+        "LIVE_MACD_CONFLICT": 310,
+        "CLOSED_TREND_NOT_ALIGNED": 76095,
+        "COUNTER_4H_STRENGTH_REQUIRED": 5675,
+        "INSUFFICIENT_RR_AFTER_COSTS": 105
+      },
+      "all_failed": {
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 92373,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 93986,
+        "LIVE_MACD_CONFLICT": 62004,
+        "INSUFFICIENT_RR_AFTER_COSTS": 119873,
+        "NO_LIVE_ENTRY_CONFLUENCE": 69628,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 88878,
+        "CLOSED_TREND_NOT_ALIGNED": 76095,
+        "COUNTER_4H_STRENGTH_REQUIRED": 15795
+      },
+      "warnings": {
+        "FIBONACCI_NOT_ALIGNED": 57585,
+        "TARGET_IS_PROJECTION": 124800,
+        "CONFLICTING_RSI_DIVERGENCE": 11807,
+        "CONFLICTING_5M_STRUCTURE": 37008,
+        "FIBONACCI_NOT_CONFIRMED": 47843,
+        "CONFLICTING_4H": 37695
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-07": {
+      "observations": 37440,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 37440
+      },
+      "first_wait": {
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 1684,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 668,
+        "NO_LIVE_ENTRY_CONFLUENCE": 3906,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 5864,
+        "LIVE_MACD_CONFLICT": 94,
+        "CLOSED_TREND_NOT_ALIGNED": 23640,
+        "COUNTER_4H_STRENGTH_REQUIRED": 1550,
+        "INSUFFICIENT_RR_AFTER_COSTS": 34
+      },
+      "all_failed": {
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 27337,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 28095,
+        "LIVE_MACD_CONFLICT": 18663,
+        "INSUFFICIENT_RR_AFTER_COSTS": 36357,
+        "NO_LIVE_ENTRY_CONFLUENCE": 21042,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 27288,
+        "CLOSED_TREND_NOT_ALIGNED": 23640,
+        "COUNTER_4H_STRENGTH_REQUIRED": 4006
+      },
+      "warnings": {
+        "FIBONACCI_NOT_ALIGNED": 17068,
+        "TARGET_IS_PROJECTION": 37440,
+        "CONFLICTING_RSI_DIVERGENCE": 3750,
+        "CONFLICTING_5M_STRUCTURE": 10824,
+        "FIBONACCI_NOT_CONFIRMED": 15672,
+        "CONFLICTING_4H": 11266
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "MODERATE/TREND_UP": {
+      "observations": 44700,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 44700
+      },
+      "first_wait": {
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 3132,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 1193,
+        "NO_LIVE_ENTRY_CONFLUENCE": 7134,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 9558,
+        "LIVE_MACD_CONFLICT": 139,
+        "CLOSED_TREND_NOT_ALIGNED": 23495,
+        "INSUFFICIENT_RR_AFTER_COSTS": 49
+      },
+      "all_failed": {
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 33505,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 33836,
+        "LIVE_MACD_CONFLICT": 23201,
+        "INSUFFICIENT_RR_AFTER_COSTS": 42354,
+        "NO_LIVE_ENTRY_CONFLUENCE": 24520,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 31010,
+        "CLOSED_TREND_NOT_ALIGNED": 23495
+      },
+      "warnings": {
+        "FIBONACCI_NOT_ALIGNED": 23430,
+        "TARGET_IS_PROJECTION": 44700,
+        "CONFLICTING_RSI_DIVERGENCE": 4850,
+        "CONFLICTING_5M_STRUCTURE": 12960,
+        "FIBONACCI_NOT_CONFIRMED": 14775,
+        "CONFLICTING_4H": 5400
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-07/TREND_UP": {
+      "observations": 13620,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 13620
+      },
+      "first_wait": {
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 844,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 323,
+        "NO_LIVE_ENTRY_CONFLUENCE": 1966,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 2601,
+        "LIVE_MACD_CONFLICT": 35,
+        "CLOSED_TREND_NOT_ALIGNED": 7835,
+        "INSUFFICIENT_RR_AFTER_COSTS": 16
+      },
+      "all_failed": {
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 9953,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 10229,
+        "LIVE_MACD_CONFLICT": 7264,
+        "INSUFFICIENT_RR_AFTER_COSTS": 13515,
+        "NO_LIVE_ENTRY_CONFLUENCE": 7467,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 9873,
+        "CLOSED_TREND_NOT_ALIGNED": 7835
+      },
+      "warnings": {
+        "FIBONACCI_NOT_ALIGNED": 6796,
+        "TARGET_IS_PROJECTION": 13620,
+        "CONFLICTING_RSI_DIVERGENCE": 1585,
+        "CONFLICTING_5M_STRUCTURE": 4050,
+        "FIBONACCI_NOT_CONFIRMED": 4845,
+        "CONFLICTING_4H": 900
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/RANGE": {
+      "observations": 41520,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 41520
+      },
+      "first_wait": {
+        "CLOSED_TREND_NOT_ALIGNED": 29075,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 3493,
+        "NO_LIVE_ENTRY_CONFLUENCE": 2713,
+        "NO_PAST_ORDERED_SWING": 479,
+        "CONFLICTING_4H": 5675,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 64,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 16,
+        "LIVE_MACD_CONFLICT": 4,
+        "INSUFFICIENT_RR_AFTER_COSTS": 1
+      },
+      "all_failed": {
+        "CLOSED_TREND_NOT_ALIGNED": 29075,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 28864,
+        "NO_PAST_ORDERED_SWING": 17911,
+        "NO_LIVE_ENTRY_CONFLUENCE": 38511,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 39387,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 31232,
+        "LIVE_MACD_CONFLICT": 19659,
+        "INSUFFICIENT_RR_AFTER_COSTS": 41520,
+        "CONFLICTING_4H": 14994
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 12414,
+        "CONFLICTING_RSI_DIVERGENCE": 3735
+      },
+      "conflicting_4h": 14994,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-07/RANGE": {
+      "observations": 13380,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 13380
+      },
+      "first_wait": {
+        "CLOSED_TREND_NOT_ALIGNED": 9390,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1161,
+        "NO_LIVE_ENTRY_CONFLUENCE": 1209,
+        "NO_PAST_ORDERED_SWING": 46,
+        "CONFLICTING_4H": 1550,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 15,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 6,
+        "LIVE_MACD_CONFLICT": 2,
+        "INSUFFICIENT_RR_AFTER_COSTS": 1
+      },
+      "all_failed": {
+        "CLOSED_TREND_NOT_ALIGNED": 9390,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 9178,
+        "NO_PAST_ORDERED_SWING": 6009,
+        "NO_LIVE_ENTRY_CONFLUENCE": 12512,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 12781,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 10081,
+        "LIVE_MACD_CONFLICT": 6272,
+        "INSUFFICIENT_RR_AFTER_COSTS": 13380,
+        "CONFLICTING_4H": 3767
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 3581,
+        "CONFLICTING_RSI_DIVERGENCE": 1371
+      },
+      "conflicting_4h": 3767,
+      "only_4h_block": 0
+    },
+    "MODERATE/RANGE": {
+      "observations": 41520,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 41520
+      },
+      "first_wait": {
+        "CLOSED_TREND_NOT_ALIGNED": 29075,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 3493,
+        "NO_LIVE_ENTRY_CONFLUENCE": 2098,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 820,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 298,
+        "LIVE_MACD_CONFLICT": 49,
+        "COUNTER_4H_STRENGTH_REQUIRED": 5675,
+        "INSUFFICIENT_RR_AFTER_COSTS": 12
+      },
+      "all_failed": {
+        "CLOSED_TREND_NOT_ALIGNED": 29075,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 28759,
+        "NO_LIVE_ENTRY_CONFLUENCE": 23631,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 30414,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 31232,
+        "LIVE_MACD_CONFLICT": 18708,
+        "INSUFFICIENT_RR_AFTER_COSTS": 39835,
+        "COUNTER_4H_STRENGTH_REQUIRED": 15795
+      },
+      "warnings": {
+        "FIBONACCI_NOT_CONFIRMED": 19568,
+        "TARGET_IS_PROJECTION": 41520,
+        "CONFLICTING_5M_STRUCTURE": 12163,
+        "CONFLICTING_4H": 15795,
+        "FIBONACCI_NOT_ALIGNED": 16596,
+        "CONFLICTING_RSI_DIVERGENCE": 3582
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-07/RANGE": {
+      "observations": 13380,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 13380
+      },
+      "first_wait": {
+        "CLOSED_TREND_NOT_ALIGNED": 9390,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1161,
+        "NO_LIVE_ENTRY_CONFLUENCE": 794,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 332,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 122,
+        "LIVE_MACD_CONFLICT": 25,
+        "COUNTER_4H_STRENGTH_REQUIRED": 1550,
+        "INSUFFICIENT_RR_AFTER_COSTS": 6
+      },
+      "all_failed": {
+        "CLOSED_TREND_NOT_ALIGNED": 9390,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 9221,
+        "NO_LIVE_ENTRY_CONFLUENCE": 7851,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 9888,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 10081,
+        "LIVE_MACD_CONFLICT": 5971,
+        "INSUFFICIENT_RR_AFTER_COSTS": 12452,
+        "COUNTER_4H_STRENGTH_REQUIRED": 4006
+      },
+      "warnings": {
+        "FIBONACCI_NOT_CONFIRMED": 6642,
+        "TARGET_IS_PROJECTION": 13380,
+        "CONFLICTING_5M_STRUCTURE": 3494,
+        "CONFLICTING_4H": 4006,
+        "FIBONACCI_NOT_ALIGNED": 5340,
+        "CONFLICTING_RSI_DIVERGENCE": 1250
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/TREND_DOWN": {
+      "observations": 36780,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 36780
+      },
+      "first_wait": {
+        "CONFLICTING_4H": 6875,
+        "CLOSED_TREND_NOT_ALIGNED": 22640,
+        "NO_PAST_ORDERED_SWING": 386,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 3569,
+        "NO_LIVE_ENTRY_CONFLUENCE": 3125,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 142,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 40,
+        "LIVE_MACD_CONFLICT": 3
+      },
+      "all_failed": {
+        "CONFLICTING_4H": 16500,
+        "NO_LIVE_ENTRY_CONFLUENCE": 33638,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 34593,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 27527,
+        "INSUFFICIENT_RR_AFTER_COSTS": 36780,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 27905,
+        "LIVE_MACD_CONFLICT": 19239,
+        "CLOSED_TREND_NOT_ALIGNED": 22640,
+        "NO_PAST_ORDERED_SWING": 12960
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 11410,
+        "CONFLICTING_RSI_DIVERGENCE": 3270
+      },
+      "conflicting_4h": 16500,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-07/TREND_DOWN": {
+      "observations": 10440,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 10440
+      },
+      "first_wait": {
+        "CONFLICTING_4H": 3040,
+        "CLOSED_TREND_NOT_ALIGNED": 6415,
+        "NO_PAST_ORDERED_SWING": 14,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 572,
+        "NO_LIVE_ENTRY_CONFLUENCE": 376,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 18,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 5
+      },
+      "all_failed": {
+        "CONFLICTING_4H": 6360,
+        "NO_LIVE_ENTRY_CONFLUENCE": 9819,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 10057,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 7785,
+        "INSUFFICIENT_RR_AFTER_COSTS": 10440,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 8194,
+        "LIVE_MACD_CONFLICT": 5428,
+        "CLOSED_TREND_NOT_ALIGNED": 6415,
+        "NO_PAST_ORDERED_SWING": 4185
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 3280,
+        "CONFLICTING_RSI_DIVERGENCE": 915
+      },
+      "conflicting_4h": 6360,
+      "only_4h_block": 0
+    },
+    "MODERATE/TREND_DOWN": {
+      "observations": 36780,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 36780
+      },
+      "first_wait": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 4344,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 7023,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 1867,
+        "INSUFFICIENT_RR_AFTER_COSTS": 44,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 748,
+        "LIVE_MACD_CONFLICT": 114,
+        "CLOSED_TREND_NOT_ALIGNED": 22640
+      },
+      "all_failed": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 20628,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 27164,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 27527,
+        "INSUFFICIENT_RR_AFTER_COSTS": 36414,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 27905,
+        "LIVE_MACD_CONFLICT": 19239,
+        "CLOSED_TREND_NOT_ALIGNED": 22640
+      },
+      "warnings": {
+        "CONFLICTING_4H": 16500,
+        "FIBONACCI_NOT_ALIGNED": 16750,
+        "TARGET_IS_PROJECTION": 36780,
+        "CONFLICTING_5M_STRUCTURE": 11410,
+        "CONFLICTING_RSI_DIVERGENCE": 3270,
+        "FIBONACCI_NOT_CONFIRMED": 12960
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-07/TREND_DOWN": {
+      "observations": 10440,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 10440
+      },
+      "first_wait": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 1146,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 2102,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 508,
+        "INSUFFICIENT_RR_AFTER_COSTS": 12,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 223,
+        "LIVE_MACD_CONFLICT": 34,
+        "CLOSED_TREND_NOT_ALIGNED": 6415
+      },
+      "all_failed": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 5724,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 7496,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 7785,
+        "INSUFFICIENT_RR_AFTER_COSTS": 10390,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 8194,
+        "LIVE_MACD_CONFLICT": 5428,
+        "CLOSED_TREND_NOT_ALIGNED": 6415
+      },
+      "warnings": {
+        "CONFLICTING_4H": 6360,
+        "FIBONACCI_NOT_ALIGNED": 4932,
+        "TARGET_IS_PROJECTION": 10440,
+        "CONFLICTING_5M_STRUCTURE": 3280,
+        "CONFLICTING_RSI_DIVERGENCE": 915,
+        "FIBONACCI_NOT_CONFIRMED": 4185
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-08": {
+      "observations": 44640,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 44640
+      },
+      "first_wait": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 6139,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 6152,
+        "CLOSED_TREND_NOT_ALIGNED": 27080,
+        "NO_PAST_ORDERED_SWING": 826,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 142,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 37,
+        "CONFLICTING_4H": 4260,
+        "INSUFFICIENT_RR_AFTER_COSTS": 2,
+        "LIVE_MACD_CONFLICT": 2
+      },
+      "all_failed": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 41589,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 42461,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 33680,
+        "INSUFFICIENT_RR_AFTER_COSTS": 44540,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 31545,
+        "LIVE_MACD_CONFLICT": 22709,
+        "CLOSED_TREND_NOT_ALIGNED": 27080,
+        "NO_PAST_ORDERED_SWING": 15882,
+        "CONFLICTING_4H": 9438
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 13791,
+        "CONFLICTING_RSI_DIVERGENCE": 4231
+      },
+      "conflicting_4h": 9438,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-08/TREND_DOWN": {
+      "observations": 13140,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 13140
+      },
+      "first_wait": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 1437,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1476,
+        "CLOSED_TREND_NOT_ALIGNED": 8760,
+        "NO_PAST_ORDERED_SWING": 188,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 88,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 19,
+        "CONFLICTING_4H": 1170,
+        "LIVE_MACD_CONFLICT": 2
+      },
+      "all_failed": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 12120,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 12465,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 9896,
+        "INSUFFICIENT_RR_AFTER_COSTS": 13140,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 9851,
+        "LIVE_MACD_CONFLICT": 6950,
+        "CLOSED_TREND_NOT_ALIGNED": 8760,
+        "NO_PAST_ORDERED_SWING": 5250,
+        "CONFLICTING_4H": 3720
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 4270,
+        "CONFLICTING_RSI_DIVERGENCE": 1230
+      },
+      "conflicting_4h": 3720,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-08": {
+      "observations": 44640,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 44640
+      },
+      "first_wait": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 5612,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 7684,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 820,
+        "INSUFFICIENT_RR_AFTER_COSTS": 32,
+        "LIVE_MACD_CONFLICT": 109,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 2288,
+        "CLOSED_TREND_NOT_ALIGNED": 27080,
+        "COUNTER_4H_STRENGTH_REQUIRED": 1015
+      },
+      "all_failed": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 25477,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 33678,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 33680,
+        "INSUFFICIENT_RR_AFTER_COSTS": 42169,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 31532,
+        "LIVE_MACD_CONFLICT": 22526,
+        "CLOSED_TREND_NOT_ALIGNED": 27080,
+        "COUNTER_4H_STRENGTH_REQUIRED": 2861
+      },
+      "warnings": {
+        "FIBONACCI_NOT_ALIGNED": 21166,
+        "TARGET_IS_PROJECTION": 44640,
+        "CONFLICTING_5M_STRUCTURE": 13791,
+        "CONFLICTING_RSI_DIVERGENCE": 4245,
+        "FIBONACCI_NOT_CONFIRMED": 16291,
+        "CONFLICTING_4H": 9521
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-08/TREND_DOWN": {
+      "observations": 13140,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 13140
+      },
+      "first_wait": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 1482,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 2032,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 208,
+        "INSUFFICIENT_RR_AFTER_COSTS": 8,
+        "LIVE_MACD_CONFLICT": 37,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 613,
+        "CLOSED_TREND_NOT_ALIGNED": 8760
+      },
+      "all_failed": {
+        "NO_LIVE_ENTRY_CONFLUENCE": 7813,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 10036,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 9896,
+        "INSUFFICIENT_RR_AFTER_COSTS": 13118,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 9851,
+        "LIVE_MACD_CONFLICT": 6950,
+        "CLOSED_TREND_NOT_ALIGNED": 8760
+      },
+      "warnings": {
+        "FIBONACCI_NOT_ALIGNED": 5383,
+        "TARGET_IS_PROJECTION": 13140,
+        "CONFLICTING_5M_STRUCTURE": 4270,
+        "CONFLICTING_RSI_DIVERGENCE": 1230,
+        "FIBONACCI_NOT_CONFIRMED": 5250,
+        "CONFLICTING_4H": 3720
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-08/RANGE": {
+      "observations": 10440,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 10440
+      },
+      "first_wait": {
+        "CLOSED_TREND_NOT_ALIGNED": 7575,
+        "NO_PAST_ORDERED_SWING": 170,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1042,
+        "NO_LIVE_ENTRY_CONFLUENCE": 635,
+        "CONFLICTING_4H": 1015,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 3
+      },
+      "all_failed": {
+        "CLOSED_TREND_NOT_ALIGNED": 7575,
+        "NO_PAST_ORDERED_SWING": 4062,
+        "NO_LIVE_ENTRY_CONFLUENCE": 9832,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 9936,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 7835,
+        "LIVE_MACD_CONFLICT": 5230,
+        "INSUFFICIENT_RR_AFTER_COSTS": 10440,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 7387,
+        "CONFLICTING_4H": 2778
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 3296,
+        "CONFLICTING_RSI_DIVERGENCE": 931
+      },
+      "conflicting_4h": 2778,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-08/RANGE": {
+      "observations": 10440,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 10440
+      },
+      "first_wait": {
+        "CLOSED_TREND_NOT_ALIGNED": 7575,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 185,
+        "NO_LIVE_ENTRY_CONFLUENCE": 551,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1042,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 63,
+        "LIVE_MACD_CONFLICT": 8,
+        "COUNTER_4H_STRENGTH_REQUIRED": 1015,
+        "INSUFFICIENT_RR_AFTER_COSTS": 1
+      },
+      "all_failed": {
+        "CLOSED_TREND_NOT_ALIGNED": 7575,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 7560,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 7835,
+        "LIVE_MACD_CONFLICT": 5047,
+        "INSUFFICIENT_RR_AFTER_COSTS": 10162,
+        "NO_LIVE_ENTRY_CONFLUENCE": 5969,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 7374,
+        "COUNTER_4H_STRENGTH_REQUIRED": 2861
+      },
+      "warnings": {
+        "FIBONACCI_NOT_CONFIRMED": 4471,
+        "TARGET_IS_PROJECTION": 10440,
+        "CONFLICTING_5M_STRUCTURE": 3296,
+        "FIBONACCI_NOT_ALIGNED": 4558,
+        "CONFLICTING_RSI_DIVERGENCE": 945,
+        "CONFLICTING_4H": 2861
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-08/TREND_UP": {
+      "observations": 19260,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 19260
+      },
+      "first_wait": {
+        "CONFLICTING_4H": 2075,
+        "CLOSED_TREND_NOT_ALIGNED": 9860,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 3279,
+        "NO_LIVE_ENTRY_CONFLUENCE": 3598,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 10,
+        "INSUFFICIENT_RR_AFTER_COSTS": 2,
+        "NO_PAST_ORDERED_SWING": 432,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 4
+      },
+      "all_failed": {
+        "CONFLICTING_4H": 2940,
+        "NO_LIVE_ENTRY_CONFLUENCE": 18079,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 18384,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 14558,
+        "LIVE_MACD_CONFLICT": 9673,
+        "INSUFFICIENT_RR_AFTER_COSTS": 19260,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 13103,
+        "CLOSED_TREND_NOT_ALIGNED": 9860,
+        "NO_PAST_ORDERED_SWING": 6030
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 5750,
+        "CONFLICTING_RSI_DIVERGENCE": 1965
+      },
+      "conflicting_4h": 2940,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-08/TREND_UP": {
+      "observations": 19260,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 19260
+      },
+      "first_wait": {
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 1330,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 479,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 4255,
+        "NO_LIVE_ENTRY_CONFLUENCE": 3257,
+        "CLOSED_TREND_NOT_ALIGNED": 9860,
+        "LIVE_MACD_CONFLICT": 56,
+        "INSUFFICIENT_RR_AFTER_COSTS": 23
+      },
+      "all_failed": {
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 14792,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 14558,
+        "LIVE_MACD_CONFLICT": 9673,
+        "INSUFFICIENT_RR_AFTER_COSTS": 17619,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 13103,
+        "NO_LIVE_ENTRY_CONFLUENCE": 10846,
+        "CLOSED_TREND_NOT_ALIGNED": 9860
+      },
+      "warnings": {
+        "CONFLICTING_4H": 2940,
+        "FIBONACCI_NOT_ALIGNED": 10416,
+        "TARGET_IS_PROJECTION": 19260,
+        "CONFLICTING_5M_STRUCTURE": 5750,
+        "CONFLICTING_RSI_DIVERGENCE": 1965,
+        "FIBONACCI_NOT_CONFIRMED": 6030
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/HIGH_VOL": {
+      "observations": 1800,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 1800
+      },
+      "first_wait": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 355,
+        "NO_LIVE_ENTRY_CONFLUENCE": 469,
+        "CLOSED_TREND_NOT_ALIGNED": 885,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 41,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 14,
+        "NO_PAST_ORDERED_SWING": 36
+      },
+      "all_failed": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1204,
+        "NO_LIVE_ENTRY_CONFLUENCE": 1558,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 1676,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 1391,
+        "LIVE_MACD_CONFLICT": 856,
+        "INSUFFICIENT_RR_AFTER_COSTS": 1700,
+        "CLOSED_TREND_NOT_ALIGNED": 885,
+        "NO_PAST_ORDERED_SWING": 540
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 475,
+        "CONFLICTING_RSI_DIVERGENCE": 105
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-08/HIGH_VOL": {
+      "observations": 1800,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 1800
+      },
+      "first_wait": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 355,
+        "NO_LIVE_ENTRY_CONFLUENCE": 469,
+        "CLOSED_TREND_NOT_ALIGNED": 885,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 41,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 14,
+        "NO_PAST_ORDERED_SWING": 36
+      },
+      "all_failed": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1204,
+        "NO_LIVE_ENTRY_CONFLUENCE": 1558,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 1676,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 1391,
+        "LIVE_MACD_CONFLICT": 856,
+        "INSUFFICIENT_RR_AFTER_COSTS": 1700,
+        "CLOSED_TREND_NOT_ALIGNED": 885,
+        "NO_PAST_ORDERED_SWING": 540
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 475,
+        "CONFLICTING_RSI_DIVERGENCE": 105
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "MODERATE/HIGH_VOL": {
+      "observations": 1800,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 1800
+      },
+      "first_wait": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 355,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 70,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 160,
+        "LIVE_MACD_CONFLICT": 8,
+        "NO_LIVE_ENTRY_CONFLUENCE": 322,
+        "CLOSED_TREND_NOT_ALIGNED": 885
+      },
+      "all_failed": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1204,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 1290,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 1391,
+        "LIVE_MACD_CONFLICT": 856,
+        "INSUFFICIENT_RR_AFTER_COSTS": 1270,
+        "NO_LIVE_ENTRY_CONFLUENCE": 849,
+        "CLOSED_TREND_NOT_ALIGNED": 885
+      },
+      "warnings": {
+        "FIBONACCI_NOT_ALIGNED": 809,
+        "TARGET_IS_PROJECTION": 1800,
+        "CONFLICTING_5M_STRUCTURE": 475,
+        "CONFLICTING_RSI_DIVERGENCE": 105,
+        "FIBONACCI_NOT_CONFIRMED": 540
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-08/HIGH_VOL": {
+      "observations": 1800,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 1800
+      },
+      "first_wait": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 355,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 70,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 160,
+        "LIVE_MACD_CONFLICT": 8,
+        "NO_LIVE_ENTRY_CONFLUENCE": 322,
+        "CLOSED_TREND_NOT_ALIGNED": 885
+      },
+      "all_failed": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1204,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 1290,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 1391,
+        "LIVE_MACD_CONFLICT": 856,
+        "INSUFFICIENT_RR_AFTER_COSTS": 1270,
+        "NO_LIVE_ENTRY_CONFLUENCE": 849,
+        "CLOSED_TREND_NOT_ALIGNED": 885
+      },
+      "warnings": {
+        "FIBONACCI_NOT_ALIGNED": 809,
+        "TARGET_IS_PROJECTION": 1800,
+        "CONFLICTING_5M_STRUCTURE": 475,
+        "CONFLICTING_RSI_DIVERGENCE": 105,
+        "FIBONACCI_NOT_CONFIRMED": 540
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-09": {
+      "observations": 42720,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 42720
+      },
+      "first_wait": {
+        "CLOSED_TREND_NOT_ALIGNED": 25375,
+        "NO_LIVE_ENTRY_CONFLUENCE": 4434,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 5126,
+        "NO_PAST_ORDERED_SWING": 822,
+        "CONFLICTING_4H": 6785,
+        "LIVE_MACD_CONFLICT": 7,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 123,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 47,
+        "INSUFFICIENT_RR_AFTER_COSTS": 1
+      },
+      "all_failed": {
+        "CLOSED_TREND_NOT_ALIGNED": 25375,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 30193,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 40025,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 32211,
+        "INSUFFICIENT_RR_AFTER_COSTS": 42720,
+        "NO_LIVE_ENTRY_CONFLUENCE": 38854,
+        "LIVE_MACD_CONFLICT": 21282,
+        "NO_PAST_ORDERED_SWING": 15265,
+        "CONFLICTING_4H": 16429
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 12557,
+        "CONFLICTING_RSI_DIVERGENCE": 3858
+      },
+      "conflicting_4h": 16429,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-09/RANGE": {
+      "observations": 17700,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 17700
+      },
+      "first_wait": {
+        "CLOSED_TREND_NOT_ALIGNED": 12110,
+        "NO_LIVE_ENTRY_CONFLUENCE": 869,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1290,
+        "NO_PAST_ORDERED_SWING": 263,
+        "CONFLICTING_4H": 3110,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 46,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 10,
+        "LIVE_MACD_CONFLICT": 2
+      },
+      "all_failed": {
+        "CLOSED_TREND_NOT_ALIGNED": 12110,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 12299,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 16670,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 13316,
+        "INSUFFICIENT_RR_AFTER_COSTS": 17700,
+        "NO_LIVE_ENTRY_CONFLUENCE": 16167,
+        "LIVE_MACD_CONFLICT": 8157,
+        "NO_PAST_ORDERED_SWING": 7840,
+        "CONFLICTING_4H": 8449
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 5537,
+        "CONFLICTING_RSI_DIVERGENCE": 1433
+      },
+      "conflicting_4h": 8449,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-09": {
+      "observations": 42720,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 42720
+      },
+      "first_wait": {
+        "CLOSED_TREND_NOT_ALIGNED": 25375,
+        "NO_LIVE_ENTRY_CONFLUENCE": 4380,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 2007,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 821,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 6881,
+        "LIVE_MACD_CONFLICT": 107,
+        "COUNTER_4H_STRENGTH_REQUIRED": 3110,
+        "INSUFFICIENT_RR_AFTER_COSTS": 39
+      },
+      "all_failed": {
+        "CLOSED_TREND_NOT_ALIGNED": 25375,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 30058,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 31358,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 32211,
+        "INSUFFICIENT_RR_AFTER_COSTS": 41347,
+        "NO_LIVE_ENTRY_CONFLUENCE": 23109,
+        "LIVE_MACD_CONFLICT": 20815,
+        "COUNTER_4H_STRENGTH_REQUIRED": 8928
+      },
+      "warnings": {
+        "TARGET_IS_PROJECTION": 42720,
+        "FIBONACCI_NOT_ALIGNED": 19351,
+        "CONFLICTING_5M_STRUCTURE": 12393,
+        "CONFLICTING_RSI_DIVERGENCE": 3812,
+        "FIBONACCI_NOT_CONFIRMED": 15880,
+        "CONFLICTING_4H": 16908
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-09/RANGE": {
+      "observations": 17700,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 17700
+      },
+      "first_wait": {
+        "CLOSED_TREND_NOT_ALIGNED": 12110,
+        "NO_LIVE_ENTRY_CONFLUENCE": 753,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 303,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 113,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1290,
+        "LIVE_MACD_CONFLICT": 16,
+        "COUNTER_4H_STRENGTH_REQUIRED": 3110,
+        "INSUFFICIENT_RR_AFTER_COSTS": 5
+      },
+      "all_failed": {
+        "CLOSED_TREND_NOT_ALIGNED": 12110,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 12164,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 12966,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 13316,
+        "INSUFFICIENT_RR_AFTER_COSTS": 17221,
+        "NO_LIVE_ENTRY_CONFLUENCE": 9811,
+        "LIVE_MACD_CONFLICT": 7690,
+        "COUNTER_4H_STRENGTH_REQUIRED": 8928
+      },
+      "warnings": {
+        "TARGET_IS_PROJECTION": 17700,
+        "FIBONACCI_NOT_ALIGNED": 6698,
+        "CONFLICTING_5M_STRUCTURE": 5373,
+        "CONFLICTING_RSI_DIVERGENCE": 1387,
+        "FIBONACCI_NOT_CONFIRMED": 8455,
+        "CONFLICTING_4H": 8928
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-09/TREND_DOWN": {
+      "observations": 13200,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 13200
+      },
+      "first_wait": {
+        "CONFLICTING_4H": 2665,
+        "CLOSED_TREND_NOT_ALIGNED": 7465,
+        "NO_LIVE_ENTRY_CONFLUENCE": 1312,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 1521,
+        "LIVE_MACD_CONFLICT": 1,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 36,
+        "NO_PAST_ORDERED_SWING": 184,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 16
+      },
+      "all_failed": {
+        "CONFLICTING_4H": 6420,
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 9860,
+        "NO_LIVE_ENTRY_CONFLUENCE": 11699,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 12071,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 9846,
+        "LIVE_MACD_CONFLICT": 6861,
+        "INSUFFICIENT_RR_AFTER_COSTS": 13200,
+        "CLOSED_TREND_NOT_ALIGNED": 7465,
+        "NO_PAST_ORDERED_SWING": 3525
+      },
+      "warnings": {
+        "CONFLICTING_5M_STRUCTURE": 3860,
+        "CONFLICTING_RSI_DIVERGENCE": 1125
+      },
+      "conflicting_4h": 6420,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-09/TREND_DOWN": {
+      "observations": 13200,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 13200
+      },
+      "first_wait": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 2889,
+        "INSUFFICIENT_RR_AFTER_COSTS": 24,
+        "NO_LIVE_ENTRY_CONFLUENCE": 1716,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 746,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 317,
+        "CLOSED_TREND_NOT_ALIGNED": 7465,
+        "LIVE_MACD_CONFLICT": 43
+      },
+      "all_failed": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 9860,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 9632,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 9846,
+        "LIVE_MACD_CONFLICT": 6861,
+        "INSUFFICIENT_RR_AFTER_COSTS": 12906,
+        "NO_LIVE_ENTRY_CONFLUENCE": 7091,
+        "CLOSED_TREND_NOT_ALIGNED": 7465
+      },
+      "warnings": {
+        "CONFLICTING_4H": 6420,
+        "TARGET_IS_PROJECTION": 13200,
+        "CONFLICTING_5M_STRUCTURE": 3860,
+        "FIBONACCI_NOT_ALIGNED": 6435,
+        "FIBONACCI_NOT_CONFIRMED": 3525,
+        "CONFLICTING_RSI_DIVERGENCE": 1125
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    },
+    "CONSERVATIVE/2026-09/TREND_UP": {
+      "observations": 11820,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 11820
+      },
+      "first_wait": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 2315,
+        "NO_LIVE_ENTRY_CONFLUENCE": 2253,
+        "CLOSED_TREND_NOT_ALIGNED": 5800,
+        "LIVE_MACD_CONFLICT": 4,
+        "NO_PAST_ORDERED_SWING": 375,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 41,
+        "CONFLICTING_4H": 1010,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 21,
+        "INSUFFICIENT_RR_AFTER_COSTS": 1
+      },
+      "all_failed": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 8034,
+        "NO_LIVE_ENTRY_CONFLUENCE": 10988,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 11284,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 9049,
+        "INSUFFICIENT_RR_AFTER_COSTS": 11820,
+        "LIVE_MACD_CONFLICT": 6264,
+        "CLOSED_TREND_NOT_ALIGNED": 5800,
+        "NO_PAST_ORDERED_SWING": 3900,
+        "CONFLICTING_4H": 1560
+      },
+      "warnings": {
+        "CONFLICTING_RSI_DIVERGENCE": 1300,
+        "CONFLICTING_5M_STRUCTURE": 3160
+      },
+      "conflicting_4h": 1560,
+      "only_4h_block": 0
+    },
+    "MODERATE/2026-09/TREND_UP": {
+      "observations": 11820,
+      "states": {
+        "LONG": 0,
+        "SHORT": 0,
+        "WAIT": 11820
+      },
+      "first_wait": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 2702,
+        "NO_LIVE_ENTRY_CONFLUENCE": 1911,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 958,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 391,
+        "LIVE_MACD_CONFLICT": 48,
+        "CLOSED_TREND_NOT_ALIGNED": 5800,
+        "INSUFFICIENT_RR_AFTER_COSTS": 10
+      },
+      "all_failed": {
+        "LIVE_MOMENTUM_NOT_CONFIRMED": 8034,
+        "NO_LIVE_ENTRY_CONFLUENCE": 6207,
+        "PROVISIONAL_CANDLE_NOT_CONFIRMED": 8760,
+        "PARTIAL_VOLUME_NOT_SUPPORTING": 9049,
+        "LIVE_MACD_CONFLICT": 6264,
+        "INSUFFICIENT_RR_AFTER_COSTS": 11220,
+        "CLOSED_TREND_NOT_ALIGNED": 5800
+      },
+      "warnings": {
+        "FIBONACCI_NOT_ALIGNED": 6218,
+        "TARGET_IS_PROJECTION": 11820,
+        "CONFLICTING_RSI_DIVERGENCE": 1300,
+        "CONFLICTING_5M_STRUCTURE": 3160,
+        "FIBONACCI_NOT_CONFIRMED": 3900,
+        "CONFLICTING_4H": 1560
+      },
+      "conflicting_4h": 0,
+      "only_4h_block": 0
+    }
+  },
+  "results": {
+    "2026-07_CONSERVATIVE_1": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-07_CONSERVATIVE_1.5": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-07_CONSERVATIVE_2": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-07_MODERATE_1": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-07_MODERATE_1.5": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-07_MODERATE_2": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-08_CONSERVATIVE_1": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-08_CONSERVATIVE_1.5": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-08_CONSERVATIVE_2": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-08_MODERATE_1": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-08_MODERATE_1.5": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-08_MODERATE_2": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-09_CONSERVATIVE_1": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-09_CONSERVATIVE_1.5": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-09_CONSERVATIVE_2": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-09_MODERATE_1": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-09_MODERATE_1.5": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    },
+    "2026-09_MODERATE_2": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0,
+      "return_pct": 0,
+      "profit_factor": null,
+      "expectancy": null,
+      "win_rate_pct": null,
+      "max_drawdown_pct": 0,
+      "fees": 0,
+      "average_duration_minutes": null,
+      "rejections": {}
+    }
+  },
+  "verdict": "INSUFFICIENT_EVIDENCE",
+  "independent_oos": false,
+  "production_changed": false
+}

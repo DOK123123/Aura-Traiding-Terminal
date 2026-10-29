@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "desktop": true,
+  "mobile_touch_emulation": true,
+  "physical_android_chrome": false,
+  "background_resnapshot": true,
+  "user_only_open_close": true,
+  "double_click_deduplicated": true,
+  "committed_virtual_trades": [
+    "abb62d157dab4c0eac643abfe0898f9a",
+    "a72a2a6d545cd1835902843853c7edba"
+  ],
+  "production_changed": false
+}

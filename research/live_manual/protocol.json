@@ -1,0 +1,20 @@
+{
+  "version": "AURA_LIVE_MANUAL_1",
+  "purpose": "TECHNICAL_REPLAY_NOT_EDGE_VALIDATION",
+  "frozen_hypothesis": "Closed 5m/15m/1h EMA trend, non-opposing 4h; forming 5m RSI 52..68 LONG / 32..48 SHORT; EMA20 + past 15m Fibonacci 38.2..61.8 confluence; provisional body/momentum and partial-time adjusted volume >=1; MACD agreement; net RR >=1.5",
+  "fee_per_side": 0.001,
+  "adverse_slippage_per_side": 0.0005,
+  "modeled_spread_bps": 2,
+  "signal_delay_seconds": 1,
+  "execution": "First subsequent 1m open at least 60 seconds after observation, adverse bid/ask + slippage. Open is a model, not guaranteed execution.",
+  "starting_balance": 10000,
+  "max_notional": 2000,
+  "max_risk_fraction": 0.005,
+  "daily_loss_fraction": 0.02,
+  "drawdown_fraction_from_initial": 0.1,
+  "sample_start_inclusive": "2026-09-23T00:00:00Z",
+  "sample_end_exclusive": "2026-09-30T00:00:00Z",
+  "independence": "REUSED_EXPLORATORY_NOT_OOS",
+  "funding": "NOT_INCLUDED",
+  "parameter_search": false
+}

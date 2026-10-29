@@ -1,0 +1,144 @@
+{
+  "protocol": {
+    "version": "AURA_LIVE_MANUAL_1",
+    "purpose": "TECHNICAL_REPLAY_NOT_EDGE_VALIDATION",
+    "frozen_hypothesis": "Closed 5m/15m/1h EMA trend, non-opposing 4h; forming 5m RSI 52..68 LONG / 32..48 SHORT; EMA20 + past 15m Fibonacci 38.2..61.8 confluence; provisional body/momentum and partial-time adjusted volume >=1; MACD agreement; net RR >=1.5",
+    "fee_per_side": 0.001,
+    "adverse_slippage_per_side": 0.0005,
+    "modeled_spread_bps": 2,
+    "signal_delay_seconds": 1,
+    "execution": "First subsequent 1m open at least 60 seconds after observation, adverse bid/ask + slippage. Open is a model, not guaranteed execution.",
+    "starting_balance": 10000,
+    "max_notional": 2000,
+    "max_risk_fraction": 0.005,
+    "daily_loss_fraction": 0.02,
+    "drawdown_fraction_from_initial": 0.1,
+    "sample_start_inclusive": "2026-09-23T00:00:00Z",
+    "sample_end_exclusive": "2026-09-30T00:00:00Z",
+    "independence": "REUSED_EXPLORATORY_NOT_OOS",
+    "funding": "NOT_INCLUDED",
+    "parameter_search": false
+  },
+  "protocol_sha256": "04bd952c976726957d415d404bffe9cc3d521333e935fb0e13779e88b3a5e0ff",
+  "code_sha256": {
+    "research/live_manual/replay.py": "451382b5fa51f344fba39775611afa2a4e8259c33a0257724073d4656386ec6a",
+    "static/manual-live-analysis.js": "4a0881e26275a78a996271b3707eb3b9411ca39ef940033c67cc645a2e5255f2",
+    "research/live_manual/bridge.cjs": "5fb01f0af6fb02eabd7c5035c270b0a325ae63808ba4a002d4affa552f248332",
+    "app/aura_trader5_scenarios.py": "0a01731f520f6920c11586fc28cb4c5bbd8db75a0b7a1e8767e4f9a6d74fc50c",
+    "app/aura_trader5_analysis.py": "0a1a9aae21001fb28d767d67ab1f6056503a6c7a11abec99057a76afed6a4f57",
+    "app/aura_trader5_technical.py": "92ec3b534323893b340292a0ddb1972bea285b840d34382b6c767774ba2e78df"
+  },
+  "sources": [
+    {
+      "file": "BTCUSDT_UMCBL_1min_202606.zip",
+      "sha256": "b40a18269c3fb0de99cc63f5d059d22fe08a9ab50bc4d7bfb21ea0dcfae45228",
+      "url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202606.zip"
+    },
+    {
+      "file": "BTCUSDT_UMCBL_1min_202607.zip",
+      "sha256": "707b5bfca6ac8fd8aa66b5a666bc7336515f5a18633e8d2931ba187962aa8525",
+      "url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202607.zip"
+    },
+    {
+      "file": "BTCUSDT_UMCBL_1min_202608.zip",
+      "sha256": "23221a0117fe180165f40fdd914121d238b506e40482604cc0d14dfaacc452e2",
+      "url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202608.zip"
+    },
+    {
+      "file": "BTCUSDT_UMCBL_1min_202609.zip",
+      "sha256": "968cb16d13c3fd87485feed3a9420a418dc8aa0acd894d434afc0800558f2a31",
+      "url": "https://img.bitgetimg.com/online/kline_month/BTCUSDT/UMCBL/BTCUSDT_UMCBL_1min_202609.zip"
+    }
+  ],
+  "counts": {
+    "observations": 10080,
+    "live_WAIT": 10080,
+    "closed_WAIT": 10080
+  },
+  "preliminary_withdrawals": 0,
+  "live_wait_reasons": {
+    "CLOSED_TREND_NOT_ALIGNED": 6805,
+    "NO_LIVE_ENTRY_CONFLUENCE": 551,
+    "LIVE_MOMENTUM_NOT_CONFIRMED": 403,
+    "CONFLICTING_4H": 2300,
+    "PROVISIONAL_CANDLE_NOT_CONFIRMED": 12,
+    "PARTIAL_VOLUME_NOT_SUPPORTING": 3,
+    "NO_PAST_ORDERED_SWING": 6
+  },
+  "metrics": {
+    "LIVE_cost1": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0.0,
+      "return_pct": 0.0,
+      "profit_factor": null,
+      "win_rate_pct": null,
+      "expectancy": null,
+      "max_drawdown_pct": 0,
+      "rejections": {}
+    },
+    "LIVE_cost1.5": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0.0,
+      "return_pct": 0.0,
+      "profit_factor": null,
+      "win_rate_pct": null,
+      "expectancy": null,
+      "max_drawdown_pct": 0,
+      "rejections": {}
+    },
+    "LIVE_cost2": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0.0,
+      "return_pct": 0.0,
+      "profit_factor": null,
+      "win_rate_pct": null,
+      "expectancy": null,
+      "max_drawdown_pct": 0,
+      "rejections": {}
+    },
+    "CLOSED_cost1": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0.0,
+      "return_pct": 0.0,
+      "profit_factor": null,
+      "win_rate_pct": null,
+      "expectancy": null,
+      "max_drawdown_pct": 0,
+      "rejections": {}
+    },
+    "CLOSED_cost1.5": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0.0,
+      "return_pct": 0.0,
+      "profit_factor": null,
+      "win_rate_pct": null,
+      "expectancy": null,
+      "max_drawdown_pct": 0,
+      "rejections": {}
+    },
+    "CLOSED_cost2": {
+      "trades": 0,
+      "long": 0,
+      "short": 0,
+      "net_pnl": 0.0,
+      "return_pct": 0.0,
+      "profit_factor": null,
+      "win_rate_pct": null,
+      "expectancy": null,
+      "max_drawdown_pct": 0,
+      "rejections": {}
+    }
+  },
+  "verdict": "INSUFFICIENT_EVIDENCE",
+  "production_changed": false
+}

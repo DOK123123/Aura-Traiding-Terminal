@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-28T13:46:41.833698+00:00",
+  "scope": "PREPARED_NOT_DEPLOYED",
+  "python_local": {
+    "passed": 2066,
+    "skipped": 3,
+    "notes": "Manual/preview disposable PostgreSQL suites ran; Auto42/Active43/Practice opt-in suites skipped locally, required remote CI; final extra forbidden-Bitget-key case included in targeted 30-case suite and final CI"
+  },
+  "javascript_local": {
+    "passed": 308,
+    "skipped": 0
+  },
+  "preview_targeted_postgres": {
+    "passed": 30,
+    "checks": 7,
+    "hosted_supabase_verified": false
+  },
+  "render_blueprint": {
+    "schema_url": "https://render.com/schema/render.yaml.json",
+    "schema_sha256": "8a3fb8da6b4f55fe686fbefa790e011d3dd7895f013f355953c572a21ab6494a",
+    "jsonschema_version": "4.26.0",
+    "validated": true,
+    "render_platform_validation": false
+  },
+  "read_only_metadata": {
+    "render_workspaces": 1,
+    "render_web_services": 1,
+    "production_plan": "free",
+    "production_autoDeploy": "no",
+    "visible_supabase_projects": 1,
+    "preview_resources_found": false,
+    "billing_or_creation_quota_verified": false
+  },
+  "resources_created": false,
+  "cloud_sql_applied": false,
+  "deploy_executed": false,
+  "production_modified": false,
+  "render_preview_verified": false,
+  "hosted_preview_supabase_verified": false,
+  "final_ci": "Exact final head result in PR #62 description"
+}
