@@ -110,11 +110,12 @@
   const step=STEPS[frame],w=snapshot?.windows?.[frame],bar=w?.bars?.at(-1);
   const verified=finite(now)&&!!step&&snapshot?.status==='LIVE'&&!!bar&&
     finite(w?.event_at)&&now>=w.event_at&&now-w.event_at<=10&&
+    finite(w?.received_at)&&now>=w.received_at&&now-w.received_at<=10&&
     bar.time===Math.floor(now/step)*step&&!!quoteFresh(snapshot?.quote,now);
   if(!verified)return {live:false,quotePrice:null,bid:null,ask:null,candleClose:bar?.close??null,delta:null};
   const q=snapshot.quote;
   return {live:true,quotePrice:q.last,bid:q.bid,ask:q.ask,
-   quoteAge:now-q.time,candleClose:bar.close,candleAge:now-w.event_at,
+   quoteAge:now-q.time,quoteTime:q.time,candleClose:bar.close,candleAge:now-w.event_at,candleEventTime:w.event_at,
    candleTime:bar.time,delta:q.last-bar.close};
  }
  const api={STEPS,VERSION,ema,rsi,atr,metrics,swings,context,windowCheck,quoteFresh,risk,legacyAnalyze,analyzeProfiles,analyze,evaluateSide,PROFILES,History,chartQuote};root.AuraManualLiveAnalysis=api;if(typeof module!=='undefined')module.exports=api;
