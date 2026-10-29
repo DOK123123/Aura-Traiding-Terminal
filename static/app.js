@@ -221,7 +221,7 @@ let manualChartFrame=null,manualPriceLines=[];
 window.addEventListener('aura-manual-market',event=>{
  if(document.body.dataset.liveManual!=='true')return;
  const snapshot=event.detail,now=Date.now()/1000,w=snapshot?.windows?.[timeframe];
- $('live-events').textContent=String(snapshot?.updates||0);
+ $('live-events').textContent=String(snapshot?.updates||0)+(snapshot?.ignoredStale?' · пропущено устаревших: '+snapshot.ignoredStale:'');
  const fresh=snapshot?.status==='LIVE'&&window.AuraManualLiveAnalysis?.quoteFresh(snapshot.quote,now);
  const debugCode=/^[A-Z_]+$/.test(snapshot?.diagnostic||'')?snapshot.diagnostic:'NO_DIAG';
  $('feed-state').textContent=(fresh?'LIVE':w?.bars?.length?'HISTORY ONLY · '+(snapshot?.status||'STALE'):snapshot?.status||'STALE')+(fresh?'':' · '+debugCode);
