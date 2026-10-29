@@ -47,7 +47,7 @@ function tick(gen,seek){
 function play(seek){if(!replay||replay.done||loading)return;pause();running=true;replay.status='RUNNING';tick(generation,seek);}
 el('play').addEventListener('click',()=>play(false));el('signal').addEventListener('click',()=>play(true));el('pause').addEventListener('click',()=>{pause();render();});
 el('next').addEventListener('click',()=>{if(!replay||replay.done||loading)return;pause();try{advance();render();}catch(e){el('status').textContent=e.message;}});
-el('reset').addEventListener('click',()=>{pause();abort?.abort();abort=null;loading=false;if(replay){replay.reset();render();}else controls();});
+el('reset').addEventListener('click',()=>{pause();abort?.abort();abort=null;loading=false;if(replay){replay.reset();render();}else{el('status').textContent='Сброшено. Выберите период и загрузите историю.';controls();}});
 for(const k of ['source','start','end','tf'])el(k).addEventListener('change',()=>{pause();replay=null;el('plan').replaceChildren();el('journal').replaceChildren();el('count').textContent='';el('progress').value=0;if(series)series.setData([]);for(const line of lines)series.removePriceLine(line);lines=[];el('status').textContent='Период изменён. Нажмите «Загрузить период».';controls();});
 el('load').addEventListener('click',async()=>{
  pause();abort?.abort();const requestGeneration=generation,controller=new AbortController();abort=controller;loading=true;replay=null;el('plan').replaceChildren();el('journal').replaceChildren();if(series){series.setData([]);for(const line of lines)series.removePriceLine(line);lines=[];}controls();el('status').textContent='Загрузка реальных свечей и 200 свечей прогрева…';
@@ -58,7 +58,7 @@ el('load').addEventListener('click',async()=>{
   const params=new URLSearchParams({source:el('source').value,timeframe:el('tf').value,start:String(start),end:String(end)});
   const response=await fetch('/api/preview/bitget/history?'+params,{method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error',signal:controller.signal});
   if(!response.ok)throw Error(response.status===401?'Войдите как владелец':response.status===400?'Неверный период или более 6000 свечей':response.status===429?'Загрузка уже идёт. Повторите позже':'Нет полного проверенного периода. Смените даты/источник');
-  const payload=await response.json();if(requestGeneration!==generation)return;replay=new R.Replay(payload);loading=false;render();
+  const payload=await response.json();if(requestGeneration!==generation)return;if(payload.start!==start||payload.end!==end||payload.timeframe!==params.get('timeframe')||payload.source!==(params.get('source')==='archive'?'BITGET_SAVED_REAL_ARCHIVE_2026_07_01_TO_10_29':'BITGET_PUBLIC_HISTORY_API'))throw Error('Источник или период ответа не совпал с запросом');replay=new R.Replay(payload);loading=false;render();
  }catch(e){if(requestGeneration===generation){loading=false;el('status').textContent=e.name==='AbortError'?'Загрузка отменена или превышено время ожидания':e.message;controls();}}
  finally{clearTimeout(deadline);if(abort===controller)abort=null;}
 });
