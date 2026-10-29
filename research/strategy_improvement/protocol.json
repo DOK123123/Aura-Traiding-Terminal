@@ -1,0 +1,167 @@
+{
+  "version": "STRATEGY_IMPROVEMENT_RESEARCH_1",
+  "baseline_commit": "5b4f6ca739e94c5c71c00efed45ce90d68889772",
+  "source": "research/strategy_engine/bitget-2026-07-10-15m.json.gz",
+  "symbol": "BTCUSDT",
+  "product": "USDT-FUTURES",
+  "data_independence": "ALL_HISTORY_REUSED_RESEARCH_ONLY_NO_UNTOUCHED_CONTROL",
+  "freeze": "Written before this research runner and candidate results; earlier baseline outcomes were already known. Not an independent preregistration.",
+  "frames": {
+    "15m": 900,
+    "1h": 3600,
+    "4h": 14400
+  },
+  "history_bars": 200,
+  "periods": [
+    {
+      "name": "2026-08",
+      "start": "2026-08-05T00:00:00Z",
+      "end": "2026-09-01T00:00:00Z",
+      "role": "DEVELOPMENT_REUSED"
+    },
+    {
+      "name": "2026-09",
+      "start": "2026-09-01T00:00:00Z",
+      "end": "2026-10-01T00:00:00Z",
+      "role": "WALK_FORWARD_1_REUSED"
+    },
+    {
+      "name": "2026-10",
+      "start": "2026-10-01T00:00:00Z",
+      "end": "2026-10-29T00:00:00Z",
+      "role": "WALK_FORWARD_2_REUSED"
+    }
+  ],
+  "candidates": [
+    "BASELINE",
+    "TREND_REGIME",
+    "BREAKOUT_CONFIRM",
+    "QUALITY",
+    "ATR_EXITS",
+    "COMBINED",
+    "COMBINED_LOOSE",
+    "COMBINED_STRICT"
+  ],
+  "sensitivity_only_not_selectable": [
+    "COMBINED_LOOSE",
+    "COMBINED_STRICT"
+  ],
+  "rules": {
+    "regime": {
+      "efficiency_lookback": 20,
+      "efficiency_min": 0.3,
+      "ema_separation_atr_min": 0.5,
+      "ema50_slope_bars": 5,
+      "slope_direction_min": 0
+    },
+    "breakout": {
+      "min_intermediate_closed_bars": 1,
+      "clearance_atr": 0.25,
+      "break_volume_ratio_min": 1.5,
+      "hold_tolerance_atr": 0,
+      "retest_volume_ratio_min": 1,
+      "close_location_min": 0.65
+    },
+    "quality": {
+      "body_fraction_min": 0.5,
+      "close_location_min": 0.7,
+      "reject_outside_bar": true,
+      "reject_opposed_accepted_strategy": true,
+      "estimated_roundtrip_cost_to_stop_max": 0.35
+    },
+    "atr_exits": {
+      "minimum_stop_atr": 2.0,
+      "preserve_baseline_structural_stop": true,
+      "target_R_efficient": 2.5,
+      "target_R_other": 2.0,
+      "efficiency_switch": 0.35
+    },
+    "loose": {
+      "regime_efficiency_min": 0.25,
+      "regime_ema_min": 0.25,
+      "body_min": 0.4,
+      "minimum_stop_atr": 1.75
+    },
+    "strict": {
+      "regime_efficiency_min": 0.35,
+      "regime_ema_min": 0.75,
+      "body_min": 0.6,
+      "minimum_stop_atr": 2.25
+    }
+  },
+  "candidate_universe": "Only baseline-accepted technical plans; filters may remove events, ATR variants may change levels, never add events. Shared net R/R >=1.5 and geometry rechecked at model quote.",
+  "entry_and_outcomes": "Unmodified static/trade-outcomes.js Analyzer, next-bar reference touch, entry expiry 1 bar, hold limit 96 bars; unknowns excluded and separately counted; fold-end censoring, no future beyond fold.",
+  "cost_multipliers": [
+    1,
+    1.5,
+    2
+  ],
+  "base_costs": {
+    "full_spread_bps": 2,
+    "slippage_bps_per_side": 5,
+    "fee_bps_per_side": 10
+  },
+  "stress_signal_policy": "Same frozen accepted plans across cost scenarios; costs affect hypothetical execution/outcomes, no hindsight reselection.",
+  "bootstrap": {
+    "method": "CIRCULAR_MOVING_BLOCKS_OF_UTC_WEEKS_PERCENTILE",
+    "replicates": 2000,
+    "seed": 20261029,
+    "confidence": 0.95,
+    "minimum_resolved": 10,
+    "minimum_active_weeks": 4,
+    "undefined_replicates_max_fraction": 0.2,
+    "block_length_weeks": 3,
+    "clarification_before_candidate_runs": "Three-week blocks cover the 16-day maximum 4h holding horizon; very few effective blocks remain. This replaces the initial one-week cluster design before inspecting candidate outcomes."
+  },
+  "walk_forward": {
+    "folds": [
+      {
+        "train": [
+          "2026-08"
+        ],
+        "test": "2026-09"
+      },
+      {
+        "train": [
+          "2026-08",
+          "2026-09"
+        ],
+        "test": "2026-10"
+      }
+    ],
+    "select_separately": "STRATEGY_DIRECTION_TIMEFRAME",
+    "no_parameter_fitting": true,
+    "purge": "Only training signals with full theoretical 97-bar entry+hold horizon ending strictly before training end; no training positions carried into test."
+  },
+  "selection_gate": {
+    "minimum_train_resolved": 30,
+    "minimum_train_active_weeks": 8,
+    "minimum_train_positive_months": 2,
+    "minimum_net_pf": 1.2,
+    "expectancy_ci_lower_above": 0,
+    "stress2_expectancy_above": 0,
+    "tie_break": "Highest stress2 expectancy CI lower, then fixed candidate ID; never max PnL",
+    "fallback": "NO_SELECTION_NO_TRADES_NOT_A_WINNER"
+  },
+  "forward_shortlist_gate": {
+    "minimum_resolved_per_strategy_side_frame": 100,
+    "positive_walk_forward_folds": 2,
+    "positive_stress2_expectancy_ci_lower": true,
+    "independent_evidence_required_for_validated": true
+  },
+  "diagnostics": {
+    "flat": "causal ER20<0.20 AND EMA separation/ATR<0.50",
+    "reversal": "POSTHOC_ONLY: adverse close >1 signal ATR within next 4 closed bars",
+    "excursions": "POSTHOC_ONLY: omit ambiguous entry candle; stop at recorded exit candle or data end; OHLC envelope, not ordered fills",
+    "hour": "UTC_6_HOUR_BUCKETS",
+    "atr_percent_buckets": [
+      0.3,
+      0.8
+    ],
+    "association_not_causation": true
+  },
+  "portfolio": "NONE_INDEPENDENT_1_BTC_HYPOTHESES; no compounded or percentage returns",
+  "funding": "NOT_MODELED",
+  "historical_bid_ask": false,
+  "initial_verdict": "UNVALIDATED / NO_EDGE_FOUND_UNTIL_EVIDENCE"
+}
