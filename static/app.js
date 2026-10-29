@@ -5,6 +5,7 @@ const utc = time => new Date(time * 1000).toISOString().replace('T', ' ').slice(
 let timeframe = '15m', chart, candles, ema20, ema50, volume;
 let controller, requestId = 0, currentData = null;
 let previewHistoryGeneration = 0;
+let liveTickerPriceLine = null;
 const metricIds = ['price','rsi','atr','return','volatility','momentum','count','up','down','headline-price','ema20-value','ema50-value'];
 
 function initializeChart() {
@@ -37,7 +38,23 @@ function initializeChart() {
   });
 }
 
+// Quote overlay is independent of real exchange OHLC and never changes candle geometry.
+function showLiveTickerLine(price) {
+  if (!candles) return;
+  if (!Number.isFinite(price) || price<=0) {
+    if (liveTickerPriceLine) candles.removePriceLine(liveTickerPriceLine);
+    liveTickerPriceLine=null;
+    return;
+  }
+  if (liveTickerPriceLine) liveTickerPriceLine.applyOptions({price});
+  else liveTickerPriceLine=candles.createPriceLine({
+    price,color:'#f4c779',lineWidth:1,lineStyle:2,
+    axisLabelVisible:true,title:'LIVE TICKER'
+  });
+}
+
 function clearData() {
+  showLiveTickerLine(null);
   currentData = null;
   window.AuraChartTools?.refresh?.();
   metricIds.forEach(id => { $(id).textContent = '—'; $(id).classList.remove('positive', 'negative'); });
@@ -78,6 +95,7 @@ async function loadPreviewClosedHistory(tf,generation) {
   // A healthy live feed owns the display; this fallback never overwrites LIVE candles.
   if(window.AuraManualLiveHub?.status==='LIVE')return;
   if(!chart)initializeChart();
+  showLiveTickerLine(null);
   currentData={symbol:'BTCUSDT',timeframe:tf,candles:closed};
   candles.setData(closed);
   ema20.setData(window.AuraBitgetLive.ema(closed,20));
@@ -222,10 +240,13 @@ window.addEventListener('aura-manual-market',event=>{
  if(document.body.dataset.liveManual!=='true')return;
  const snapshot=event.detail,now=Date.now()/1000,w=snapshot?.windows?.[timeframe];
  $('live-events').textContent=String(snapshot?.updates||0)+(snapshot?.ignoredStale?' · пропущено устаревших: '+snapshot.ignoredStale:'');
- const fresh=snapshot?.status==='LIVE'&&window.AuraManualLiveAnalysis?.quoteFresh(snapshot.quote,now);
+ const frameQuote=window.AuraManualLiveAnalysis?.chartQuote(snapshot,timeframe,now);
+ const fresh=frameQuote?.live===true;
  const debugCode=/^[A-Z_]+$/.test(snapshot?.diagnostic||'')?snapshot.diagnostic:'NO_DIAG';
  $('feed-state').textContent=(fresh?'LIVE':w?.bars?.length?'HISTORY ONLY · '+(snapshot?.status||'STALE'):snapshot?.status||'STALE')+(fresh?'':' · '+debugCode);
  if(!w?.bars?.length){
+  showLiveTickerLine(null);
+  $('chart-subtitle').textContent='BTCUSDT · '+timeframe+' · нет LIVE-свечей';
   // Keep the last integrity-checked candles visible on transient reconnects.
   const hasHistory=Boolean(currentData?.candles?.length);
   if(hasHistory)$('feed-state').textContent='HISTORY ONLY · '+(snapshot?.status||'STALE')+' · '+debugCode;
@@ -242,17 +263,19 @@ window.addEventListener('aura-manual-market',event=>{
   const step=window.AuraManualLiveAnalysis.STEPS[timeframe];
   const closed=window.AuraManualLiveAnalysis.windowCheck(w.bars,step,now);
   const bars=fresh?w.bars:closed; // Never display forming candles as current without verified bid/ask.
+  $('chart-subtitle').textContent='BTCUSDT · '+timeframe+(fresh?' · LIVE тикер + свечи Bitget':' · история, НЕ LIVE');
   currentData={symbol:'BTCUSDT',timeframe,candles:bars};
   candles.setData(bars);ema20.setData(window.AuraBitgetLive.ema(bars,20));ema50.setData(window.AuraBitgetLive.ema(bars,50));
+  showLiveTickerLine(fresh?frameQuote.quotePrice:null);
   volume.setData(bars.map(b=>({time:b.time,value:b.volume,color:b.close>=b.open?'#42d6b055':'#fa788b55'})));
   if(manualChartFrame!==timeframe){chart.timeScale().setVisibleLogicalRange({from:Math.max(0,bars.length-100),to:bars.length+4});manualChartFrame=timeframe;}
   $('chart-overlay').hidden=true;
   if(fresh){
    $('headline-price').textContent=fmt(snapshot.quote.last);$('price').textContent=fmt(snapshot.quote.last);
    $('headline-return').textContent='текущая котировка Bitget';
-   $('event-age').textContent='Возраст котировки '+Math.max(0,now-snapshot.quote.time).toFixed(1)+' с';
+   $('event-age').textContent='Котировка '+frameQuote.quoteAge.toFixed(1)+' с · Bid '+fmt(frameQuote.bid)+' / Ask '+fmt(frameQuote.ask);
    $('source').textContent='Bitget USDT-M Futures · публичный WebSocket';
-   $('live-candle').textContent='Формируется '+timeframe+' · '+utc(w.bars.at(-1).time)+' · V '+fmt(w.bars.at(-1).volume);
+   $('live-candle').textContent='Формируется '+timeframe+' · C '+fmt(frameQuote.candleClose)+' · тикер '+fmt(frameQuote.quotePrice)+' · разница '+(frameQuote.delta>=0?'+':'')+fmt(frameQuote.delta)+' · обновление свечи '+frameQuote.candleAge.toFixed(1)+' с';
    $('status').className='status';
    $('status').textContent='LIVE: текущая свеча предварительная; закрытые подтверждения в AURA ANALYST.';
    const m=window.AuraManualLiveAnalysis.metrics(bars);
