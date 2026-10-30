@@ -55,17 +55,29 @@ class DiagnosticStore:
         since=now-hours*3600
         with self.connection() as db:
             decisions=[json.loads(r[0]) for r in db.execute('SELECT payload FROM diagnostic_decisions WHERE at>=? AND at<=? AND model=? ORDER BY at,seq',(since,now,self.model_sha256))]
-            samples=list(db.execute('SELECT frame,at,status FROM diagnostic_samples WHERE at>=? AND at<=? ORDER BY frame,at,seq',(since,now)))
+            samples=list(db.execute('SELECT frame,at,status,session FROM diagnostic_samples WHERE at>=? AND at<=? ORDER BY frame,at,seq',(since,now)))
             meta={r['key']:r['value'] for r in db.execute("SELECT * FROM meta WHERE key IN ('diagnostic_first_at','diagnostic_pruned')")}
             sessions=db.execute('SELECT COUNT(*) FROM diagnostic_sessions WHERE last_at>=? AND first_at<=?',(since,now)).fetchone()[0]
         coverage={}
         for frame in STEPS:
             xs=[r for r in samples if r['frame']==frame];gaps=[b['at']-a['at'] for a,b in zip(xs,xs[1:])]
+            # Cadence alone is not market coverage: both endpoints must be
+            # successful and from the same writer session. Unknown edges and
+            # every failure/restart interval remain unobserved.
+            observed=sum(b['at']-a['at'] for a,b in zip(xs,xs[1:])
+                         if 0<=b['at']-a['at']<=15 and a['status']==b['status']=='LIVE'
+                         and a['session']==b['session'])
             counts=Counter(r['status'] for r in xs)
             coverage[frame]={'samples':len(xs),'successful_samples':counts['LIVE'],'status_counts':dict(counts),
                 'first_sample_utc':utc(xs[0]['at']) if xs else None,'last_sample_utc':utc(xs[-1]['at']) if xs else None,
                 'sample_span_seconds':xs[-1]['at']-xs[0]['at'] if xs else 0,'maximum_sample_gap_seconds':max(gaps,default=None),
-                'cadence_observed_seconds':sum(g for g in gaps if 0<=g<=15),
+                'cadence_observed_seconds':observed,
+                'coverage_definition':'PAIRED_LIVE_SAMPLES_SAME_SESSION_MAX_15_SECONDS_NOT_CONTINUOUS_TICKS',
+                'unobserved_window_seconds':hours*3600-observed,
+                'leading_unobserved_seconds':xs[0]['at']-since if xs else hours*3600,
+                'trailing_unobserved_seconds':now-xs[-1]['at'] if xs else 0,
+                'failed_or_restart_interval_seconds':sum(g for a,b,g in zip(xs,xs[1:],gaps)
+                    if 0<=g<=15 and (a['status']!='LIVE' or b['status']!='LIVE' or a['session']!=b['session'])),
                 'unobserved_gap_seconds':sum(g for g in gaps if g>15),'window_seconds':hours*3600,
                 'continuous_hosting_verified':False,'coverage_complete':False}
         groups=[]

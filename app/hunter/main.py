@@ -12,7 +12,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-from .market import PublicMarket, STEPS
+from .market import PublicMarket, STEPS, SOURCE, fresh_quote
 from .store import Store
 from .diagnostics import failure_code
 
@@ -35,11 +35,23 @@ class Hunter:
         except asyncio.CancelledError:raise
         except Exception:funding=[]
         snapshots=await asyncio.gather(*(self.market.snapshot(frame) for frame in STEPS),return_exceptions=True)
+        # Bid/Ask belongs to BTCUSDT, not to a candle timeframe. A fast
+        # frame's quote may age while gather waits for slower candle requests.
+        # Use the freshest actual same-market quote for this decision cohort;
+        # never rewrite exchange/receipt timestamps or extend the 5s freshness.
+        cohort_now=time.time()
+        candidates=[s['quote'] for frame,s in zip(STEPS,snapshots)
+                    if isinstance(s,dict) and s.get('source')==SOURCE
+                    and s.get('frame')==frame and s.get('step')==STEPS[frame]
+                    and fresh_quote(s.get('quote',{}),cohort_now)]
+        current_quote=max(candidates,key=lambda q:(q['time'],q['received_at'])) if candidates else None
         for frame,snap in zip(STEPS,snapshots):
             stage='market'
             try:
                 if isinstance(snap,BaseException):raise snap
                 stage='observer'
+                if current_quote is not None:
+                    snap={**snap,'quote':dict(current_quote)}
                 await asyncio.to_thread(self.store.observe,snap,funding,time.time(),self.registry)
                 self.quotes[frame]=snap['quote'];self.frame_errors.pop(frame,None);success+=1
             except asyncio.CancelledError:raise

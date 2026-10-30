@@ -12,7 +12,7 @@ from .market import SOURCE, STEPS, LIVE_WINDOW, LIVE_INPUT_CONTRACT, fresh_quote
 from .outcomes import cashflow
 from .diagnostics import explain
 from .diagnostic_store import DiagnosticStore
-from .costs import entry_fill, exit_fill, filled_in_zone
+from .costs import entry_fill, exit_fill, filled_in_zone, risk_reward
 
 MODEL_HASH = hashlib.sha256(b''.join(Path(__file__).with_name(name).read_bytes()
                                     for name in ('engine.py','rules.json','costs.py','outcomes.py'))).hexdigest()
@@ -202,6 +202,7 @@ class Store(DiagnosticStore):
                     plan=p['plan'];q=quotes[row['frame']];ref=q['ask' if plan['direction']=='LONG' else 'bid']
                     rr=net_rr(ref,plan['sl'],plan['tp'],plan['direction'],plan['step'],plan['hold_bars'],q['ask']-q['bid'])
                     plan['net_rr_at_quote']=rr
+                    plan['costs_at_quote']=risk_reward(ref,plan['sl'],plan['tp'],plan['direction'],plan['step'],plan['hold_bars'],q['ask']-q['bid'])
                     if not filled_in_zone(ref,plan['zone'],plan['direction']) or rr is None or rr<1.5:state='NO TRADE'
                 records.append({'id':row['id'],'state':state,'recorded_state':row['state'],**{k:p[k] for k in ('plan','quote','detected_at','reason','research')},
                                 'input_sha256':p.get('input_sha256'),

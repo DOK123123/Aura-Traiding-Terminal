@@ -310,8 +310,17 @@ async def preview_ws_diagnostics(request:Request):
 @app.get('/api/health')
 async def health():
     task=getattr(app.state,'preview_signals_task',None)
-    return {'status':'ok','scope':'ISOLATED_MANUAL_PREVIEW','exchange_execution':False,'active43_controller_enabled':False,'automatic_entry_scheduler_enabled':False,
-            'signal_observer_enabled':app.state.preview_config.signals_enabled,'signal_observer_running':task is not None and not task.done()}
+    enabled=app.state.preview_config.signals_enabled
+    running=task is not None and not task.done()
+    observer=getattr(app.state,'preview_signals',None)
+    last=getattr(observer,'last_cycle_at',None)
+    reference=last if last is not None else getattr(app.state,'preview_signals_started_at',time.time())
+    overdue=enabled and time.time()-reference>120
+    degraded=enabled and (not running or overdue)
+    return JSONResponse({'status':'degraded' if degraded else 'ok','scope':'ISOLATED_MANUAL_PREVIEW',
+            'exchange_execution':False,'active43_controller_enabled':False,'automatic_entry_scheduler_enabled':False,
+            'signal_observer_enabled':enabled,'signal_observer_running':running,
+            'signal_observer_last_cycle_at':last,'signal_observer_overdue':overdue},status_code=503 if degraded else 200)
 
 @app.get('/')
 async def index(request:Request):return HTMLResponse(page(request.app.state.preview_ws_token,server_signals=request.app.state.preview_config.signals_enabled),headers={'Cache-Control':'no-store'})
