@@ -8,6 +8,8 @@ import httpx
 
 SOURCE = 'BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2'
 STEPS = {'5m': 300, '15m': 900, '1h': 3600, '4h': 14400}
+LIVE_WINDOW = 260
+LIVE_INPUT_CONTRACT = 'BITGET_NATIVE_260_CLOSED_BARS_V2'
 PATHS = frozenset({'history-candles', 'history-fund-rate', 'candles', 'ticker'})
 BASE = 'https://api.bitget.com/api/v2/mix/market/'
 
@@ -77,12 +79,14 @@ class PublicMarket:
         if frame not in STEPS:
             raise ValueError('INVALID_FRAME')
         step = STEPS[frame]
-        response = await self.get('candles', granularity={'1h': '1H', '4h': '4H'}.get(frame, frame), limit=260)
+        # Bitget may include the forming candle. Reserve one extra row so the
+        # indicator seed always uses exactly 260 closed native bars.
+        response = await self.get('candles', granularity={'1h': '1H', '4h': '4H'}.get(frame, frame), limit=LIVE_WINDOW+1)
         quote_response = await self.get('ticker')
         now = time.time()
         bars = [b for b in parse_bars(response['data'], step) if b[0] + step <= now]
         validate_bars(bars, step)
-        if len(bars) < 250 or bars[-1][0] + step != int(now // step) * step:
+        if len(bars) < LIVE_WINDOW or bars[-1][0] + step != int(now // step) * step:
             raise ValueError('STALE_OR_INCOMPLETE_CANDLES')
         data = quote_response['data']
         if len(data) != 1 or data[0].get('symbol') != 'BTCUSDT':
@@ -92,7 +96,7 @@ class PublicMarket:
                  'time': float(q['ts']) / 1000, 'received_at': now, 'source': SOURCE}
         if not fresh_quote(quote, now):
             raise ValueError('STALE_OR_CONFLICTING_QUOTE')
-        return {'source': SOURCE, 'frame': frame, 'step': step, 'bars': bars[-260:], 'quote': quote}
+        return {'source': SOURCE, 'frame': frame, 'step': step, 'bars': bars[-LIVE_WINDOW:], 'quote': quote}
 
 
 def fresh_quote(q: dict, now: float) -> bool:

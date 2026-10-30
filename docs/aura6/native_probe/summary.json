@@ -1,0 +1,176 @@
+{
+  "scope": "BOUNDED_PUBLIC_PROBE_NOT_DEPLOYED_OR_CONTINUOUS_FORWARD",
+  "at": 1793345709.0529292,
+  "error": null,
+  "frame_errors": {},
+  "audits": [
+    {
+      "scope": "INPUT_REPRODUCTION_ONLY",
+      "frame": "5m",
+      "inputs_verified": 1,
+      "technical_plans": 0,
+      "preparation_plans": 0,
+      "internal_gaps": [],
+      "has_more": false,
+      "earliest_retained_seq": 1,
+      "model_sha256": "fa700ebbbff6fbb4af411389fd38a145ea2ec4a63ad930a27f8302a771aaed83",
+      "input_contract": "BITGET_NATIVE_260_CLOSED_BARS_V2",
+      "source_authenticity_verified": false,
+      "complete_history_claimed": false,
+      "profitability_evaluated": false,
+      "approved_for_confirmed": []
+    },
+    {
+      "scope": "INPUT_REPRODUCTION_ONLY",
+      "frame": "15m",
+      "inputs_verified": 1,
+      "technical_plans": 0,
+      "preparation_plans": 0,
+      "internal_gaps": [],
+      "has_more": false,
+      "earliest_retained_seq": 2,
+      "model_sha256": "fa700ebbbff6fbb4af411389fd38a145ea2ec4a63ad930a27f8302a771aaed83",
+      "input_contract": "BITGET_NATIVE_260_CLOSED_BARS_V2",
+      "source_authenticity_verified": false,
+      "complete_history_claimed": false,
+      "profitability_evaluated": false,
+      "approved_for_confirmed": []
+    },
+    {
+      "scope": "INPUT_REPRODUCTION_ONLY",
+      "frame": "1h",
+      "inputs_verified": 1,
+      "technical_plans": 0,
+      "preparation_plans": 0,
+      "internal_gaps": [],
+      "has_more": false,
+      "earliest_retained_seq": 3,
+      "model_sha256": "fa700ebbbff6fbb4af411389fd38a145ea2ec4a63ad930a27f8302a771aaed83",
+      "input_contract": "BITGET_NATIVE_260_CLOSED_BARS_V2",
+      "source_authenticity_verified": false,
+      "complete_history_claimed": false,
+      "profitability_evaluated": false,
+      "approved_for_confirmed": []
+    },
+    {
+      "scope": "INPUT_REPRODUCTION_ONLY",
+      "frame": "4h",
+      "inputs_verified": 1,
+      "technical_plans": 1,
+      "preparation_plans": 0,
+      "internal_gaps": [],
+      "has_more": false,
+      "earliest_retained_seq": 4,
+      "model_sha256": "fa700ebbbff6fbb4af411389fd38a145ea2ec4a63ad930a27f8302a771aaed83",
+      "input_contract": "BITGET_NATIVE_260_CLOSED_BARS_V2",
+      "source_authenticity_verified": false,
+      "complete_history_claimed": false,
+      "profitability_evaluated": false,
+      "approved_for_confirmed": []
+    }
+  ],
+  "states": {
+    "scope": "AURA6_PUBLIC_OBSERVER_ONLY",
+    "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+    "state": "NO TRADE",
+    "reason": "NO_VALIDATED_EDGE",
+    "server_time": 1793345709.0529308,
+    "fresh_frames": [
+      "15m",
+      "1h",
+      "4h"
+    ],
+    "quotes": {
+      "15m": {
+        "bid": 78311.2,
+        "ask": 78311.3,
+        "last": 78311.3,
+        "time": 1793345708.913,
+        "received_at": 1793345709.0059848,
+        "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2"
+      },
+      "1h": {
+        "bid": 78311.2,
+        "ask": 78311.3,
+        "last": 78311.3,
+        "time": 1793345708.847,
+        "received_at": 1793345708.926949,
+        "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2"
+      },
+      "4h": {
+        "bid": 78311.2,
+        "ask": 78311.3,
+        "last": 78311.3,
+        "time": 1793345708.854,
+        "received_at": 1793345708.9342535,
+        "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2"
+      }
+    },
+    "records": [
+      {
+        "id": "2915a9fbbe75982cd22c50711ab4e68ea38370c50eafdaa04201f2fcbb96ab60",
+        "state": "NO TRADE",
+        "recorded_state": "NO TRADE",
+        "plan": {
+          "id": "2122553ad1cf904ec6ef161d88190a88167a8cbc1cfecd12378e00a11c252a41",
+          "version": "AURA6_RESEARCH_1",
+          "strategy": "LIQUIDITY_SWEEP",
+          "variant": "BASE",
+          "frame": "4h",
+          "direction": "LONG",
+          "signal_time": 1793332800,
+          "valid_until": 1793347200,
+          "entry": 78189.3,
+          "sl": 76197.99049053322,
+          "tp": 82171.91901893356,
+          "zone": [
+            77635.08098106644,
+            78743.51901893357
+          ],
+          "atr": 1108.438037867142,
+          "net_rr": 1.5236057881225935,
+          "hold_bars": 32,
+          "technical_trigger": true,
+          "reasons": [
+            "sweep of prior 20-bar extreme (liquidity proxy, not observed orders)",
+            "rejection wick",
+            "relative volume"
+          ],
+          "confirmation": "directional closed reclaim of prior extreme",
+          "cancel": "entry expiry, zone departure, SL/TP crossed, stale or inconsistent public data",
+          "regime": "RANGE",
+          "rsi": 36.927109654260406,
+          "er20": 0.15635876374773747,
+          "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+          "statistical_status": "UNVALIDATED",
+          "probability_tp_before_sl": null,
+          "step": 14400,
+          "model_sha256": "fa700ebbbff6fbb4af411389fd38a145ea2ec4a63ad930a27f8302a771aaed83",
+          "input_contract": "BITGET_NATIVE_260_CLOSED_BARS_V2",
+          "net_rr_at_quote": 1.4145056741810615
+        },
+        "quote": {
+          "bid": 78311.2,
+          "ask": 78311.3,
+          "last": 78311.3,
+          "time": 1793345708.854,
+          "received_at": 1793345708.9342535,
+          "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2"
+        },
+        "detected_at": 1793345709.0288677,
+        "reason": "ENTRY_CONDITIONS_FAILED",
+        "research": true,
+        "input_sha256": "d5b978c91e2f80a01e51e48f52042bd2271ab8b673108f50121e675430923de2",
+        "outcome": "NOT_TRIGGERED",
+        "result": null
+      }
+    ],
+    "alerts": [],
+    "model_sha256": "fa700ebbbff6fbb4af411389fd38a145ea2ec4a63ad930a27f8302a771aaed83",
+    "account_connected": false,
+    "execution_enabled": false,
+    "probability_tp_before_sl": null
+  },
+  "orders": 0,
+  "approved_for_confirmed": []
+}

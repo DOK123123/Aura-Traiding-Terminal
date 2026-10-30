@@ -127,11 +127,13 @@ def test_hunter_public_transport_only_get_bounded_fixed_identity():
 def test_hunter_empty_registry_watch_durable_dedup_cancel_and_no_order_path(tmp_path,monkeypatch):
     now=96001.;path=tmp_path/'observer.sqlite';store=Store(path)
     p=plan();monkeypatch.setattr(Prepared,'plans',lambda self,i,family,**kw:[copy.deepcopy(p)] if family=='TREND_PULLBACK' else [])
-    snap={'source':SOURCE,'frame':'5m','step':300,'bars':bars(320),'quote':quote(now)}
+    snap={'source':SOURCE,'frame':'5m','step':300,'bars':bars(320)[-260:],'quote':quote(now)}
     fund=[[86400,.0001],[115200,.0001]] # Future rate is intentionally invalid for CONFIRMED.
     store.observe(snap,fund,now,{'approved':[]});data=store.snapshot(now,{'5m':quote(now)})
     assert data['state']=='WATCH' and data['alerts']==[] and data['execution_enabled'] is False
     assert data['records'][0]['plan']['statistical_status']=='UNVALIDATED'
+    assert data['records'][0]['input_sha256']==store.export_inputs('5m')['items'][0]['sha256']
+    assert store.snapshot(now,{'5m':quote(now)},'OBSERVER_STOPPED')['records'][0]['state']=='NO TRADE'
     other=Store(path);other.observe(snap,fund,now+.1,{'approved':[]});assert len(other.snapshot(now+.1,{'5m':quote(now)})['records'])==1
     bad={**snap,'quote':quote(now+1,120)};other.observe(bad,fund,now+1,{'approved':[]})
     assert other.snapshot(now+1,{'5m':bad['quote']})['state']=='NO TRADE'
@@ -149,7 +151,7 @@ def test_hunter_confirmed_requires_exact_independent_registry_and_funding(tmp_pa
     assert not validated(p,{'approved':[{**proof,'evidence_sha256':1}]})
     assert not validated(p,{'approved':[{**proof,'input_contract':'ARCHIVE_EXPANDING_PREFIX'}]})
     assert not validated(p,{'approved':[{k:v for k,v in proof.items() if k!='input_contract'}]})
-    snap={'source':SOURCE,'frame':'5m','step':300,'bars':bars(320),'quote':quote(now)}
+    snap={'source':SOURCE,'frame':'5m','step':300,'bars':bars(320)[-260:],'quote':quote(now)}
     store=Store(tmp_path/'valid.sqlite');store.observe(snap,[[57600,.0001],[86400,.0001]],now,registry)
     data=store.snapshot(now,{'5m':quote(now)});assert data['state']=='CONFIRMED' and len(data['alerts'])==1
     assert data['probability_tp_before_sl'] is None
@@ -221,7 +223,7 @@ def test_hunter_worker_success_after_disconnect_and_persistent_watermark(tmp_pat
         down=True
         async def snapshot(self,frame):
             if self.down or frame!='5m':raise ValueError('FIXTURE_DISCONNECT')
-            return {'source':SOURCE,'frame':'5m','step':300,'bars':bars(320),'quote':quote(now)}
+            return {'source':SOURCE,'frame':'5m','step':300,'bars':bars(320)[-260:],'quote':quote(now)}
     async def run():
         m=Recovering();s=Store(tmp_path/'recover.sqlite');h=Hunter(s,m,{'approved':[]})
         await h.cycle();assert h.error and not h.quotes

@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 import time
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
@@ -23,6 +23,7 @@ class Hunter:
     def __init__(self, store, market, registry):
         self.store,self.market,self.registry=store,market,registry
         self.quotes={};self.error='STARTING';self.failures=0;self.cycles=0
+        self.frame_errors={};self.last_cycle_at=None
 
     async def cycle(self):
         success=0
@@ -36,17 +37,27 @@ class Hunter:
             try:
                 if isinstance(snap,BaseException):raise ValueError('PUBLIC_FRAME_FAILED')
                 await asyncio.to_thread(self.store.observe,snap,funding,time.time(),self.registry)
-                self.quotes[frame]=snap['quote'];success+=1
+                self.quotes[frame]=snap['quote'];self.frame_errors.pop(frame,None);success+=1
             except asyncio.CancelledError:raise
-            except Exception:self.quotes.pop(frame,None)
+            except Exception:
+                self.quotes.pop(frame,None)
+                self.frame_errors[frame]='FRAME_OBSERVATION_FAILED'
         self.cycles+=1
+        self.last_cycle_at=time.time()
         self.error=None if success else 'MARKET_DATA_UNAVAILABLE'
         self.failures=0 if success else self.failures+1
         if self.error:await asyncio.to_thread(self.store.invalidate,time.time(),self.error)
 
     async def run(self):
         while True:
-            await self.cycle()
+            try:
+                await self.cycle()
+            except asyncio.CancelledError:raise
+            except Exception:
+                # Storage failure (including invalidate) must not silently kill
+                # the task while HTTP health continues to report success.
+                self.quotes.clear();self.error='OBSERVER_CYCLE_FAILED'
+                self.failures+=1;self.last_cycle_at=time.time()
             await asyncio.sleep(min(60,5*2**min(self.failures,4)))
 
 
@@ -67,6 +78,7 @@ def create_app(*, store=None, market=None, password=None, observe=None):
         observer=Hunter(store or Store(state_path),market or PublicMarket(),registry)
         app.state.hunter=observer
         task=asyncio.create_task(observer.run()) if enabled and configured_password else None
+        app.state.observer_task=task
         try:yield
         finally:
             if task:
@@ -89,7 +101,10 @@ def create_app(*, store=None, market=None, password=None, observe=None):
 
     @app.get('/api/health')
     async def health():
-        return {'status':'ok','scope':'AURA6_PUBLIC_OBSERVER_ONLY','account_connected':False,'execution_enabled':False,'observer_enabled':bool(enabled and configured_password)}
+        task=app.state.observer_task
+        stopped=task is not None and task.done()
+        data={'status':'degraded' if stopped else 'ok','scope':'AURA6_PUBLIC_OBSERVER_ONLY','account_connected':False,'execution_enabled':False,'observer_enabled':bool(enabled and configured_password)}
+        return JSONResponse(data,status_code=503 if stopped else 200)
 
     @app.get('/',dependencies=[Depends(owner)])
     async def index():return HTMLResponse((ROOT/'static/hunter6/index.html').read_text())
@@ -102,7 +117,17 @@ def create_app(*, store=None, market=None, password=None, observe=None):
     @app.get('/api/hunter/snapshot',dependencies=[Depends(owner)])
     async def snapshot():
         h=app.state.hunter
-        return await asyncio.to_thread(h.store.snapshot,time.time(),h.quotes,h.error)
+        task=app.state.observer_task
+        running=task is not None and not task.done()
+        reason=h.error if running else 'OBSERVER_STOPPED' if task else 'OBSERVER_DISABLED'
+        data=await asyncio.to_thread(h.store.snapshot,time.time(),h.quotes,reason)
+        data['observer']={'running':running,'cycles':h.cycles,'last_cycle_at':h.last_cycle_at,
+                          'frame_errors':dict(h.frame_errors)}
+        return data
+
+    @app.get('/api/hunter/inputs',dependencies=[Depends(owner)])
+    async def inputs(frame:str=Query(pattern='^(5m|15m|1h|4h)$'),after:int=Query(0,ge=0),limit:int=Query(20,ge=1,le=100)):
+        return await asyncio.to_thread(app.state.hunter.store.export_inputs,frame,after,limit)
 
     return app
 

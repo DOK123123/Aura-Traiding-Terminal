@@ -8,11 +8,13 @@ import threading
 from pathlib import Path
 
 from .engine import FAMILIES, Prepared, VERSION, net_rr
-from .market import SOURCE, STEPS, fresh_quote
+from .market import SOURCE, STEPS, LIVE_WINDOW, LIVE_INPUT_CONTRACT, fresh_quote, validate_bars
 from .outcomes import cashflow
 
 MODEL_HASH = hashlib.sha256(Path(__file__).with_name('engine.py').read_bytes()+Path(__file__).with_name('rules.json').read_bytes()).hexdigest()
-LIVE_INPUT_CONTRACT = 'BITGET_NATIVE_260_CLOSED_BARS_V1'
+
+def evidence_hash(payload: dict) -> str:
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 
 def validated(plan, registry):
@@ -80,7 +82,10 @@ class Store:
             at REAL NOT NULL, expires REAL NOT NULL);
             CREATE INDEX IF NOT EXISTS event_at ON events(at);
             CREATE INDEX IF NOT EXISTS event_pending ON events(frame,outcome,technical);
-            CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);''')
+            CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS inputs (seq INTEGER PRIMARY KEY AUTOINCREMENT,
+            frame TEXT NOT NULL, cutoff INTEGER NOT NULL, sha256 TEXT NOT NULL, payload TEXT NOT NULL,
+            UNIQUE(frame,cutoff));''')
 
     @contextmanager
     def connection(self):
@@ -102,6 +107,8 @@ class Store:
             raise ValueError('UNVERIFIED_OBSERVER_SNAPSHOT')
         frame,step,bars=snapshot['frame'],snapshot['step'],snapshot['bars']
         if frame not in STEPS or step!=STEPS[frame]:raise ValueError('OBSERVER_FRAME_MISMATCH')
+        if len(bars)!=LIVE_WINDOW:raise ValueError('OBSERVER_WINDOW_MISMATCH')
+        validate_bars(bars,step)
         prepared=Prepared(bars,frame)
         cutoff=bars[-1][0]+step
         if cutoff!=int(now//step)*step:
@@ -126,6 +133,14 @@ class Store:
             if wm and wm[0]>=cutoff:
                 return
             db.execute('INSERT OR REPLACE INTO watermarks VALUES (?,?)',(frame,cutoff))
+            # Preserve the exact parsed inputs and BASE hypotheses at first
+            # detection, even when there are no setups. No silent archive/native
+            # substitution; bounded export can reproduce indicator seeding.
+            captured={'input_contract':LIVE_INPUT_CONTRACT,'model_sha256':MODEL_HASH,
+                      'detected_at':now,'snapshot':snapshot,'funding':funding,'plans':plans}
+            input_hash=evidence_hash(captured)
+            db.execute('INSERT INTO inputs(frame,cutoff,sha256,payload) VALUES (?,?,?,?)',
+                       (frame,cutoff,input_hash,json.dumps(captured,allow_nan=False)))
             for p in plans:
                 p['step']=step;p['model_sha256']=MODEL_HASH
                 p['input_contract']=LIVE_INPUT_CONTRACT
@@ -137,9 +152,9 @@ class Store:
                 state='CONFIRMED' if evidence and funding_ready and p['technical_trigger'] and entry_valid else 'WATCH' if entry_valid else 'NO TRADE'
                 p['statistical_status']='VALIDATED' if evidence else 'UNVALIDATED'
                 p['net_rr_at_quote']=rr
-                record={'plan':p,'quote':q,'detected_at':now,'state':state,'reason':'RULES_AND_INDEPENDENT_EDGE' if state=='CONFIRMED' else 'RESEARCH_ONLY_NO_VALIDATED_EDGE' if state=='WATCH' else 'ENTRY_CONDITIONS_FAILED',
+                record={'plan':p,'quote':q,'detected_at':now,'input_sha256':input_hash,'state':state,'reason':'RULES_AND_INDEPENDENT_EDGE' if state=='CONFIRMED' else 'RESEARCH_ONLY_NO_VALIDATED_EDGE' if state=='WATCH' else 'ENTRY_CONDITIONS_FAILED',
                         'probability_tp_before_sl':None,'scope':'PUBLIC_OBSERVATION_ONLY','research':not evidence}
-                event_id=hashlib.sha256((MODEL_HASH+p['id']).encode()).hexdigest()
+                event_id=hashlib.sha256((LIVE_INPUT_CONTRACT+MODEL_HASH+p['id']).encode()).hexdigest()
                 inserted=db.execute('INSERT OR IGNORE INTO events(id,frame,at,expires,state,technical,payload,outcome) VALUES (?,?,?,?,?,?,?,?)',
                     (event_id,frame,now,p['valid_until'],state,int(p['technical_trigger'] and entry_valid),json.dumps(record),'PENDING' if p['technical_trigger'] and entry_valid else 'NOT_TRIGGERED')).rowcount
                 if inserted and state=='CONFIRMED':
@@ -148,6 +163,20 @@ class Store:
             db.execute("DELETE FROM events WHERE id IN (SELECT id FROM events WHERE state NOT IN ('WATCH','CONFIRMED') AND outcome NOT IN ('PENDING','OPEN') ORDER BY at DESC LIMIT -1 OFFSET 100000)")
             # Watermarks survive retention; terminal records may be pruned without replaying alerts.
             db.execute("DELETE FROM events WHERE at<? AND state NOT IN ('WATCH','CONFIRMED') AND outcome NOT IN ('PENDING','OPEN')",(now-180*86400,))
+            # At most 2048 inputs per frame (~7 days for 5m). Export regularly;
+            # pruning is reported by the export sequence, never claimed complete.
+            db.execute('DELETE FROM inputs WHERE frame=? AND seq NOT IN (SELECT seq FROM inputs WHERE frame=? ORDER BY seq DESC LIMIT 2048)',(frame,frame))
+
+    def export_inputs(self, frame: str, after: int = 0, limit: int = 20) -> dict:
+        if frame not in STEPS or type(after) is not int or after<0 or type(limit) is not int or not 1<=limit<=100:
+            raise ValueError('INVALID_EVIDENCE_PAGE')
+        with self.connection() as db:
+            first=db.execute('SELECT MIN(seq) FROM inputs WHERE frame=?',(frame,)).fetchone()[0]
+            rows=db.execute('SELECT * FROM inputs WHERE frame=? AND seq>? ORDER BY seq LIMIT ?', (frame,after,limit+1)).fetchall()
+            items=[{'seq':r['seq'],'sha256':r['sha256'],'payload':json.loads(r['payload'])} for r in rows[:limit]]
+        return {'scope':'AURA6_PARSED_NATIVE_INPUTS_NOT_PROFIT_PROOF','frame':frame,
+                'items':items,'next_after':items[-1]['seq'] if items else after,'has_more':len(rows)>limit,
+                'earliest_retained_seq':first,'retention_per_frame':2048,'complete_history_claimed':False}
 
     def snapshot(self, now, quotes, error=None):
         fresh_frames={frame for frame,q in quotes.items() if fresh_quote(q,now)}
@@ -155,12 +184,13 @@ class Store:
             records=[]
             for row in db.execute('SELECT * FROM events ORDER BY at DESC,id LIMIT 200'):
                 p=json.loads(row['payload']);state=row['state']
-                if state in ('WATCH','CONFIRMED') and (row['expires']<=now or row['frame'] not in fresh_frames):state='NO TRADE'
+                if state in ('WATCH','CONFIRMED') and (error or row['expires']<=now or row['frame'] not in fresh_frames or p['plan'].get('input_contract')!=LIVE_INPUT_CONTRACT):state='NO TRADE'
                 if state in ('WATCH','CONFIRMED'):
                     plan=p['plan'];q=quotes[row['frame']];ref=q['ask' if plan['direction']=='LONG' else 'bid']
                     rr=net_rr(ref,plan['sl'],plan['tp'],plan['direction'],plan['step'],plan['hold_bars'],q['ask']-q['bid'])
                     if not plan['zone'][0]<=ref<=plan['zone'][1] or rr is None or rr<1.5:state='NO TRADE'
                 records.append({'id':row['id'],'state':state,'recorded_state':row['state'],**{k:p[k] for k in ('plan','quote','detected_at','reason','research')},
+                                'input_sha256':p.get('input_sha256'),
                                 'outcome':row['outcome'],'result':json.loads(row['result']) if row['result'] else None})
             current=[r for r in records if r['state'] in ('WATCH','CONFIRMED')]
             state='CONFIRMED' if any(r['state']=='CONFIRMED' for r in current) else 'WATCH' if current else 'NO TRADE'
