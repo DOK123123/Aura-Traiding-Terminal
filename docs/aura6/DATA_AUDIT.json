@@ -1,0 +1,23 @@
+{
+  "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+  "requested_start": 1627776000,
+  "requested_end": 1793232000,
+  "actual_start": 1627776000,
+  "actual_end_exclusive": 1793232000,
+  "base_candles": 551520,
+  "missing_candles": 0,
+  "gaps": [],
+  "duplicate_or_conflicting_archived_rows": 0,
+  "funding_rows": 268,
+  "funding_gaps_over_8h": [],
+  "funding_first": 1785542400,
+  "funding_last": 1793232000,
+  "funding_coverage_complete": false,
+  "frame_candles": {
+    "5m": 551520,
+    "15m": 183840,
+    "1h": 45960,
+    "4h": 11490
+  },
+  "gap_policy": "NO_FILL; DROP_INCOMPLETE_AGGREGATES; RESET_250_BAR_WARMUP; OPEN_HYPOTHESIS_UNKNOWN_ON_GAP"
+}

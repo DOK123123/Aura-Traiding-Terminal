@@ -1,0 +1,247 @@
+{
+  "model_sha256": "fa700ebbbff6fbb4af411389fd38a145ea2ec4a63ad930a27f8302a771aaed83",
+  "candidates": [
+    {
+      "frame": "5m",
+      "strategy": "TREND_PULLBACK",
+      "variant": "BASE",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "TREND_PULLBACK",
+      "variant": "BASE",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "TREND_PULLBACK",
+      "variant": "STRICT",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "TREND_PULLBACK",
+      "variant": "STRICT",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "BREAKOUT_RETEST",
+      "variant": "BASE",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "BREAKOUT_RETEST",
+      "variant": "BASE",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "BREAKOUT_RETEST",
+      "variant": "STRICT",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "BREAKOUT_RETEST",
+      "variant": "STRICT",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "MOMENTUM_EXPANSION",
+      "variant": "BASE",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "MOMENTUM_EXPANSION",
+      "variant": "BASE",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "MOMENTUM_EXPANSION",
+      "variant": "STRICT",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "MOMENTUM_EXPANSION",
+      "variant": "STRICT",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "MEAN_REVERSION",
+      "variant": "BASE",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "MEAN_REVERSION",
+      "variant": "BASE",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "MEAN_REVERSION",
+      "variant": "STRICT",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "MEAN_REVERSION",
+      "variant": "STRICT",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "LIQUIDITY_SWEEP",
+      "variant": "BASE",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "LIQUIDITY_SWEEP",
+      "variant": "BASE",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "LIQUIDITY_SWEEP",
+      "variant": "STRICT",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "LIQUIDITY_SWEEP",
+      "variant": "STRICT",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "RANGE_REJECTION",
+      "variant": "BASE",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "RANGE_REJECTION",
+      "variant": "BASE",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "RANGE_REJECTION",
+      "variant": "STRICT",
+      "side": "LONG",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    },
+    {
+      "frame": "5m",
+      "strategy": "RANGE_REJECTION",
+      "variant": "STRICT",
+      "side": "SHORT",
+      "cost_model_screen_passed": false,
+      "selected_before_test": false,
+      "basis": "TRAIN_VALIDATION_ONLY",
+      "score": null
+    }
+  ],
+  "sealed_before_test": true,
+  "sealed_before_final": true
+}
