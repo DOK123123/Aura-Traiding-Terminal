@@ -5,8 +5,9 @@ import logging
 from pathlib import Path
 import time
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Query, Request, HTTPException
 from fastapi.responses import JSONResponse
+from typing import Literal
 
 from app.hunter.main import Hunter
 from app.hunter.market import PublicMarket
@@ -58,7 +59,8 @@ async def snapshot(request:Request):
     if h is None:
         return JSONResponse({'code':'PREVIEW_SIGNALS_UNAVAILABLE','exchange_execution':False},503)
     running=task is not None and not task.done()
-    status={'running':running,'cycles':h.cycles,'last_cycle_at':h.last_cycle_at,'frame_errors':dict(h.frame_errors)}
+    status={'running':running,'cycles':h.cycles,'last_cycle_at':h.last_cycle_at,'frame_errors':dict(h.frame_errors),
+            'diagnostic_write_failures':h.diagnostic_write_failures}
     data=await asyncio.to_thread(h.store.snapshot,time.time(),dict(h.quotes),h.error if running else 'OBSERVER_STOPPED')
     data['observer']=status
     data['storage']='EPHEMERAL_RENDER_LOCAL'
@@ -70,3 +72,20 @@ async def inputs(request:Request,frame:str=Query(pattern='^(5m|15m|1h|4h)$'),aft
     h=request.app.state.preview_signals
     if h is None:return JSONResponse({'code':'PREVIEW_SIGNALS_UNAVAILABLE'},503)
     return await asyncio.to_thread(h.store.export_inputs,frame,after,limit)
+
+
+@router.get('/diagnostics')
+async def diagnostics(request:Request,hours:int=Query(24,ge=24,le=48)):
+    if hours not in (24,48):raise HTTPException(422,'INVALID_DIAGNOSTIC_WINDOW')
+    h=request.app.state.preview_signals
+    if h is None:return JSONResponse({'code':'PREVIEW_SIGNALS_UNAVAILABLE'},503)
+    return await asyncio.to_thread(h.store.diagnostics,time.time(),hours)
+
+
+@router.get('/journal')
+async def journal(request:Request,hours:int=Query(24,ge=24,le=48),kind:Literal['decisions','samples']='decisions',
+                  after:int=Query(0,ge=0),limit:int=Query(500,ge=1,le=1000)):
+    if hours not in (24,48):raise HTTPException(422,'INVALID_DIAGNOSTIC_WINDOW')
+    h=request.app.state.preview_signals
+    if h is None:return JSONResponse({'code':'PREVIEW_SIGNALS_UNAVAILABLE'},503)
+    return await asyncio.to_thread(h.store.export_diagnostics,time.time(),hours,kind,after,limit)

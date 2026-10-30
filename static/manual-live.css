@@ -27,3 +27,9 @@
 #rp-results th, #rp-results td { padding: 10px; border: 1px solid #35425a; text-align: right; }
 #rp-results th { position: sticky; top: 0; background: #101720; }
 #rp-equity { display: block; width: 100%; height: 220px; }
+
+#ps-diagnostics { min-width:0; max-width:100%; }
+#ps-diagnostics .ps-diag-scroll { max-width:100%; overflow:auto; max-height:480px; }
+#ps-diagnostics table { border-collapse:collapse; min-width:860px; font-size:.85rem; }
+#ps-diagnostics th,#ps-diagnostics td { padding:8px; border:1px solid #35425a; vertical-align:top; max-width:260px; }
+#ps-audio strong { display:block; }
