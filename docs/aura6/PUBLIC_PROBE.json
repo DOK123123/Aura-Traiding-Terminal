@@ -1,0 +1,114 @@
+{
+  "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+  "scope": "BOUNDED_PUBLIC_GET_PROBE_NOT_DEPLOYED_FORWARD_PROFIT",
+  "crosschecks": [
+    {
+      "frame": "15m",
+      "end": 1640995200,
+      "bars": 10,
+      "ohlc_match": true,
+      "volume_match": true,
+      "max_volume_relative_difference": 1.9177779830064864e-16
+    },
+    {
+      "frame": "1h",
+      "end": 1640995200,
+      "bars": 10,
+      "ohlc_match": true,
+      "volume_match": true,
+      "max_volume_relative_difference": 1.4087797801406718e-16
+    },
+    {
+      "frame": "4h",
+      "end": 1640995200,
+      "bars": 10,
+      "ohlc_match": true,
+      "volume_match": false,
+      "max_volume_relative_difference": 1.4136489502448483e-05
+    },
+    {
+      "frame": "15m",
+      "end": 1704067200,
+      "bars": 10,
+      "ohlc_match": true,
+      "volume_match": true,
+      "max_volume_relative_difference": 1.9835407723552086e-16
+    },
+    {
+      "frame": "1h",
+      "end": 1704067200,
+      "bars": 10,
+      "ohlc_match": true,
+      "volume_match": true,
+      "max_volume_relative_difference": 0.0
+    },
+    {
+      "frame": "4h",
+      "end": 1704067200,
+      "bars": 10,
+      "ohlc_match": true,
+      "volume_match": false,
+      "max_volume_relative_difference": 0.0006754262386539163
+    },
+    {
+      "frame": "15m",
+      "end": 1788220800,
+      "bars": 10,
+      "ohlc_match": true,
+      "volume_match": true,
+      "max_volume_relative_difference": 0.0
+    },
+    {
+      "frame": "1h",
+      "end": 1788220800,
+      "bars": 10,
+      "ohlc_match": true,
+      "volume_match": true,
+      "max_volume_relative_difference": 2.0485209294805757e-16
+    },
+    {
+      "frame": "4h",
+      "end": 1788220800,
+      "bars": 10,
+      "ohlc_match": true,
+      "volume_match": true,
+      "max_volume_relative_difference": 0.0
+    }
+  ],
+  "cycles": [
+    {
+      "restart": false,
+      "at": 1793335457.942033,
+      "state": "NO TRADE",
+      "fresh_frames": [
+        "15m",
+        "1h",
+        "4h",
+        "5m"
+      ],
+      "records": 1,
+      "alerts": 0,
+      "error": null,
+      "account_connected": false,
+      "execution_enabled": false
+    },
+    {
+      "restart": true,
+      "at": 1793335458.7531388,
+      "state": "NO TRADE",
+      "fresh_frames": [
+        "15m",
+        "1h",
+        "4h",
+        "5m"
+      ],
+      "records": 1,
+      "alerts": 0,
+      "error": null,
+      "account_connected": false,
+      "execution_enabled": false
+    }
+  ],
+  "confirmed_eligibility": 0,
+  "orders": 0
+}

@@ -1,0 +1,6 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {usable}=require('../static/preview-signals.js');
+function fixture(){const source='BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2',row={state:'WATCH',plan:{frame:'5m',direction:'LONG',source,entry:100,sl:90,tp:120,zone:[95,105],valid_until:1200}};const data={scope:'AURA6_PUBLIC_OBSERVER_ONLY',execution_enabled:false,account_connected:false,state:'WATCH',server_time:1000,fresh_frames:['5m'],quotes:{'5m':{source,bid:99.99,ask:100.01,time:1000,received_at:1000}}};return {row,data};}
+test('server scenario is displayable only with current source-bound quote and levels',()=>{const {data,row}=fixture();assert.equal(usable(data,row,1000),true);assert.equal(usable(data,row,1006),false);row.plan.direction='SHORT';row.plan.sl=110;row.plan.tp=80;assert.equal(usable(data,row,1000),true);});
+for(const [name,change] of Object.entries({stopped:d=>d.state='NO TRADE',source:d=>d.quotes['5m'].source='OTHER',crossed:d=>d.quotes['5m'].bid=101,stale:d=>d.quotes['5m'].time-=6,wrongScope:d=>d.scope='OTHER',account:d=>d.account_connected=true,execution:d=>d.execution_enabled=true,missingFrame:d=>d.fresh_frames=[]}))test('reject '+name,()=>{const {data,row}=fixture();change(data);assert.equal(usable(data,row,1000),false);});

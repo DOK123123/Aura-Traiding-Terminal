@@ -15,6 +15,7 @@ class Config:
     url:str
     key:str=field(repr=False)
     manual_enabled:bool=False
+    signals_enabled:bool=False
 
 
 def parse(env,clock=time.time):
@@ -50,4 +51,6 @@ def parse(env,clock=time.time):
     # The dedicated Supabase host still verifies the JWT signature and role.
     enabled=env.get('AURA_PREVIEW_MANUAL_ENABLED','false')
     if enabled not in ('true','false'):raise ValueError('PREVIEW_MANUAL_FLAG_INVALID')
-    return Config(password,ref,url,key,enabled=='true')
+    signals=env.get('AURA_PREVIEW_SIGNALS_ENABLED','false')
+    if signals not in ('true','false'):raise ValueError('PREVIEW_SIGNALS_FLAG_INVALID')
+    return Config(password,ref,url,key,enabled=='true',signals=='true')

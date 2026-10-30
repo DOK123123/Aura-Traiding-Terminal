@@ -1,0 +1,122 @@
+{
+  "version": "AURA6_RESEARCH_1",
+  "frames": {
+    "5m": 300,
+    "15m": 900,
+    "1h": 3600,
+    "4h": 14400
+  },
+  "warmup": 250,
+  "families": [
+    "TREND_PULLBACK",
+    "BREAKOUT_RETEST",
+    "MOMENTUM_EXPANSION",
+    "MEAN_REVERSION",
+    "LIQUIDITY_SWEEP",
+    "RANGE_REJECTION"
+  ],
+  "variants": [
+    "BASE",
+    "STRICT"
+  ],
+  "rules": {
+    "ema": [
+      20,
+      50,
+      200
+    ],
+    "atr": 14,
+    "rsi": 14,
+    "efficiency": 20,
+    "trend": {
+      "er_min": 0.3,
+      "strict_er_min": 0.4,
+      "rsi_long": [
+        45,
+        70
+      ],
+      "rsi_short": [
+        30,
+        55
+      ],
+      "stop_atr": 2,
+      "target_R": 2.5,
+      "hold": 48
+    },
+    "breakout": {
+      "range": 20,
+      "clearance_atr": 0.2,
+      "retest_atr": 0.5,
+      "volume": 1.2,
+      "strict_volume": 1.5,
+      "stop_atr": 2,
+      "target_R": 2,
+      "hold": 32
+    },
+    "momentum": {
+      "range": 20,
+      "tr_atr_min": 1.5,
+      "tr_atr_max": 3,
+      "body_min": 0.6,
+      "volume": 1.5,
+      "strict_volume": 2,
+      "stop_atr": 1.8,
+      "target_R": 2.5,
+      "hold": 24
+    },
+    "mean_reversion": {
+      "bands": 20,
+      "stddev": 2,
+      "strict_stddev": 2.5,
+      "er_max": 0.3,
+      "rsi_extremes": [
+        30,
+        70
+      ],
+      "stop_atr": 1.5,
+      "target": "KNOWN_MEAN20",
+      "hold": 24
+    },
+    "sweep": {
+      "range": 20,
+      "excursion_atr": 0.1,
+      "volume": 1.2,
+      "strict_volume": 1.5,
+      "wick_body_min": 1,
+      "stop_atr": 1.5,
+      "target_R": 2,
+      "hold": 32
+    },
+    "range": {
+      "range": 40,
+      "er_max": 0.2,
+      "strict_er_max": 0.15,
+      "ema_sep_atr_max": 0.5,
+      "width_atr_min": 4,
+      "edge_fraction": 0.2,
+      "rsi": [
+        45,
+        55
+      ],
+      "stop_atr": 1.5,
+      "target": "KNOWN_RANGE_MID",
+      "hold": 24
+    }
+  },
+  "planning": {
+    "min_net_rr": 1.5,
+    "entry_zone_atr": 0.5,
+    "entry_expiry_bars": 1,
+    "funding_reserve_bps_per_8h": 1
+  },
+  "costs": {
+    "fee_bps_per_side": 10,
+    "slippage_bps_per_side": 5,
+    "full_spread_bps": 2,
+    "multipliers": [
+      1,
+      1.5,
+      2
+    ]
+  }
+}

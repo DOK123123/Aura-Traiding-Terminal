@@ -32,6 +32,8 @@ jobs:
           export CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
           node scripts/verify_replay_alerts_browser.cjs work/replay-alerts-browser
           node scripts/verify_manual_strategies_browser.cjs work/strategies-browser
+          node scripts/verify_hunter6_browser.cjs work/hunter6-browser
+          node scripts/verify_preview_signals_browser.cjs work/preview-signals-browser
           PYTHON="$PYTHON" node scripts/verify_manual_preview_chart.cjs work/chart-browser
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
