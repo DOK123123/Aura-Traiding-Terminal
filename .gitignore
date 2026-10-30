@@ -13,3 +13,8 @@ python-runtime.zip
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm
+
+# Public observer capture checkpoints are exported as parsed JSON, never DB files.
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

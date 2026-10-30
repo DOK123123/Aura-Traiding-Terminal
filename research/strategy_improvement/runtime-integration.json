@@ -1,9 +1,9 @@
 {
-  "reason": "User-authorized Aura 5 server-signal integration. Preserve the original research runtime snapshot and guard the reviewed replacement separately; numerical inputs and results are unchanged.",
+  "reason": "User-authorized Aura 5 integration and observer health correctness. Original archived runtime/numerical research remain unchanged; reviewed health now reports stopped/overdue observer as degraded.",
   "files": {
     "app/manual_preview/main.py": {
       "archive": "research/strategy_improvement/baseline_runtime/main.py.txt",
-      "authorized_runtime_sha256": "9edd4be6c21bfbb6acec1f7843cba79c23a359ca670b1f6b864af9993f215c27"
+      "authorized_runtime_sha256": "3a7c83bb56fd0ba44a2d31bd71efaaef8a4572d848c95cf0fd6b2cbe4c1b23d1"
     },
     "app/manual_preview/page.py": {
       "archive": "research/strategy_improvement/baseline_runtime/page.py.txt",

@@ -146,3 +146,75 @@ def test_saved_replay_is_deterministic_and_reports_absent_forward(tmp_path,monke
     assert not s['profitability_evaluated'] and s['orders']==0
     for name in ['summary.json','counts.csv','decisions.json.gz']:assert (out/name).read_bytes()==(saved/name).read_bytes()
     assert all(r['bid_ask_age_seconds'] is None for r in json.loads(gzip.decompress((out/'decisions.json.gz').read_bytes())))
+
+
+def test_market_coverage_excludes_failed_samples_edges_and_restart(tmp_path):
+    s=Store(tmp_path/'coverage.sqlite')
+    with s.connection() as db:
+        for at,status in [(96001.,'LIVE'),(96006.,'LIVE'),(96011.,'QUOTE_GAP'),(96016.,'QUOTE_GAP'),(96021.,'LIVE')]:
+            s.sample(db,'5m',at,status)
+    other=Store(s.path)
+    with other.connection() as db:
+        other.sample(db,'5m',96026.,'LIVE')
+        other.sample(db,'5m',96031.,'LIVE')
+    d=other.diagnostics(96041.,24)['coverage']['5m']
+    assert d['cadence_observed_seconds']==10  # two 5s LIVE pairs; restart excluded
+    assert d['failed_or_restart_interval_seconds']==20
+    assert d['trailing_unobserved_seconds']==10
+    assert d['leading_unobserved_seconds']==86400-40
+    assert d['unobserved_window_seconds']==86390
+    assert not d['coverage_complete']
+    empty=other.diagnostics(96041.,24)['coverage']['4h']
+    assert empty['unobserved_window_seconds']==86400
+    assert empty['cadence_observed_seconds']==0
+
+
+def test_preview_health_fails_closed_when_enabled_observer_stops(integrated):
+    from app.manual_preview import main
+    task=main.app.state.preview_signals_task
+    async def stop():
+        task.cancel()
+        await asyncio.gather(task,return_exceptions=True)
+    integrated.portal.call(stop)
+    response=integrated.get('/api/health')
+    assert response.status_code==503
+    assert response.json()['status']=='degraded'
+    assert response.json()['signal_observer_running'] is False
+    assert response.json()['exchange_execution'] is False
+
+
+@pytest.mark.parametrize('side',['LONG','SHORT'])
+def test_displayed_quote_costs_use_current_executable_side(tmp_path,monkeypatch,side):
+    p=plan(side)
+    monkeypatch.setattr(Prepared,'plans',lambda self,i,family,**kw:[copy.deepcopy(p)] if family=='TREND_PULLBACK' else [])
+    s=Store(tmp_path/'cost-display.sqlite');s.observe(sample(),[],96001.,{'approved':[]})
+    data=s.snapshot(96002.,{'5m':quote(96002.)})
+    costs=data['records'][0]['plan']['costs_at_quote']
+    sign=1 if side=='LONG' else -1
+    reference=100.01 if side=='LONG' else 99.99
+    expected_entry=reference*(1+sign*.0005)
+    expected_stop=p['sl']*(1-sign*.0005)
+    assert costs['entry_basis']=='EXECUTABLE_QUOTE'
+    assert costs['entry_fill']==pytest.approx(expected_entry)
+    assert costs['stop_fees']==pytest.approx(.001*(expected_entry+expected_stop))
+    assert data['records'][0]['plan']['net_rr_at_quote']==costs['net_rr']
+
+
+def test_preview_health_detects_hung_first_cycle(integrated):
+    from app.manual_preview import main
+    class Pending:
+        def done(self):return False
+    old_task=main.app.state.preview_signals_task
+    old_observer=main.app.state.preview_signals
+    old_start=main.app.state.preview_signals_started_at
+    try:
+        main.app.state.preview_signals_task=Pending()
+        main.app.state.preview_signals=type('Starting',(),{'last_cycle_at':None})()
+        main.app.state.preview_signals_started_at=95000.
+        response=integrated.get('/api/health')
+        assert response.status_code==503
+        assert response.json()['signal_observer_overdue'] is True
+    finally:
+        main.app.state.preview_signals_task=old_task
+        main.app.state.preview_signals=old_observer
+        main.app.state.preview_signals_started_at=old_start

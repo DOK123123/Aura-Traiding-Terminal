@@ -31,6 +31,7 @@ async def run_observer(observer):
 
 @asynccontextmanager
 async def observer_lifespan(app, client, enabled: bool):
+    app.state.preview_signals_started_at=time.time()
     app.state.preview_signals=None
     app.state.preview_signals_task=None
     market=None

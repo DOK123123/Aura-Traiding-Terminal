@@ -1,0 +1,24 @@
+{
+  "scope":"AURA5_FROZEN_RESEARCH_NO_SELECTION_NO_ORDERS",
+  "registration":"Rules frozen before first replay; timestamp metadata corrected after initial replay, no rule changes",
+  "families":"ALL_SIX",
+  "variants":["BASE","STRICT"],
+  "frames":["4h"],
+  "budget":{"configurations":12,"parameter_search":0,"selection":0},
+  "input_contract":"EXACT_260_ARCHIVE_AGGREGATED_CLOSED_BARS_NOT_NATIVE",
+  "splits":[
+    {"name":"train","start":"2021-10-01T00:00:00Z","end":"2023-10-01T00:00:00Z"},
+    {"name":"validation","start":"2023-10-01T00:00:00Z","end":"2024-10-01T00:00:00Z"},
+    {"name":"reused_test","start":"2024-10-01T00:00:00Z","end":"2025-10-01T00:00:00Z"},
+    {"name":"reused_final_NOT_HOLDOUT","start":"2025-10-01T00:00:00Z","end":"2026-10-29T00:00:00Z"}
+  ],
+  "purge":"NO_CARRY; pending positions at split end UNKNOWN; causal warmup permitted",
+  "execution":"NEXT_OPEN; SL_FIRST; ADVERSE_GAPS; SAME_CURRENT_CORRECTED_COSTS",
+  "historical_quote_uncertainty":"OHLC spread/slippage model, not historical Bid/Ask",
+  "funding":"PUBLIC_ARCHIVE_RATES_AND_OHLC_NOTIONAL_PROXY; MISSING_DEBIT_DISCLOSED",
+  "untouched_holdout_available":false,
+  "forward_start_rule":"AFTER_THIS_PROTOCOL; no retroactive backfill claimed as observation",
+  "forward_minimum":"48 elapsed hours is operational check only; not sufficient edge validation",
+  "eligibility_changes":0,
+  "edge_result":"NO_EDGE_FOUND_UNLESS_INDEPENDENT_QUALIFICATION_IN_FUTURE_SEPARATE_REVIEW"
+}
