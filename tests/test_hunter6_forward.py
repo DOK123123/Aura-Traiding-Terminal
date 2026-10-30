@@ -184,3 +184,52 @@ def test_bounded_capture_reports_unavailable_frames_instead_of_inventing_inputs(
     assert len(result['frame_errors'])==4 and result['orders']==0
     assert all(r['inputs_verified']==0 for r in result['audits'])
     assert result['states']['state']=='NO TRADE'
+
+
+def test_cycle_uses_fresh_same_market_quote_after_parallel_frame_wait(tmp_path,monkeypatch):
+    """Early frame quote can expire while gather waits for slower candle fetches."""
+    import app.hunter.main as module
+    from app.hunter.market import STEPS, fresh_quote
+    now=7200000.
+    monkeypatch.setattr(module.time,'time',lambda:now)
+    class DelayedCohort(OfflineMarket):
+        async def snapshot(self,frame):
+            step=STEPS[frame]
+            return {'source':SOURCE,'frame':frame,'step':step,
+                    'bars':bars(260,step,int(now)-260*step),
+                    'quote':quote(now-10 if frame=='5m' else now)}
+    async def run():
+        s=Store(tmp_path/'cohort.sqlite');h=Hunter(s,DelayedCohort(),{'approved':[]})
+        await h.cycle()
+        assert h.frame_errors=={}
+        for frame in STEPS:
+            page=s.export_inputs(frame)
+            assert len(page['items'])==1
+            q=page['items'][0]['payload']['snapshot']['quote']
+            assert q==quote(now) and fresh_quote(q,now)
+            assert audit_page(page)['inputs_verified']==1
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize('bad',['stale','future','foreign_quote','foreign_snapshot'])
+def test_cycle_never_refreshes_from_unverified_quote_cohort(tmp_path,monkeypatch,bad):
+    import app.hunter.main as module
+    from app.hunter.market import STEPS
+    now=7200000.
+    monkeypatch.setattr(module.time,'time',lambda:now)
+    class BadCohort(OfflineMarket):
+        async def snapshot(self,frame):
+            step=STEPS[frame];q=quote(now-10)
+            source=SOURCE
+            if frame=='4h':
+                if bad=='future':q=quote(now+1)
+                if bad=='foreign_quote':q=quote(now);q['source']='OTHER'
+                if bad=='foreign_snapshot':q=quote(now);source='OTHER'
+            return {'source':source,'frame':frame,'step':step,
+                    'bars':bars(260,step,int(now)-260*step),'quote':q}
+    async def run():
+        s=Store(tmp_path/'bad-cohort.sqlite');h=Hunter(s,BadCohort(),{'approved':[]})
+        await h.cycle()
+        assert h.quotes=={} and len(h.frame_errors)==4
+        assert all(s.export_inputs(frame)['items']==[] for frame in STEPS)
+    asyncio.run(run())
