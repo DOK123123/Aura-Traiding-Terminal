@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 
 from .market import SOURCE, STEPS, validate_bars
+from .costs import risk_reward
 
 RULES = json.loads(Path(__file__).with_name('rules.json').read_text())
 VERSION = RULES['version']
@@ -55,19 +56,8 @@ def wilder(values, n=14):
 
 
 def net_rr(entry, stop, target, direction, step, hold, spread=None):
-    sign = 1 if direction == 'LONG' else -1
-    if not all(math.isfinite(x) and x > 0 for x in (entry, stop, target)):
-        return None
-    if sign * (entry-stop) <= 0 or sign * (target-entry) <= 0:
-        return None
-    half = (RULES['costs']['full_spread_bps'] / 2e4) if spread is None else spread / (2*entry)
-    slip = RULES['costs']['slippage_bps_per_side'] / 1e4
-    fee = RULES['costs']['fee_bps_per_side'] / 1e4
-    funding = entry * math.ceil(hold * step / 28800) * RULES['planning']['funding_reserve_bps_per_8h'] / 1e4
-    e, s, t = entry*(1+sign*(half+slip)), stop*(1-sign*(half+slip)), target*(1-sign*(half+slip))
-    loss = sign*(e-s)+fee*(e+s)+funding
-    reward = sign*(t-e)-fee*(e+t)-funding
-    return reward/loss if loss > 0 else None
+    costs = risk_reward(entry,stop,target,direction,step,hold,spread)
+    return costs['net_rr'] if costs else None
 
 
 class Prepared:
@@ -111,7 +101,7 @@ class Prepared:
                 getattr(self, 'low'+str(size))[start:end] = rolling(l, size, False)
             self.valid[start+RULES['warmup']-1:end] = True
 
-    def plans(self, i, family, variant='BASE', *, cutoff=None, watch=False):
+    def plans(self, i, family, variant='BASE', *, cutoff=None, watch=False, audit=None):
         if family not in FAMILIES or variant not in RULES['variants']:
             raise ValueError('UNREGISTERED_RULE')
         if type(i) is not int or i < 249 or i >= len(self.rows) or not self.valid[i]:
@@ -211,6 +201,13 @@ class Prepared:
                 continue
             stop = c-sign*stop_distance
             rr = net_rr(c, stop, target, direction, self.step, hold)
+            if audit is not None:
+                audit.append({'strategy':family,'variant':variant,'frame':self.frame,'direction':direction,
+                              'signal_time':at,'entry':c,'sl':float(stop),'tp':float(target),'hold_bars':hold,
+                              'technical_trigger':bool(trigger),'net_rr':rr,
+                              'costs':risk_reward(c,float(stop),float(target),direction,self.step,hold),
+                              'rejection':'INVALID_GEOMETRY_OR_COST_INPUT' if rr is None else
+                                          'NET_RR_BELOW_MINIMUM' if rr < RULES['planning']['min_net_rr'] else None})
             if rr is None or rr < RULES['planning']['min_net_rr']:
                 continue
             identity = f'{VERSION}:{family}:{variant}:{self.frame}:{direction}:{at}'

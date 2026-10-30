@@ -1,0 +1,21 @@
+{
+  "scope": "AURA5_COST_CORRECTNESS_AUDIT_NOT_STRATEGY_SELECTION",
+  "baseline_commit": "53097fe20eaa8d76824bc71b012a8f1d4ec812f2",
+  "issue66_window": ["2026-10-27T00:00:00Z", "2026-10-29T00:00:00Z"],
+  "comparison_window": ["2026-08-01T00:00:00Z", "2026-10-29T00:00:00Z"],
+  "frames": {"5m":300,"15m":900,"1h":3600,"4h":14400},
+  "seed": "EXACT_260_CLOSED_ARCHIVE_AGGREGATED_BARS_EACH_DECISION_NOT_NATIVE_HIGHER_TF",
+  "families": "ALL_SIX_UNCHANGED_BASE",
+  "cost_multipliers": [1,1.5,2],
+  "entry": "NEXT_OPEN_WITHIN_ONE_BAR_EXPIRY",
+  "overlap": "ONE_HYPOTHESIS_PER_FAMILY_TF_SIDE; NO_CROSS_GROUP_PORTFOLIO_RETURN",
+  "stop_target": "UNCHANGED_LEVELS_EXIT_SIDE_QUOTES; SL_FIRST_ON_SAME_BAR; ADVERSE_GAP; TP_CAPPED",
+  "costs": {"fee_bps_per_side":10,"slippage_bps_per_side":5,"full_spread_bps":2,"funding_reserve_bps_per_8h":1},
+  "funding": "PUBLIC_ARCHIVE_RATES_OHLC_NOTIONAL_PROXY; MISSING_1BP_DEBIT_DISCLOSED; BOUNDARY_CREDITS_EXCLUDED",
+  "unknown": "EXCLUDED_FROM_CLOSED_METRICS_AND_REPORTED_NOT_ZERO_OR_PROFIT",
+  "baseline_strategy_fitted": false,
+  "selection_or_threshold_optimization": false,
+  "independent_unseen_oos": false,
+  "validation_registry_changes": 0,
+  "execution": "OFFLINE_HYPOTHETICAL_ONLY_NO_ORDERS_NO_PAPER_NO_DEPLOY"
+}

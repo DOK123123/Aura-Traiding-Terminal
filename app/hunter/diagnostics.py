@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .engine import FAMILIES, RULES, VERSION, net_rr
 from .market import SOURCE, LIVE_INPUT_CONTRACT
+from .costs import filled_in_zone
 
 DIAGNOSTICS_VERSION='AURA5_DIAGNOSTICS_1'
 DIAGNOSTICS_HASH=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
@@ -93,7 +94,7 @@ def explain(prepared,plans,now,model_hash,*,quote=None,states=None,replay=False)
                 else:
                     ref=quote['ask' if side=='LONG' else 'bid']
                     rr=net_rr(ref,p['sl'],p['tp'],side,step,p['hold_bars'],quote['ask']-quote['bid'])
-                    if not p['zone'][0]<=ref<=p['zone'][1]:reasons.append('ENTRY_OUTSIDE_ZONE')
+                    if not filled_in_zone(ref,p['zone'],p['direction']):reasons.append('ENTRY_OUTSIDE_ZONE')
                     if rr is None or rr<1.5:reasons.append('QUOTE_NET_RR_OR_GEOMETRY')
                     if now>=p['valid_until']:reasons.append('ENTRY_EXPIRED')
                     state=(states or {}).get((family,side),'REJECTED')

@@ -79,7 +79,8 @@ def test_hunter_execution_independent_tp_sl_gap_and_cost_signs(side):
     both=[96300,100,125,75,100,1]
     r=simulate(p,[initial,both],[]);assert r['outcome']=='SL' and r['ambiguous'] and r['r']<0
     gap=[96300,80,85,75,80,1] if sign==1 else [96300,120,125,115,120,1]
-    r=simulate(p,[initial,gap],[]);assert r['note']=='ADVERSE_STOP_GAP' and r['r']<-2
+    r=simulate(p,[initial,gap],[]);assert r['note']=='ADVERSE_STOP_GAP' and r['gross_reference_r']<-2
+    assert r['r']==pytest.approx(float(r['pnl_usdt'])/float(r['risk_usdt']))
 
 
 def test_hunter_entry_expiry_missing_data_timeout_unknown_and_funding_boundaries():

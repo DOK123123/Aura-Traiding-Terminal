@@ -129,8 +129,14 @@ def test_owner_pagination_and_no_http_ack_route(integrated):
     assert not first['includes_private_account_data']
 
 
-def test_saved_replay_is_deterministic_and_reports_absent_forward(tmp_path):
+def test_saved_replay_is_deterministic_and_reports_absent_forward(tmp_path,monkeypatch):
     from research.aura5_issue66.run import run
+    import research.aura5_issue66.run as replay
+    from research.aura5_cost_audit.baseline import engine,diagnostics,MODEL_HASH as original_hash
+    monkeypatch.setattr(replay,'Prepared',engine.Prepared)
+    monkeypatch.setattr(replay,'MODEL_HASH',original_hash)
+    monkeypatch.setattr(replay,'explain',diagnostics.explain)
+    monkeypatch.setattr(replay,'DIAGNOSTICS_HASH',diagnostics.DIAGNOSTICS_HASH)
     out=tmp_path/'replay';s=run(out);saved=Path('docs/aura_trader5/issue66/replay')
     assert s['frames']=={'5m':576,'15m':192,'1h':48,'4h':12} and s['decisions']==9936
     assert sum(g['candidates'] for g in s['windows']['48']['groups'])==229
