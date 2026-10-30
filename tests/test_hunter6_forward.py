@@ -166,7 +166,11 @@ def test_stopped_task_is_degraded_and_never_reported_as_running(tmp_path):
         assert d['state']=='NO TRADE' and d['alerts']==[]
 
 
-def test_saved_public_native_windows_reproduce_without_network():
+def test_saved_public_native_windows_reproduce_without_network(monkeypatch):
+    import research.hunter6.forward as reproduction
+    from research.aura5_cost_audit.baseline import engine,MODEL_HASH as original_hash
+    monkeypatch.setattr(reproduction,'Prepared',engine.Prepared)
+    monkeypatch.setattr(reproduction,'MODEL_HASH',original_hash)
     folder=Path(__file__).resolve().parents[1]/'docs/aura6/native_probe'
     for frame in ['5m','15m','1h','4h']:
         report=audit_page(json.loads((folder/(frame+'.json')).read_text()))

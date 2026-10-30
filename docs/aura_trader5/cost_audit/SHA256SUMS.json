@@ -1,0 +1,13 @@
+{
+  "docs/aura_trader5/cost_audit/results/candidates229.csv": "a8afa236d10609bc829216f1e8e975ab420c1b19cd223eeaae0c79377865dd01",
+  "docs/aura_trader5/cost_audit/results/candidates229.json.gz": "32d929697ba799655a77bdf0969a23d9753f5abf5fae051d8c38d94e3743aea8",
+  "docs/aura_trader5/cost_audit/results/outcomes.json.gz": "5dd25dccd55d5542b7aedaf00ad313cafeac597a2a18ea4469eed3af1b25ea1b",
+  "docs/aura_trader5/cost_audit/results/summary.json": "9d55497dec4d3932bbbd7eda036f072b0e0e0c832f607deafd8263996868b753",
+  "research/aura5_cost_audit/baseline/__init__.py": "5d1e9a7361b600cbdf999cb9d76edbadb43253e3012d1aaf85fab08b46638b85",
+  "research/aura5_cost_audit/baseline/diagnostics.py": "e0bf2674219d79c9afc4e18e1e50ebeadaafa3cb124df70a747d841ae8d1601d",
+  "research/aura5_cost_audit/baseline/engine.py": "2668c667dd166177b8f6ecc928dd74ee6efa8b4ec728aef633a38828559c851e",
+  "research/aura5_cost_audit/baseline/market.py": "970a99edc24efff2435c5edcf0a60a49f9ec620a0a0dc2f7150fdc6b9b13a788",
+  "research/aura5_cost_audit/baseline/outcomes.py": "e8af59c0bbd29a70f6e8dfb42ffbb1266cf3b32ec721906d9e880633c6c9db9a",
+  "research/aura5_cost_audit/baseline/rules.json": "58f4d8fda023f64b126d0b9185335ff7bc156eccab800da72ff22084d6a35bd1",
+  "research/aura5_cost_audit/protocol.json": "edc7f27266891a1407bdc2fd5f8c86808f970ffa4d7bab89e6e79271e65b3d2b"
+}

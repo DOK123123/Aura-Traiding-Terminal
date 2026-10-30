@@ -7,13 +7,15 @@ import sqlite3
 import threading
 from pathlib import Path
 
-from .engine import FAMILIES, Prepared, VERSION, net_rr
+from .engine import FAMILIES, Prepared, VERSION, RULES, net_rr
 from .market import SOURCE, STEPS, LIVE_WINDOW, LIVE_INPUT_CONTRACT, fresh_quote, validate_bars
 from .outcomes import cashflow
 from .diagnostics import explain
 from .diagnostic_store import DiagnosticStore
+from .costs import entry_fill, exit_fill, filled_in_zone
 
-MODEL_HASH = hashlib.sha256(Path(__file__).with_name('engine.py').read_bytes()+Path(__file__).with_name('rules.json').read_bytes()).hexdigest()
+MODEL_HASH = hashlib.sha256(b''.join(Path(__file__).with_name(name).read_bytes()
+                                    for name in ('engine.py','rules.json','costs.py','outcomes.py'))).hexdigest()
 
 def evidence_hash(payload: dict) -> str:
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
@@ -35,7 +37,7 @@ def forward_outcome(record, bars, funding):
     after=[b for b in bars if b[0]+p['step']>record['detected_at']]
     start=int(record['detected_at']//p['step'])*p['step']
     result={'outcome':'OPEN','entered':True,'entry_time':record['detected_at'],
-            'entry_fill':record['quote']['ask' if sign==1 else 'bid']*(1+sign*.0005),
+            'entry_fill':entry_fill(record['quote']['ask' if sign==1 else 'bid'],p['direction'],quoted=True),
             'exit_time':None,'pnl_usdt':None,'r':None,'note':'PUBLIC_QUOTE_HYPOTHESIS_NOT_EXECUTION'}
     if not after:
         return result
@@ -45,7 +47,7 @@ def forward_outcome(record, bars, funding):
         return {**result,'outcome':'UNKNOWN','note':'FUNDING_COVERAGE_UNVERIFIED'}
     for i,b in enumerate(after[:p['hold_bars']]):
         # The detection candle has pre-detection extremes. Never certify an intrabar winner from them.
-        q=1-sign*.0001
+        q=1-sign*RULES['costs']['full_spread_bps']/2e4
         op,high,low,close=b[1]*q,b[2]*q,b[3]*q,b[4]*q
         sl=low<=p['sl'] if sign==1 else high>=p['sl']
         tp=high>=p['tp'] if sign==1 else low<=p['tp']
@@ -61,10 +63,10 @@ def forward_outcome(record, bars, funding):
             if funding[-1][0]<b[0]+p['step']-28800:
                 return {**result,'outcome':'UNKNOWN','note':'FUNDING_TAIL_UNVERIFIED'}
             # Spread/slippage are reserves, not true historical executions.
-            fill=price*(1-sign*.0005)
+            fill=exit_fill(price,p['direction'])
             result.update(outcome=outcome,exit_time=b[0],exit_fill=fill,
                           note='BOTH_TOUCHED_SL_FIRST' if sl and tp else 'CLOSED_CANDLE_OBSERVATION')
-            result.update(cashflow(p,result['entry_fill'],fill,record['detected_at'],b[0],after[:i+1],funding))
+            result.update(cashflow(p,result['entry_fill'],fill,record['detected_at'],b[0],after[:i+1],funding,exit_at_close=outcome=='TIMEOUT'))
             return result
     return result
 
@@ -126,12 +128,13 @@ class Store(DiagnosticStore):
             for old in db.execute("SELECT id,payload FROM events WHERE frame=? AND state IN ('WATCH','CONFIRMED')",(frame,)).fetchall():
                 p=json.loads(old['payload'])['plan'];q=snapshot['quote'];ref=q['ask' if p['direction']=='LONG' else 'bid']
                 rr=net_rr(ref,p['sl'],p['tp'],p['direction'],step,p['hold_bars'],q['ask']-q['bid'])
-                if not p['zone'][0]<=ref<=p['zone'][1] or rr is None or rr<1.5:
+                if not filled_in_zone(ref,p['zone'],p['direction']) or rr is None or rr<1.5:
                     db.execute("UPDATE events SET state='CANCELLED_ENTRY' WHERE id=?",(old['id'],))
             pending=db.execute("SELECT * FROM events WHERE frame=? AND technical=1 AND outcome IN ('PENDING','OPEN') ORDER BY at LIMIT 1000",(frame,)).fetchall()
             for row in pending:
                 record=json.loads(row['payload'])
-                result=forward_outcome(record,bars,funding)
+                result=({'outcome':'UNKNOWN','note':'MODEL_CHANGED_NO_CROSS_VERSION_OUTCOME','r':None,'pnl_usdt':None}
+                        if record['plan'].get('model_sha256')!=MODEL_HASH else forward_outcome(record,bars,funding))
                 db.execute('UPDATE events SET outcome=?,result=? WHERE id=?',(result['outcome'],json.dumps(result),row['id']))
             wm=db.execute('SELECT cutoff FROM watermarks WHERE frame=?',(frame,)).fetchone()
             if wm and wm[0]>=cutoff:
@@ -151,7 +154,7 @@ class Store(DiagnosticStore):
                 p['input_contract']=LIVE_INPUT_CONTRACT
                 q=snapshot['quote'];reference=q['ask' if p['direction']=='LONG' else 'bid']
                 rr=net_rr(reference,p['sl'],p['tp'],p['direction'],step,p['hold_bars'],q['ask']-q['bid'])
-                entry_valid=p['zone'][0]<=reference<=p['zone'][1] and rr is not None and rr>=1.5 and now<p['valid_until']
+                entry_valid=filled_in_zone(reference,p['zone'],p['direction']) and rr is not None and rr>=1.5 and now<p['valid_until']
                 evidence=validated(p,registry)
                 funding_ready=bool(len(funding)>=2 and funding[0][0]<=now and 0<=now-funding[-1][0]<=28800 and all(type(t) is int and math.isfinite(rate) and -1<rate<1 and t<=now for t,rate in funding) and all(0<b[0]-a[0]<=28800 for a,b in zip(funding,funding[1:])))
                 state='CONFIRMED' if evidence and funding_ready and p['technical_trigger'] and entry_valid else 'WATCH' if entry_valid else 'NO TRADE'
@@ -194,11 +197,12 @@ class Store(DiagnosticStore):
             records=[]
             for row in db.execute('SELECT * FROM events ORDER BY at DESC,id LIMIT 200'):
                 p=json.loads(row['payload']);state=row['state']
-                if state in ('WATCH','CONFIRMED') and (error or row['expires']<=now or row['frame'] not in fresh_frames or p['plan'].get('input_contract')!=LIVE_INPUT_CONTRACT):state='NO TRADE'
+                if state in ('WATCH','CONFIRMED') and (error or row['expires']<=now or row['frame'] not in fresh_frames or p['plan'].get('input_contract')!=LIVE_INPUT_CONTRACT or p['plan'].get('model_sha256')!=MODEL_HASH):state='NO TRADE'
                 if state in ('WATCH','CONFIRMED'):
                     plan=p['plan'];q=quotes[row['frame']];ref=q['ask' if plan['direction']=='LONG' else 'bid']
                     rr=net_rr(ref,plan['sl'],plan['tp'],plan['direction'],plan['step'],plan['hold_bars'],q['ask']-q['bid'])
-                    if not plan['zone'][0]<=ref<=plan['zone'][1] or rr is None or rr<1.5:state='NO TRADE'
+                    plan['net_rr_at_quote']=rr
+                    if not filled_in_zone(ref,plan['zone'],plan['direction']) or rr is None or rr<1.5:state='NO TRADE'
                 records.append({'id':row['id'],'state':state,'recorded_state':row['state'],**{k:p[k] for k in ('plan','quote','detected_at','reason','research')},
                                 'input_sha256':p.get('input_sha256'),
                                 'outcome':row['outcome'],'result':json.loads(row['result']) if row['result'] else None})
