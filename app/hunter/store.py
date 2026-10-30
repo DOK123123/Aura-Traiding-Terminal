@@ -10,6 +10,8 @@ from pathlib import Path
 from .engine import FAMILIES, Prepared, VERSION, net_rr
 from .market import SOURCE, STEPS, LIVE_WINDOW, LIVE_INPUT_CONTRACT, fresh_quote, validate_bars
 from .outcomes import cashflow
+from .diagnostics import explain
+from .diagnostic_store import DiagnosticStore
 
 MODEL_HASH = hashlib.sha256(Path(__file__).with_name('engine.py').read_bytes()+Path(__file__).with_name('rules.json').read_bytes()).hexdigest()
 
@@ -67,11 +69,11 @@ def forward_outcome(record, bars, funding):
     return result
 
 
-class Store:
+class Store(DiagnosticStore):
     def __init__(self, path):
         if str(path).startswith('file:') or '://' in str(path):
             raise ValueError('LOCAL_OBSERVER_DB_ONLY')
-        self.path=str(path);self.lock=threading.RLock()
+        self.path=str(path);self.lock=threading.RLock();self.model_sha256=MODEL_HASH
         Path(path).parent.mkdir(parents=True,exist_ok=True)
         with self.connection() as db:
             db.executescript('''CREATE TABLE IF NOT EXISTS watermarks (frame TEXT PRIMARY KEY, cutoff INTEGER NOT NULL);
@@ -86,6 +88,7 @@ class Store:
             CREATE TABLE IF NOT EXISTS inputs (seq INTEGER PRIMARY KEY AUTOINCREMENT,
             frame TEXT NOT NULL, cutoff INTEGER NOT NULL, sha256 TEXT NOT NULL, payload TEXT NOT NULL,
             UNIQUE(frame,cutoff));''')
+            self.init_diagnostics(db)
 
     @contextmanager
     def connection(self):
@@ -118,6 +121,7 @@ class Store:
             plans.extend(prepared.plans(len(bars)-1,family,cutoff=cutoff,watch=True))
         with self.connection() as db:
             db.execute('BEGIN IMMEDIATE')
+            self.sample(db,frame,now,'LIVE',snapshot)
             db.execute("UPDATE events SET state='EXPIRED' WHERE expires<=? AND state IN ('WATCH','CONFIRMED')",(now,))
             for old in db.execute("SELECT id,payload FROM events WHERE frame=? AND state IN ('WATCH','CONFIRMED')",(frame,)).fetchall():
                 p=json.loads(old['payload'])['plan'];q=snapshot['quote'];ref=q['ask' if p['direction']=='LONG' else 'bid']
@@ -141,6 +145,7 @@ class Store:
             input_hash=evidence_hash(captured)
             db.execute('INSERT INTO inputs(frame,cutoff,sha256,payload) VALUES (?,?,?,?)',
                        (frame,cutoff,input_hash,json.dumps(captured,allow_nan=False)))
+            diagnostic_states={}
             for p in plans:
                 p['step']=step;p['model_sha256']=MODEL_HASH
                 p['input_contract']=LIVE_INPUT_CONTRACT
@@ -150,6 +155,7 @@ class Store:
                 evidence=validated(p,registry)
                 funding_ready=bool(len(funding)>=2 and funding[0][0]<=now and 0<=now-funding[-1][0]<=28800 and all(type(t) is int and math.isfinite(rate) and -1<rate<1 and t<=now for t,rate in funding) and all(0<b[0]-a[0]<=28800 for a,b in zip(funding,funding[1:])))
                 state='CONFIRMED' if evidence and funding_ready and p['technical_trigger'] and entry_valid else 'WATCH' if entry_valid else 'NO TRADE'
+                diagnostic_states[(p['strategy'],p['direction'])]=state
                 p['statistical_status']='VALIDATED' if evidence else 'UNVALIDATED'
                 p['net_rr_at_quote']=rr
                 record={'plan':p,'quote':q,'detected_at':now,'input_sha256':input_hash,'state':state,'reason':'RULES_AND_INDEPENDENT_EDGE' if state=='CONFIRMED' else 'RESEARCH_ONLY_NO_VALIDATED_EDGE' if state=='WATCH' else 'ENTRY_CONDITIONS_FAILED',
@@ -159,6 +165,10 @@ class Store:
                     (event_id,frame,now,p['valid_until'],state,int(p['technical_trigger'] and entry_valid),json.dumps(record),'PENDING' if p['technical_trigger'] and entry_valid else 'NOT_TRIGGERED')).rowcount
                 if inserted and state=='CONFIRMED':
                     db.execute('INSERT OR IGNORE INTO alerts(id,at,expires) VALUES (?,?,?)',(event_id,now,min(now+30,p['valid_until'])))
+            traced=explain(prepared,plans,now,MODEL_HASH,quote=snapshot['quote'],states=diagnostic_states)
+            for row in traced:row['input_sha256']=input_hash
+            db.execute('INSERT INTO diagnostic_decisions(frame,cutoff,at,model,payload) VALUES (?,?,?,?,?)',
+                       (frame,cutoff,now,MODEL_HASH,json.dumps(traced,allow_nan=False)))
             db.execute("INSERT OR REPLACE INTO meta VALUES ('status',?)",(json.dumps({'state':'READ_ONLY','at':now}),))
             db.execute("DELETE FROM events WHERE id IN (SELECT id FROM events WHERE state NOT IN ('WATCH','CONFIRMED') AND outcome NOT IN ('PENDING','OPEN') ORDER BY at DESC LIMIT -1 OFFSET 100000)")
             # Watermarks survive retention; terminal records may be pruned without replaying alerts.
@@ -196,8 +206,13 @@ class Store:
             state='CONFIRMED' if any(r['state']=='CONFIRMED' for r in current) else 'WATCH' if current else 'NO TRADE'
             alerts=[dict(r) for r in db.execute('SELECT * FROM alerts WHERE expires>? ORDER BY seq DESC LIMIT 100',(now,))]
             alerts=[a for a in alerts if any(r['id']==a['id'] and r['state']=='CONFIRMED' for r in current)]
+            watch_alerts=[{'id':r['id'],'at':r['detected_at'],'expires':min(r['detected_at']+30,r['plan']['valid_until'])}
+                          for r in current if r['state']=='WATCH' and r['research'] is True
+                          and r['plan']['statistical_status']=='UNVALIDATED' and type(r['plan']['technical_trigger']) is bool
+                          and 0<=now-r['detected_at']<30]
         return {'scope':'AURA6_PUBLIC_OBSERVER_ONLY','source':SOURCE,'state':state if fresh_frames and not error else 'NO TRADE',
                 'reason':error or ('NO_VALIDATED_EDGE' if not any(r['state']=='CONFIRMED' for r in current) else 'INDEPENDENT_EDGE_REQUIRED'),
                 'server_time':now,'fresh_frames':sorted(fresh_frames),'quotes':{k:v for k,v in quotes.items() if k in fresh_frames},
-                'records':records,'alerts':alerts if not error else [],'model_sha256':MODEL_HASH,
+                'records':records,'alerts':alerts if not error else [],'watch_alerts':watch_alerts if not error else [],'model_sha256':MODEL_HASH,
+                'journal_instance':self.journal_instance,'writer_session':self.session_id,
                 'account_connected':False,'execution_enabled':False,'probability_tp_before_sl':None}

@@ -1,0 +1,1671 @@
+{
+  "actual_forward_uptime_seconds": null,
+  "archive_manifest_sha256": "ce48303e354435efd4e0340c6096910c1e51a798133c261b5e2e566c610c0f38",
+  "bid_ask_observed": false,
+  "confirmed_registry_changes": 0,
+  "decisions": 9936,
+  "diagnostics_sha256": "e0bf2674219d79c9afc4e18e1e50ebeadaafa3cb124df70a747d841ae8d1601d",
+  "end_exclusive_utc": "2026-10-29T00:00:00Z",
+  "forward_24_48h": "NOT_RUN_NO_CONTINUOUS_HOSTING",
+  "forward_coverage": null,
+  "frames": {
+    "15m": 192,
+    "1h": 48,
+    "4h": 12,
+    "5m": 576
+  },
+  "input_contract": "ARCHIVE_AGGREGATED_260_DIAGNOSTIC_ONLY",
+  "live_deliveries": null,
+  "model_sha256": "fa700ebbbff6fbb4af411389fd38a145ea2ec4a63ad930a27f8302a771aaed83",
+  "orders": 0,
+  "parameter_changes": 0,
+  "profitability_evaluated": false,
+  "scope": "AURA5_ARCHIVE_RULE_REPLAY_NOT_FORWARD",
+  "seed_bars": 260,
+  "sides_evaluated": [
+    "LONG",
+    "SHORT"
+  ],
+  "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+  "start_utc": "2026-10-27T00:00:00Z",
+  "trace_sha256": "4c10e0333e85bfb3b6404222ba4798658435a945af33c06c8e324f29f787a758",
+  "windows": {
+    "24": {
+      "end_exclusive_utc": "2026-10-29T00:00:00Z",
+      "groups": [
+        {
+          "candidates": 13,
+          "candles_evaluated": 288,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 13,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 8,
+            "EMA20_DISTANCE": 42,
+            "EMA20_TOUCH": 105,
+            "PLANNING_NET_RR_OR_GEOMETRY": 13,
+            "PREVIOUS_EXTREME_CLOSE": 11,
+            "RSI_PULLBACK": 7,
+            "TREND_DIRECTION": 70,
+            "TREND_EFFICIENCY": 216,
+            "TRIGGER_VOLUME": 7
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 11,
+          "candles_evaluated": 288,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 11,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 8,
+            "EMA20_DISTANCE": 42,
+            "EMA20_TOUCH": 99,
+            "PLANNING_NET_RR_OR_GEOMETRY": 11,
+            "PREVIOUS_EXTREME_CLOSE": 11,
+            "RSI_PULLBACK": 11,
+            "TREND_DIRECTION": 218,
+            "TREND_EFFICIENCY": 216,
+            "TRIGGER_VOLUME": 6
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 7,
+          "candles_evaluated": 288,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 7,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 227,
+            "CLOSED_BREAKOUT": 276,
+            "PLANNING_NET_RR_OR_GEOMETRY": 7,
+            "RETEST_DISTANCE": 273
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 4,
+          "candles_evaluated": 288,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 4,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 227,
+            "CLOSED_BREAKOUT": 280,
+            "DIRECTIONAL_BODY": 2,
+            "PLANNING_NET_RR_OR_GEOMETRY": 4,
+            "RETEST_DISTANCE": 276,
+            "RETEST_RECLAIM": 1
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 6,
+          "candles_evaluated": 288,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 6,
+          "reason_codes": {
+            "BODY_FRACTION": 4,
+            "CLOSED_RANGE_BREAK": 1,
+            "MOMENTUM_TREND": 103,
+            "MOMENTUM_VOLUME": 238,
+            "NEAR_RANGE_BREAK": 260,
+            "PLANNING_NET_RR_OR_GEOMETRY": 6,
+            "SETUP_TRUE_RANGE": 232,
+            "TRIGGER_TRUE_RANGE": 4
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 3,
+          "candles_evaluated": 288,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 3,
+          "reason_codes": {
+            "BODY_FRACTION": 2,
+            "CLOSED_RANGE_BREAK": 1,
+            "MOMENTUM_TREND": 185,
+            "MOMENTUM_VOLUME": 238,
+            "NEAR_RANGE_BREAK": 267,
+            "PLANNING_NET_RR_OR_GEOMETRY": 3,
+            "SETUP_TRUE_RANGE": 232,
+            "TRIGGER_TRUE_RANGE": 1
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 288,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "MEAN_REVERSION_REGIME": 72,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "PREVIOUS_BAND_EXCURSION": 276,
+            "RSI_EXTREME": 271
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 288,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MEAN_REVERSION_REGIME": 72,
+            "PREVIOUS_BAND_EXCURSION": 265,
+            "RSI_EXTREME": 267
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 4,
+          "candles_evaluated": 288,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 4,
+          "reason_codes": {
+            "EXTREME_SWEEP": 266,
+            "PLANNING_NET_RR_OR_GEOMETRY": 4,
+            "REJECTION_WICK": 198,
+            "SWEEP_VOLUME": 226
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 8,
+          "candles_evaluated": 288,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 8,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 7,
+            "EXTREME_RECLAIM": 2,
+            "EXTREME_SWEEP": 264,
+            "PLANNING_NET_RR_OR_GEOMETRY": 8,
+            "REJECTION_WICK": 194,
+            "SWEEP_VOLUME": 226
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 31,
+          "candles_evaluated": 288,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 31,
+          "reason_codes": {
+            "CLOSE_RECOVERY": 15,
+            "DIRECTIONAL_BODY": 15,
+            "EMA_SEPARATION": 205,
+            "PLANNING_NET_RR_OR_GEOMETRY": 31,
+            "RANGE_EDGE_CLOSE": 194,
+            "RANGE_EDGE_TOUCH": 196,
+            "RANGE_EFFICIENCY": 107,
+            "RANGE_WIDTH": 4,
+            "RSI_RANGE": 14
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 5,
+          "candles_evaluated": 288,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 5,
+          "reason_codes": {
+            "CLOSE_RECOVERY": 3,
+            "DIRECTIONAL_BODY": 3,
+            "EMA_SEPARATION": 205,
+            "PLANNING_NET_RR_OR_GEOMETRY": 5,
+            "RANGE_EDGE_CLOSE": 234,
+            "RANGE_EDGE_TOUCH": 235,
+            "RANGE_EFFICIENCY": 107,
+            "RANGE_WIDTH": 4
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 15,
+          "candles_evaluated": 96,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 15,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 7,
+            "EMA20_DISTANCE": 14,
+            "EMA20_TOUCH": 43,
+            "PLANNING_NET_RR_OR_GEOMETRY": 15,
+            "PREVIOUS_EXTREME_CLOSE": 11,
+            "RSI_PULLBACK": 13,
+            "TREND_EFFICIENCY": 67,
+            "TRIGGER_VOLUME": 10
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 96,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA20_DISTANCE": 14,
+            "EMA20_TOUCH": 24,
+            "TREND_DIRECTION": 96,
+            "TREND_EFFICIENCY": 67
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 3,
+          "candles_evaluated": 96,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 3,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 72,
+            "CLOSED_BREAKOUT": 92,
+            "DIRECTIONAL_BODY": 3,
+            "PLANNING_NET_RR_OR_GEOMETRY": 3,
+            "RETEST_DISTANCE": 91,
+            "RETEST_RECLAIM": 3
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 96,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 72,
+            "CLOSED_BREAKOUT": 94,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "RETEST_DISTANCE": 93
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 96,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "MOMENTUM_TREND": 23,
+            "MOMENTUM_VOLUME": 79,
+            "NEAR_RANGE_BREAK": 90,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "SETUP_TRUE_RANGE": 77,
+            "TRIGGER_TRUE_RANGE": 1
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 96,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MOMENTUM_TREND": 73,
+            "MOMENTUM_VOLUME": 79,
+            "NEAR_RANGE_BREAK": 90,
+            "SETUP_TRUE_RANGE": 77
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 96,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MEAN_REVERSION_REGIME": 29,
+            "PREVIOUS_BAND_EXCURSION": 92,
+            "RSI_EXTREME": 94
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 2,
+          "candles_evaluated": 96,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 2,
+          "reason_codes": {
+            "MEAN_REVERSION_REGIME": 29,
+            "PLANNING_NET_RR_OR_GEOMETRY": 2,
+            "PREVIOUS_BAND_EXCURSION": 86,
+            "RSI_EXTREME": 93
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 96,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 1,
+            "EXTREME_SWEEP": 89,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "REJECTION_WICK": 63,
+            "SWEEP_VOLUME": 73
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 96,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "EXTREME_SWEEP": 87,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "REJECTION_WICK": 66,
+            "SWEEP_VOLUME": 73
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 96,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA_SEPARATION": 72,
+            "RANGE_EDGE_CLOSE": 73,
+            "RANGE_EDGE_TOUCH": 73,
+            "RANGE_EFFICIENCY": 54
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 96,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA_SEPARATION": 72,
+            "RANGE_EDGE_CLOSE": 81,
+            "RANGE_EDGE_TOUCH": 83,
+            "RANGE_EFFICIENCY": 54
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 24,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA20_DISTANCE": 1,
+            "EMA20_TOUCH": 17,
+            "TREND_DIRECTION": 24,
+            "TREND_EFFICIENCY": 11
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 12,
+          "candles_evaluated": 24,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 12,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 5,
+            "EMA20_DISTANCE": 1,
+            "EMA20_TOUCH": 4,
+            "PLANNING_NET_RR_OR_GEOMETRY": 12,
+            "PREVIOUS_EXTREME_CLOSE": 8,
+            "RSI_PULLBACK": 12,
+            "TREND_EFFICIENCY": 11,
+            "TRIGGER_VOLUME": 8
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 24,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 17,
+            "CLOSED_BREAKOUT": 23,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "RETEST_DISTANCE": 23
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 24,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 17,
+            "CLOSED_BREAKOUT": 24,
+            "RETEST_DISTANCE": 24
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 24,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "BODY_FRACTION": 1,
+            "MOMENTUM_VOLUME": 18,
+            "NEAR_RANGE_BREAK": 23,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "SETUP_TRUE_RANGE": 17
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 24,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MOMENTUM_TREND": 24,
+            "MOMENTUM_VOLUME": 18,
+            "NEAR_RANGE_BREAK": 24,
+            "SETUP_TRUE_RANGE": 17
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 24,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MEAN_REVERSION_REGIME": 13,
+            "PREVIOUS_BAND_EXCURSION": 24,
+            "RSI_EXTREME": 24
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 24,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MEAN_REVERSION_REGIME": 13,
+            "PREVIOUS_BAND_EXCURSION": 22,
+            "RSI_EXTREME": 23
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 24,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EXTREME_SWEEP": 24,
+            "REJECTION_WICK": 13,
+            "SWEEP_VOLUME": 17
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 24,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EXTREME_SWEEP": 23,
+            "REJECTION_WICK": 15,
+            "SWEEP_VOLUME": 17
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 24,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA_SEPARATION": 19,
+            "RANGE_EDGE_CLOSE": 24,
+            "RANGE_EDGE_TOUCH": 24,
+            "RANGE_EFFICIENCY": 13
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 24,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA_SEPARATION": 19,
+            "RANGE_EDGE_CLOSE": 8,
+            "RANGE_EDGE_TOUCH": 8,
+            "RANGE_EFFICIENCY": 13
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 6,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA20_TOUCH": 4,
+            "TREND_DIRECTION": 6,
+            "TREND_EFFICIENCY": 6
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 6,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "TREND_EFFICIENCY": 6
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 6,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 4,
+            "CLOSED_BREAKOUT": 6,
+            "RETEST_DISTANCE": 5
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 6,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 4,
+            "CLOSED_BREAKOUT": 6,
+            "RETEST_DISTANCE": 6
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 6,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MOMENTUM_TREND": 6,
+            "MOMENTUM_VOLUME": 3,
+            "NEAR_RANGE_BREAK": 3,
+            "SETUP_TRUE_RANGE": 4
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 6,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MOMENTUM_VOLUME": 3,
+            "NEAR_RANGE_BREAK": 6,
+            "SETUP_TRUE_RANGE": 4
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 6,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "PREVIOUS_BAND_EXCURSION": 6,
+            "RSI_EXTREME": 6
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 6,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "PREVIOUS_BAND_EXCURSION": 6,
+            "RSI_EXTREME": 6
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 6,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EXTREME_SWEEP": 6,
+            "REJECTION_WICK": 3,
+            "SWEEP_VOLUME": 3
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 6,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 1,
+            "EXTREME_RECLAIM": 1,
+            "EXTREME_SWEEP": 4,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "REJECTION_WICK": 4,
+            "SWEEP_VOLUME": 3
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 6,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA_SEPARATION": 5,
+            "RANGE_EDGE_CLOSE": 5,
+            "RANGE_EDGE_TOUCH": 6,
+            "RANGE_EFFICIENCY": 1
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 6,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA_SEPARATION": 5,
+            "RANGE_EDGE_CLOSE": 6,
+            "RANGE_EDGE_TOUCH": 6,
+            "RANGE_EFFICIENCY": 1
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        }
+      ],
+      "start_utc": "2026-10-28T00:00:00Z"
+    },
+    "48": {
+      "end_exclusive_utc": "2026-10-29T00:00:00Z",
+      "groups": [
+        {
+          "candidates": 15,
+          "candles_evaluated": 576,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 15,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 9,
+            "EMA20_DISTANCE": 64,
+            "EMA20_TOUCH": 228,
+            "PLANNING_NET_RR_OR_GEOMETRY": 15,
+            "PREVIOUS_EXTREME_CLOSE": 12,
+            "RSI_PULLBACK": 7,
+            "TREND_DIRECTION": 224,
+            "TREND_EFFICIENCY": 468,
+            "TRIGGER_VOLUME": 8
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 24,
+          "candles_evaluated": 576,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 24,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 15,
+            "EMA20_DISTANCE": 64,
+            "EMA20_TOUCH": 174,
+            "PLANNING_NET_RR_OR_GEOMETRY": 24,
+            "PREVIOUS_EXTREME_CLOSE": 19,
+            "RSI_PULLBACK": 18,
+            "TREND_DIRECTION": 352,
+            "TREND_EFFICIENCY": 468,
+            "TRIGGER_VOLUME": 17
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 13,
+          "candles_evaluated": 576,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 13,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 437,
+            "CLOSED_BREAKOUT": 554,
+            "DIRECTIONAL_BODY": 4,
+            "PLANNING_NET_RR_OR_GEOMETRY": 13,
+            "RETEST_DISTANCE": 546,
+            "RETEST_RECLAIM": 2
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 8,
+          "candles_evaluated": 576,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 8,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 437,
+            "CLOSED_BREAKOUT": 561,
+            "DIRECTIONAL_BODY": 3,
+            "PLANNING_NET_RR_OR_GEOMETRY": 8,
+            "RETEST_DISTANCE": 552,
+            "RETEST_RECLAIM": 1
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 14,
+          "candles_evaluated": 576,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 14,
+          "reason_codes": {
+            "BODY_FRACTION": 9,
+            "CLOSED_RANGE_BREAK": 5,
+            "MOMENTUM_TREND": 205,
+            "MOMENTUM_VOLUME": 473,
+            "NEAR_RANGE_BREAK": 526,
+            "PLANNING_NET_RR_OR_GEOMETRY": 14,
+            "SETUP_TRUE_RANGE": 440,
+            "TRIGGER_TRUE_RANGE": 9
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 7,
+          "candles_evaluated": 576,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 7,
+          "reason_codes": {
+            "BODY_FRACTION": 4,
+            "CLOSED_RANGE_BREAK": 2,
+            "MOMENTUM_TREND": 371,
+            "MOMENTUM_VOLUME": 473,
+            "NEAR_RANGE_BREAK": 535,
+            "PLANNING_NET_RR_OR_GEOMETRY": 7,
+            "SETUP_TRUE_RANGE": 440,
+            "TRIGGER_TRUE_RANGE": 4
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 576,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "MEAN_REVERSION_REGIME": 108,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "PREVIOUS_BAND_EXCURSION": 556,
+            "RSI_EXTREME": 558
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 2,
+          "candles_evaluated": 576,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 2,
+          "reason_codes": {
+            "BAND_REENTRY": 1,
+            "MEAN_REVERSION_REGIME": 108,
+            "PLANNING_NET_RR_OR_GEOMETRY": 2,
+            "PREVIOUS_BAND_EXCURSION": 534,
+            "RSI_EXTREME": 547,
+            "RSI_RECOVERY": 1
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 10,
+          "candles_evaluated": 576,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 10,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 4,
+            "EXTREME_RECLAIM": 2,
+            "EXTREME_SWEEP": 535,
+            "PLANNING_NET_RR_OR_GEOMETRY": 10,
+            "REJECTION_WICK": 421,
+            "SWEEP_VOLUME": 436
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 14,
+          "candles_evaluated": 576,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 14,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 12,
+            "EXTREME_RECLAIM": 4,
+            "EXTREME_SWEEP": 530,
+            "PLANNING_NET_RR_OR_GEOMETRY": 14,
+            "REJECTION_WICK": 400,
+            "SWEEP_VOLUME": 436
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 35,
+          "candles_evaluated": 576,
+          "direction": "LONG",
+          "frame": "5m",
+          "planning_rejected": 35,
+          "reason_codes": {
+            "CLOSE_RECOVERY": 18,
+            "DIRECTIONAL_BODY": 18,
+            "EMA_SEPARATION": 418,
+            "PLANNING_NET_RR_OR_GEOMETRY": 35,
+            "RANGE_EDGE_CLOSE": 429,
+            "RANGE_EDGE_TOUCH": 435,
+            "RANGE_EFFICIENCY": 207,
+            "RANGE_WIDTH": 5,
+            "RSI_RANGE": 15
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 13,
+          "candles_evaluated": 576,
+          "direction": "SHORT",
+          "frame": "5m",
+          "planning_rejected": 13,
+          "reason_codes": {
+            "CLOSE_RECOVERY": 9,
+            "DIRECTIONAL_BODY": 9,
+            "EMA_SEPARATION": 418,
+            "PLANNING_NET_RR_OR_GEOMETRY": 13,
+            "RANGE_EDGE_CLOSE": 427,
+            "RANGE_EDGE_TOUCH": 428,
+            "RANGE_EFFICIENCY": 207,
+            "RANGE_WIDTH": 5
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 15,
+          "candles_evaluated": 192,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 15,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 7,
+            "EMA20_DISTANCE": 17,
+            "EMA20_TOUCH": 92,
+            "PLANNING_NET_RR_OR_GEOMETRY": 15,
+            "PREVIOUS_EXTREME_CLOSE": 11,
+            "RSI_PULLBACK": 13,
+            "TREND_DIRECTION": 71,
+            "TREND_EFFICIENCY": 147,
+            "TRIGGER_VOLUME": 10
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 10,
+          "candles_evaluated": 192,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 10,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 5,
+            "EMA20_DISTANCE": 17,
+            "EMA20_TOUCH": 44,
+            "PLANNING_NET_RR_OR_GEOMETRY": 10,
+            "PREVIOUS_EXTREME_CLOSE": 9,
+            "RSI_PULLBACK": 9,
+            "TREND_DIRECTION": 121,
+            "TREND_EFFICIENCY": 147,
+            "TRIGGER_VOLUME": 6
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 6,
+          "candles_evaluated": 192,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 6,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 137,
+            "CLOSED_BREAKOUT": 185,
+            "DIRECTIONAL_BODY": 4,
+            "PLANNING_NET_RR_OR_GEOMETRY": 6,
+            "RETEST_DISTANCE": 182,
+            "RETEST_RECLAIM": 3
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 2,
+          "candles_evaluated": 192,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 2,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 137,
+            "CLOSED_BREAKOUT": 189,
+            "DIRECTIONAL_BODY": 1,
+            "PLANNING_NET_RR_OR_GEOMETRY": 2,
+            "RETEST_DISTANCE": 187,
+            "RETEST_RECLAIM": 1
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 3,
+          "candles_evaluated": 192,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 3,
+          "reason_codes": {
+            "BODY_FRACTION": 2,
+            "CLOSED_RANGE_BREAK": 1,
+            "MOMENTUM_TREND": 69,
+            "MOMENTUM_VOLUME": 153,
+            "NEAR_RANGE_BREAK": 177,
+            "PLANNING_NET_RR_OR_GEOMETRY": 3,
+            "SETUP_TRUE_RANGE": 154,
+            "TRIGGER_TRUE_RANGE": 2
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 192,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "MOMENTUM_TREND": 123,
+            "MOMENTUM_VOLUME": 153,
+            "NEAR_RANGE_BREAK": 181,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "SETUP_TRUE_RANGE": 154
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 192,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MEAN_REVERSION_REGIME": 45,
+            "PREVIOUS_BAND_EXCURSION": 186,
+            "RSI_EXTREME": 190
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 2,
+          "candles_evaluated": 192,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 2,
+          "reason_codes": {
+            "MEAN_REVERSION_REGIME": 45,
+            "PLANNING_NET_RR_OR_GEOMETRY": 2,
+            "PREVIOUS_BAND_EXCURSION": 176,
+            "RSI_EXTREME": 189
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 2,
+          "candles_evaluated": 192,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 2,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 2,
+            "EXTREME_SWEEP": 181,
+            "PLANNING_NET_RR_OR_GEOMETRY": 2,
+            "REJECTION_WICK": 125,
+            "SWEEP_VOLUME": 138
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 6,
+          "candles_evaluated": 192,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 6,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 5,
+            "EXTREME_RECLAIM": 2,
+            "EXTREME_SWEEP": 174,
+            "PLANNING_NET_RR_OR_GEOMETRY": 6,
+            "REJECTION_WICK": 120,
+            "SWEEP_VOLUME": 138
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 6,
+          "candles_evaluated": 192,
+          "direction": "LONG",
+          "frame": "15m",
+          "planning_rejected": 6,
+          "reason_codes": {
+            "CLOSE_RECOVERY": 4,
+            "DIRECTIONAL_BODY": 4,
+            "EMA_SEPARATION": 133,
+            "PLANNING_NET_RR_OR_GEOMETRY": 6,
+            "RANGE_EDGE_CLOSE": 142,
+            "RANGE_EDGE_TOUCH": 141,
+            "RANGE_EFFICIENCY": 100,
+            "RANGE_WIDTH": 1
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 192,
+          "direction": "SHORT",
+          "frame": "15m",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA_SEPARATION": 133,
+            "RANGE_EDGE_CLOSE": 141,
+            "RANGE_EDGE_TOUCH": 142,
+            "RANGE_EFFICIENCY": 100,
+            "RANGE_WIDTH": 1
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 48,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA20_DISTANCE": 1,
+            "EMA20_TOUCH": 24,
+            "TREND_DIRECTION": 48,
+            "TREND_EFFICIENCY": 34
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 13,
+          "candles_evaluated": 48,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 13,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 6,
+            "EMA20_DISTANCE": 1,
+            "EMA20_TOUCH": 11,
+            "PLANNING_NET_RR_OR_GEOMETRY": 13,
+            "PREVIOUS_EXTREME_CLOSE": 9,
+            "RSI_PULLBACK": 13,
+            "TREND_EFFICIENCY": 34,
+            "TRIGGER_VOLUME": 9
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 2,
+          "candles_evaluated": 48,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 2,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 35,
+            "CLOSED_BREAKOUT": 46,
+            "PLANNING_NET_RR_OR_GEOMETRY": 2,
+            "RETEST_DISTANCE": 44
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 48,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 35,
+            "CLOSED_BREAKOUT": 48,
+            "RETEST_DISTANCE": 48
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 2,
+          "candles_evaluated": 48,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 2,
+          "reason_codes": {
+            "BODY_FRACTION": 2,
+            "MOMENTUM_TREND": 20,
+            "MOMENTUM_VOLUME": 37,
+            "NEAR_RANGE_BREAK": 42,
+            "PLANNING_NET_RR_OR_GEOMETRY": 2,
+            "SETUP_TRUE_RANGE": 37
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 48,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MOMENTUM_TREND": 28,
+            "MOMENTUM_VOLUME": 37,
+            "NEAR_RANGE_BREAK": 48,
+            "SETUP_TRUE_RANGE": 37
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 48,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MEAN_REVERSION_REGIME": 14,
+            "PREVIOUS_BAND_EXCURSION": 48,
+            "RSI_EXTREME": 48
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 48,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MEAN_REVERSION_REGIME": 14,
+            "PREVIOUS_BAND_EXCURSION": 42,
+            "RSI_EXTREME": 47
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 48,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "EXTREME_SWEEP": 47,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "REJECTION_WICK": 27,
+            "SWEEP_VOLUME": 35
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 48,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 1,
+            "EXTREME_RECLAIM": 1,
+            "EXTREME_SWEEP": 44,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "REJECTION_WICK": 29,
+            "SWEEP_VOLUME": 35
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 48,
+          "direction": "LONG",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA_SEPARATION": 29,
+            "RANGE_EDGE_CLOSE": 42,
+            "RANGE_EDGE_TOUCH": 42,
+            "RANGE_EFFICIENCY": 16,
+            "RANGE_WIDTH": 14
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 48,
+          "direction": "SHORT",
+          "frame": "1h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA_SEPARATION": 29,
+            "RANGE_EDGE_CLOSE": 22,
+            "RANGE_EDGE_TOUCH": 24,
+            "RANGE_EFFICIENCY": 16,
+            "RANGE_WIDTH": 14
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 12,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA20_TOUCH": 4,
+            "TREND_DIRECTION": 12,
+            "TREND_EFFICIENCY": 12
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 12,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA20_TOUCH": 5,
+            "TREND_EFFICIENCY": 12
+          },
+          "rule_plans": 0,
+          "strategy": "TREND_PULLBACK",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 12,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 9,
+            "CLOSED_BREAKOUT": 12,
+            "RETEST_DISTANCE": 11
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 12,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "BREAKOUT_VOLUME": 9,
+            "CLOSED_BREAKOUT": 12,
+            "RETEST_DISTANCE": 12
+          },
+          "rule_plans": 0,
+          "strategy": "BREAKOUT_RETEST",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 12,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MOMENTUM_TREND": 12,
+            "MOMENTUM_VOLUME": 8,
+            "NEAR_RANGE_BREAK": 9,
+            "SETUP_TRUE_RANGE": 10
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 12,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "MOMENTUM_VOLUME": 8,
+            "NEAR_RANGE_BREAK": 12,
+            "SETUP_TRUE_RANGE": 10
+          },
+          "rule_plans": 0,
+          "strategy": "MOMENTUM_EXPANSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 12,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "PREVIOUS_BAND_EXCURSION": 12,
+            "RSI_EXTREME": 12
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 12,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "PREVIOUS_BAND_EXCURSION": 12,
+            "RSI_EXTREME": 12
+          },
+          "rule_plans": 0,
+          "strategy": "MEAN_REVERSION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 12,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EXTREME_SWEEP": 12,
+            "REJECTION_WICK": 6,
+            "SWEEP_VOLUME": 8
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 1,
+          "candles_evaluated": 12,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 1,
+          "reason_codes": {
+            "DIRECTIONAL_BODY": 1,
+            "EXTREME_RECLAIM": 1,
+            "EXTREME_SWEEP": 10,
+            "PLANNING_NET_RR_OR_GEOMETRY": 1,
+            "REJECTION_WICK": 8,
+            "SWEEP_VOLUME": 8
+          },
+          "rule_plans": 0,
+          "strategy": "LIQUIDITY_SWEEP",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 12,
+          "direction": "LONG",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA_SEPARATION": 11,
+            "RANGE_EDGE_CLOSE": 6,
+            "RANGE_EDGE_TOUCH": 7,
+            "RANGE_EFFICIENCY": 4
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        },
+        {
+          "candidates": 0,
+          "candles_evaluated": 12,
+          "direction": "SHORT",
+          "frame": "4h",
+          "planning_rejected": 0,
+          "reason_codes": {
+            "EMA_SEPARATION": 11,
+            "RANGE_EDGE_CLOSE": 12,
+            "RANGE_EDGE_TOUCH": 12,
+            "RANGE_EFFICIENCY": 4
+          },
+          "rule_plans": 0,
+          "strategy": "RANGE_REJECTION",
+          "technical_triggers": 0
+        }
+      ],
+      "start_utc": "2026-10-27T00:00:00Z"
+    }
+  }
+}

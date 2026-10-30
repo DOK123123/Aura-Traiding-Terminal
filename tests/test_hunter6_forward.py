@@ -141,7 +141,7 @@ def test_partial_frame_failure_is_visible_without_disabling_good_frame(tmp_path,
         h=Hunter(Store(tmp_path/'partial.sqlite'),Partial(),{'approved':[]})
         await h.cycle()
         assert h.error is None and list(h.quotes)==['5m']
-        assert h.frame_errors=={f:'FRAME_OBSERVATION_FAILED' for f in ['15m','1h','4h']}
+        assert h.frame_errors=={f:'PUBLIC_FRAME_UNAVAILABLE' for f in ['15m','1h','4h']}
     asyncio.run(run())
 
 

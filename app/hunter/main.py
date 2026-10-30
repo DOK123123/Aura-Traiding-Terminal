@@ -14,6 +14,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from .market import PublicMarket, STEPS
 from .store import Store
+from .diagnostics import failure_code
 
 ROOT=Path(__file__).resolve().parents[2]
 security=HTTPBasic(auto_error=False)
@@ -24,6 +25,7 @@ class Hunter:
         self.store,self.market,self.registry=store,market,registry
         self.quotes={};self.error='STARTING';self.failures=0;self.cycles=0
         self.frame_errors={};self.last_cycle_at=None
+        self.diagnostic_write_failures=0
 
     async def cycle(self):
         success=0
@@ -34,14 +36,21 @@ class Hunter:
         except Exception:funding=[]
         snapshots=await asyncio.gather(*(self.market.snapshot(frame) for frame in STEPS),return_exceptions=True)
         for frame,snap in zip(STEPS,snapshots):
+            stage='market'
             try:
-                if isinstance(snap,BaseException):raise ValueError('PUBLIC_FRAME_FAILED')
+                if isinstance(snap,BaseException):raise snap
+                stage='observer'
                 await asyncio.to_thread(self.store.observe,snap,funding,time.time(),self.registry)
                 self.quotes[frame]=snap['quote'];self.frame_errors.pop(frame,None);success+=1
             except asyncio.CancelledError:raise
-            except Exception:
+            except Exception as exc:
                 self.quotes.pop(frame,None)
-                self.frame_errors[frame]='FRAME_OBSERVATION_FAILED'
+                code=failure_code(exc,stage)
+                self.frame_errors[frame]=code
+                try:await asyncio.to_thread(self.store.record_frame_failure,frame,time.time(),code)
+                except Exception:
+                    self.diagnostic_write_failures+=1
+                    self.frame_errors[frame]='DIAGNOSTIC_JOURNAL_UNAVAILABLE'
         self.cycles+=1
         self.last_cycle_at=time.time()
         self.error=None if success else 'MARKET_DATA_UNAVAILABLE'
@@ -120,7 +129,8 @@ def create_app(*, store=None, market=None, password=None, observe=None):
         task=app.state.observer_task
         running=task is not None and not task.done()
         reason=h.error if running else 'OBSERVER_STOPPED' if task else 'OBSERVER_DISABLED'
-        status={'running':running,'cycles':h.cycles,'last_cycle_at':h.last_cycle_at,'frame_errors':dict(h.frame_errors)}
+        status={'running':running,'cycles':h.cycles,'last_cycle_at':h.last_cycle_at,'frame_errors':dict(h.frame_errors),
+                'diagnostic_write_failures':h.diagnostic_write_failures}
         data=await asyncio.to_thread(h.store.snapshot,time.time(),dict(h.quotes),reason)
         data['observer']=status
         return data
