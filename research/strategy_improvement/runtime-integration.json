@@ -1,0 +1,13 @@
+{
+  "reason": "User-authorized Aura 5 server-signal integration. Preserve the original research runtime snapshot and guard the reviewed replacement separately; numerical inputs and results are unchanged.",
+  "files": {
+    "app/manual_preview/main.py": {
+      "archive": "research/strategy_improvement/baseline_runtime/main.py.txt",
+      "authorized_runtime_sha256": "9edd4be6c21bfbb6acec1f7843cba79c23a359ca670b1f6b864af9993f215c27"
+    },
+    "app/manual_preview/page.py": {
+      "archive": "research/strategy_improvement/baseline_runtime/page.py.txt",
+      "authorized_runtime_sha256": "cc313c4d027ba452f76d54c2f0eac4f73915ff4f4cc24e726adce88cc0c55184"
+    }
+  }
+}

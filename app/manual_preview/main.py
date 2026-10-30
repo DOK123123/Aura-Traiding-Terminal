@@ -19,6 +19,7 @@ from .config import parse
 from .store import PreviewStore
 from .page import page,ROOT,ASSETS
 from .history import archive_history,public_history,bounds as history_bounds
+from .signals import router as signals_router, observer_lifespan
 import httpx
 
 
@@ -49,7 +50,8 @@ async def lifespan(app):
                                            error=None if config.manual_enabled else 'MANUAL_PAPER_DISABLED')
             if config.manual_enabled:task=asyncio.create_task(app.state.manual_paper.run_protection())
             app.state.preview_protection_task=task
-            try:yield
+            try:
+                async with observer_lifespan(app,client,config.signals_enabled):yield
             finally:
                 try:
                     if task:
@@ -67,6 +69,7 @@ app=FastAPI(title='Isolated Aura Manual Preview',lifespan=lifespan,docs_url=None
 app.dependency_overrides[owner]=preview_owner
 app.include_router(manual_router)
 app.include_router(analyst_router)
+app.include_router(signals_router)
 
 @app.middleware('http')
 async def isolate(request,call_next):
@@ -306,10 +309,12 @@ async def preview_ws_diagnostics(request:Request):
 
 @app.get('/api/health')
 async def health():
-    return {'status':'ok','scope':'ISOLATED_MANUAL_PREVIEW','exchange_execution':False,'active43_controller_enabled':False,'automatic_entry_scheduler_enabled':False}
+    task=getattr(app.state,'preview_signals_task',None)
+    return {'status':'ok','scope':'ISOLATED_MANUAL_PREVIEW','exchange_execution':False,'active43_controller_enabled':False,'automatic_entry_scheduler_enabled':False,
+            'signal_observer_enabled':app.state.preview_config.signals_enabled,'signal_observer_running':task is not None and not task.done()}
 
 @app.get('/')
-async def index(request:Request):return HTMLResponse(page(request.app.state.preview_ws_token),headers={'Cache-Control':'no-store'})
+async def index(request:Request):return HTMLResponse(page(request.app.state.preview_ws_token,server_signals=request.app.state.preview_config.signals_enabled),headers={'Cache-Control':'no-store'})
 
 @app.get('/api/paper/login')
 async def login():return RedirectResponse('/',303)

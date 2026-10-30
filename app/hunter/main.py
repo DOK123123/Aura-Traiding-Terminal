@@ -120,9 +120,9 @@ def create_app(*, store=None, market=None, password=None, observe=None):
         task=app.state.observer_task
         running=task is not None and not task.done()
         reason=h.error if running else 'OBSERVER_STOPPED' if task else 'OBSERVER_DISABLED'
-        data=await asyncio.to_thread(h.store.snapshot,time.time(),h.quotes,reason)
-        data['observer']={'running':running,'cycles':h.cycles,'last_cycle_at':h.last_cycle_at,
-                          'frame_errors':dict(h.frame_errors)}
+        status={'running':running,'cycles':h.cycles,'last_cycle_at':h.last_cycle_at,'frame_errors':dict(h.frame_errors)}
+        data=await asyncio.to_thread(h.store.snapshot,time.time(),dict(h.quotes),reason)
+        data['observer']=status
         return data
 
     @app.get('/api/hunter/inputs',dependencies=[Depends(owner)])
