@@ -60,8 +60,10 @@ const server=http.createServer((req,res)=>{
   await page.locator('#sc-manual-sl').fill('49600');await page.locator('#sc-manual-sl').dispatchEvent('change');
   assert.equal(await page.evaluate(()=>Aura5Confidence&&new Aura5Confidence.LocalJournal(localStorage).rows[0].manual_adjustments.length),1);
   assert.match(await page.locator('#aura-confidence .sc-manual [role="status"]').textContent(),/net R\/R/);
-  let confirmed=0;page.on('dialog',async d=>{confirmed++;assert.match(d.message(),/Ни один ордер/);await d.accept();});
+  let confirmed=0;const confirmation=new Promise(resolve=>page.once('dialog',async d=>{
+   confirmed++;assert.match(d.message(),/Ни один ордер/);await d.accept();resolve();}));
   await page.getByRole('button',{name:'Скопировать уровни для ручной сверки в Bybit Demo'}).click();
+  await confirmation;
   assert.equal(confirmed,1);
   mode='OFFLINE';await page.waitForFunction(()=>document.querySelector('#aura-confidence [role="status"]')?.textContent.includes('OFFLINE'));
   assert.equal(await page.locator('#aura-confidence .sc-cards article').count(),0);
