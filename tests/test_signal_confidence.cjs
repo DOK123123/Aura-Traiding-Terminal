@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {usable,validThreshold,reserveAudio,LocalJournal,VERSION}=require('../static/signal-confidence.js');
+const {usable,validThreshold,reserveAudio,manualCosts,LocalJournal,VERSION}=require('../static/signal-confidence.js');
 const SOURCE='BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2';
 function payload(){const now=600601,q={bid:49999.9,ask:50000.1,time:now,received_at:now,source:SOURCE};
  const c={id:'a'.repeat(64),score:80,score_groups:{trend:30,momentum:25,structure:10,volume:0,support_resistance:15},
@@ -9,7 +9,8 @@ function payload(){const now=600601,q={bid:49999.9,ask:50000.1,time:now,received
   statistical_status:'UNVALIDATED',probability_tp_before_sl:null,exchange_execution:false,manual_only:true,
   closed_at:600600,valid_until:600900,quote_time:now,quote_received_at:now,
   bid:q.bid,ask:q.ask,
-  entry:50000.1,sl:49850,tp:50300,net_rr:1.8,risk_gates_passed:true,state:'WATCH_RESEARCH'};
+  entry:50000.1,sl:49850,tp:50300,net_rr:1.8,risk_gates_passed:true,state:'WATCH_RESEARCH',
+  costs:{cost_version:'AURA5_EXIT_QUOTE_COSTS_2',entry_basis:'EXECUTABLE_QUOTE'}};
  const d={scope:'AURA6_PUBLIC_OBSERVER_ONLY',execution_enabled:false,account_connected:false,
   observer:{running:true},confidence_version:VERSION,model_sha256:c.model_sha256,
   server_time:now,fresh_frames:['5m'],quotes:{'5m':q},confidence_candidates:[c]};
@@ -18,6 +19,17 @@ test('threshold, labels are technical not probabilities',()=>{
  const {now,c,d}=payload();assert.equal(usable(d,c,now,50),true);assert.equal(usable(d,c,now,80),true);
  assert.equal(usable(d,c,now,81),false);assert.equal(validThreshold(49),false);assert.equal(validThreshold(100),true);
  assert.equal(usable(d,{...c,probability_tp_before_sl:.8},now),false);
+});
+test('manual RR exactly matches Python fee, slip, funding and exit-quote costs',()=>{
+ const {c}=payload();const x=manualCosts(c,[50000.1,49850,50300]);
+ assert.ok(Math.abs(x.net_rr-0.4738003397564491)<1e-12);
+ assert.ok(Math.abs(x.net_loss-304.8752350499892)<1e-9);
+ assert.ok(Math.abs(x.funding_reserve-5.00001)<1e-9);
+ const y=manualCosts({...c,direction:'SHORT',frame:'15m'},[50000,50200,49500]);
+ assert.ok(Math.abs(y.net_rr-0.9731217356820372)<1e-12);
+ assert.equal(manualCosts({...c,costs:{cost_version:'UNKNOWN'}},[50000,49850,50300]),null);
+ assert.equal(manualCosts(c,[50000,51000,52000]),null);
+ assert.ok(manualCosts(c,[50000.1,49700,51000]).net_rr>=1.5);
 });
 for(const [name,change]of Object.entries({
  oldQuote:({d})=>{d.quotes['5m'].time-=6;},
