@@ -11,11 +11,19 @@ body[data-aura-theme="light"] {
   --muted:#41566d; --text:#15263a; --mint:#096c54; --red:#a52644;
   --violet:#5648a1;
 }
+body[data-aura-theme="light"] .aura-action {color:#fff;}
+body[data-aura-theme="light"] .aura-legal-warning {
+  color:#65400b;background:#fff2d5;border-color:#966216;
+}
 @media(prefers-color-scheme:light) {
   body[data-aura-app="mobile"]:not([data-aura-theme]) {
     color-scheme:light; --bg:#f2f5fa; --panel:#fff; --line:#cbd5e2;
     --muted:#41566d; --text:#15263a; --mint:#096c54; --red:#a52644;
     --violet:#5648a1;
+  }
+  body[data-aura-app="mobile"]:not([data-aura-theme]) .aura-action {color:#fff;}
+  body[data-aura-app="mobile"]:not([data-aura-theme]) .aura-legal-warning {
+    color:#65400b;background:#fff2d5;border-color:#966216;
   }
 }
 body[data-aura-theme="dark"] { color-scheme:dark; }
