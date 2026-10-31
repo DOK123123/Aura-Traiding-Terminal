@@ -11,7 +11,7 @@ body[data-aura-theme="light"] {
   --muted:#41566d; --text:#15263a; --mint:#096c54; --red:#a52644;
   --violet:#5648a1;
 }
-body[data-aura-theme="light"] .aura-action {color:#fff;}
+body[data-aura-theme="light"] .aura-quick-actions .aura-action:first-child {color:#fff;}
 body[data-aura-theme="light"] .aura-legal-warning {
   color:#65400b;background:#fff2d5;border-color:#966216;
 }
@@ -21,7 +21,7 @@ body[data-aura-theme="light"] .aura-legal-warning {
     --muted:#41566d; --text:#15263a; --mint:#096c54; --red:#a52644;
     --violet:#5648a1;
   }
-  body[data-aura-app="mobile"]:not([data-aura-theme]) .aura-action {color:#fff;}
+  body[data-aura-app="mobile"]:not([data-aura-theme]) .aura-quick-actions .aura-action:first-child {color:#fff;}
   body[data-aura-app="mobile"]:not([data-aura-theme]) .aura-legal-warning {
     color:#65400b;background:#fff2d5;border-color:#966216;
   }
