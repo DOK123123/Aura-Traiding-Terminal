@@ -265,6 +265,8 @@ class Store(DiagnosticStore):
                                       'score':record.get('score'),'direction':record['plan']['direction'],
                                       'score_version':record.get('score_version'),
                                       'score_model_sha256':record.get('score_model_sha256'),
+                                      'input_sha256':record.get('input_sha256'),
+                                      'quote_time':record['quote'].get('time'),
                                       'outcome':row['outcome'],
                                       'result':json.loads(row['result']) if row['result'] else None})
             for row in db.execute('SELECT * FROM events ORDER BY at DESC,id LIMIT 200'):

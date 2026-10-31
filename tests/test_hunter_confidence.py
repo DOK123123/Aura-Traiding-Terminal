@@ -67,6 +67,7 @@ class ConfidenceTests(unittest.TestCase):
                       if c['score']>=50 and c['risk_gates_passed']}
             self.assertEqual({c['id'] for c in data['confidence_history']},expected)
             self.assertTrue(all(x['outcome']=='PENDING' for x in data['confidence_history']))
+            self.assertTrue(all(x['quote_time']==q['time'] for x in data['confidence_history']))
             self.assertTrue(all(c['input_sha256'] for c in data['confidence_candidates']))
             self.assertTrue(all(c['probability_tp_before_sl'] is None for c in data['confidence_candidates']))
             self.assertEqual(data['alerts'],[])
@@ -74,6 +75,7 @@ class ConfidenceTests(unittest.TestCase):
             store.observe({**snap,'quote':newer},[],now+1,{'approved':[]})
             self.assertEqual(len(store.snapshot(now+1,{'5m':newer})['confidence_candidates']),2)
             self.assertEqual({c['id'] for c in store.snapshot(now+1,{'5m':newer})['confidence_history']},expected)
+            self.assertTrue(all(x['quote_time']==q['time'] for x in store.snapshot(now+1,{'5m':newer})['confidence_history']))
             self.assertEqual(store.snapshot(now+1,{'5m':q})['confidence_candidates'],[])
             self.assertEqual(store.snapshot(now+6,{'5m':q})['confidence_candidates'],[])
             self.assertEqual(store.snapshot(now,{'5m':q},'OBSERVER_STOPPED')['confidence_candidates'],[])

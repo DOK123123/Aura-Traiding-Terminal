@@ -35,7 +35,8 @@ function usable(data,c,now,threshold=50){
      c.entry,c.sl,c.tp,c.net_rr].every(Number.isFinite)
   &&Math.abs(now-data.server_time)<=10&&now>=q.time&&now-q.time<=5
   &&now>=q.received_at&&now-q.received_at<=5&&q.bid>0&&q.ask>=q.bid&&(q.ask-q.bid)/q.bid<=.002
-  &&c.quote_time===q.time&&c.quote_received_at===q.received_at&&c.closed_at%STEPS[c.frame]===0
+  &&c.quote_time===q.time&&c.quote_received_at===q.received_at&&c.bid===q.bid&&c.ask===q.ask
+  &&c.closed_at%STEPS[c.frame]===0
   &&c.closed_at<=now&&now<c.valid_until&&c.valid_until===c.closed_at+STEPS[c.frame]
   &&c.risk_gates_passed===true&&c.net_rr>=1.5
   &&Math.abs(c.entry-(sign===1?q.ask:q.bid))<1e-7
@@ -66,14 +67,21 @@ class LocalJournal{
    quote_time:c.quote_time,seen_at:now,entry:c.entry,sl:c.sl,tp:c.tp,net_rr:c.net_rr,
    probability_tp_before_sl:null,outcome:'UNKNOWN',gap:'NO_CONTINUOUS_EXECUTION_TRACKING',
    copied_at:null,alerted_at:null,manual_adjustments:[]});this.rows=this.rows.slice(-200);this.save();return true;}
- copied(c,now){const row=this.rows.find(r=>r.id===c.id);if(!row)return false;row.copied_at=now;this.save();return true;}
+ copied(c,now){const row=this.rows.find(r=>r.id===c.id);if(!row)return false;
+  // A candle id stays stable as Bid/Ask changes. Record the exact manually
+  // transferred quote, never attribute the first quote's outcome to it.
+  row.quote_time=c.quote_time;row.entry=c.entry;row.sl=c.sl;row.tp=c.tp;row.net_rr=c.net_rr;
+  row.outcome='UNKNOWN';row.gap='MANUAL_PLAN_NOT_EXECUTED';row.modeled_r=null;
+  row.copied_at=now;this.save();return true;}
  edited(id,levels,now){const row=this.rows.find(r=>r.id===id);if(!row||!levels.every(Number.isFinite)||!Number.isFinite(now))return false;
   row.manual_adjustments.push({at:now,entry:levels[0],sl:levels[1],tp:levels[2]});row.manual_adjustments=row.manual_adjustments.slice(-30);
   this.save();return true;}
  outcomes(history){if(!Array.isArray(history))return false;let changed=false;
   for(const event of history.slice(0,100)){const row=this.rows.find(r=>r.id===event?.id);
    if(!row||event.score_version!==VERSION||event.score_model_sha256!==row.score_model_sha256
-     ||event.score!==row.score||!['PENDING','OPEN','UNKNOWN','NO_FILL','TP','SL','TIMEOUT'].includes(event.outcome))continue;
+     ||event.score!==row.score||event.input_sha256!==row.input_sha256
+     ||event.quote_time!==row.quote_time
+     ||!['PENDING','OPEN','UNKNOWN','NO_FILL','TP','SL','TIMEOUT'].includes(event.outcome))continue;
    if(row.outcome!==event.outcome||row.gap!==(event.result?.note||'PENDING_FORWARD')){
     row.outcome=event.outcome;row.gap=event.result?.note||'PENDING_FORWARD';
     row.modeled_r=Number.isFinite(event.result?.r)?event.result.r:null;changed=true;}
