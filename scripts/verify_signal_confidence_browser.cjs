@@ -41,7 +41,7 @@ const server=http.createServer((req,res)=>{
   await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{window.WebSocket=class{constructor(){this.readyState=1;}send(){}close(){this.readyState=3;}};});
-  await page.goto('http://127.0.0.1:'+server.address().port);
+  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('[data-aura-tab="signals"]').click();
   await page.waitForFunction(()=>document.querySelector('#aura-confidence .sc-cards')?.textContent.includes('LONG'));
   assert.match(await page.locator('#aura-confidence').textContent(),/НЕ вероятность прибыли/);
   assert.match(await page.locator('#aura-confidence').textContent(),/80\/100/);
