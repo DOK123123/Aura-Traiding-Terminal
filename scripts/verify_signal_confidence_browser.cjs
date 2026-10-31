@@ -15,8 +15,8 @@ function snapshot(){const now=Date.now()/1000,closed=Math.floor(now/300)*300;
   score:80,score_groups:{trend:30,momentum:25,structure:10,volume:0,support_resistance:15},
   factors:['EMA group','RSI/MACD group'],contradictions:['volume'],direction:'LONG',frame:'5m',source:SOURCE,
   symbol:'BTCUSDT',closed_at:closed,observed_at:now,valid_until:closed+300,quote_time:now,quote_received_at:now,
-  bid:quote.bid,ask:quote.ask,entry:quote.ask,sl:49700,tp:50750,net_rr:2.2,risk_gates_passed:true,
-  costs:{stop_fees:100,target_fees:100,funding_reserve:5},technical_trigger:false,
+  bid:quote.bid,ask:quote.ask,entry:quote.ask,sl:49700,tp:51000,net_rr:2.2,risk_gates_passed:true,
+  costs:{stop_fees:100,target_fees:100,funding_reserve:5,cost_version:'AURA5_EXIT_QUOTE_COSTS_2',entry_basis:'EXECUTABLE_QUOTE'},technical_trigger:false,
   statistical_status:'UNVALIDATED',probability_tp_before_sl:null,manual_only:true,exchange_execution:false,
   cancel:'stale or expired',state:'WATCH_RESEARCH'};
  return {scope:'AURA6_PUBLIC_OBSERVER_ONLY',state:'NO TRADE',source:SOURCE,execution_enabled:false,
@@ -54,11 +54,15 @@ const server=http.createServer((req,res)=>{
   assert.equal(await page.locator('#aura-confidence .sc-cards article').count(),0);
   await page.locator('#aura-confidence input[type="range"]').evaluate(e=>{e.value='50';e.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.getByRole('button',{name:'Перенести LONG · без ордера'}).click();
-  await page.waitForFunction(()=>document.getElementById('sc-manual-tp').value==='50750.0');
+  await page.waitForFunction(()=>document.getElementById('sc-manual-tp').value==='51000.0');
   assert.equal(await page.locator('#sc-manual-sl').inputValue(),'49700.0');
   assert.equal(await page.locator('#mp-entry').inputValue(),''); // PAPER controls untouched
   await page.locator('#sc-manual-sl').fill('49600');await page.locator('#sc-manual-sl').dispatchEvent('change');
   assert.equal(await page.evaluate(()=>Aura5Confidence&&new Aura5Confidence.LocalJournal(localStorage).rows[0].manual_adjustments.length),1);
+  assert.match(await page.locator('#aura-confidence .sc-manual [role="status"]').textContent(),/net R\/R/);
+  let confirmed=0;page.on('dialog',async d=>{confirmed++;assert.match(d.message(),/Ни один ордер/);await d.accept();});
+  await page.getByRole('button',{name:'Скопировать уровни для ручной сверки в Bybit Demo'}).click();
+  assert.equal(confirmed,1);
   mode='OFFLINE';await page.waitForFunction(()=>document.querySelector('#aura-confidence [role="status"]')?.textContent.includes('OFFLINE'));
   assert.equal(await page.locator('#aura-confidence .sc-cards article').count(),0);
   mode='LIVE';await page.waitForFunction(()=>document.querySelector('#aura-confidence .sc-cards')?.textContent.includes('LONG'));

@@ -8,6 +8,27 @@ const STEPS={'5m':300,'15m':900,'1h':3600,'4h':14400};
 const GROUPS={trend:'Тренд EMA20/50/200',momentum:'Импульс RSI/MACD',structure:'Структура рынка',volume:'Объём',support_resistance:'Уровни S/R'};
 const CAPS={trend:30,momentum:25,structure:20,volume:10,support_resistance:15};
 
+function manualCosts(candidate,levels){
+ // Same frozen AURA5_EXIT_QUOTE_COSTS_2 convention as app/hunter/costs.py:
+ // displayed Entry is an executable quote; SL/TP are exit-side quotes.
+ if(!candidate||candidate.costs?.cost_version!=='AURA5_EXIT_QUOTE_COSTS_2'
+   ||candidate.costs?.entry_basis!=='EXECUTABLE_QUOTE'||!STEPS[candidate.frame]
+   ||!Array.isArray(levels)||levels.length!==3||levels.some(x=>!Number.isFinite(x)||x<=0))return null;
+ const sign=candidate.direction==='LONG'?1:candidate.direction==='SHORT'?-1:0;
+ if(!sign)return null;
+ const [entry,sl,tp]=levels,filledEntry=entry*(1+sign*.0005);
+ if(sign*(filledEntry-sl)<=0||sign*(tp-filledEntry)<=0)return null;
+ const filledStop=sl*(1-sign*.0005),filledTarget=tp*(1-sign*.0005);
+ const funding=entry*Math.ceil(24*STEPS[candidate.frame]/28800)*.0001;
+ const stopFees=.001*(filledEntry+filledStop),targetFees=.001*(filledEntry+filledTarget);
+ const netLoss=sign*(filledEntry-filledStop)+stopFees+funding;
+ const netReward=sign*(filledTarget-filledEntry)-targetFees-funding;
+ if(!(netLoss>0)||!Number.isFinite(netReward))return null;
+ return {net_rr:netReward/netLoss,net_loss:netLoss,net_reward:netReward,
+         stop_fees:stopFees,target_fees:targetFees,funding_reserve:funding,
+         cost_version:'AURA5_EXIT_QUOTE_COSTS_2'};
+}
+
 function validThreshold(x){return Number.isSafeInteger(x)&&x>=50&&x<=100;}
 function reserveAudio(storage,id){
  if(typeof id!=='string'||!/^[a-f0-9]{64}$/.test(id))return false;
@@ -89,8 +110,8 @@ class LocalJournal{
   if(changed)this.save();return changed;}
 }
 function usableId(c){return typeof c?.id==='string'&&/^[a-f0-9]{64}$/.test(c.id);}
-root.Aura5Confidence={usable,validThreshold,reserveAudio,LocalJournal,VERSION,STORE};
-if(typeof module!=='undefined')module.exports={usable,validThreshold,reserveAudio,LocalJournal,VERSION,STORE};
+root.Aura5Confidence={usable,validThreshold,reserveAudio,manualCosts,LocalJournal,VERSION,STORE};
+if(typeof module!=='undefined')module.exports={usable,validThreshold,reserveAudio,manualCosts,LocalJournal,VERSION,STORE};
 if(!root.document||document.body.dataset.manualPreview!=='true')return;
 const host=document.getElementById('aura-confidence');if(!host)return;
 const add=(tag,value,parent)=>{const e=document.createElement(tag);e.textContent=value;parent.append(e);return e;};
@@ -122,13 +143,21 @@ const manualStatus=add('p','Нет выбранного плана',manual);manu
 const history=add('details','',host);add('summary','Локальный журнал · просмотр и экспорт',history);
 const exportButton=add('button','Скачать JSON журнала',history);exportButton.type='button';
 const historyList=add('ol','',history);
-let latest=null,copiedId=null,requestId=0;
+let latest=null,copiedId=null,copiedSource=null,requestId=0;
 function historyPaint(){historyList.replaceChildren();for(const r of journal.rows.slice(-20).reverse())add('li',
   new Date(r.seen_at*1000).toISOString()+' · '+r.direction+' '+r.frame+' · '+r.score+'/100 · '+r.outcome+
   ' ('+r.gap+')'+(r.copied_at?' · перенесён вручную':'')+(r.manual_adjustments.length?' · правок: '+r.manual_adjustments.length:''),historyList);}
 function freshRows(d,now){return (d.confidence_candidates||[]).filter(c=>usable(d,c,now,journal.threshold))
  .sort((a,b)=>b.score-a.score||a.frame.localeCompare(b.frame)||a.direction.localeCompare(b.direction));}
 function textLevels(c){return 'Entry '+c.entry.toFixed(2)+' · SL '+c.sl.toFixed(2)+' · TP '+c.tp.toFixed(2)+' · Net R/R '+c.net_rr.toFixed(2);}
+function editedLevels(){return ['entry','sl','tp'].map(k=>Number(manualFields[k].value));}
+function manualRecalculate(){const calculated=manualCosts(copiedSource,editedLevels());
+ if(!calculated||calculated.net_rr<1.5){manualStatus.textContent='Ручной план не проходит геометрию или net R/R ≥ 1.5 с расходами. Копирование заблокировано.';return null;}
+ manualStatus.textContent='Ручная модель: net R/R '+calculated.net_rr.toFixed(2)+
+  ' · комиссия SL '+calculated.stop_fees.toFixed(2)+' / TP '+calculated.target_fees.toFixed(2)+
+  ' USDT · funding-резерв '+calculated.funding_reserve.toFixed(2)+
+  ' USDT / 1 BTC. Цена Entry после правки НЕ подтверждена биржей; сверяйте на Bybit Demo.';
+ return calculated;}
 async function maybeSound(rows){
  if(!audioReady||document.hidden||notifying||!rows.length||!navigator.locks?.request||!journal.available)return;
  notifying=true;
@@ -180,25 +209,25 @@ async function copy(id){const seq=++requestId;try{const d=await fetchFresh(),now
  if(seq!==requestId||document.hidden)return;const c=d.confidence_candidates?.find(x=>x.id===id);if(!usable(d,c,now,journal.threshold))return;
  manualFields.direction.value=c.direction;
  for(const key of ['entry','sl','tp'])manualFields[key].value=c[key].toFixed(1);
- copiedId=c.id;journal.seen(c,now);journal.copied(c,now);
+ copiedId=c.id;copiedSource=c;journal.seen(c,now);journal.copied(c,now);
  manualDescription.textContent='Исследовательский '+c.direction+' ('+c.score+'/100), а не подтверждённый сигнал.';
- manualStatus.textContent='Перенесено только локально. Сверьте цену, направление, комиссии, размер и риск в Bybit Demo самостоятельно. Ни один ордер не создан.';
+ manualRecalculate();
  historyPaint();}catch{status.textContent='Перенос отменён: нет свежего подтверждения котировок';}}
 for(const key of ['entry','sl','tp'])manualFields[key].addEventListener('change',()=>{
- if(!copiedId)return;const v=['entry','sl','tp'].map(k=>Number(manualFields[k].value));
- journal.edited(copiedId,v,Date.now()/1000);historyPaint();});
+ if(!copiedId)return;const v=editedLevels();
+ journal.edited(copiedId,v,Date.now()/1000);manualRecalculate();historyPaint();});
 clipboard.onclick=async()=>{
  if(!copiedId||!['LONG','SHORT'].includes(manualFields.direction.value))return;
  try{const latestCopy=await fetchFresh(),current=latestCopy.confidence_candidates?.find(c=>c.id===copiedId);
   if(!usable(latestCopy,current,Date.now()/1000,journal.threshold))throw Error('STALE');}
  catch{manualStatus.textContent='Котировки или гипотеза устарели. Выберите заново свежий план; копирование отменено.';return;}
- const values=['entry','sl','tp'].map(k=>Number(manualFields[k].value));
- const sign=manualFields.direction.value==='LONG'?1:-1;
- if(values.some(v=>!Number.isFinite(v)||v<=0)||sign*(values[0]-values[1])<=0||sign*(values[2]-values[0])<=0){
-  manualStatus.textContent='Неверная геометрия Entry / SL / TP. Исправьте локальные поля.';return;
- }
+ const values=editedLevels(),costs=manualRecalculate();if(!costs)return;
+ if(!root.confirm('Скопировать только текст исследовательского плана? Ни один ордер не создаётся. Проверить Entry, SL, TP и риски на Bybit Demo самостоятельно?'))return;
  const plan='RESEARCH ONLY · NOT AN ORDER\nBTCUSDT Bitget USDT-M → verify on Bybit Demo\n'+manualFields.direction.value+
-  '\nEntry '+values[0]+'\nSL '+values[1]+'\nTP '+values[2]+'\nSignal Confidence is NOT win probability.';
+  '\nEntry '+values[0]+'\nSL '+values[1]+'\nTP '+values[2]+'\nModeled net RR '+costs.net_rr.toFixed(2)+
+  '\nFee reserve SL/TP '+costs.stop_fees.toFixed(2)+'/'+costs.target_fees.toFixed(2)+
+  ' USDT, funding reserve '+costs.funding_reserve.toFixed(2)+' USDT / 1 BTC'+
+  '\nSignal Confidence is NOT win probability. No order created.';
  try{await navigator.clipboard.writeText(plan);manualStatus.textContent='Текст скопирован. Проверьте текущие Bid/Ask и риск в Bybit Demo; ордер не создан.';}
  catch{manualStatus.textContent='Буфер обмена недоступен. Значения доступны в локальных полях.';}
 };
