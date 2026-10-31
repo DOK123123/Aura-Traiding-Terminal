@@ -33,3 +33,17 @@
 #ps-diagnostics table { border-collapse:collapse; min-width:860px; font-size:.85rem; }
 #ps-diagnostics th,#ps-diagnostics td { padding:8px; border:1px solid #35425a; vertical-align:top; max-width:260px; }
 #ps-audio strong { display:block; }
+
+/* Read-only research score, isolated Aura 5 preview only. */
+#aura-confidence { grid-column:1 / -1; min-width:0; overflow-wrap:anywhere; }
+#aura-confidence .sc-controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+#aura-confidence label { display:flex; gap:12px; align-items:center; flex-wrap:wrap; min-height:44px; }
+#aura-confidence input[type=range] { width:min(350px,65vw); min-height:44px; }
+#aura-confidence .sc-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+#aura-confidence article { padding:12px; border:1px solid #35425a; border-radius:10px; min-width:0; }
+#aura-confidence button { min-height:46px; max-width:100%; white-space:normal; touch-action:manipulation; }
+#aura-confidence .sc-manual { margin:14px 0; padding:14px; border:1px solid #35425a; border-radius:10px; display:flex; flex-wrap:wrap; align-items:end; gap:12px; min-width:0; }
+#aura-confidence .sc-manual h3,#aura-confidence .sc-manual p { flex:1 0 100%; margin:0; }
+#aura-confidence .sc-manual label { display:grid; flex:1 1 140px; gap:6px; min-width:0; }
+#aura-confidence .sc-manual input { box-sizing:border-box; width:100%; max-width:100%; min-height:44px; }
+@media(max-width:800px) { #aura-confidence .sc-cards { grid-template-columns:1fr; } }

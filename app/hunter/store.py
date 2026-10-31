@@ -13,12 +13,36 @@ from .outcomes import cashflow
 from .diagnostics import explain
 from .diagnostic_store import DiagnosticStore
 from .costs import entry_fill, exit_fill, filled_in_zone, risk_reward
+from .confidence import technical_scores, VERSION as CONFIDENCE_VERSION, SCORE_HASH
 
 MODEL_HASH = hashlib.sha256(b''.join(Path(__file__).with_name(name).read_bytes()
                                     for name in ('engine.py','rules.json','costs.py','outcomes.py'))).hexdigest()
 
 def evidence_hash(payload: dict) -> str:
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+
+
+def save_confidence(db, frame, scores, input_hash, plans, quote, now):
+    """Refresh executable Bid/Ask every cycle; never change the immutable input."""
+    for candidate in scores:
+        candidate['input_sha256']=input_hash
+        candidate['model_sha256']=MODEL_HASH
+        candidate['technical_trigger']=any(p['direction']==candidate['direction']
+                                          and p['technical_trigger'] for p in plans)
+    db.execute('INSERT OR REPLACE INTO meta VALUES (?,?)',
+               ('confidence:'+frame,json.dumps(scores,allow_nan=False)))
+    for candidate in scores:
+        if candidate['score']<50 or not candidate['risk_gates_passed']:
+            continue
+        plan={'direction':candidate['direction'],'step':STEPS[frame],
+              'entry':candidate['entry'],'sl':candidate['sl'],'tp':candidate['tp'],
+              'hold_bars':24,'model_sha256':MODEL_HASH}
+        record={'plan':plan,'quote':quote,'detected_at':now,
+                'score':candidate['score'],'score_version':CONFIDENCE_VERSION,
+                'score_model_sha256':SCORE_HASH,'input_sha256':input_hash,
+                'scope':'HYPOTHETICAL_PUBLIC_FORWARD_ONLY'}
+        db.execute('INSERT OR IGNORE INTO confidence_events(id,frame,at,payload,outcome) VALUES (?,?,?,?,?)',
+                   (candidate['id'],frame,now,json.dumps(record,allow_nan=False),'PENDING'))
 
 
 def validated(plan, registry):
@@ -89,7 +113,10 @@ class Store(DiagnosticStore):
             CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS inputs (seq INTEGER PRIMARY KEY AUTOINCREMENT,
             frame TEXT NOT NULL, cutoff INTEGER NOT NULL, sha256 TEXT NOT NULL, payload TEXT NOT NULL,
-            UNIQUE(frame,cutoff));''')
+            UNIQUE(frame,cutoff));
+            CREATE TABLE IF NOT EXISTS confidence_events (id TEXT PRIMARY KEY,frame TEXT NOT NULL,
+            at REAL NOT NULL,payload TEXT NOT NULL,outcome TEXT NOT NULL,result TEXT);
+            CREATE INDEX IF NOT EXISTS confidence_pending ON confidence_events(frame,outcome);''')
             self.init_diagnostics(db)
 
     @contextmanager
@@ -121,6 +148,7 @@ class Store(DiagnosticStore):
         plans=[]
         for family in FAMILIES:
             plans.extend(prepared.plans(len(bars)-1,family,cutoff=cutoff,watch=True))
+        scores=technical_scores(prepared,snapshot['quote'],now)
         with self.connection() as db:
             db.execute('BEGIN IMMEDIATE')
             self.sample(db,frame,now,'LIVE',snapshot)
@@ -136,8 +164,18 @@ class Store(DiagnosticStore):
                 result=({'outcome':'UNKNOWN','note':'MODEL_CHANGED_NO_CROSS_VERSION_OUTCOME','r':None,'pnl_usdt':None}
                         if record['plan'].get('model_sha256')!=MODEL_HASH else forward_outcome(record,bars,funding))
                 db.execute('UPDATE events SET outcome=?,result=? WHERE id=?',(result['outcome'],json.dumps(result),row['id']))
+            research_pending=db.execute("SELECT * FROM confidence_events WHERE frame=? AND outcome IN ('PENDING','OPEN') ORDER BY at LIMIT 1000",(frame,)).fetchall()
+            for row in research_pending:
+                record=json.loads(row['payload'])
+                result=({'outcome':'UNKNOWN','note':'MODEL_CHANGED_NO_CROSS_VERSION_OUTCOME','r':None,'pnl_usdt':None}
+                        if record.get('score_model_sha256')!=SCORE_HASH or record['plan'].get('model_sha256')!=MODEL_HASH
+                        else forward_outcome(record,bars,funding))
+                db.execute('UPDATE confidence_events SET outcome=?,result=? WHERE id=?',
+                           (result['outcome'],json.dumps(result),row['id']))
             wm=db.execute('SELECT cutoff FROM watermarks WHERE frame=?',(frame,)).fetchone()
             if wm and wm[0]>=cutoff:
+                original=db.execute('SELECT sha256 FROM inputs WHERE frame=? AND cutoff=?',(frame,cutoff)).fetchone()
+                if original:save_confidence(db,frame,scores,original['sha256'],plans,snapshot['quote'],now)
                 return
             db.execute('INSERT OR REPLACE INTO watermarks VALUES (?,?)',(frame,cutoff))
             # Preserve the exact parsed inputs and BASE hypotheses at first
@@ -148,6 +186,9 @@ class Store(DiagnosticStore):
             input_hash=evidence_hash(captured)
             db.execute('INSERT INTO inputs(frame,cutoff,sha256,payload) VALUES (?,?,?,?)',
                        (frame,cutoff,input_hash,json.dumps(captured,allow_nan=False)))
+            # Score-only hypotheses live outside validated/alert/event tables.
+            # The threshold is a browser display preference, never eligibility.
+            save_confidence(db,frame,scores,input_hash,plans,snapshot['quote'],now)
             diagnostic_states={}
             for p in plans:
                 p['step']=step;p['model_sha256']=MODEL_HASH
@@ -179,6 +220,7 @@ class Store(DiagnosticStore):
             # At most 2048 inputs per frame (~7 days for 5m). Export regularly;
             # pruning is reported by the export sequence, never claimed complete.
             db.execute('DELETE FROM inputs WHERE frame=? AND seq NOT IN (SELECT seq FROM inputs WHERE frame=? ORDER BY seq DESC LIMIT 2048)',(frame,frame))
+            db.execute("DELETE FROM confidence_events WHERE at<? AND outcome NOT IN ('PENDING','OPEN')",(now-180*86400,))
 
     def export_inputs(self, frame: str, after: int = 0, limit: int = 20) -> dict:
         if frame not in STEPS or type(after) is not int or after<0 or type(limit) is not int or not 1<=limit<=100:
@@ -194,7 +236,37 @@ class Store(DiagnosticStore):
     def snapshot(self, now, quotes, error=None):
         fresh_frames={frame for frame,q in quotes.items() if fresh_quote(q,now)}
         with self.connection() as db:
+            score_rows=[]
+            if not error:
+                for frame in sorted(fresh_frames):
+                    row=db.execute('SELECT value FROM meta WHERE key=?',('confidence:'+frame,)).fetchone()
+                    if not row:continue
+                    try:
+                        candidates=json.loads(row['value'])
+                    except (ValueError,TypeError):
+                        continue  # Corrupt optional score journal must fail closed.
+                    if not isinstance(candidates,list) or len(candidates)>2:continue
+                    for candidate in candidates:
+                        if not isinstance(candidate,dict):continue
+                        quote=quotes[frame]
+                        if (candidate.get('score_version')==CONFIDENCE_VERSION
+                                and candidate.get('score_model_sha256')==SCORE_HASH
+                                and candidate.get('model_sha256')==MODEL_HASH
+                                and candidate.get('source')==SOURCE
+                                and candidate.get('quote_time')==quote['time']
+                                and candidate.get('quote_received_at')==quote['received_at']
+                                and now<candidate.get('valid_until',0)):
+                            score_rows.append(candidate)
             records=[]
+            score_history=[]
+            for row in db.execute('SELECT * FROM confidence_events ORDER BY at DESC,id LIMIT 100'):
+                record=json.loads(row['payload'])
+                score_history.append({'id':row['id'],'frame':row['frame'],'detected_at':row['at'],
+                                      'score':record.get('score'),'direction':record['plan']['direction'],
+                                      'score_version':record.get('score_version'),
+                                      'score_model_sha256':record.get('score_model_sha256'),
+                                      'outcome':row['outcome'],
+                                      'result':json.loads(row['result']) if row['result'] else None})
             for row in db.execute('SELECT * FROM events ORDER BY at DESC,id LIMIT 200'):
                 p=json.loads(row['payload']);state=row['state']
                 if state in ('WATCH','CONFIRMED') and (error or row['expires']<=now or row['frame'] not in fresh_frames or p['plan'].get('input_contract')!=LIVE_INPUT_CONTRACT or p['plan'].get('model_sha256')!=MODEL_HASH):state='NO TRADE'
@@ -220,4 +292,6 @@ class Store(DiagnosticStore):
                 'server_time':now,'fresh_frames':sorted(fresh_frames),'quotes':{k:v for k,v in quotes.items() if k in fresh_frames},
                 'records':records,'alerts':alerts if not error else [],'watch_alerts':watch_alerts if not error else [],'model_sha256':MODEL_HASH,
                 'journal_instance':self.journal_instance,'writer_session':self.session_id,
-                'account_connected':False,'execution_enabled':False,'probability_tp_before_sl':None}
+                'account_connected':False,'execution_enabled':False,'probability_tp_before_sl':None,
+                'confidence_version':CONFIDENCE_VERSION,'confidence_candidates':score_rows,
+                'confidence_history':score_history}
