@@ -36,6 +36,7 @@ jobs:
           node scripts/verify_preview_signals_browser.cjs work/preview-signals-browser
           node scripts/verify_issue66_browser.cjs work/issue66-browser
           node scripts/verify_signal_confidence_browser.cjs work/confidence-browser
+          node scripts/verify_issue73_browser.cjs work/issue73-browser
           PYTHON="$PYTHON" node scripts/verify_manual_preview_chart.cjs work/chart-browser
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()

@@ -1,5 +1,5 @@
 {
-  "reason": "User-authorized Aura 5 integration, observer health correctness, and Issue #70 read-only Signal Confidence panel/asset. Original archived runtime/numerical research remain unchanged; page hash tracks the reviewed UI-only addition while main/production remain out of scope.",
+  "reason": "User-authorized Aura 5 integration, observer health correctness, Issue #70 read-only Signal Confidence, and Issue #73 isolated mobile navigation. Original archived runtime/numerical research remain unchanged; page hash tracks the reviewed preview-only CSS/JS injection while main/production remain out of scope.",
   "files": {
     "app/manual_preview/main.py": {
       "archive": "research/strategy_improvement/baseline_runtime/main.py.txt",
@@ -7,7 +7,7 @@
     },
     "app/manual_preview/page.py": {
       "archive": "research/strategy_improvement/baseline_runtime/page.py.txt",
-      "authorized_runtime_sha256": "84cde2bc24ac22d80c1ab5ed1d9e411e98d9bfa91b8bd4d3adb13bc138136513"
+      "authorized_runtime_sha256": "e6eeec5de61eb453086b13c20804134779ff574eb235033b24592bebd458ee87"
     }
   }
 }
