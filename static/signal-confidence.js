@@ -41,6 +41,7 @@ function reserveAudio(storage,id){
  return true;
 }
 function usable(data,c,now,threshold=50){
+ if(data?.explanation_version)return false; // generic scoring cannot qualify a named-strategy WATCH
  const q=data?.quotes?.[c?.frame],sign=c?.direction==='LONG'?1:c?.direction==='SHORT'?-1:0;
  return !!(validThreshold(threshold)&&data?.scope==='AURA6_PUBLIC_OBSERVER_ONLY'&&data.execution_enabled===false
   &&data.account_connected===false&&data.observer?.running===true&&data.confidence_version===VERSION
@@ -188,6 +189,9 @@ audioButton.onclick=async()=>{
  if(audioReady&&latest)void maybeSound(freshRows(latest,Date.now()/1000));
 };
 function paint(){cards.replaceChildren();if(!latest)return;const now=Date.now()/1000,rows=freshRows(latest,now);
+ if(latest.explanation_version){status.textContent='Общий технический скоринг · не стратегия и не WATCH. Объяснимые сценарии показаны выше.';
+  for(const c of latest.confidence_candidates||[]){const card=add('article','',cards);add('h3',c.direction+' · '+c.frame+' · '+c.score+'/100 · технический контекст',card);add('p','За: '+(c.factors||[]).join('; ')+' | Против: '+(c.contradictions||[]).join('; '),card);}
+  audioReady=false;player.suspend();audioButton.disabled=true;audioStatus.textContent='Общий скоринг не включает WATCH-звук';historyPaint();return;}
  status.textContent=(rows.length?'WATCH · исследовательских направлений: '+rows.length:'WAIT · направлений выше порога с актуальными данными и R/R нет')+
   ' · порог '+journal.threshold+'/100 · LIVE относится только к свежей котировке Bitget, не к прибыли';
  for(const c of rows){journal.seen(c,now);const card=add('article','',cards);

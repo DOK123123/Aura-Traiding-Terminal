@@ -30,7 +30,8 @@
     }
     if (!quote) return noQuote;
     const validThreshold = Number.isInteger(threshold) && threshold >= 50 && threshold <= 100 ? threshold : 50;
-    const valid = Array.isArray(data.confidence_candidates) && typeof usable === 'function'
+    const explainable = Array.isArray(data.explainable_candidates);
+    const valid = explainable ? data.explainable_candidates.filter(c => root.AuraExplainable?.usable(data,c,now,validThreshold)) : Array.isArray(data.confidence_candidates) && typeof usable === 'function'
       ? data.confidence_candidates.filter(c => usable(data,c,now,validThreshold)) : [];
     valid.sort((a,b) => b.score-a.score || a.direction.localeCompare(b.direction));
     return {state:valid.length?'WATCH':'WAIT',reason:valid.length
@@ -138,7 +139,10 @@
 
     const signalsHeading=el('div','aura-screen-title');signalsHeading.append(el('p','aura-overline','ИССЛЕДОВАНИЕ · НЕ КОМАНДА НА ВХОД'));
     signalsHeading.append(el('h1','','Сигналы'));panes.signals.append(signalsHeading);
-    move('#aura-confidence',panes.signals);
+    move('#aura-explainable',panes.signals);
+    const scores=el('details','aura-advanced');scores.id='aura-score-diagnostics';scores.open=true;
+    scores.append(el('summary','','Общий технический скоринг · не торговая стратегия'));
+    move('#aura-confidence',scores);panes.signals.append(scores);
     const advancedSignals=el('details','aura-advanced');advancedSignals.append(el('summary','', 'Дополнительные сценарии и диагностика WATCH'));
     move('#aura-signal-center',advancedSignals);
     move('#aura-live-analyst',advancedSignals);
@@ -214,6 +218,7 @@
 
     const fmt=n=>Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     const feed=new HomeFeed({onData:(data,now)=>{
+      root.dispatchEvent(new CustomEvent('aura-preview-snapshot',{detail:data}));
       let threshold=50;try{threshold=new root.Aura5Confidence.LocalJournal(localStorage).threshold;}catch{}
       paint(data?homeState(data,now,threshold,root.Aura5Confidence?.usable):{
         state:'STALE',quote:null,reason:'Нет связи с наблюдателем или отсутствует доступ к данным'});
@@ -225,7 +230,7 @@
       signal.dataset.state=model.state;
       signal.textContent=model.state==='WATCH'?(model.candidate.direction+' · WATCH · '+model.candidate.score+'/100'):model.state;
       details.textContent=model.state==='WATCH'
-        ?'Entry '+fmt(model.candidate.entry)+' · SL '+fmt(model.candidate.sl)+' · TP '+fmt(model.candidate.tp)+' · net RR '+model.candidate.net_rr.toFixed(2)+' · '+model.reason
+        ?(model.candidate.name?model.candidate.name+' · ':'')+'Entry '+fmt(model.candidate.entry)+' · SL '+fmt(model.candidate.sl)+' · TP '+fmt(model.candidate.tp)+' · net RR '+model.candidate.net_rr.toFixed(2)+' · '+model.reason
         :model.reason+(model.state==='WAIT'?' · Порог '+model.threshold+'/100':'');
     }
     const resume=()=>{if(document.hidden)feed.stop();else feed.start();};

@@ -126,3 +126,5 @@ body[data-aura-app="mobile"] .aura-tab-pane {overflow-wrap:break-word;}
   body[data-aura-app="mobile"] #aura-confidence .sc-manual label {flex:1 1 100%;}
 }
 
+
+.explain-cards article{min-width:0;overflow-wrap:anywhere}.explain-cards details{margin-top:12px}.explain-cards summary{cursor:pointer;font-weight:600}.explain-cards details p{font-size:.85rem}#explain-risk{max-width:160px;width:100%;margin:8px}

@@ -9,7 +9,7 @@ ASSETS=frozenset({'styles.css','aura-analyst.css','aura-analyst.js',
     'vendor/lightweight-charts.standalone.production.js','active43-live.js','live.js',
     'aura-scenario-journal.js','aura-chart-tools.js','app.js','aura-workspace.css',
     'manual-paper.css','manual-paper.js','manual-live.css','manual-live-analysis.js',
-    'manual-live-feed.js','manual-live-ui.js','strategy-engine.js','manual-strategies.js','forward-observer.js','signal-center.js','trade-outcomes.js','historical-replay.js','replay-ui.js','signal-alerts.js','preview-status.js','preview-signals.js','signal-confidence.js','aura-mobile-shell.js','aura-mobile-shell.css','hunter6/hunter.js','favicon.svg'})
+    'manual-live-feed.js','manual-live-ui.js','strategy-engine.js','manual-strategies.js','forward-observer.js','signal-center.js','trade-outcomes.js','historical-replay.js','replay-ui.js','signal-alerts.js','preview-status.js','preview-signals.js','signal-confidence.js','explainable-signals.js','aura-mobile-shell.js','aura-mobile-shell.css','hunter6/hunter.js','favicon.svg'})
 
 
 def page(ws_token='', *, server_signals=False):
@@ -37,8 +37,8 @@ def page(ws_token='', *, server_signals=False):
         source=source.replace('<section class="panel" id="aura-notifications"></section>','')
         source=source.replace('<script defer src="/static/signal-center.js"></script>','')
         source=source.replace('<section class="panel" id="aura-signal-center"></section>',
-                              '<section class="panel" id="aura-confidence"></section><section class="panel" id="aura-signal-center"></section>')
-        source=source.replace('</head>','<script defer src="/static/hunter6/hunter.js"></script><script defer src="/static/preview-signals.js"></script><script defer src="/static/signal-confidence.js"></script></head>')
+                              '<section class="panel" id="aura-explainable"></section><section class="panel" id="aura-confidence"></section><section class="panel" id="aura-signal-center"></section>')
+        source=source.replace('</head>','<script defer src="/static/hunter6/hunter.js"></script><script defer src="/static/preview-signals.js"></script><script defer src="/static/signal-confidence.js"></script><script defer src="/static/explainable-signals.js"></script></head>')
         # Mount after all existing scripts: move their DOM nodes, never clone them.
         # Only the isolated, owner-protected signals preview receives this shell.
         source=source.replace('</head>','<link rel="stylesheet" href="/static/aura-mobile-shell.css"><script defer src="/static/aura-mobile-shell.js"></script></head>')

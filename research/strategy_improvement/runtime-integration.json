@@ -1,5 +1,5 @@
 {
-  "reason": "User-authorized Aura 5 integration, observer health correctness, Issue #70 read-only Signal Confidence, and Issue #73 isolated mobile navigation. Original archived runtime/numerical research remain unchanged; page hash tracks the reviewed preview-only CSS/JS injection while main/production remain out of scope.",
+  "reason": "User-authorized Aura 5 integration, observer health correctness, Issue #70 read-only Signal Confidence, and Issue #73 isolated mobile navigation. Original archived runtime/numerical research remain unchanged; page hash tracks the reviewed preview-only CSS/JS injection while main/production remain out of scope. Explainable signal cards are an authorized preview-only addition; the original research archive is unchanged.",
   "files": {
     "app/manual_preview/main.py": {
       "archive": "research/strategy_improvement/baseline_runtime/main.py.txt",
@@ -7,7 +7,7 @@
     },
     "app/manual_preview/page.py": {
       "archive": "research/strategy_improvement/baseline_runtime/page.py.txt",
-      "authorized_runtime_sha256": "e6eeec5de61eb453086b13c20804134779ff574eb235033b24592bebd458ee87"
+      "authorized_runtime_sha256": "96e47853d8610d90cee3ea2da850607fe8eba9e43ffd17ba8ef135c2c46bda5e"
     }
   }
 }
