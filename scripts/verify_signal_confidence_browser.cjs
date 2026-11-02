@@ -4,6 +4,7 @@ const fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const assert=require('node:assert/strict');
 const {execFileSync}=require('node:child_process');
 const {chromium,devices}=require('playwright');
+const {manualCosts}=require('../static/signal-confidence.js');
 const root=path.resolve(__dirname,'..'),out=path.resolve(process.argv[2]||'work/confidence-browser');
 fs.mkdirSync(out,{recursive:true});
 const html=execFileSync(process.env.PYTHON||'python',['-c','from app.manual_preview.page import page; print(page("DUMMY",server_signals=True))'],{cwd:root,encoding:'utf8'});
@@ -19,6 +20,7 @@ function snapshot(){const now=Date.now()/1000,closed=Math.floor(now/300)*300;
   costs:{stop_fees:100,target_fees:100,funding_reserve:5,cost_version:'AURA5_EXIT_QUOTE_COSTS_2',entry_basis:'EXECUTABLE_QUOTE'},technical_trigger:true,
   statistical_status:'UNVALIDATED',probability_tp_before_sl:null,manual_only:true,exchange_execution:false,
   cancel:'stale or expired',state:'WATCH_RESEARCH'};
+ candidate.net_rr=manualCosts(candidate,[candidate.entry,candidate.sl,candidate.tp]).net_rr;
  const short={...candidate,id:'e'.repeat(64),direction:'SHORT',entry:quote.bid,sl:50300,tp:49000,
   score:40,score_groups:{trend:0,momentum:0,structure:20,volume:5,support_resistance:15},
   state:'REJECTED',risk_gates_passed:false,technical_trigger:false,rejection_reasons:['RSI_EXTREME']};
@@ -46,9 +48,10 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{window.WebSocket=class{constructor(){this.readyState=1;}send(){}close(){this.readyState=3;}};});
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('[data-aura-tab="signals"]').click();
-  await page.waitForFunction(()=>document.querySelector('#aura-confidence .sc-cards')?.textContent.includes('LONG'));
+  await page.waitForFunction(()=>!!document.querySelector('#aura-confidence article[data-state="WATCH"]'));
   assert.match(await page.locator('#aura-confidence').textContent(),/НЕ вероятность прибыли/);
   assert.match(await page.locator('#aura-confidence').textContent(),/80\/100/);
+  assert.match(await page.locator('#aura-confidence article[data-state="WATCH"]').textContent(),/Entry 50000.10/);
   assert.equal(await page.locator('#aura-confidence .sc-cards article').count(),8);
   const shortCard=page.locator('#aura-confidence article[data-frame="5m"][data-direction="SHORT"]');
   assert.equal(await shortCard.getAttribute('data-state'),'REJECTED');
@@ -81,7 +84,7 @@ const server=http.createServer((req,res)=>{
   mode='OFFLINE';await page.waitForFunction(()=>document.querySelector('#aura-confidence [role="status"]')?.textContent.includes('OFFLINE'));
   assert.equal(await page.locator('#aura-confidence .sc-cards article').count(),8);
   assert.equal(await page.locator('#aura-confidence .sc-cards button').count(),0);
-  mode='LIVE';await page.waitForFunction(()=>document.querySelector('#aura-confidence .sc-cards')?.textContent.includes('LONG'));
+  mode='LIVE';await page.waitForFunction(()=>!!document.querySelector('#aura-confidence article[data-state="WATCH"]'));
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await page.screenshot({path:path.join(out,mobile?'mobile.png':'desktop.png'),fullPage:true});
   assert.deepEqual(errors,[]);reports.push({mobile,threshold:true,copy_only:true,manual_edit:true,sound_optin_dedup:true,stale_recovery:true,page_errors:errors});

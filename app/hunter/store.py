@@ -35,7 +35,7 @@ def save_confidence(db, frame, scores, input_hash, plans, quote, now):
             continue
         plan={'direction':candidate['direction'],'step':STEPS[frame],
               'entry':candidate['entry'],'sl':candidate['sl'],'tp':candidate['tp'],
-              'hold_bars':24,'model_sha256':MODEL_HASH}
+              'hold_bars':candidate['hold_bars'],'model_sha256':MODEL_HASH}
         record={'plan':plan,'quote':quote,'detected_at':now,
                 'score':candidate['score'],'score_version':CONFIDENCE_VERSION,
                 'score_model_sha256':SCORE_HASH,'input_sha256':input_hash,
