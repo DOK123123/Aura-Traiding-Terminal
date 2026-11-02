@@ -30,8 +30,8 @@
     }
     if (!quote) return noQuote;
     const validThreshold = Number.isInteger(threshold) && threshold >= 50 && threshold <= 100 ? threshold : 50;
-    const explainable = Array.isArray(data.explainable_candidates);
-    const valid = explainable ? data.explainable_candidates.filter(c => root.AuraExplainable?.usable(data,c,now,validThreshold)) : Array.isArray(data.confidence_candidates) && typeof usable === 'function'
+    const explainable = Object.hasOwn(data,'explainable_candidates');
+    const valid = explainable ? (root.AuraExplainable?.candidates(data)||[]).filter(c => root.AuraExplainable?.usable(data,c,now,validThreshold)) : Array.isArray(data.confidence_candidates) && typeof usable === 'function'
       ? data.confidence_candidates.filter(c => usable(data,c,now,validThreshold)) : [];
     valid.sort((a,b) => b.score-a.score || a.direction.localeCompare(b.direction));
     return {state:valid.length?'WATCH':'WAIT',reason:valid.length

@@ -31,7 +31,7 @@ function snapshot(){const now=Date.now()/1000,q={...fixture.quote,time:now,recei
  if(mode==='LONG'){const at=Math.floor(now/3600)*3600,c={...fixture.long_fixture,closed_at:at,valid_until:at+3600,quote_time:now,quote_received_at:now};candidates.push(c);}
  return {scope:'AURA6_PUBLIC_OBSERVER_ONLY',source:q.source,execution_enabled:false,account_connected:false,server_time:now,
  observer:{running:true,cycles:1,frame_errors:{}},fresh_frames:Object.keys(steps),quotes:Object.fromEntries(Object.keys(steps).map(tf=>[tf,q])),
- explanation_version:'AURA5_EXPLAINABLE_V1',explainable_candidates:candidates,records:[],alerts:[],watch_alerts:[],confidence_candidates:[]};}
+ explanation_version:'AURA5_EXPLAINABLE_V1',explainable_candidates:mode==='MALFORMED'?{invalid:true}:candidates,records:[],alerts:[],watch_alerts:[],confidence_candidates:[]};}
 const server=http.createServer((req,res)=>{if(req.method!=='GET'){posts++;res.writeHead(405).end();return;}
  if(req.url==='/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end(html);return;}
  if(req.url==='/api/preview/signals/snapshot'){if(mode==='HOLD'){held.add(res);res.on('close',()=>held.delete(res));return;}if(mode==='OFFLINE'){res.writeHead(503).end();return;}res.setHeader('Content-Type','application/json');res.end(JSON.stringify(snapshot()));return;}
@@ -61,6 +61,7 @@ const server=http.createServer((req,res)=>{if(req.method!=='GET'){posts++;res.wr
  assert.equal(await page.locator('#aura-explainable article').filter({hasText:/Entry \d/}).count(),0);
  mode='LONG';for(const res of held)res.destroy();held.clear();
  await page.waitForFunction(()=>document.querySelector('#aura-explainable [data-frame="1h"][data-direction="LONG"]')?.dataset.state==='WATCH',{},{timeout:20000});
+ mode='MALFORMED';await page.waitForFunction(()=>[...document.querySelectorAll('#aura-explainable article')].every(e=>e.dataset.state==='UNKNOWN'),{},{timeout:10000});
  for(const tab of ['chart','more','home','signals'])await page.locator('#app-tab-'+tab).click();
  assert.deepEqual(errors,[]);reports.push({name,long_short:true,rejected_unknown:true,risk:true,details_persist:true,quote_expiry:true,navigation:true,overflow:false,errors});await context.close();}
  assert.equal(posts,0);fs.writeFileSync(path.join(out,'report.json'),JSON.stringify({status:'PASS',posts,reports},null,2));console.log(JSON.stringify({status:'PASS',posts,reports}));
