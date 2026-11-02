@@ -81,8 +81,8 @@ function render(){const clock=Date.now()/1000;void notify(clock);const signature
    add('p',quantity===null?'Для расчёта размера позиции задайте риск в USDT.':'Размер позиции ≤ '+quantity.toFixed(6)+' BTC · номинал '+fmt(quantity*x.entry)+' USDT. Расчётный риск '+fmt(Number(risk.value))+' USDT.',card);
   }
   add('p','Для входа: '+x.confirmation,card);
-  add('p','Отмена: '+x.cancel,card);
-  add('p','Ориентир удержания '+Math.round(x.horizon.min_seconds/60)+'–'+Math.round(x.horizon.max_seconds/60)+' мин. '+x.horizon.time_exit,card);
+  add('p','Отмена: '+x.cancel.replaceAll('anchor','уровня отмены'),card);
+  add('p','Ориентир удержания '+Math.round(x.horizon.min_seconds/60)+'–'+Math.round(x.horizon.max_seconds/60)+' мин. Если SL/TP не достигнуты, пересмотреть выход не позже чем через '+Math.round(x.horizon.max_seconds/60)+' мин после входа. Это оценка, не гарантия.',card);
   const detail=add('details','',card);detail.open=opened.has(frame+':'+direction);add('summary','Почему такой сигнал',detail);
   for(const c of x.checks)add('p',(c.passed?'Выполнено: ':'Не выполнено: ')+label(c.code)+' · факт '+JSON.stringify(c.actual)+' · нужно '+JSON.stringify(c.required),detail);
   add('p','Индикаторы: '+Object.entries(x.indicators).map(([k,v])=>k+' '+fmt(v)).join(' · '),detail);
