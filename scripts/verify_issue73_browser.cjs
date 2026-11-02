@@ -11,7 +11,7 @@ fs.mkdirSync(out,{recursive:true});
 const html=execFileSync(process.env.PYTHON||'python',['-c',
   'from app.manual_preview.page import page; print(page("ISSUE73_FIXTURE",server_signals=True))'],{cwd:root,encoding:'utf8'});
 const SOURCE='BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2',VERSION='AURA5_TECHNICAL_SCORE_V1_FROZEN';
-let mode='LIVE',posts=0;
+let mode='LIVE',posts=0;const held=new Set();
 function snapshot(){const now=Date.now()/1000,closed=Math.floor(now/300)*300;
   const q={source:SOURCE,bid:49999.9,ask:50000.1,last:50000,time:now,received_at:now};
   const c={id:'a'.repeat(64),score_version:VERSION,score_model_sha256:'d'.repeat(64),model_sha256:'b'.repeat(64),input_sha256:'c'.repeat(64),
@@ -31,6 +31,7 @@ const server=http.createServer((req,res)=>{
   if(req.method!=='GET'){posts++;res.writeHead(405).end();return;}
   if(req.url==='/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end(html);return;}
   if(req.url==='/api/preview/signals/snapshot'){
+    if(mode==='HOLD'){held.add(res);res.on('close',()=>held.delete(res));return;}
     if(mode==='OFFLINE'){res.writeHead(503).end();return;}
     res.setHeader('Content-Type','application/json');res.end(JSON.stringify(snapshot()));return;
   }
@@ -89,6 +90,17 @@ const server=http.createServer((req,res)=>{
       assert.equal(await page.locator('#app-bid-ask').textContent(),'Bid — · Ask —');
       mode='OFFLINE';await page.waitForFunction(()=>document.querySelector('#app-signal-detail')?.textContent.includes('Нет связи'));
       mode='LIVE';await page.waitForFunction(()=>document.querySelector('#app-signal-state')?.textContent.includes('SHORT'));
+      // Unlike a 503, a hung transport has no response to trigger UI painting.
+      // Home must still expire its last Bid/Ask within the unchanged 5s gate.
+      mode='HOLD';await page.waitForFunction(()=>document.querySelector('#app-signal-state')?.textContent==='STALE',null,{timeout:7500});
+      assert.equal(await page.locator('#app-bid-ask').textContent(),'Bid — · Ask —');
+      mode='LIVE';for(const response of held){if(!response.destroyed){response.setHeader('Content-Type','application/json');response.end(JSON.stringify(snapshot()));}}held.clear();
+      await page.waitForFunction(()=>document.querySelector('#app-signal-state')?.textContent.includes('SHORT'));
+      // Simulate the native page lifecycle used on back/forward cache restore.
+      await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})));
+      assert.equal(await page.locator('#app-bid-ask').textContent(),'Bid — · Ask —');
+      await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));
+      await page.waitForFunction(()=>document.querySelector('#app-signal-state')?.textContent.includes('SHORT'));
       const nav=await page.locator('.aura-bottom-nav').boundingBox(),size=page.viewportSize();
       assert.ok(nav.y+nav.height>=size.height-2);
       for(const key of ['home','signals','chart','more'])assert.ok((await page.locator('#app-tab-'+key).boundingBox()).height>=44);
@@ -96,7 +108,7 @@ const server=http.createServer((req,res)=>{
       await page.screenshot({path:path.join(out,name+'-home.png'),fullPage:true});
       await page.locator('#app-tab-signals').click();await page.screenshot({path:path.join(out,name+'-signals.png'),fullPage:true});
       assert.deepEqual(errors,[]);reports.push({name,nav:true,home_freshness:true,threshold:true,chart:true,
-        manual_journal:true,theme:true,history:true,offline_recovery:true,no_post:true,page_errors:errors});
+        manual_journal:true,theme:true,history:true,offline_recovery:true,hung_request_expires:true,page_restore:true,no_post:true,page_errors:errors});
       await context.close();
     }
     assert.equal(posts,0);
@@ -104,3 +116,4 @@ const server=http.createServer((req,res)=>{
     console.log(JSON.stringify({status:'PASS',posts,reports}));
   }finally{await browser?.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;});
+

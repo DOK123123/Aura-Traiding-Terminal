@@ -14,7 +14,7 @@
   // server's unsupported LIVE label must never be shown as current Bid/Ask.
   function homeState(data, now, threshold, usable) {
     const noQuote = {state:'STALE', reason:'Нет подтверждённых свежих Bid/Ask Bitget', quote:null, candidate:null};
-    if (!data || data.scope !== 'AURA6_PUBLIC_OBSERVER_ONLY' ||
+    if (!Number.isFinite(now) || !data || data.scope !== 'AURA6_PUBLIC_OBSERVER_ONLY' ||
         data.execution_enabled !== false || data.account_connected !== false ||
         data.observer?.running !== true || !Number.isFinite(data.server_time) ||
         Math.abs(now - data.server_time) > 10 || !Array.isArray(data.fresh_frames)) return noQuote;
@@ -39,8 +39,55 @@
       quote,frame,candidate:valid[0] || null,threshold:validThreshold};
   }
 
-  root.AuraMobileShell={resolveTab,homeState};
-  if (typeof module !== 'undefined') module.exports={resolveTab,homeState};
+  // Quote expiry must not depend on the next HTTP response. One bounded request
+  // at a time; a cancelled session can never repaint a resumed page.
+  class HomeFeed {
+    constructor({fetcher=root.fetch?.bind(root),timers=root,clock=()=>Date.now()/1000,onData=()=>{}}={}) {
+      Object.assign(this,{fetcher,timers,clock,onData});
+      this.running=false;this.generation=0;this.data=null;this.controller=null;
+    }
+    emit(){this.onData(this.data,this.clock());}
+    start(){
+      if(this.running)return;
+      this.running=true;this.generation++;
+      this.emit();
+      this.expiry=this.timers.setInterval(()=>this.emit(),1000);
+      this.poll=this.timers.setInterval(()=>this.refresh(),4000);
+      this.refresh();
+    }
+    stop(){
+      this.running=false;this.generation++;
+      this.timers.clearInterval(this.expiry);this.timers.clearInterval(this.poll);
+      this.timers.clearTimeout(this.deadline);
+      const controller=this.controller;this.controller=null;controller?.abort();
+      this.data=null;this.emit();
+    }
+    async refresh(){
+      if(!this.running||this.controller)return;
+      const generation=this.generation,controller=new AbortController();
+      this.controller=controller;
+      const current=()=>this.running&&generation===this.generation&&this.controller===controller;
+      const deadline=this.timers.setTimeout(()=>{
+        if(!current())return;
+        this.controller=null;this.data=null;this.emit();controller.abort();
+      },8000);
+      this.deadline=deadline;
+      try{
+        const response=await this.fetcher('/api/preview/signals/snapshot',{
+          credentials:'same-origin',cache:'no-store',redirect:'error',signal:controller.signal});
+        if(!response.ok)throw Error('SNAPSHOT_UNAVAILABLE');
+        const data=await response.json();
+        if(current()){this.data=data;this.emit();}
+      }catch{
+        if(current()){this.data=null;this.emit();}
+      }finally{
+        this.timers.clearTimeout(deadline);
+        if(current())this.controller=null;
+      }
+    }
+  }
+  root.AuraMobileShell={resolveTab,homeState,HomeFeed};
+  if (typeof module !== 'undefined') module.exports={resolveTab,homeState,HomeFeed};
   if (!root.document || document.body?.dataset.manualPreview !== 'true' ||
       !document.getElementById('aura-confidence')) return;
 
@@ -166,14 +213,11 @@
     activate(resolveTab(location.hash),false);
 
     const fmt=n=>Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-    let requestNo=0;
-    async function refreshHome(){const current=++requestNo;
-      try{const response=await fetch('/api/preview/signals/snapshot',{credentials:'same-origin',cache:'no-store',redirect:'error'});
-        if(!response.ok)throw Error('HTTP_'+response.status);
-        const data=await response.json();if(current!==requestNo)return;
-        let threshold=50;try{threshold=new root.Aura5Confidence.LocalJournal(localStorage).threshold;}catch{}
-        paint(homeState(data,Date.now()/1000,threshold,root.Aura5Confidence?.usable));
-      }catch{if(current===requestNo)paint({state:'STALE',quote:null,reason:'Нет связи с наблюдателем или отсутствует доступ к данным'});}}
+    const feed=new HomeFeed({onData:(data,now)=>{
+      let threshold=50;try{threshold=new root.Aura5Confidence.LocalJournal(localStorage).threshold;}catch{}
+      paint(data?homeState(data,now,threshold,root.Aura5Confidence?.usable):{
+        state:'STALE',quote:null,reason:'Нет связи с наблюдателем или отсутствует доступ к данным'});
+    }});
     function paint(model){badge.dataset.state=model.state;
       badge.textContent=model.quote?'LIVE · BITGET':'STALE · НЕТ LIVE';
       quote.textContent=model.quote?'Bid '+fmt(model.quote.bid)+' · Ask '+fmt(model.quote.ask):'Bid — · Ask —';
@@ -184,8 +228,12 @@
         ?'Entry '+fmt(model.candidate.entry)+' · SL '+fmt(model.candidate.sl)+' · TP '+fmt(model.candidate.tp)+' · net RR '+model.candidate.net_rr.toFixed(2)+' · '+model.reason
         :model.reason+(model.state==='WAIT'?' · Порог '+model.threshold+'/100':'');
     }
-    refreshHome();const timer=root.setInterval(refreshHome,4000);
-    root.addEventListener('pagehide',()=>root.clearInterval(timer),{once:true});
+    const resume=()=>{if(document.hidden)feed.stop();else feed.start();};
+    root.addEventListener('pagehide',()=>feed.stop());
+    root.addEventListener('pageshow',resume);
+    document.addEventListener('visibilitychange',resume);
+    resume();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build,{once:true});else build();
 })(typeof window !== 'undefined' ? window : globalThis);
+
