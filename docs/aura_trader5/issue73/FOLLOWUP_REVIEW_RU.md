@@ -52,6 +52,11 @@ secrets, SQL, режима PAPER/Active43 или торговых POST. Ошиб
 - Перед merge обязательны полный Regression CI с изолированным PostgreSQL и
   Manual Preview Browser на точном SHA патча. Фактические run/deploy результаты
   фиксируются в PR после завершения; предыдущие CI за новый прогон не считаются.
+- Отдельный job `isolated-preview-health` делает только GET публичного health
+  указанного Preview: проверяет scope, работающий observer и выключенные
+  execution/Active43/scheduler. Redirects запрещены; ответ ограничен размером,
+  попытки и timeout ограничены. Job повторно запускается после deploy. Это
+  отдельная hosted-проверка, не часть offline market/browser доказательств.
 
 Локальный Chromium runtime ограничен окружением (setsockopt EPERM), поэтому
 браузерная проверка выполняется существующим GitHub workflow. Браузерные данные

@@ -4,6 +4,53 @@ on:
 permissions:
   contents: read
 jobs:
+  isolated-preview-health:
+    # Read-only public endpoint of the one authorized isolated preview. Can be
+    # rerun after deploy without repeating or weakening the offline UI suite.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Verify isolated Preview health and disabled execution (GET only)
+        run: |
+          python3 - <<'PY'
+          import json
+          import time
+          import urllib.error
+          import urllib.request
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          client = urllib.request.build_opener(NoRedirect)
+          url = 'https://aura-manual-trader5-isolated-preview.onrender.com/api/health'
+          for attempt in range(4):
+              try:
+                  request = urllib.request.Request(url, method='GET', headers={'User-Agent':'Aura-Issue73-ReadOnly-Health'})
+                  with client.open(request, timeout=25) as response:
+                      if response.status != 200:
+                          raise ValueError('HTTP_HEALTH_FAILED')
+                      body = response.read(16385)
+                      if len(body) > 16384:
+                          raise ValueError('HEALTH_RESPONSE_LIMIT')
+                      data = json.loads(body)
+                  if (data.get('scope') != 'ISOLATED_MANUAL_PREVIEW' or data.get('status') != 'ok'
+                      or data.get('exchange_execution') is not False
+                      or data.get('active43_controller_enabled') is not False
+                      or data.get('automatic_entry_scheduler_enabled') is not False
+                      or data.get('signal_observer_enabled') is not True
+                      or data.get('signal_observer_running') is not True
+                      or data.get('signal_observer_overdue') is not False):
+                      raise ValueError('ISOLATED_HEALTH_INVARIANT_FAILED')
+                  print(json.dumps({'status':'ISOLATED_PREVIEW_HEALTH_PASS','method':'GET',
+                                    'execution':False,'active43':False,'entry_scheduler':False,
+                                    'observer_running':True,'checked_at':time.time()}))
+                  break
+              except (OSError, ValueError, TimeoutError):
+                  if attempt == 3:
+                      raise SystemExit('ISOLATED_PREVIEW_HEALTH_FAILED') from None
+                  time.sleep(5)
+          PY
   browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -45,3 +92,4 @@ jobs:
           path: work/*browser
           if-no-files-found: warn
           retention-days: 7
+
