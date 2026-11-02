@@ -126,3 +126,23 @@ def test_replay_next_open_gap_and_sl_first_not_signal_candle_fill():
     assert outcome(plan, b, 300)['outcome'] == 'SL'
     b[1] = [300, 110, 111, 109, 110, 1]
     assert outcome(plan, b, 300)['outcome'] == 'NO_FILL'
+
+
+@pytest.mark.parametrize('strategy,side', [(k, s) for k in ('TREND_PULLBACK', 'BREAKOUT_RETEST', 'MOMENTUM_DIVERGENCE') for s in ('LONG', 'SHORT')])
+def test_real_native_5m_patterns_have_closed_numeric_evidence_and_honest_risk_rejection(strategy, side):
+    # Native exchange archive, independently fetched; no interpolation from 15m.
+    payload = json.load(gzip.open(Path(__file__).parents[1]/'research/strategy_engine/bitget-native-5m-2026-11-02.json.gz'))
+    assert payload['source'] == SOURCE and payload['frame'] == '5m'
+    cutoffs = {('MOMENTUM_DIVERGENCE','SHORT'):1793046600, ('BREAKOUT_RETEST','SHORT'):1793047500,
+               ('TREND_PULLBACK','LONG'):1793063400, ('TREND_PULLBACK','SHORT'):1793068500,
+               ('BREAKOUT_RETEST','LONG'):1793088300, ('MOMENTUM_DIVERGENCE','LONG'):1793156100}
+    at = cutoffs[strategy,side]
+    b = [r for r in payload['bars'] if r[0]+300 <= at][-260:]
+    mid = b[-1][4]
+    q = dict(source=SOURCE, bid=mid*.9999, ask=mid*1.0001, last=mid, time=at, received_at=at)
+    x = next(r for r in evaluate(b, '5m', q, at) if r['strategy'] == strategy and r['direction'] == side)
+    assert all(c['passed'] for c in x['checks'])
+    assert x['state'] == 'REJECTED' and x['rejection']
+    assert x['score'] == 100 and x['indicators']['atr'] > 0
+    assert x['horizon']['min_seconds'] == 900 and x['horizon']['max_seconds'] == 3600
+    assert x['edge'] == 'NO_EDGE_FOUND' and x['probability_tp_before_sl'] is None

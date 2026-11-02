@@ -20,7 +20,7 @@
   "limitations": [
     "Previously researched archive, not independent OOS",
     "Overlapping hypotheses, no portfolio return claim",
-    "5m native real archive unavailable; no fabricated 5m from 15m",
+    "Native 5m is analyzed separately in native5m.json; never fabricated from 15m",
     "1h/4h aggregated from complete 15m archive, not live native seeding equivalence",
     "Baseline hold=24 bars vs new hold<=4h; comparison includes intentional horizon change",
     "No parameter search or independent statistical qualification"

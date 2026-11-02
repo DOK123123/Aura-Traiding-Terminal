@@ -52,8 +52,14 @@
 
 Источник: сохранённый в репозитории реальный архив BTCUSDT Bitget USDT-M,
 11520 свечей 15m, 2026-07-01 — 2026-10-29 UTC. 1h/4h агрегированы только из
-полных групп без пропусков. Реального 5m архива здесь нет: проверка 5m на
-реальной истории **не выполнена**, 5m не синтезируется из 15m.
+полных групп без пропусков. Для 5m отдельно получены **2276 нативных реальных свечей** через публичный
+Bitget history-candles: 2026-10-25 22:45 — 2026-11-02 20:25 UTC, включая
+260 свечей прогрева перед неделей наблюдений. Это не синтетическая агрегация.
+Все три паттерна обнаружены в обе стороны: Trend Pullback LONG/SHORT 54/37,
+Breakout + Retest 11/13, Momentum Divergence 27/17. **WATCH после риск-фильтров:
+0**. Полный разбор: [native5m.json](native5m.json). Старая отдельная панель
+стратегий не поддерживала 5m; сравнение существовавшего before/after на этом
+TF неприменимо, сопоставление старой логики выполняется на 15m/1h/4h.
 
 Параметры зафиксированы перед запуском нового сравнения, перебор параметров
 не выполнялся. Этот архив уже использовался предыдущими исследованиями:
@@ -96,12 +102,19 @@
 (0.84%). Для SHORT anchor 76761.90; SL выше него на .25 ATR, расстояние
 845.88 USDT (1.11%). Структурное объяснение не превращает паттерн в прибыльный.
 
+Нативный 5m capture можно воспроизвести в пределах доступной истории Bitget:
+
+```bash
+PYTHONPATH=. python scripts/capture_explainable_5m.py --start 1792968300 --end 1793651100 --output /tmp/native5m.json.gz
+```
+
 Полные результаты, причины отказа и числовые примеры: [replay.json](replay.json).
 
 Воспроизведение из корня репозитория:
 
 ```bash
 node scripts/replay_explainable_baseline.cjs /tmp/aura5-baseline.json
+PYTHONPATH=. python scripts/replay_explainable_5m.py --output /tmp/aura5-native5m.json
 PYTHONPATH=. python scripts/replay_explainable.py --baseline /tmp/aura5-baseline.json --output /tmp/aura5-explainable
 python -m pytest -q tests/test_explainable_signals.py tests/test_preview_signals.py
 node --test tests/test_explainable_signals.cjs
@@ -127,7 +140,7 @@ node --test tests/test_explainable_signals.cjs
 
 Полный локальный прогон: **2202 Python PASS, 5 SKIP; 448 JavaScript PASS**.
 Дополнительная новая проверка API/owner включена и отдельно проходит вместе
-с тестами движка (21 PASS). SKIP — существующие интеграции изолированного
+с тестами движка и нативной 5m историей (27 PASS). SKIP — существующие интеграции изолированного
 PostgreSQL без локального opt-in; CI запускает их в disposable Docker. Python 3.12, зависимости ci/requirements.lock;
 временное локальное дополнение socksio нужно для прокси окружения и не
 добавлено в runtime. Node локально 24.22.1, CI использует .node-version.
@@ -141,3 +154,5 @@ REJECTED/UNKNOWN, числовые объяснения/позиция, опци
 зависшем HTTP, навигация, отсутствие overflow/JS ошибок и POST. Транспортные
 фикстуры имеют сдвинутые времена и не являются доказательством LIVE-потока.
 Результат CI и ссылки на конкретный commit будут указаны в PR.
+
+Chromium-проверка версии `403c71d5d984036d448c7fafd6635b7c9e5a6658` прошла полностью: [Manual Preview Browser](https://github.com/DOK123123/Aura-Traiding-Terminal/actions/runs/41518569327). Следующий commit добавляет нативный 5m архив/исследование/регрессии; финальный CI на его SHA указан в PR.

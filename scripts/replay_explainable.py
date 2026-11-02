@@ -81,7 +81,7 @@ def main():
                               'funding_reserve_bps_per_8h': 1, 'entry': 'NEXT_OPEN_AFTER_DECISION',
                               'tie': 'SL_FIRST', 'gaps': 'ADVERSE_STOP_OPEN', 'sizing': 'INDEPENDENT_1R_OBSERVATIONS_NOT_PORTFOLIO'},
               'limitations': ['Previously researched archive, not independent OOS', 'Overlapping hypotheses, no portfolio return claim',
-                              '5m native real archive unavailable; no fabricated 5m from 15m',
+                              'Native 5m is analyzed separately in native5m.json; never fabricated from 15m',
                               '1h/4h aggregated from complete 15m archive, not live native seeding equivalence',
                               'Baseline hold=24 bars vs new hold<=4h; comparison includes intentional horizon change',
                               'No parameter search or independent statistical qualification'], 'frames': {}, 'examples': {}}
