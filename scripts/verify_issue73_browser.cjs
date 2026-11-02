@@ -88,6 +88,13 @@ const server=http.createServer((req,res)=>{
       await page.goForward();assert.equal(await page.locator('#app-home').isVisible(),true);
       mode='STALE';await page.waitForFunction(()=>document.querySelector('#app-signal-state')?.textContent==='STALE');
       assert.equal(await page.locator('#app-bid-ask').textContent(),'Bid — · Ask —');
+      const contrast=await page.locator('#app-market-state').evaluate(node=>{
+        const style=getComputedStyle(node),luminance=rgb=>rgb.match(/[\d.]+/g).slice(0,3)
+          .map(Number).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4)
+          .reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+        const a=luminance(style.color),b=luminance(style.backgroundColor);
+        return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+      });assert.ok(contrast>=4.5,'light STALE badge must meet text contrast');
       mode='OFFLINE';await page.waitForFunction(()=>document.querySelector('#app-signal-detail')?.textContent.includes('Нет связи'));
       mode='LIVE';await page.waitForFunction(()=>document.querySelector('#app-signal-state')?.textContent.includes('SHORT'));
       // Unlike a 503, a hung transport has no response to trigger UI painting.
@@ -108,7 +115,7 @@ const server=http.createServer((req,res)=>{
       await page.screenshot({path:path.join(out,name+'-home.png'),fullPage:true});
       await page.locator('#app-tab-signals').click();await page.screenshot({path:path.join(out,name+'-signals.png'),fullPage:true});
       assert.deepEqual(errors,[]);reports.push({name,nav:true,home_freshness:true,threshold:true,chart:true,
-        manual_journal:true,theme:true,history:true,offline_recovery:true,hung_request_expires:true,page_restore:true,no_post:true,page_errors:errors});
+        manual_journal:true,theme:true,light_stale_contrast:contrast,history:true,offline_recovery:true,hung_request_expires:true,page_restore:true,no_post:true,page_errors:errors});
       await context.close();
     }
     assert.equal(posts,0);
