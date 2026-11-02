@@ -232,7 +232,8 @@ audioButton.onclick=async()=>{
  audioStatus.textContent=audioReady?'Звук активен в открытой вкладке; без фоновой гарантии':'Звук недоступен';
  if(audioReady&&latest)void maybeSound(freshRows(latest,Date.now()/1000));
 };
-function paint(){cards.replaceChildren();const now=Date.now()/1000,rows=latest?freshRows(latest,now):[];
+function paint(){const expanded=new Set([...cards.querySelectorAll('article')].filter(e=>e.querySelector('details')?.open).map(e=>e.dataset.frame+e.dataset.direction));
+ cards.replaceChildren();const now=Date.now()/1000,rows=latest?freshRows(latest,now):[];
  status.textContent=(latest?'Обе стороны рынка':'OFFLINE/STALE · UNKNOWN')+
   ' · WATCH: '+rows.length+' · порог '+journal.threshold+'/100 · NO_EDGE_FOUND';
  for(const c of displaySides(latest,now,journal.threshold)){
@@ -244,7 +245,7 @@ function paint(){cards.replaceChildren();const now=Date.now()/1000,rows=latest?f
   const costs=manualCosts(c,levels.slice(0,3));
   if(c.state!=='UNKNOWN'&&costs&&Number.isFinite(c.net_rr)&&Math.abs(costs.net_rr-c.net_rr)<1e-7)add('p',textLevels(c),card);
   if(c.state!=='WATCH')add('p','Причины: '+(c.rejection_reasons?.map(r=>REASONS[r]||r).join('; ')||'Проверки сценария не пройдены'),card);
-  const details=add('details','',card);add('summary','Факторы и условия',details);
+  const details=add('details','',card);details.open=expanded.has(c.frame+c.direction);add('summary','Факторы и условия',details);
   add('p','Балл — техническая оценка направления, не вероятность прибыли. NO_EDGE_FOUND; CONFIRMED запрещён.',details);
   if(c.score_groups)add('p',Object.entries(c.score_groups).map(([k,v])=>(GROUPS[k]||k)+' '+v).join(' · '),details);
   if(c.factors)add('p','За: '+c.factors.join('; ')+' | Против: '+(c.contradictions||[]).join('; '),details);

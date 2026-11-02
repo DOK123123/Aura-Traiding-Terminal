@@ -58,6 +58,9 @@ const server=http.createServer((req,res)=>{
   assert.match(await shortCard.textContent(),/40\/100/);
   assert.match(await shortCard.textContent(),/RSI не достиг экстремума/);
   assert.equal(await shortCard.locator('button').count(),0);
+  await shortCard.locator('summary').click();
+  await page.waitForTimeout(1300);
+  assert.equal(await shortCard.locator('details').evaluate(e=>e.open),true);
   await page.locator('#aura-confidence .sc-controls button').click();
   await page.waitForFunction(()=>document.querySelector('#aura-confidence .sc-controls span')?.textContent.includes('Web Audio запланирован'));
   assert.equal(await page.evaluate(()=>new Aura5Confidence.LocalJournal(localStorage).rows[0].alerted_at!==null),true);
