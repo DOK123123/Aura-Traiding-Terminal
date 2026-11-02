@@ -107,7 +107,7 @@
     moreHeading.append(el('h1','','Ещё'));panes.more.append(moreHeading);
     const journal=el('section','aura-more-card');journal.append(el('h2','','Журнал сигналов'));
     journal.append(el('p','aura-subtle','Локальная история Signal Confidence в этом браузере. Не является историей исполненных сделок.'));
-    const sourceJournal=document.querySelector('#aura-confidence details');
+    const sourceJournal=document.querySelector('#aura-confidence details.sc-history');
     if(sourceJournal)journal.append(sourceJournal);
     panes.more.append(journal);
     const settings=el('section','aura-more-card');settings.append(el('h2','','Оформление'));

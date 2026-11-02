@@ -185,7 +185,7 @@ for(const [key,title] of [['direction','Направление'],['entry','Entry
 }
 const clipboard=add('button','Скопировать уровни для ручной сверки в Bybit Demo',manual);clipboard.type='button';
 const manualStatus=add('p','Нет выбранного плана',manual);manualStatus.setAttribute('role','status');
-const history=add('details','',host);add('summary','Локальный журнал · просмотр и экспорт',history);
+const history=add('details','',host);history.className='sc-history';add('summary','Локальный журнал · просмотр и экспорт',history);
 const exportButton=add('button','Скачать JSON журнала',history);exportButton.type='button';
 const historyList=add('ol','',history);
 let latest=null,copiedId=null,copiedSource=null,requestId=0;

@@ -20,12 +20,12 @@ function snapshot(){const now=Date.now()/1000,closed=Math.floor(now/300)*300;
     symbol:'BTCUSDT',closed_at:closed,observed_at:now,valid_until:closed+300,quote_time:now,quote_received_at:now,
     bid:q.bid,ask:q.ask,entry:q.bid,sl:50300,tp:49000,net_rr:2.2,risk_gates_passed:true,
     costs:{stop_fees:100,target_fees:100,funding_reserve:5,cost_version:'AURA5_EXIT_QUOTE_COSTS_2',entry_basis:'EXECUTABLE_QUOTE'},
-    statistical_status:'UNVALIDATED',probability_tp_before_sl:null,manual_only:true,exchange_execution:false,
+    statistical_status:'UNVALIDATED',probability_tp_before_sl:null,technical_trigger:true,manual_only:true,exchange_execution:false,
     cancel:'stale or expired',state:'WATCH_RESEARCH'};
   return {scope:'AURA6_PUBLIC_OBSERVER_ONLY',state:'NO TRADE',source:SOURCE,execution_enabled:false,
     account_connected:false,server_time:now,fresh_frames:['5m'],quotes:{'5m':mode==='STALE'?{...q,time:now-12}:q},
     observer:{running:true,cycles:8,frame_errors:{}},records:[],alerts:[],watch_alerts:[],
-    model_sha256:'b'.repeat(64),confidence_version:VERSION,confidence_candidates:[c]};
+    model_sha256:'b'.repeat(64),confidence_version:VERSION,confidence_candidates:[c],dual_scenarios:[c]};
 }
 const server=http.createServer((req,res)=>{
   if(req.method!=='GET'){posts++;res.writeHead(405).end();return;}
@@ -75,7 +75,7 @@ const server=http.createServer((req,res)=>{
       assert.equal(await page.locator('#timeframes [data-tf="5m"]').count(),1);
       await page.locator('#app-tab-more').click();
       assert.equal(await page.locator('#manual-paper-panel').count(),1);
-      assert.equal(await page.locator('#aura-confidence details').count(),0); // Journal moved into More
+      assert.equal(await page.locator('#aura-confidence details.sc-history').count(),0); // Journal moved into More
       const journal=page.locator('.aura-more-card details').first();assert.equal(await journal.count(),1);
       await journal.locator('summary').click();
       assert.match(await journal.textContent(),/Локальный журнал/);
