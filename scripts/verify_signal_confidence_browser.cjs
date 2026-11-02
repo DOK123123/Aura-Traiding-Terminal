@@ -16,13 +16,17 @@ function snapshot(){const now=Date.now()/1000,closed=Math.floor(now/300)*300;
   factors:['EMA group','RSI/MACD group'],contradictions:['volume'],direction:'LONG',frame:'5m',source:SOURCE,
   symbol:'BTCUSDT',closed_at:closed,observed_at:now,valid_until:closed+300,quote_time:now,quote_received_at:now,
   bid:quote.bid,ask:quote.ask,entry:quote.ask,sl:49700,tp:51000,net_rr:2.2,risk_gates_passed:true,
-  costs:{stop_fees:100,target_fees:100,funding_reserve:5,cost_version:'AURA5_EXIT_QUOTE_COSTS_2',entry_basis:'EXECUTABLE_QUOTE'},technical_trigger:false,
+  costs:{stop_fees:100,target_fees:100,funding_reserve:5,cost_version:'AURA5_EXIT_QUOTE_COSTS_2',entry_basis:'EXECUTABLE_QUOTE'},technical_trigger:true,
   statistical_status:'UNVALIDATED',probability_tp_before_sl:null,manual_only:true,exchange_execution:false,
   cancel:'stale or expired',state:'WATCH_RESEARCH'};
+ const short={...candidate,id:'e'.repeat(64),direction:'SHORT',entry:quote.bid,sl:50300,tp:49000,
+  score:40,score_groups:{trend:0,momentum:0,structure:20,volume:5,support_resistance:15},
+  state:'REJECTED',risk_gates_passed:false,technical_trigger:false,rejection_reasons:['RSI_EXTREME']};
+ if(mode==='STALE'){quote.time-=6;quote.received_at-=6;}
  return {scope:'AURA6_PUBLIC_OBSERVER_ONLY',state:'NO TRADE',source:SOURCE,execution_enabled:false,
   account_connected:false,server_time:now,fresh_frames:['5m'],quotes:{'5m':quote},observer:{running:true,cycles:7,frame_errors:{}},
   records:[],alerts:[],watch_alerts:[],model_sha256:'b'.repeat(64),confidence_version:VERSION,
-  confidence_candidates:mode==='STALE'?[]:[candidate]};}
+  confidence_candidates:mode==='STALE'?[]:[candidate],dual_scenarios:[candidate,short]};}
 const server=http.createServer((req,res)=>{
  if(req.method!=='GET'){posts++;res.writeHead(405).end();return;}
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(html);return;}
@@ -45,13 +49,20 @@ const server=http.createServer((req,res)=>{
   await page.waitForFunction(()=>document.querySelector('#aura-confidence .sc-cards')?.textContent.includes('LONG'));
   assert.match(await page.locator('#aura-confidence').textContent(),/НЕ вероятность прибыли/);
   assert.match(await page.locator('#aura-confidence').textContent(),/80\/100/);
+  assert.equal(await page.locator('#aura-confidence .sc-cards article').count(),8);
+  const shortCard=page.locator('#aura-confidence article[data-frame="5m"][data-direction="SHORT"]');
+  assert.equal(await shortCard.getAttribute('data-state'),'REJECTED');
+  assert.match(await shortCard.textContent(),/40\/100/);
+  assert.match(await shortCard.textContent(),/RSI не достиг экстремума/);
+  assert.equal(await shortCard.locator('button').count(),0);
   await page.locator('#aura-confidence .sc-controls button').click();
   await page.waitForFunction(()=>document.querySelector('#aura-confidence .sc-controls span')?.textContent.includes('Web Audio запланирован'));
   assert.equal(await page.evaluate(()=>new Aura5Confidence.LocalJournal(localStorage).rows[0].alerted_at!==null),true);
   await page.waitForTimeout(4300);
   assert.equal(await page.evaluate(()=>new Aura5Confidence.LocalJournal(localStorage).rows.filter(r=>r.alerted_at!==null).length),1);
   await page.locator('#aura-confidence input[type="range"]').evaluate(e=>{e.value='81';e.dispatchEvent(new Event('input',{bubbles:true}));});
-  assert.equal(await page.locator('#aura-confidence .sc-cards article').count(),0);
+  assert.equal(await page.locator('#aura-confidence .sc-cards article').count(),8);
+  assert.equal(await page.locator('#aura-confidence .sc-cards button').count(),0);
   await page.locator('#aura-confidence input[type="range"]').evaluate(e=>{e.value='50';e.dispatchEvent(new Event('input',{bubbles:true}));});
   await page.getByRole('button',{name:'Перенести LONG · без ордера'}).click();
   await page.waitForFunction(()=>document.getElementById('sc-manual-tp').value==='51000.0');
@@ -65,8 +76,11 @@ const server=http.createServer((req,res)=>{
   await page.getByRole('button',{name:'Скопировать уровни для ручной сверки в Bybit Demo'}).click();
   await confirmation;
   assert.equal(confirmed,1);
+  mode='STALE';await page.waitForFunction(()=>document.querySelectorAll('#aura-confidence article[data-state="UNKNOWN"]').length===8);
+  assert.equal(await page.locator('#aura-confidence .sc-cards button').count(),0);
   mode='OFFLINE';await page.waitForFunction(()=>document.querySelector('#aura-confidence [role="status"]')?.textContent.includes('OFFLINE'));
-  assert.equal(await page.locator('#aura-confidence .sc-cards article').count(),0);
+  assert.equal(await page.locator('#aura-confidence .sc-cards article').count(),8);
+  assert.equal(await page.locator('#aura-confidence .sc-cards button').count(),0);
   mode='LIVE';await page.waitForFunction(()=>document.querySelector('#aura-confidence .sc-cards')?.textContent.includes('LONG'));
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   await page.screenshot({path:path.join(out,mobile?'mobile.png':'desktop.png'),fullPage:true});
