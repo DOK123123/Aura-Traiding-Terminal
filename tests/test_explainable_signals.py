@@ -2,10 +2,6 @@
 import gzip
 import json
 from pathlib import Path
-from types import SimpleNamespace
-import asyncio
-
-import numpy as np
 import pytest
 
 from app.hunter.market import SOURCE

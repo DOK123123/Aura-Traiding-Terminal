@@ -143,7 +143,7 @@
     const scores=el('details','aura-advanced');scores.id='aura-score-diagnostics';scores.open=true;
     scores.append(el('summary','','Общий технический скоринг · не торговая стратегия'));
     move('#aura-confidence',scores);panes.signals.append(scores);
-    const advancedSignals=el('details','aura-advanced');advancedSignals.append(el('summary','', 'Дополнительные сценарии и диагностика WATCH'));
+    const advancedSignals=el('details','aura-advanced');advancedSignals.id='aura-strategy-diagnostics';advancedSignals.append(el('summary','', 'Дополнительные сценарии и диагностика WATCH'));
     move('#aura-signal-center',advancedSignals);
     move('#aura-live-analyst',advancedSignals);
     move('#aura-analyst',advancedSignals);

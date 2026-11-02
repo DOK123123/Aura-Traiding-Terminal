@@ -19,12 +19,16 @@ rows=[]
 for frame,step in [('15m',900),('1h',3600),('4h',14400)]:
  b=[r for r in bars_for(base,step) if r[0]+step<=at][-260:]
  rows.extend(evaluate(b,frame,q,at))
-print(json.dumps(dict(rows=rows,quote=q)))
+b=[r for r in bars_for(base,3600) if r[0]+3600<=at][-260:]
+mirror=[[t,2*mid-o,2*mid-l,2*mid-h,2*mid-c,v] for t,o,h,l,c,v in b]
+long=next(r for r in evaluate(mirror,'1h',q,at) if r['strategy']=='BREAKOUT_RETEST' and r['direction']=='LONG')
+assert long['state']=='WATCH'
+print(json.dumps(dict(rows=rows,quote=q,long_fixture=long)))
 `],{encoding:'utf8',cwd:root}));
 let mode='LIVE',posts=0;const held=new Set();
 function snapshot(){const now=Date.now()/1000,q={...fixture.quote,time:now,received_at:now},steps={'5m':300,'15m':900,'1h':3600,'4h':14400};
  const candidates=structuredClone(fixture.rows).map(c=>({...c,closed_at:Math.floor(now/steps[c.frame])*steps[c.frame],valid_until:(Math.floor(now/steps[c.frame])+1)*steps[c.frame],quote_time:now,quote_received_at:now}));
- if(mode==='LONG'){const c=candidates.find(c=>c.frame==='1h'&&c.state==='WATCH');c.direction='LONG';c.entry=q.ask;[c.sl,c.tp]=[c.entry-Math.abs(c.sl-c.entry),c.entry+Math.abs(c.tp-c.entry)];}
+ if(mode==='LONG'){const at=Math.floor(now/3600)*3600,c={...fixture.long_fixture,closed_at:at,valid_until:at+3600,quote_time:now,quote_received_at:now};candidates.push(c);}
  return {scope:'AURA6_PUBLIC_OBSERVER_ONLY',source:q.source,execution_enabled:false,account_connected:false,server_time:now,
  observer:{running:true,cycles:1,frame_errors:{}},fresh_frames:Object.keys(steps),quotes:Object.fromEntries(Object.keys(steps).map(tf=>[tf,q])),
  explanation_version:'AURA5_EXPLAINABLE_V1',explainable_candidates:candidates,records:[],alerts:[],watch_alerts:[],confidence_candidates:[]};}

@@ -77,6 +77,7 @@ jobs:
         run: |
           export PYTHON="$PWD/.ci-venv/bin/python"
           export CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          node scripts/verify_explainable_browser.cjs work/explainable-browser
           node scripts/verify_replay_alerts_browser.cjs work/replay-alerts-browser
           node scripts/verify_manual_strategies_browser.cjs work/strategies-browser
           node scripts/verify_hunter6_browser.cjs work/hunter6-browser
@@ -84,7 +85,6 @@ jobs:
           node scripts/verify_issue66_browser.cjs work/issue66-browser
           node scripts/verify_signal_confidence_browser.cjs work/confidence-browser
           node scripts/verify_issue73_browser.cjs work/issue73-browser
-          node scripts/verify_explainable_browser.cjs work/explainable-browser
           PYTHON="$PYTHON" node scripts/verify_manual_preview_chart.cjs work/chart-browser
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
