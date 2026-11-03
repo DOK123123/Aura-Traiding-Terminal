@@ -19,7 +19,7 @@ function manualCosts(candidate,levels){
  const [entry,sl,tp]=levels,filledEntry=entry*(1+sign*.0005);
  if(sign*(filledEntry-sl)<=0||sign*(tp-filledEntry)<=0)return null;
  const filledStop=sl*(1-sign*.0005),filledTarget=tp*(1-sign*.0005);
- const funding=entry*Math.ceil(24*STEPS[candidate.frame]/28800)*.0001;
+ const funding=entry*Math.ceil((candidate.hold_bars||24)*STEPS[candidate.frame]/28800)*.0001;
  const stopFees=.001*(filledEntry+filledStop),targetFees=.001*(filledEntry+filledTarget);
  const netLoss=sign*(filledEntry-filledStop)+stopFees+funding;
  const netReward=sign*(filledTarget-filledEntry)-targetFees-funding;
@@ -46,7 +46,7 @@ function usable(data,c,now,threshold=50){
   &&data.account_connected===false&&data.observer?.running===true&&data.confidence_version===VERSION
   &&Array.isArray(data.confidence_candidates)&&c?.score_version===VERSION&&c?.source===SOURCE
   &&c?.statistical_status==='UNVALIDATED'&&c.probability_tp_before_sl===null
-  &&c.state==='WATCH_RESEARCH'
+  &&c.state==='WATCH_RESEARCH'&&c.technical_trigger===true
   &&c.model_sha256===data.model_sha256
   &&typeof c.score_model_sha256==='string'&&/^[a-f0-9]{64}$/.test(c.score_model_sha256)
   &&c.exchange_execution===false&&c.manual_only===true&&sign!==0&&STEPS[c.frame]
@@ -110,8 +110,53 @@ class LocalJournal{
   if(changed)this.save();return changed;}
 }
 function usableId(c){return typeof c?.id==='string'&&/^[a-f0-9]{64}$/.test(c.id);}
-root.Aura5Confidence={usable,validThreshold,reserveAudio,manualCosts,LocalJournal,VERSION,STORE};
-if(typeof module!=='undefined')module.exports={usable,validThreshold,reserveAudio,manualCosts,LocalJournal,VERSION,STORE};
+const REASONS={
+ TREND_DIRECTION:'EMA50/200 против направления',TREND_EFFICIENCY:'Недостаточно выраженный тренд',
+ EMA20_TOUCH:'Нет касания EMA20',EMA20_DISTANCE:'Цена слишком далеко от EMA20',
+ DIRECTIONAL_BODY:'Свеча закрылась против направления',PREVIOUS_EXTREME_CLOSE:'Нет закрытия за предыдущим экстремумом',
+ RSI_PULLBACK:'RSI вне диапазона отката',TRIGGER_VOLUME:'Недостаточный объём подтверждения',
+ CLOSED_BREAKOUT:'Нет закрытого пробоя',RETEST_DISTANCE:'Не выполнен ретест уровня',BREAKOUT_VOLUME:'Недостаточный объём пробоя',
+ RETEST_RECLAIM:'Ретест не подтвердил возврат за уровень',MOMENTUM_TREND:'EMA20/50 против импульса',
+ MOMENTUM_VOLUME:'Недостаточный объём импульса',SETUP_TRUE_RANGE:'Диапазон свечи вне условий стратегии',
+ NEAR_RANGE_BREAK:'Цена далеко от пробоя диапазона',TRIGGER_TRUE_RANGE:'Недостаточное расширение диапазона',
+ BODY_FRACTION:'Слишком малая доля тела свечи',CLOSED_RANGE_BREAK:'Нет подтверждённого пробоя диапазона',
+ RSI_MOMENTUM:'RSI не подтвердил импульс',MEAN_REVERSION_REGIME:'Режим не подходит для возврата к среднему',
+ RSI_EXTREME:'RSI не достиг экстремума',PREVIOUS_BAND_EXCURSION:'Нет выхода за полосу Боллинджера',
+ BAND_REENTRY:'Нет возврата внутрь полосы',RSI_RECOVERY:'RSI не подтвердил разворот',
+ EXTREME_SWEEP:'Нет выноса предыдущего экстремума',SWEEP_VOLUME:'Недостаточный объём выноса',
+ REJECTION_WICK:'Нет требуемой разворотной тени',EXTREME_RECLAIM:'Нет возврата за экстремум',
+ RANGE_EFFICIENCY:'Рынок не в боковом режиме',EMA_SEPARATION:'EMA слишком далеко друг от друга',
+ RANGE_WIDTH:'Диапазон слишком узкий',RANGE_EDGE_TOUCH:'Нет касания границы диапазона',
+ RANGE_EDGE_CLOSE:'Закрытие вне зоны границы',CLOSE_RECOVERY:'Нет закрытия в сторону возврата',RSI_RANGE:'RSI вне условий диапазона',
+ NO_VALID_RULE_PLAN:'Нет корректного плана по правилам стратегии',ENTRY_OUTSIDE_ZONE:'Цена вышла из зоны входа',
+ ENTRY_EXPIRED:'Сценарий истёк',INVALID_GEOMETRY_OR_COST_INPUT:'Некорректные уровни или расходы',
+ NET_RR_BELOW_1_5:'Net R/R ниже 1.5 после расходов',TECHNICAL_SCORE_BELOW_50:'Технический балл ниже 50',
+ TECHNICAL_TRIGGER_NOT_MET:'Технический триггер не выполнен'
+};
+function displaySides(d,now,threshold=50){
+ const valid=!!(d&&d.scope==='AURA6_PUBLIC_OBSERVER_ONLY'&&d.execution_enabled===false&&d.account_connected===false&&Math.abs(now-d.server_time)<=10&&d.observer?.running===true);
+ return Object.keys(STEPS).flatMap(frame=>['LONG','SHORT'].map(direction=>{
+  const c=valid?d.dual_scenarios?.find(x=>x.frame===frame&&x.direction===direction):null;
+  // Revalidate market freshness independently of server presentation state.
+  const q=d?.quotes?.[frame];
+  const fresh=valid&&d.fresh_frames?.includes(frame)&&q?.source===SOURCE
+   &&[q.time,q.received_at,q.bid,q.ask].every(Number.isFinite)
+   &&now>=q.time&&now-q.time<=5&&now>=q.received_at&&now-q.received_at<=5
+   &&q.bid>0&&q.ask>=q.bid&&(q.ask-q.bid)/q.bid<=.002;
+  if(!c||!fresh||c.state==='UNKNOWN'||!Number.isSafeInteger(c.score)||c.score<0||c.score>100
+    ||c.score_version!==VERSION||c.model_sha256!==d.model_sha256
+    ||c.closed_at%STEPS[frame]!==0||c.closed_at>now||now>=c.valid_until
+    ||c.valid_until!==c.closed_at+STEPS[frame]||c.quote_time!==q.time||c.quote_received_at!==q.received_at
+    ||c.bid!==q.bid||c.ask!==q.ask)
+   return {frame,direction,state:'UNKNOWN',score:null,rejection_reasons:['Нет свежих закрытых свечей и Bid/Ask']};
+  const accepted=usable(d,c,now,threshold);
+  return {...c,state:accepted?'WATCH':'REJECTED',rejection_reasons:accepted?[]:
+   [...(c.rejection_reasons||[]),...(c.score<threshold?['Ниже выбранного порога '+threshold]:[]),
+    ...(!c.technical_trigger?['Технический триггер не выполнен']:[])]};
+ }));
+}
+root.Aura5Confidence={usable,displaySides,validThreshold,reserveAudio,manualCosts,LocalJournal,VERSION,STORE};
+if(typeof module!=='undefined')module.exports={usable,displaySides,validThreshold,reserveAudio,manualCosts,LocalJournal,VERSION,STORE};
 if(!root.document||document.body.dataset.manualPreview!=='true')return;
 const host=document.getElementById('aura-confidence');if(!host)return;
 const add=(tag,value,parent)=>{const e=document.createElement(tag);e.textContent=value;parent.append(e);return e;};
@@ -140,7 +185,7 @@ for(const [key,title] of [['direction','Направление'],['entry','Entry
 }
 const clipboard=add('button','Скопировать уровни для ручной сверки в Bybit Demo',manual);clipboard.type='button';
 const manualStatus=add('p','Нет выбранного плана',manual);manualStatus.setAttribute('role','status');
-const history=add('details','',host);add('summary','Локальный журнал · просмотр и экспорт',history);
+const history=add('details','',host);history.className='sc-history';add('summary','Локальный журнал · просмотр и экспорт',history);
 const exportButton=add('button','Скачать JSON журнала',history);exportButton.type='button';
 const historyList=add('ol','',history);
 let latest=null,copiedId=null,copiedSource=null,requestId=0;
@@ -187,20 +232,31 @@ audioButton.onclick=async()=>{
  audioStatus.textContent=audioReady?'Звук активен в открытой вкладке; без фоновой гарантии':'Звук недоступен';
  if(audioReady&&latest)void maybeSound(freshRows(latest,Date.now()/1000));
 };
-function paint(){cards.replaceChildren();if(!latest)return;const now=Date.now()/1000,rows=freshRows(latest,now);
- status.textContent=(rows.length?'WATCH · исследовательских направлений: '+rows.length:'WAIT · направлений выше порога с актуальными данными и R/R нет')+
-  ' · порог '+journal.threshold+'/100 · LIVE относится только к свежей котировке Bitget, не к прибыли';
- for(const c of rows){journal.seen(c,now);const card=add('article','',cards);
-  add('h3',c.direction+' · '+c.frame+' · '+c.score+'/100 · '+(c.score<65?'слабый':c.score<80?'умеренный':'сильный'),card);
-  add('p','WATCH / НЕПРОВЕРЕННАЯ ГИПОТЕЗА · технический триггер '+(c.technical_trigger?'есть':'не подтверждён'),card);
-  add('p',textLevels(c),card);
-  add('p','Закрытая свеча '+new Date(c.closed_at*1000).toISOString()+' · Bid '+c.bid+' / Ask '+c.ask+' · источник: публичный Bitget',card);
-  add('p',Object.entries(c.score_groups).map(([k,v])=>(GROUPS[k]||k)+' '+v).join(' · '),card);
-  add('p','За: '+(c.factors||[]).join('; ')+' | Против: '+(c.contradictions||[]).join('; '),card);
-  add('p','Расходы и Funding учтены модельно. ATR-стоп и цель 2.5R — исследовательские допущения, не прогноз. Отмена: '+c.cancel,card);
-  const b=add('button','Перенести '+c.direction+' · без ордера',card);b.type='button';b.onclick=()=>copy(c.id);
+function paint(){const expanded=new Set([...cards.querySelectorAll('article')].filter(e=>e.querySelector('details')?.open).map(e=>e.dataset.frame+e.dataset.direction));
+ cards.replaceChildren();const now=Date.now()/1000,rows=latest?freshRows(latest,now):[];
+ status.textContent=(latest?'Обе стороны рынка':'OFFLINE/STALE · UNKNOWN')+
+  ' · WATCH: '+rows.length+' · порог '+journal.threshold+'/100 · NO_EDGE_FOUND';
+ for(const c of displaySides(latest,now,journal.threshold)){
+  const card=add('article','',cards);card.dataset.state=c.state;card.dataset.direction=c.direction;card.dataset.frame=c.frame;
+  add('h3',c.direction+' · '+c.frame+' · '+(c.score===null?'UNKNOWN':c.score+'/100'),card);
+  add('strong',c.state==='WATCH'?'WATCH / НЕПРОВЕРЕННАЯ ГИПОТЕЗА':c.state,card);
+  if(c.strategy)add('p','Стратегия: '+c.strategy,card);
+  const levels=[c.entry,c.sl,c.tp,c.net_rr];
+  const costs=manualCosts(c,levels.slice(0,3));
+  if(c.state!=='UNKNOWN'&&costs&&Number.isFinite(c.net_rr)&&Math.abs(costs.net_rr-c.net_rr)<1e-7)add('p',textLevels(c),card);
+  if(c.state!=='WATCH')add('p','Причины: '+(c.rejection_reasons?.map(r=>REASONS[r]||r).join('; ')||'Проверки сценария не пройдены'),card);
+  const details=add('details','',card);details.open=expanded.has(c.frame+c.direction);add('summary','Факторы и условия',details);
+  add('p','Балл — техническая оценка направления, не вероятность прибыли. NO_EDGE_FOUND; CONFIRMED запрещён.',details);
+  if(c.score_groups)add('p',Object.entries(c.score_groups).map(([k,v])=>(GROUPS[k]||k)+' '+v).join(' · '),details);
+  if(c.factors)add('p','За: '+c.factors.join('; ')+' | Против: '+(c.contradictions||[]).join('; '),details);
+  if(c.cancel)add('p','Отмена: '+c.cancel,details);
+  if(c.state==='WATCH'){
+   journal.seen(c,now);
+   const b=add('button','Перенести '+c.direction+' · без ордера',card);b.type='button';b.onclick=()=>copy(c.id);
+  }
  }
- journal.outcomes(latest.confidence_history);historyPaint();void maybeSound(rows);}
+ if(latest)journal.outcomes(latest.confidence_history);historyPaint();void maybeSound(rows);
+}
 async function fetchFresh(){const c=new AbortController(),t=setTimeout(()=>c.abort(),8000);try{
  const r=await fetch('/api/preview/signals/snapshot',{method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error',signal:c.signal});
  if(!r.ok)throw Error('UNAVAILABLE');const d=await r.json();if(d.scope!=='AURA6_PUBLIC_OBSERVER_ONLY'||d.execution_enabled!==false||d.account_connected!==false||!Number.isFinite(d.server_time)||Math.abs(Date.now()/1000-d.server_time)>10)throw Error('INVALID_SNAPSHOT');
@@ -236,9 +292,11 @@ exportButton.onclick=()=>{const payload={scope:'AURA5_LOCAL_RESEARCH_SCORE_NOT_A
  warning:'Technical score is NOT a win probability. Outcomes UNKNOWN without gap-free forward study.'};
  const u=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'})),a=document.createElement('a');
  a.href=u;a.download='aura5-signal-confidence-journal.json';a.click();URL.revokeObjectURL(u);};
-async function poll(){try{if(!document.hidden){latest=await fetchFresh();paint();}}catch{latest=null;cards.replaceChildren();status.textContent='OFFLINE/STALE · баллы и перенос скрыты';}
+async function poll(){try{if(!document.hidden){latest=await fetchFresh();paint();}}catch{latest=null;paint();}
  finally{setTimeout(poll,4000);}}
-document.addEventListener('visibilitychange',()=>{if(document.hidden){latest=null;audioReady=false;player.suspend();audioButton.textContent='Включить WATCH-звук ≥ порога · только эта вкладка';cards.replaceChildren();status.textContent='PAUSED · вкладка скрыта';}
+document.addEventListener('visibilitychange',()=>{if(document.hidden){latest=null;audioReady=false;player.suspend();audioButton.textContent='Включить WATCH-звук ≥ порога · только эта вкладка';paint();status.textContent='PAUSED · вкладка скрыта';}
  else status.textContent='Восстановление свежих данных…';});
+paint();
+setInterval(()=>{if(!document.hidden)paint();},1000);
 poll();
 })(typeof window==='undefined'?globalThis:window);

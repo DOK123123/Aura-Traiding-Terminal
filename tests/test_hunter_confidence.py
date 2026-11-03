@@ -35,6 +35,7 @@ class ConfidenceTests(unittest.TestCase):
         self.assertTrue(all(r['statistical_status']=='UNVALIDATED' and not r['exchange_execution'] for r in result))
         self.assertGreater(result[0]['score'],result[1]['score'])
         self.assertEqual(result[0]['score_version'],VERSION)
+        self.assertTrue(all(r['state']=='NOT_READY' for r in result))
 
     def test_stale_future_and_foreign_quotes_fail_closed(self):
         rows=history();p=Prepared(rows[-260:],'5m');now=rows[-1][0]+301

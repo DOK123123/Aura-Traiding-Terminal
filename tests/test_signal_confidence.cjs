@@ -9,7 +9,7 @@ function payload(){const now=600601,q={bid:49999.9,ask:50000.1,time:now,received
   statistical_status:'UNVALIDATED',probability_tp_before_sl:null,exchange_execution:false,manual_only:true,
   closed_at:600600,valid_until:600900,quote_time:now,quote_received_at:now,
   bid:q.bid,ask:q.ask,
-  entry:50000.1,sl:49850,tp:50300,net_rr:1.8,risk_gates_passed:true,state:'WATCH_RESEARCH',
+  technical_trigger:true,entry:50000.1,sl:49850,tp:50300,net_rr:1.8,risk_gates_passed:true,state:'WATCH_RESEARCH',
   costs:{cost_version:'AURA5_EXIT_QUOTE_COSTS_2',entry_basis:'EXECUTABLE_QUOTE'}};
  const d={scope:'AURA6_PUBLIC_OBSERVER_ONLY',execution_enabled:false,account_connected:false,
   observer:{running:true},confidence_version:VERSION,model_sha256:c.model_sha256,
@@ -32,6 +32,7 @@ test('manual RR exactly matches Python fee, slip, funding and exit-quote costs',
  assert.ok(manualCosts(c,[50000.1,49700,51000]).net_rr>=1.5);
 });
 for(const [name,change]of Object.entries({
+ missingTrigger:({c})=>{c.technical_trigger=false;},
  oldQuote:({d})=>{d.quotes['5m'].time-=6;},
  staleServer:({d})=>{d.server_time-=11;},
  stopped:({d})=>{d.observer.running=false;},

@@ -14,7 +14,8 @@ from .market import SOURCE, fresh_quote
 
 
 VERSION = 'AURA5_TECHNICAL_SCORE_V1_FROZEN'
-SCORE_HASH = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+SCORE_HASH = hashlib.sha256(Path(__file__).read_bytes() +
+                            Path(__file__).with_name('dual.py').read_bytes()).hexdigest()
 GROUP_CAPS = {'trend': 30, 'momentum': 25, 'structure': 20,
               'volume': 10, 'support_resistance': 15}
 
@@ -150,7 +151,8 @@ def technical_scores(prepared: Prepared, quote: dict, now: float) -> list[dict]:
             'factors': evidence['factors'], 'contradictions': evidence['contradictions'],
             'assumptions': 'Illustrative ATR stop and 2.5R target; not a six-family technical trigger',
             'cancel': 'Stale Bid/Ask, new candle, invalid geometry, net R/R below 1.5, or manual cancellation',
-            'state': 'WATCH_RESEARCH' if allowed and score >= 50 else 'NOT_READY',
+            # A directional score alone never qualifies a technical WATCH.
+            'state': 'NOT_READY',
             'manual_only': True, 'exchange_execution': False,
         })
     return output

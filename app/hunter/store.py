@@ -14,6 +14,7 @@ from .diagnostics import explain
 from .diagnostic_store import DiagnosticStore
 from .costs import entry_fill, exit_fill, filled_in_zone, risk_reward
 from .confidence import technical_scores, VERSION as CONFIDENCE_VERSION, SCORE_HASH
+from .dual import qualify_sides, complete_sides
 
 MODEL_HASH = hashlib.sha256(b''.join(Path(__file__).with_name(name).read_bytes()
                                     for name in ('engine.py','rules.json','costs.py','outcomes.py'))).hexdigest()
@@ -27,8 +28,6 @@ def save_confidence(db, frame, scores, input_hash, plans, quote, now):
     for candidate in scores:
         candidate['input_sha256']=input_hash
         candidate['model_sha256']=MODEL_HASH
-        candidate['technical_trigger']=any(p['direction']==candidate['direction']
-                                          and p['technical_trigger'] for p in plans)
     db.execute('INSERT OR REPLACE INTO meta VALUES (?,?)',
                ('confidence:'+frame,json.dumps(scores,allow_nan=False)))
     for candidate in scores:
@@ -36,7 +35,7 @@ def save_confidence(db, frame, scores, input_hash, plans, quote, now):
             continue
         plan={'direction':candidate['direction'],'step':STEPS[frame],
               'entry':candidate['entry'],'sl':candidate['sl'],'tp':candidate['tp'],
-              'hold_bars':24,'model_sha256':MODEL_HASH}
+              'hold_bars':candidate['hold_bars'],'model_sha256':MODEL_HASH}
         record={'plan':plan,'quote':quote,'detected_at':now,
                 'score':candidate['score'],'score_version':CONFIDENCE_VERSION,
                 'score_model_sha256':SCORE_HASH,'input_sha256':input_hash,
@@ -148,7 +147,8 @@ class Store(DiagnosticStore):
         plans=[]
         for family in FAMILIES:
             plans.extend(prepared.plans(len(bars)-1,family,cutoff=cutoff,watch=True))
-        scores=technical_scores(prepared,snapshot['quote'],now)
+        scores=qualify_sides(technical_scores(prepared,snapshot['quote'],now),
+                             prepared,plans,snapshot['quote'],now)
         with self.connection() as db:
             db.execute('BEGIN IMMEDIATE')
             self.sample(db,frame,now,'LIVE',snapshot)
@@ -198,7 +198,7 @@ class Store(DiagnosticStore):
                 entry_valid=filled_in_zone(reference,p['zone'],p['direction']) and rr is not None and rr>=1.5 and now<p['valid_until']
                 evidence=validated(p,registry)
                 funding_ready=bool(len(funding)>=2 and funding[0][0]<=now and 0<=now-funding[-1][0]<=28800 and all(type(t) is int and math.isfinite(rate) and -1<rate<1 and t<=now for t,rate in funding) and all(0<b[0]-a[0]<=28800 for a,b in zip(funding,funding[1:])))
-                state='CONFIRMED' if evidence and funding_ready and p['technical_trigger'] and entry_valid else 'WATCH' if entry_valid else 'NO TRADE'
+                state='CONFIRMED' if evidence and funding_ready and p['technical_trigger'] and entry_valid else 'WATCH' if entry_valid and p['technical_trigger'] else 'NO TRADE'
                 diagnostic_states[(p['strategy'],p['direction'])]=state
                 p['statistical_status']='VALIDATED' if evidence else 'UNVALIDATED'
                 p['net_rr_at_quote']=rr
@@ -277,7 +277,7 @@ class Store(DiagnosticStore):
                     rr=net_rr(ref,plan['sl'],plan['tp'],plan['direction'],plan['step'],plan['hold_bars'],q['ask']-q['bid'])
                     plan['net_rr_at_quote']=rr
                     plan['costs_at_quote']=risk_reward(ref,plan['sl'],plan['tp'],plan['direction'],plan['step'],plan['hold_bars'],q['ask']-q['bid'])
-                    if not filled_in_zone(ref,plan['zone'],plan['direction']) or rr is None or rr<1.5:state='NO TRADE'
+                    if not plan['technical_trigger'] or not filled_in_zone(ref,plan['zone'],plan['direction']) or rr is None or rr<1.5:state='NO TRADE'
                 records.append({'id':row['id'],'state':state,'recorded_state':row['state'],**{k:p[k] for k in ('plan','quote','detected_at','reason','research')},
                                 'input_sha256':p.get('input_sha256'),
                                 'outcome':row['outcome'],'result':json.loads(row['result']) if row['result'] else None})
@@ -296,4 +296,4 @@ class Store(DiagnosticStore):
                 'journal_instance':self.journal_instance,'writer_session':self.session_id,
                 'account_connected':False,'execution_enabled':False,'probability_tp_before_sl':None,
                 'confidence_version':CONFIDENCE_VERSION,'confidence_candidates':score_rows,
-                'confidence_history':score_history}
+                'confidence_history':score_history,'dual_scenarios':complete_sides(score_rows,error)}

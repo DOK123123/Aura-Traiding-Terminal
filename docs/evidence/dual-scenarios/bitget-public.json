@@ -1,0 +1,167 @@
+{
+  "scope": "PUBLIC_GET_ONLY_NO_ACCOUNTS",
+  "at": 1793630441.4791663,
+  "frames": {
+    "5m": {
+      "bars": 260,
+      "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+      "quote_age": 0.10255980491638184,
+      "sides": [
+        {
+          "direction": "LONG",
+          "state": "REJECTED",
+          "score": 35,
+          "strategy": "LIQUIDITY_SWEEP",
+          "entry": null,
+          "sl": null,
+          "tp": null,
+          "net_rr": null,
+          "rejection_reasons": [
+            "EXTREME_SWEEP",
+            "DIRECTIONAL_BODY",
+            "NO_VALID_RULE_PLAN",
+            "TECHNICAL_SCORE_BELOW_50"
+          ],
+          "edge_status": "NO_EDGE_FOUND"
+        },
+        {
+          "direction": "SHORT",
+          "state": "REJECTED",
+          "score": 50,
+          "strategy": "LIQUIDITY_SWEEP",
+          "entry": null,
+          "sl": null,
+          "tp": null,
+          "net_rr": null,
+          "rejection_reasons": [
+            "EXTREME_SWEEP",
+            "REJECTION_WICK",
+            "NO_VALID_RULE_PLAN"
+          ],
+          "edge_status": "NO_EDGE_FOUND"
+        }
+      ]
+    },
+    "15m": {
+      "bars": 260,
+      "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+      "quote_age": 0.09962677955627441,
+      "sides": [
+        {
+          "direction": "LONG",
+          "state": "REJECTED",
+          "score": 43,
+          "strategy": "MEAN_REVERSION",
+          "entry": null,
+          "sl": null,
+          "tp": null,
+          "net_rr": null,
+          "rejection_reasons": [
+            "RSI_EXTREME",
+            "PREVIOUS_BAND_EXCURSION",
+            "RSI_RECOVERY",
+            "NO_VALID_RULE_PLAN",
+            "TECHNICAL_SCORE_BELOW_50"
+          ],
+          "edge_status": "NO_EDGE_FOUND"
+        },
+        {
+          "direction": "SHORT",
+          "state": "REJECTED",
+          "score": 52,
+          "strategy": "MEAN_REVERSION",
+          "entry": null,
+          "sl": null,
+          "tp": null,
+          "net_rr": null,
+          "rejection_reasons": [
+            "RSI_EXTREME",
+            "PREVIOUS_BAND_EXCURSION",
+            "NO_VALID_RULE_PLAN"
+          ],
+          "edge_status": "NO_EDGE_FOUND"
+        }
+      ]
+    },
+    "1h": {
+      "bars": 260,
+      "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+      "quote_age": 0.09965634346008301,
+      "sides": [
+        {
+          "direction": "LONG",
+          "state": "REJECTED",
+          "score": 35,
+          "strategy": "LIQUIDITY_SWEEP",
+          "entry": null,
+          "sl": null,
+          "tp": null,
+          "net_rr": null,
+          "rejection_reasons": [
+            "EXTREME_SWEEP",
+            "NO_VALID_RULE_PLAN",
+            "TECHNICAL_SCORE_BELOW_50"
+          ],
+          "edge_status": "NO_EDGE_FOUND"
+        },
+        {
+          "direction": "SHORT",
+          "state": "REJECTED",
+          "score": 50,
+          "strategy": "LIQUIDITY_SWEEP",
+          "entry": null,
+          "sl": null,
+          "tp": null,
+          "net_rr": null,
+          "rejection_reasons": [
+            "EXTREME_SWEEP",
+            "DIRECTIONAL_BODY",
+            "NO_VALID_RULE_PLAN"
+          ],
+          "edge_status": "NO_EDGE_FOUND"
+        }
+      ]
+    },
+    "4h": {
+      "bars": 260,
+      "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+      "quote_age": 0.11402249336242676,
+      "sides": [
+        {
+          "direction": "LONG",
+          "state": "REJECTED",
+          "score": 23,
+          "strategy": "MEAN_REVERSION",
+          "entry": null,
+          "sl": null,
+          "tp": null,
+          "net_rr": null,
+          "rejection_reasons": [
+            "RSI_EXTREME",
+            "PREVIOUS_BAND_EXCURSION",
+            "RSI_RECOVERY",
+            "NO_VALID_RULE_PLAN",
+            "TECHNICAL_SCORE_BELOW_50"
+          ],
+          "edge_status": "NO_EDGE_FOUND"
+        },
+        {
+          "direction": "SHORT",
+          "state": "REJECTED",
+          "score": 52,
+          "strategy": "LIQUIDITY_SWEEP",
+          "entry": null,
+          "sl": null,
+          "tp": null,
+          "net_rr": null,
+          "rejection_reasons": [
+            "EXTREME_SWEEP",
+            "SWEEP_VOLUME",
+            "NO_VALID_RULE_PLAN"
+          ],
+          "edge_status": "NO_EDGE_FOUND"
+        }
+      ]
+    }
+  }
+}
