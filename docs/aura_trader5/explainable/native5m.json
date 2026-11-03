@@ -1,0 +1,1048 @@
+{
+  "scope": "REAL_NATIVE_5M_OFFLINE_RESEARCH_NO_ORDERS",
+  "verdict": "NO_EDGE_FOUND",
+  "model_sha256": "e4fedd98473e47949adddec38b1e24f9b74f48f3aa7bf8cf18dc8563df73c60f",
+  "archive_sha256": "c266f23af9ec1dddbd002f8dd77b5da45bce7394e1d0d47ee7869c4dc6eaf421",
+  "bars": 2276,
+  "first_utc": "2026-10-25T22:45:00+00:00",
+  "last_close_utc": "2026-11-02T20:25:00+00:00",
+  "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+  "historical_bid_ask": false,
+  "historical_funding": false,
+  "native_not_aggregated": true,
+  "baseline_5m": "NOT_APPLICABLE_OLD_INDEPENDENT_PANEL_SUPPORTED_15m_1h_4h",
+  "costs": "Same modeled 10bps fee/side, 5bps slip/side, 2bps spread, 1bps funding/8h as main replay",
+  "entry": "NEXT_OPEN_AFTER_CLOSED_DECISION; SL_FIRST; ADVERSE_STOP_GAPS",
+  "independent_oos": false,
+  "no_parameter_search": true,
+  "states": {
+    "LONG|REJECTED": 6051,
+    "SHORT|REJECTED": 6051
+  },
+  "rejection_reasons": {
+    "EMA_TREND": 2138,
+    "PULLBACK": 2094,
+    "RSI": 1512,
+    "CLOSED_CANDLE_CONFIRMATION": 8997,
+    "PRIOR_LEVEL_BREAK": 3197,
+    "SEPARATE_RETEST": 3694,
+    "BREAK_VOLUME": 2816,
+    "PRICE_DIVERGENCE": 2410,
+    "MACD_DIVERGENCE": 2541,
+    "TREND_STRUCTURE": 2820,
+    "MOMENTUM_TURN": 2017,
+    "CONFIRMED_PIVOTS": 730,
+    "RSI_DIVERGENCE": 2396,
+    "NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY": 154,
+    "OUTSIDE_CLOSED_SIGNAL_ENTRY_ZONE": 146,
+    "LEVEL_HELD": 217,
+    "NO_KNOWN_OPPOSING_PIVOT_TARGET": 5
+  },
+  "technical_setups_before_risk": {
+    "MOMENTUM_DIVERGENCE|SHORT": 17,
+    "BREAKOUT_RETEST|SHORT": 13,
+    "TREND_PULLBACK|LONG": 54,
+    "TREND_PULLBACK|SHORT": 37,
+    "BREAKOUT_RETEST|LONG": 11,
+    "MOMENTUM_DIVERGENCE|LONG": 27
+  },
+  "after": {
+    "count": 0,
+    "closed": 0,
+    "outcomes": {},
+    "mean_net_r": null,
+    "profit_factor_net_r": null
+  },
+  "examples": {
+    "MOMENTUM_DIVERGENCE|SHORT": {
+      "id": "569320f7dc7b6b8ba0ac4d5e6e0c88580b7d49c0178db8caef76c5d2f0901f77",
+      "version": "AURA5_EXPLAINABLE_V1",
+      "model_sha256": "e4fedd98473e47949adddec38b1e24f9b74f48f3aa7bf8cf18dc8563df73c60f",
+      "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+      "frame": "5m",
+      "strategy": "MOMENTUM_DIVERGENCE",
+      "name": "Momentum Divergence",
+      "direction": "SHORT",
+      "state": "REJECTED",
+      "score": 100,
+      "score_basis": "Равные доли выполненных условий выбранной стратегии; не вероятность прибыли",
+      "checks": [
+        {
+          "code": "CONFIRMED_PIVOTS",
+          "passed": true,
+          "actual": [
+            {
+              "kind": "HIGH",
+              "price": 80091.1,
+              "index": 245,
+              "time": 1793042100,
+              "confirmed_at": 1793043000
+            },
+            {
+              "kind": "HIGH",
+              "price": 80092.8,
+              "index": 249,
+              "time": 1793043300,
+              "confirmed_at": 1793044200
+            }
+          ],
+          "required": "Два pivot 2+2, интервал ≤50 свечей, последний ≤10 свечей назад"
+        },
+        {
+          "code": "PRICE_DIVERGENCE",
+          "passed": true,
+          "actual": {
+            "first": {
+              "kind": "HIGH",
+              "price": 80091.1,
+              "index": 245,
+              "time": 1793042100,
+              "confirmed_at": 1793043000
+            },
+            "last": {
+              "kind": "HIGH",
+              "price": 80092.8,
+              "index": 249,
+              "time": 1793043300,
+              "confirmed_at": 1793044200
+            },
+            "rsi": [
+              42.78754604725501,
+              41.37004611511907
+            ],
+            "macd": [
+              -61.975719537527766,
+              -71.56909596106561
+            ]
+          },
+          "required": "Новый high"
+        },
+        {
+          "code": "RSI_DIVERGENCE",
+          "passed": true,
+          "actual": {
+            "first": {
+              "kind": "HIGH",
+              "price": 80091.1,
+              "index": 245,
+              "time": 1793042100,
+              "confirmed_at": 1793043000
+            },
+            "last": {
+              "kind": "HIGH",
+              "price": 80092.8,
+              "index": 249,
+              "time": 1793043300,
+              "confirmed_at": 1793044200
+            },
+            "rsi": [
+              42.78754604725501,
+              41.37004611511907
+            ],
+            "macd": [
+              -61.975719537527766,
+              -71.56909596106561
+            ]
+          },
+          "required": "RSI на втором экстремуме ниже"
+        },
+        {
+          "code": "MACD_DIVERGENCE",
+          "passed": true,
+          "actual": {
+            "first": {
+              "kind": "HIGH",
+              "price": 80091.1,
+              "index": 245,
+              "time": 1793042100,
+              "confirmed_at": 1793043000
+            },
+            "last": {
+              "kind": "HIGH",
+              "price": 80092.8,
+              "index": 249,
+              "time": 1793043300,
+              "confirmed_at": 1793044200
+            },
+            "rsi": [
+              42.78754604725501,
+              41.37004611511907
+            ],
+            "macd": [
+              -61.975719537527766,
+              -71.56909596106561
+            ]
+          },
+          "required": "MACD на втором экстремуме ниже"
+        },
+        {
+          "code": "MOMENTUM_TURN",
+          "passed": true,
+          "actual": [
+            -3.6107680830929496,
+            -5.545330802795917
+          ],
+          "required": "Гистограмма меняется в сторону разворота"
+        },
+        {
+          "code": "CLOSED_CANDLE_CONFIRMATION",
+          "passed": true,
+          "actual": {
+            "open": 79894.8,
+            "close": 79838.9,
+            "previous_high": 79933.7,
+            "previous_low": 79855.0
+          },
+          "required": "Направленная закрытая свеча за предыдущим high/low"
+        }
+      ],
+      "rejection": [
+        "NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY",
+        "OUTSIDE_CLOSED_SIGNAL_ENTRY_ZONE"
+      ],
+      "indicators": {
+        "ema20": 79977.12020988707,
+        "ema50": 80080.70826004542,
+        "atr": 86.79293744960417,
+        "rsi": 35.4737638010876,
+        "macd": -75.58432783228636,
+        "histogram": -5.545330802795917
+      },
+      "closed_at": 1793046600,
+      "valid_until": 1793046900,
+      "quote_time": 1793046600,
+      "quote_received_at": 1793046600,
+      "entry": null,
+      "sl": null,
+      "tp": null,
+      "net_rr": null,
+      "gross_rr": null,
+      "costs": null,
+      "stop_explanation": {
+        "atr": 86.79293744960417,
+        "atr_period": 14,
+        "atr_method": "WILDER",
+        "anchor": 80092.8,
+        "anchor_kind": "DIVERGENCE_EXTREME",
+        "formula": "SL = Entry + max(1.5 × ATR14, anchor − Entry + .25 × ATR14)",
+        "distance_usdt": 283.5821243624129,
+        "distance_percent": 0.35522844805095516,
+        "reason": "За уровнем отмены с буфером ≥.25 ATR и дистанцией ≥1.5 ATR; стоп не сужается ради R/R"
+      },
+      "target_explanation": {
+        "pivot": {
+          "kind": "LOW",
+          "price": 79812.0,
+          "index": 11,
+          "time": 1792971900,
+          "confirmed_at": 1792972800
+        },
+        "reason": "Ближайший известный встречный pivot; цель не растягивается ради R/R"
+      },
+      "entry_reason": "Текущий Ask для LONG / Bid для SHORT после закрытого подтверждения; котировка и модельное исполнение не дальше .25 ATR от закрытия",
+      "confirmation": "Все условия стратегии на закрытых свечах, свежие Bid/Ask, допустимая зона входа и Net R/R ≥1.5; статистической квалификации нет",
+      "horizon": {
+        "min_seconds": 900,
+        "max_seconds": 3600,
+        "hold_bars": 12,
+        "time_exit": "Если сценарий не достиг SL/TP, пересмотреть выход не позже Entry time + max_seconds; оценка, не гарантия"
+      },
+      "cancel": "Потеря структурного anchor, достижение SL/TP, выход из зоны входа, новая свеча до входа, устаревшие данные или Net R/R <1.5",
+      "edge": "NO_EDGE_FOUND",
+      "statistical_status": "UNVALIDATED",
+      "probability_tp_before_sl": null,
+      "manual_only": true,
+      "exchange_execution": false
+    },
+    "BREAKOUT_RETEST|SHORT": {
+      "id": "1198371b0c3f5f6963e584481bad7876eec66c9c3c37482cfd84dc3242bc5bde",
+      "version": "AURA5_EXPLAINABLE_V1",
+      "model_sha256": "e4fedd98473e47949adddec38b1e24f9b74f48f3aa7bf8cf18dc8563df73c60f",
+      "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+      "frame": "5m",
+      "strategy": "BREAKOUT_RETEST",
+      "name": "Breakout + Retest",
+      "direction": "SHORT",
+      "state": "REJECTED",
+      "score": 100,
+      "score_basis": "Равные доли выполненных условий выбранной стратегии; не вероятность прибыли",
+      "checks": [
+        {
+          "code": "PRIOR_LEVEL_BREAK",
+          "passed": true,
+          "actual": {
+            "level": {
+              "kind": "LOW",
+              "price": 79893.7,
+              "index": 245,
+              "time": 1793043000,
+              "confirmed_at": 1793043900
+            },
+            "breakout_at": 1793046600,
+            "relative_volume": 1.5088059716854783,
+            "broken": true,
+            "held": true,
+            "retest": true
+          },
+          "required": "Заранее известный pivot; пробой > .1ATR; отдельный возврат без потери уровня"
+        },
+        {
+          "code": "LEVEL_HELD",
+          "passed": true,
+          "actual": {
+            "level": {
+              "kind": "LOW",
+              "price": 79893.7,
+              "index": 245,
+              "time": 1793043000,
+              "confirmed_at": 1793043900
+            },
+            "breakout_at": 1793046600,
+            "relative_volume": 1.5088059716854783,
+            "broken": true,
+            "held": true,
+            "retest": true
+          },
+          "required": "Заранее известный pivot; пробой > .1ATR; отдельный возврат без потери уровня"
+        },
+        {
+          "code": "SEPARATE_RETEST",
+          "passed": true,
+          "actual": {
+            "level": {
+              "kind": "LOW",
+              "price": 79893.7,
+              "index": 245,
+              "time": 1793043000,
+              "confirmed_at": 1793043900
+            },
+            "breakout_at": 1793046600,
+            "relative_volume": 1.5088059716854783,
+            "broken": true,
+            "held": true,
+            "retest": true
+          },
+          "required": "Заранее известный pivot; пробой > .1ATR; отдельный возврат без потери уровня"
+        },
+        {
+          "code": "BREAK_VOLUME",
+          "passed": true,
+          "actual": 1.5088059716854783,
+          "required": "Объём пробоя / предыдущие 20 ≥ 1.2"
+        },
+        {
+          "code": "CLOSED_CANDLE_CONFIRMATION",
+          "passed": true,
+          "actual": {
+            "open": 79870.1,
+            "close": 79810.1,
+            "previous_high": 79895.9,
+            "previous_low": 79853.1
+          },
+          "required": "Направленная закрытая свеча за предыдущим high/low"
+        }
+      ],
+      "rejection": [
+        "NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY",
+        "OUTSIDE_CLOSED_SIGNAL_ENTRY_ZONE"
+      ],
+      "indicators": {
+        "ema20": 79945.65979047661,
+        "ema50": 80055.46807641111,
+        "atr": 82.5662843521905,
+        "rsi": 35.77375891792015,
+        "macd": -75.01564829070412,
+        "histogram": -3.347762438470255
+      },
+      "closed_at": 1793047500,
+      "valid_until": 1793047800,
+      "quote_time": 1793047500,
+      "quote_received_at": 1793047500,
+      "entry": null,
+      "sl": null,
+      "tp": null,
+      "net_rr": null,
+      "gross_rr": null,
+      "costs": null,
+      "stop_explanation": {
+        "atr": 82.5662843521905,
+        "atr_period": 14,
+        "atr_method": "WILDER",
+        "anchor": 79893.7,
+        "anchor_kind": "RETEST_LEVEL_EXTREME",
+        "formula": "SL = Entry + max(1.5 × ATR14, anchor − Entry + .25 × ATR14)",
+        "distance_usdt": 123.84942652828573,
+        "distance_percent": 0.1551956615886419,
+        "reason": "За уровнем отмены с буфером ≥.25 ATR и дистанцией ≥1.5 ATR; стоп не сужается ради R/R"
+      },
+      "target_explanation": {
+        "pivot": {
+          "kind": "LOW",
+          "price": 79800.0,
+          "index": 5,
+          "time": 1792971000,
+          "confirmed_at": 1792971900
+        },
+        "reason": "Ближайший известный встречный pivot; цель не растягивается ради R/R"
+      },
+      "entry_reason": "Текущий Ask для LONG / Bid для SHORT после закрытого подтверждения; котировка и модельное исполнение не дальше .25 ATR от закрытия",
+      "confirmation": "Все условия стратегии на закрытых свечах, свежие Bid/Ask, допустимая зона входа и Net R/R ≥1.5; статистической квалификации нет",
+      "horizon": {
+        "min_seconds": 900,
+        "max_seconds": 3600,
+        "hold_bars": 12,
+        "time_exit": "Если сценарий не достиг SL/TP, пересмотреть выход не позже Entry time + max_seconds; оценка, не гарантия"
+      },
+      "cancel": "Потеря структурного anchor, достижение SL/TP, выход из зоны входа, новая свеча до входа, устаревшие данные или Net R/R <1.5",
+      "edge": "NO_EDGE_FOUND",
+      "statistical_status": "UNVALIDATED",
+      "probability_tp_before_sl": null,
+      "manual_only": true,
+      "exchange_execution": false
+    },
+    "TREND_PULLBACK|LONG": {
+      "id": "b923b183fd6594646b38037b869162c55fc244ed67a63e74123b5e5b437bbdac",
+      "version": "AURA5_EXPLAINABLE_V1",
+      "model_sha256": "e4fedd98473e47949adddec38b1e24f9b74f48f3aa7bf8cf18dc8563df73c60f",
+      "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+      "frame": "5m",
+      "strategy": "TREND_PULLBACK",
+      "name": "Trend Pullback",
+      "direction": "LONG",
+      "state": "REJECTED",
+      "score": 100,
+      "score_basis": "Равные доли выполненных условий выбранной стратегии; не вероятность прибыли",
+      "checks": [
+        {
+          "code": "EMA_TREND",
+          "passed": true,
+          "actual": [
+            80178.22493304494,
+            80104.94593475727
+          ],
+          "required": "EMA20 > EMA50 + .1ATR"
+        },
+        {
+          "code": "TREND_STRUCTURE",
+          "passed": true,
+          "actual": {
+            "own": [
+              {
+                "kind": "LOW",
+                "price": 79700.0,
+                "index": 234,
+                "time": 1793055600,
+                "confirmed_at": 1793056500
+              },
+              {
+                "kind": "LOW",
+                "price": 80060.4,
+                "index": 244,
+                "time": 1793058600,
+                "confirmed_at": 1793059500
+              }
+            ],
+            "opposite": [
+              {
+                "kind": "HIGH",
+                "price": 80292.2,
+                "index": 248,
+                "time": 1793059800,
+                "confirmed_at": 1793060700
+              },
+              {
+                "kind": "HIGH",
+                "price": 80362.7,
+                "index": 253,
+                "time": 1793061300,
+                "confirmed_at": 1793062200
+              }
+            ]
+          },
+          "required": "HH/HL"
+        },
+        {
+          "code": "PULLBACK",
+          "passed": true,
+          "actual": [
+            80188.0,
+            80250.0
+          ],
+          "required": [
+            80079.09672306811,
+            80190.36457326167
+          ]
+        },
+        {
+          "code": "RSI",
+          "passed": true,
+          "actual": 59.82246075075003,
+          "required": "45–70"
+        },
+        {
+          "code": "CLOSED_CANDLE_CONFIRMATION",
+          "passed": true,
+          "actual": {
+            "open": 80224.0,
+            "close": 80251.6,
+            "previous_high": 80250.0,
+            "previous_low": 80188.0
+          },
+          "required": "Направленная закрытая свеча за предыдущим high/low"
+        }
+      ],
+      "rejection": [
+        "NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY",
+        "OUTSIDE_CLOSED_SIGNAL_ENTRY_ZONE"
+      ],
+      "indicators": {
+        "ema20": 80178.22493304494,
+        "ema50": 80104.94593475727,
+        "atr": 79.45332590063192,
+        "rsi": 59.82246075075003,
+        "macd": 58.30364636097511,
+        "histogram": -2.999473192595829
+      },
+      "closed_at": 1793063400,
+      "valid_until": 1793063700,
+      "quote_time": 1793063400,
+      "quote_received_at": 1793063400,
+      "entry": null,
+      "sl": null,
+      "tp": null,
+      "net_rr": null,
+      "gross_rr": null,
+      "costs": null,
+      "stop_explanation": {
+        "atr": 79.45332590063192,
+        "atr_period": 14,
+        "atr_method": "WILDER",
+        "anchor": 80188.0,
+        "anchor_kind": "PULLBACK_EXTREME",
+        "formula": "SL = Entry − max(1.5 × ATR14, Entry − anchor + .25 × ATR14)",
+        "distance_usdt": 119.1799888509479,
+        "distance_percent": 0.1484930793202173,
+        "reason": "За уровнем отмены с буфером ≥.25 ATR и дистанцией ≥1.5 ATR; стоп не сужается ради R/R"
+      },
+      "target_explanation": {
+        "pivot": {
+          "kind": "HIGH",
+          "price": 80260.0,
+          "index": 30,
+          "time": 1792994400,
+          "confirmed_at": 1792995300
+        },
+        "reason": "Ближайший известный встречный pivot; цель не растягивается ради R/R"
+      },
+      "entry_reason": "Текущий Ask для LONG / Bid для SHORT после закрытого подтверждения; котировка и модельное исполнение не дальше .25 ATR от закрытия",
+      "confirmation": "Все условия стратегии на закрытых свечах, свежие Bid/Ask, допустимая зона входа и Net R/R ≥1.5; статистической квалификации нет",
+      "horizon": {
+        "min_seconds": 900,
+        "max_seconds": 3600,
+        "hold_bars": 12,
+        "time_exit": "Если сценарий не достиг SL/TP, пересмотреть выход не позже Entry time + max_seconds; оценка, не гарантия"
+      },
+      "cancel": "Потеря структурного anchor, достижение SL/TP, выход из зоны входа, новая свеча до входа, устаревшие данные или Net R/R <1.5",
+      "edge": "NO_EDGE_FOUND",
+      "statistical_status": "UNVALIDATED",
+      "probability_tp_before_sl": null,
+      "manual_only": true,
+      "exchange_execution": false
+    },
+    "TREND_PULLBACK|SHORT": {
+      "id": "626e4f6bc330f81a481d125389a29c9feb7faf727226c9bfcdf6993a8099760d",
+      "version": "AURA5_EXPLAINABLE_V1",
+      "model_sha256": "e4fedd98473e47949adddec38b1e24f9b74f48f3aa7bf8cf18dc8563df73c60f",
+      "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+      "frame": "5m",
+      "strategy": "TREND_PULLBACK",
+      "name": "Trend Pullback",
+      "direction": "SHORT",
+      "state": "REJECTED",
+      "score": 100,
+      "score_basis": "Равные доли выполненных условий выбранной стратегии; не вероятность прибыли",
+      "checks": [
+        {
+          "code": "EMA_TREND",
+          "passed": true,
+          "actual": [
+            80065.62960671872,
+            80084.85435684034
+          ],
+          "required": "EMA20 < EMA50 − .1ATR"
+        },
+        {
+          "code": "TREND_STRUCTURE",
+          "passed": true,
+          "actual": {
+            "own": [
+              {
+                "kind": "HIGH",
+                "price": 80348.6,
+                "index": 249,
+                "time": 1793065200,
+                "confirmed_at": 1793066100
+              },
+              {
+                "kind": "HIGH",
+                "price": 80087.6,
+                "index": 255,
+                "time": 1793067000,
+                "confirmed_at": 1793067900
+              }
+            ],
+            "opposite": [
+              {
+                "kind": "LOW",
+                "price": 79993.9,
+                "index": 246,
+                "time": 1793064300,
+                "confirmed_at": 1793065200
+              },
+              {
+                "kind": "LOW",
+                "price": 79960.4,
+                "index": 253,
+                "time": 1793066400,
+                "confirmed_at": 1793067300
+              }
+            ]
+          },
+          "required": "LH/LL"
+        },
+        {
+          "code": "PULLBACK",
+          "passed": true,
+          "actual": [
+            79922.4,
+            80064.0
+          ],
+          "required": [
+            80057.39502959138,
+            80120.78578361146
+          ]
+        },
+        {
+          "code": "RSI",
+          "passed": true,
+          "actual": 37.41046824416124,
+          "required": "30–55"
+        },
+        {
+          "code": "CLOSED_CANDLE_CONFIRMATION",
+          "passed": true,
+          "actual": {
+            "open": 79935.1,
+            "close": 79881.4,
+            "previous_high": 80064.0,
+            "previous_low": 79922.4
+          },
+          "required": "Направленная закрытая свеча за предыдущим high/low"
+        }
+      ],
+      "rejection": [
+        "NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY",
+        "OUTSIDE_CLOSED_SIGNAL_ENTRY_ZONE"
+      ],
+      "indicators": {
+        "ema20": 80065.62960671872,
+        "ema50": 80084.85435684034,
+        "atr": 110.50866923303268,
+        "rsi": 37.41046824416124,
+        "macd": -49.30162730757729,
+        "histogram": -26.722174306336925
+      },
+      "closed_at": 1793068500,
+      "valid_until": 1793068800,
+      "quote_time": 1793068500,
+      "quote_received_at": 1793068500,
+      "entry": null,
+      "sl": null,
+      "tp": null,
+      "net_rr": null,
+      "gross_rr": null,
+      "costs": null,
+      "stop_explanation": {
+        "atr": 110.50866923303268,
+        "atr_period": 14,
+        "atr_method": "WILDER",
+        "anchor": 80064.0,
+        "anchor_kind": "PULLBACK_EXTREME",
+        "formula": "SL = Entry + max(1.5 × ATR14, anchor − Entry + .25 × ATR14)",
+        "distance_usdt": 218.2153073082653,
+        "distance_percent": 0.27320143490395443,
+        "reason": "За уровнем отмены с буфером ≥.25 ATR и дистанцией ≥1.5 ATR; стоп не сужается ради R/R"
+      },
+      "target_explanation": {
+        "pivot": {
+          "kind": "LOW",
+          "price": 79869.2,
+          "index": 211,
+          "time": 1793053800,
+          "confirmed_at": 1793054700
+        },
+        "reason": "Ближайший известный встречный pivot; цель не растягивается ради R/R"
+      },
+      "entry_reason": "Текущий Ask для LONG / Bid для SHORT после закрытого подтверждения; котировка и модельное исполнение не дальше .25 ATR от закрытия",
+      "confirmation": "Все условия стратегии на закрытых свечах, свежие Bid/Ask, допустимая зона входа и Net R/R ≥1.5; статистической квалификации нет",
+      "horizon": {
+        "min_seconds": 900,
+        "max_seconds": 3600,
+        "hold_bars": 12,
+        "time_exit": "Если сценарий не достиг SL/TP, пересмотреть выход не позже Entry time + max_seconds; оценка, не гарантия"
+      },
+      "cancel": "Потеря структурного anchor, достижение SL/TP, выход из зоны входа, новая свеча до входа, устаревшие данные или Net R/R <1.5",
+      "edge": "NO_EDGE_FOUND",
+      "statistical_status": "UNVALIDATED",
+      "probability_tp_before_sl": null,
+      "manual_only": true,
+      "exchange_execution": false
+    },
+    "BREAKOUT_RETEST|LONG": {
+      "id": "839eaada9f23cda269426a60dfac3aa4b733c9a09a2cde7acf9b5b56e1509a7a",
+      "version": "AURA5_EXPLAINABLE_V1",
+      "model_sha256": "e4fedd98473e47949adddec38b1e24f9b74f48f3aa7bf8cf18dc8563df73c60f",
+      "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+      "frame": "5m",
+      "strategy": "BREAKOUT_RETEST",
+      "name": "Breakout + Retest",
+      "direction": "LONG",
+      "state": "REJECTED",
+      "score": 100,
+      "score_basis": "Равные доли выполненных условий выбранной стратегии; не вероятность прибыли",
+      "checks": [
+        {
+          "code": "PRIOR_LEVEL_BREAK",
+          "passed": true,
+          "actual": {
+            "level": {
+              "kind": "HIGH",
+              "price": 79770.1,
+              "index": 253,
+              "time": 1793086200,
+              "confirmed_at": 1793087100
+            },
+            "breakout_at": 1793087400,
+            "relative_volume": 3.4291139747078594,
+            "broken": true,
+            "held": true,
+            "retest": true
+          },
+          "required": "Заранее известный pivot; пробой > .1ATR; отдельный возврат без потери уровня"
+        },
+        {
+          "code": "LEVEL_HELD",
+          "passed": true,
+          "actual": {
+            "level": {
+              "kind": "HIGH",
+              "price": 79770.1,
+              "index": 253,
+              "time": 1793086200,
+              "confirmed_at": 1793087100
+            },
+            "breakout_at": 1793087400,
+            "relative_volume": 3.4291139747078594,
+            "broken": true,
+            "held": true,
+            "retest": true
+          },
+          "required": "Заранее известный pivot; пробой > .1ATR; отдельный возврат без потери уровня"
+        },
+        {
+          "code": "SEPARATE_RETEST",
+          "passed": true,
+          "actual": {
+            "level": {
+              "kind": "HIGH",
+              "price": 79770.1,
+              "index": 253,
+              "time": 1793086200,
+              "confirmed_at": 1793087100
+            },
+            "breakout_at": 1793087400,
+            "relative_volume": 3.4291139747078594,
+            "broken": true,
+            "held": true,
+            "retest": true
+          },
+          "required": "Заранее известный pivot; пробой > .1ATR; отдельный возврат без потери уровня"
+        },
+        {
+          "code": "BREAK_VOLUME",
+          "passed": true,
+          "actual": 3.4291139747078594,
+          "required": "Объём пробоя / предыдущие 20 ≥ 1.2"
+        },
+        {
+          "code": "CLOSED_CANDLE_CONFIRMATION",
+          "passed": true,
+          "actual": {
+            "open": 79784.0,
+            "close": 79924.9,
+            "previous_high": 79860.8,
+            "previous_low": 79756.5
+          },
+          "required": "Направленная закрытая свеча за предыдущим high/low"
+        }
+      ],
+      "rejection": [
+        "NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY",
+        "OUTSIDE_CLOSED_SIGNAL_ENTRY_ZONE"
+      ],
+      "indicators": {
+        "ema20": 79752.60911711278,
+        "ema50": 79782.64535511614,
+        "atr": 99.26507806855086,
+        "rsi": 61.67938373755939,
+        "macd": 10.627598496794235,
+        "histogram": 29.280504476463882
+      },
+      "closed_at": 1793088300,
+      "valid_until": 1793088600,
+      "quote_time": 1793088300,
+      "quote_received_at": 1793088300,
+      "entry": null,
+      "sl": null,
+      "tp": null,
+      "net_rr": null,
+      "gross_rr": null,
+      "costs": null,
+      "stop_explanation": {
+        "atr": 99.26507806855086,
+        "atr_period": 14,
+        "atr_method": "WILDER",
+        "anchor": 79770.1,
+        "anchor_kind": "RETEST_LEVEL_EXTREME",
+        "formula": "SL = Entry − max(1.5 × ATR14, Entry − anchor + .25 × ATR14)",
+        "distance_usdt": 187.60875951713027,
+        "distance_percent": 0.2347078326242242,
+        "reason": "За уровнем отмены с буфером ≥.25 ATR и дистанцией ≥1.5 ATR; стоп не сужается ради R/R"
+      },
+      "target_explanation": {
+        "pivot": {
+          "kind": "HIGH",
+          "price": 79940.7,
+          "index": 118,
+          "time": 1793045700,
+          "confirmed_at": 1793046600
+        },
+        "reason": "Ближайший известный встречный pivot; цель не растягивается ради R/R"
+      },
+      "entry_reason": "Текущий Ask для LONG / Bid для SHORT после закрытого подтверждения; котировка и модельное исполнение не дальше .25 ATR от закрытия",
+      "confirmation": "Все условия стратегии на закрытых свечах, свежие Bid/Ask, допустимая зона входа и Net R/R ≥1.5; статистической квалификации нет",
+      "horizon": {
+        "min_seconds": 900,
+        "max_seconds": 3600,
+        "hold_bars": 12,
+        "time_exit": "Если сценарий не достиг SL/TP, пересмотреть выход не позже Entry time + max_seconds; оценка, не гарантия"
+      },
+      "cancel": "Потеря структурного anchor, достижение SL/TP, выход из зоны входа, новая свеча до входа, устаревшие данные или Net R/R <1.5",
+      "edge": "NO_EDGE_FOUND",
+      "statistical_status": "UNVALIDATED",
+      "probability_tp_before_sl": null,
+      "manual_only": true,
+      "exchange_execution": false
+    },
+    "MOMENTUM_DIVERGENCE|LONG": {
+      "id": "4d2f7df6f4eb9bd8f6e6d194b1d008dc9c096e49bf89fb222321c4495dfe3415",
+      "version": "AURA5_EXPLAINABLE_V1",
+      "model_sha256": "e4fedd98473e47949adddec38b1e24f9b74f48f3aa7bf8cf18dc8563df73c60f",
+      "source": "BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2",
+      "frame": "5m",
+      "strategy": "MOMENTUM_DIVERGENCE",
+      "name": "Momentum Divergence",
+      "direction": "LONG",
+      "state": "REJECTED",
+      "score": 100,
+      "score_basis": "Равные доли выполненных условий выбранной стратегии; не вероятность прибыли",
+      "checks": [
+        {
+          "code": "CONFIRMED_PIVOTS",
+          "passed": true,
+          "actual": [
+            {
+              "kind": "LOW",
+              "price": 80851.5,
+              "index": 247,
+              "time": 1793152200,
+              "confirmed_at": 1793153100
+            },
+            {
+              "kind": "LOW",
+              "price": 80825.4,
+              "index": 250,
+              "time": 1793153100,
+              "confirmed_at": 1793154000
+            }
+          ],
+          "required": "Два pivot 2+2, интервал ≤50 свечей, последний ≤10 свечей назад"
+        },
+        {
+          "code": "PRICE_DIVERGENCE",
+          "passed": true,
+          "actual": {
+            "first": {
+              "kind": "LOW",
+              "price": 80851.5,
+              "index": 247,
+              "time": 1793152200,
+              "confirmed_at": 1793153100
+            },
+            "last": {
+              "kind": "LOW",
+              "price": 80825.4,
+              "index": 250,
+              "time": 1793153100,
+              "confirmed_at": 1793154000
+            },
+            "rsi": [
+              55.78023909113205,
+              58.10560766138321
+            ],
+            "macd": [
+              16.754011744706077,
+              30.783637004948105
+            ]
+          },
+          "required": "Новый low"
+        },
+        {
+          "code": "RSI_DIVERGENCE",
+          "passed": true,
+          "actual": {
+            "first": {
+              "kind": "LOW",
+              "price": 80851.5,
+              "index": 247,
+              "time": 1793152200,
+              "confirmed_at": 1793153100
+            },
+            "last": {
+              "kind": "LOW",
+              "price": 80825.4,
+              "index": 250,
+              "time": 1793153100,
+              "confirmed_at": 1793154000
+            },
+            "rsi": [
+              55.78023909113205,
+              58.10560766138321
+            ],
+            "macd": [
+              16.754011744706077,
+              30.783637004948105
+            ]
+          },
+          "required": "RSI на втором экстремуме выше"
+        },
+        {
+          "code": "MACD_DIVERGENCE",
+          "passed": true,
+          "actual": {
+            "first": {
+              "kind": "LOW",
+              "price": 80851.5,
+              "index": 247,
+              "time": 1793152200,
+              "confirmed_at": 1793153100
+            },
+            "last": {
+              "kind": "LOW",
+              "price": 80825.4,
+              "index": 250,
+              "time": 1793153100,
+              "confirmed_at": 1793154000
+            },
+            "rsi": [
+              55.78023909113205,
+              58.10560766138321
+            ],
+            "macd": [
+              16.754011744706077,
+              30.783637004948105
+            ]
+          },
+          "required": "MACD на втором экстремуме выше"
+        },
+        {
+          "code": "MOMENTUM_TURN",
+          "passed": true,
+          "actual": [
+            1.0228731593612252,
+            1.5373581553646645
+          ],
+          "required": "Гистограмма меняется в сторону разворота"
+        },
+        {
+          "code": "CLOSED_CANDLE_CONFIRMATION",
+          "passed": true,
+          "actual": {
+            "open": 80919.3,
+            "close": 80948.8,
+            "previous_high": 80927.9,
+            "previous_low": 80866.6
+          },
+          "required": "Направленная закрытая свеча за предыдущим high/low"
+        }
+      ],
+      "rejection": [
+        "NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY",
+        "OUTSIDE_CLOSED_SIGNAL_ENTRY_ZONE"
+      ],
+      "indicators": {
+        "ema20": 80886.44376161798,
+        "ema50": 80838.85147483095,
+        "atr": 84.69100641007675,
+        "rsi": 57.663985753710165,
+        "macd": 37.5159313337208,
+        "histogram": 1.5373581553646645
+      },
+      "closed_at": 1793156100,
+      "valid_until": 1793156400,
+      "quote_time": 1793156100,
+      "quote_received_at": 1793156100,
+      "entry": null,
+      "sl": null,
+      "tp": null,
+      "net_rr": null,
+      "gross_rr": null,
+      "costs": null,
+      "stop_explanation": {
+        "atr": 84.69100641007675,
+        "atr_period": 14,
+        "atr_method": "WILDER",
+        "anchor": 80825.4,
+        "anchor_kind": "DIVERGENCE_EXTREME",
+        "formula": "SL = Entry − max(1.5 × ATR14, Entry − anchor + .25 × ATR14)",
+        "distance_usdt": 152.6676316025321,
+        "distance_percent": 0.18857891206033384,
+        "reason": "За уровнем отмены с буфером ≥.25 ATR и дистанцией ≥1.5 ATR; стоп не сужается ради R/R"
+      },
+      "target_explanation": {
+        "pivot": {
+          "kind": "HIGH",
+          "price": 80969.9,
+          "index": 245,
+          "time": 1793151600,
+          "confirmed_at": 1793152500
+        },
+        "reason": "Ближайший известный встречный pivot; цель не растягивается ради R/R"
+      },
+      "entry_reason": "Текущий Ask для LONG / Bid для SHORT после закрытого подтверждения; котировка и модельное исполнение не дальше .25 ATR от закрытия",
+      "confirmation": "Все условия стратегии на закрытых свечах, свежие Bid/Ask, допустимая зона входа и Net R/R ≥1.5; статистической квалификации нет",
+      "horizon": {
+        "min_seconds": 900,
+        "max_seconds": 3600,
+        "hold_bars": 12,
+        "time_exit": "Если сценарий не достиг SL/TP, пересмотреть выход не позже Entry time + max_seconds; оценка, не гарантия"
+      },
+      "cancel": "Потеря структурного anchor, достижение SL/TP, выход из зоны входа, новая свеча до входа, устаревшие данные или Net R/R <1.5",
+      "edge": "NO_EDGE_FOUND",
+      "statistical_status": "UNVALIDATED",
+      "probability_tp_before_sl": null,
+      "manual_only": true,
+      "exchange_execution": false
+    }
+  }
+}

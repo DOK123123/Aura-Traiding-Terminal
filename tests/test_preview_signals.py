@@ -102,3 +102,21 @@ def test_optional_observer_startup_failure_does_not_stop_existing_terminal(integ
     asyncio.run(run())
     assert integrated.get('/',auth=AUTH).status_code==200
     assert integrated.get('/api/preview/signals/snapshot',auth=AUTH).status_code==200
+
+
+def test_explainable_preview_uses_existing_owner_and_returns_all_sides(integrated):
+    c=integrated
+    for _ in range(100):
+        d=c.get('/api/preview/signals/snapshot',auth=AUTH).json()
+        if d.get('observer',{}).get('cycles',0)>0:break
+    assert d['explanation_version']=='AURA5_EXPLAINABLE_V1'
+    rows=d['explainable_candidates']
+    assert len(rows)==24
+    assert {r['strategy'] for r in rows}=={'TREND_PULLBACK','BREAKOUT_RETEST','MOMENTUM_DIVERGENCE'}
+    for frame in ['5m','15m','1h','4h']:
+        assert {r['direction'] for r in rows if r['frame']==frame}=={'LONG','SHORT'}
+    assert all(r['state']=='UNKNOWN' and r['score'] is None for r in rows if r['frame']!='5m')
+    assert all(r['state']!='CONFIRMED' and r['edge']=='NO_EDGE_FOUND' for r in rows)
+    assert c.get('/static/explainable-signals.js').status_code==401
+    assert c.get('/static/explainable-signals.js',auth=AUTH).status_code==200
+    assert c.app.state.manual_paper.store is None

@@ -12,6 +12,7 @@ from typing import Literal
 from app.hunter.main import Hunter
 from app.hunter.market import PublicMarket
 from app.hunter.store import Store
+from .explainable import from_store, VERSION as EXPLANATION_VERSION
 
 ROOT=Path(__file__).resolve().parents[2]
 router=APIRouter(prefix='/api/preview/signals')
@@ -63,6 +64,8 @@ async def snapshot(request:Request):
     status={'running':running,'cycles':h.cycles,'last_cycle_at':h.last_cycle_at,'frame_errors':dict(h.frame_errors),
             'diagnostic_write_failures':h.diagnostic_write_failures}
     data=await asyncio.to_thread(h.store.snapshot,time.time(),dict(h.quotes),h.error if running else 'OBSERVER_STOPPED')
+    data['explanation_version']=EXPLANATION_VERSION
+    data['explainable_candidates']=await asyncio.to_thread(from_store,h.store,dict(h.quotes),time.time(),running and not h.error)
     data['observer']=status
     data['storage']='EPHEMERAL_RENDER_LOCAL'
     return data

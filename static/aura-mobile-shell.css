@@ -126,3 +126,14 @@ body[data-aura-app="mobile"] .aura-tab-pane {overflow-wrap:break-word;}
   body[data-aura-app="mobile"] #aura-confidence .sc-manual label {flex:1 1 100%;}
 }
 
+
+.explain-cards article{min-width:0;overflow-wrap:anywhere}.explain-cards details{margin-top:12px}.explain-cards summary{cursor:pointer;font-weight:600}.explain-cards details p{font-size:.85rem}#explain-risk{max-width:160px;width:100%;margin:8px}
+#aura-explainable{margin:0 0 16px;padding:clamp(13px,3vw,24px);border-radius:20px;min-width:0}
+#aura-explainable h2{font-size:20px;line-height:1.3}
+#aura-explainable :is(button,input,summary){min-height:44px}
+.explain-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px;align-items:start}
+.explain-cards article{border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--bg)}
+.explain-cards article[data-state="WATCH"]{border-color:var(--mint)}
+.explain-cards h3{font-size:17px;line-height:1.4;margin-top:0}
+.explain-cards p{line-height:1.6}
+@media(max-width:800px){.explain-cards{grid-template-columns:minmax(0,1fr)}}
