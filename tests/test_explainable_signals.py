@@ -77,6 +77,23 @@ def test_real_short_and_explicitly_synthetic_mirrored_long_stop_cost_and_horizon
     assert x['probability_tp_before_sl'] is None and x['edge'] == 'NO_EDGE_FOUND'
 
 
+def test_target_beyond_horizon_is_rejected_without_moving_levels(monkeypatch):
+    b, q = case()
+    def short():
+        return next(x for x in evaluate(b, '1h', q, q['time'])
+                    if x['strategy'] == 'BREAKOUT_RETEST' and x['direction'] == 'SHORT')
+    baseline = short()
+    assert baseline['state'] == 'WATCH'
+    assert baseline['target_explanation']['max_distance_atr'] == 8
+    monkeypatch.setattr('app.manual_preview.explainable.TARGET_ATR_PER_SQRT_BAR', 3)
+    rejected = short()
+    assert rejected['state'] == 'REJECTED'
+    assert rejected['rejection'] == ['TARGET_TOO_FAR_FOR_HORIZON']
+    assert rejected['target_explanation']['distance_atr'] > 6
+    assert [rejected[k] for k in ('entry', 'sl', 'tp', 'net_rr')] == [
+        baseline[k] for k in ('entry', 'sl', 'tp', 'net_rr')]
+
+
 @pytest.mark.parametrize('defect', ['stale', 'future', 'foreign', 'crossed', 'gap', 'warmup', 'forming', 'nan'])
 def test_invalid_data_unknown_with_no_invented_score_or_levels(defect):
     at = 1787464800; b, q = case(at)

@@ -2,6 +2,7 @@
 
 Frozen v1: 260 closed native bars, 2+2 pivots, ATR14 Wilder, EMA20/50,
 1.5–3 ATR stop, .25 ATR structural buffer and nearest opposing market structure.
+TP must fit within 4 × ATR × sqrt(hold bars), a distance guard, not a forecast.
 Score is the equal-weight fraction of strategy conditions, never win probability.
 """
 import hashlib
@@ -16,6 +17,7 @@ from app.hunter.market import SOURCE, STEPS, fresh_quote, validate_bars
 from app.hunter.costs import risk_reward, entry_fill
 
 VERSION = 'AURA5_EXPLAINABLE_V1'
+TARGET_ATR_PER_SQRT_BAR = 4
 MODEL_HASH = hashlib.sha256(b''.join(p.read_bytes() for p in (
     Path(__file__), *(Path(__file__).parents[1]/'hunter'/name
                        for name in ('engine.py', 'costs.py', 'market.py', 'rules.json'))))).hexdigest()
@@ -214,6 +216,11 @@ def evaluate(rows: list, frame: str, quote: dict, now: float) -> list[dict]:
                         else:
                             rejection.append('NO_KNOWN_OPPOSING_PIVOT_TARGET')
                     if tp is not None:
+                        target_atr = sign*(tp-entry)/a
+                        max_target_atr = TARGET_ATR_PER_SQRT_BAR*math.sqrt(hold)
+                        target_info.update(distance_atr=target_atr, max_distance_atr=max_target_atr)
+                        if target_atr > max_target_atr:
+                            rejection.append('TARGET_TOO_FAR_FOR_HORIZON')
                         costs = risk_reward(entry, sl, tp, side, step, hold, quote['ask']-quote['bid'])
                         if costs is None or costs['net_rr'] < 1.5:
                             rejection.append('NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY')

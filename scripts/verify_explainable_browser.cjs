@@ -27,7 +27,7 @@ print(json.dumps(dict(rows=rows,quote=q,long_fixture=long,bars=b[-201:])))
 `],{encoding:'utf8',cwd:root}));
 let mode='LIVE',posts=0,ticks=0;const held=new Set();
 function snapshot(){const now=Date.now()/1000,q={...fixture.quote,time:now,received_at:now},steps={'5m':300,'15m':900,'1h':3600,'4h':14400};
- const delta=(++ticks%2)*.02;q.bid-=delta;q.ask+=delta;
+ const delta=++ticks*.02;q.bid-=delta;q.ask+=delta;
  const candidates=structuredClone(fixture.rows).map(c=>({...c,closed_at:Math.floor(now/steps[c.frame])*steps[c.frame],valid_until:(Math.floor(now/steps[c.frame])+1)*steps[c.frame],quote_time:now,quote_received_at:now,entry:c.entry==null?null:q[c.direction==='LONG'?'ask':'bid']}));
  if(mode==='LONG'){const at=Math.floor(now/3600)*3600,c={...fixture.long_fixture,closed_at:at,valid_until:at+3600,quote_time:now,quote_received_at:now,entry:q.ask};candidates.push(c);}
  return {scope:'AURA6_PUBLIC_OBSERVER_ONLY',source:q.source,execution_enabled:false,account_connected:false,server_time:now,
@@ -47,7 +47,7 @@ const server=http.createServer((req,res)=>{if(req.method!=='GET'){posts++;res.wr
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;const reports=[];
  try{browser=await chromium.launch({...(process.env.CHROMIUM?{executablePath:process.env.CHROMIUM}:{}),args:['--no-sandbox']});
  for(const [name,config] of [['desktop',{}],['pixel7',devices['Pixel 7']],['a50',{viewport:{width:360,height:740},isMobile:true,hasTouch:true}]]){
- mode='LIVE';const context=await browser.newContext(config),page=await context.newPage(),errors=[];
+ mode='LIVE';ticks=0;const context=await browser.newContext(config),page=await context.newPage(),errors=[];
  await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
  await page.addInitScript(()=>{window.WebSocket=class{constructor(){this.readyState=1;}send(){}close(){}};});page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#app-tab-signals').click();

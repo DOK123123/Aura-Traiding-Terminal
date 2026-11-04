@@ -54,6 +54,7 @@ test('quote refresh preserves card and open details; expiry removes the chart pl
  button.events.click();
  assert.equal(overlays['1h'].plan.entry,100);
  q.ask=candidate.entry=100.02;
+ candidate.target_explanation.distance_atr=5.01;
  receive();
  assert.ok(cards.children.includes(card));
  assert.equal(card.dataset.scenarioId,candidate.id);

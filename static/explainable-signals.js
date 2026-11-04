@@ -8,6 +8,7 @@ const LABELS={EMA_TREND:'Тренд EMA20/50',TREND_STRUCTURE:'Структур�
  PRIOR_LEVEL_BREAK:'Пробой известного уровня',LEVEL_HELD:'Удержание уровня',SEPARATE_RETEST:'Отдельный ретест',BREAK_VOLUME:'Объём пробоя',
  CONFIRMED_PIVOTS:'Подтверждённые экстремумы',PRICE_DIVERGENCE:'Новый ценовой экстремум',RSI_DIVERGENCE:'Дивергенция RSI',
  MACD_DIVERGENCE:'Дивергенция MACD',MOMENTUM_TURN:'Разворот импульса MACD',CLOSED_CANDLE_CONFIRMATION:'Подтверждение закрытой свечой',
+ TARGET_TOO_FAR_FOR_HORIZON:'Цель слишком далеко относительно ATR и срока удержания',
  STOP_WIDER_THAN_3_ATR:'Структурный стоп шире 3 ATR',ENTRY_IN_OPPOSING_ZONE:'Вход внутри встречной зоны',
  NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY:'Net R/R ниже 1.5 или некорректные уровни',NO_KNOWN_OPPOSING_PIVOT_TARGET:'Нет известного встречного экстремума для TP',
  NO_STRUCTURAL_INVALIDATION_BEHIND_ENTRY:'Нет структурного уровня отмены за Entry',OUTSIDE_CLOSED_SIGNAL_ENTRY_ZONE:'Котировка или модельное исполнение вышли из зоны входа',
@@ -136,7 +137,7 @@ function render(){
   hide(detail,!x&&!historical);
   if(x){
    const alternatives=verified.slice(1).map(c=>c.name+' · '+c.state+' · '+c.score+'/100 · '+reasons(c).map(label).join(' · '));
-   const signature=JSON.stringify([x.id,state,x.checks,x.rejection,x.indicators,x.stop_explanation?.anchor,x.target_explanation,levels(x),zones,alternatives]);
+   const signature=JSON.stringify([x.id,state,x.checks,x.rejection,x.indicators,x.stop_explanation?.anchor,x.target_explanation?.reason,levels(x),zones,alternatives]);
    if(signature!==slot.detailSignature){
     slot.detailSignature=signature;
     body.replaceChildren();
