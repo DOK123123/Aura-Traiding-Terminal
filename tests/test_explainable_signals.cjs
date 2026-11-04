@@ -22,3 +22,47 @@ test('malformed API candidates and incomplete explanations fail closed without e
  for(const value of [null,{},'bad',false,42,[null,{},'bad']]){const d={...data(),explainable_candidates:value};assert.doesNotThrow(()=>E.candidates(d).map(c=>E.fresh(d,c,now)));assert.equal(E.candidates(d).filter(c=>E.usable(d,c,now)).length,0);}
  for(const change of [c=>c.checks={},c=>c.checks=[null],c=>c.horizon=null,c=>c.indicators=null,c=>c.rejection='bad',c=>c.stop_explanation=null]){const d=data(),c=d.explainable_candidates[0];change(c);assert.equal(E.fresh(d,c,now),false);assert.equal(E.usable(d,c,now),false);}
 });
+
+test('quote refresh preserves card and open details; expiry removes the chart plan',()=>{
+ const {readFileSync}=require('node:fs'),{runInNewContext}=require('node:vm');
+ class Element {
+  constructor(tag){this.tag=tag;this.children=[];this.dataset={};this.events={};this.textContent='';this.hidden=false;this.open=false;}
+  append(child){this.children.push(child);}
+  replaceChildren(){this.children=[];}
+  addEventListener(type,handler){this.events[type]=handler;}
+ }
+ const host=new Element('section'),events={},document={
+  getElementById:id=>id==='aura-explainable'?host:null,
+  createElement:tag=>new Element(tag),querySelector:()=>null,addEventListener:()=>{}
+ };
+ let time=now,render,overlays;
+ const window={document,AuraSignalAlerts:{WebAudioPlayer:class{}},
+  addEventListener:(type,handler)=>{events[type]=handler;},
+  dispatchEvent:event=>{overlays=event.detail;}};
+ const file=require.resolve('../static/explainable-signals.js');
+ runInNewContext(readFileSync(file,'utf8'),{window,document,Date:class extends Date{static now(){return time*1000;}},
+  CustomEvent:class{constructor(type,{detail}){this.detail=detail;}},setInterval:handler=>{render=handler;}});
+ const d=data(),candidate=d.explainable_candidates[0],q=d.quotes['1h'];
+ candidate.id='c'.repeat(64);
+ const receive=()=>events['aura-preview-snapshot']({detail:d});
+ receive();
+ const cards=host.children.at(-1),card=cards.children.find(e=>e.dataset.frame==='1h'&&e.dataset.direction==='LONG');
+ const details=card.children.find(e=>e.tag==='details'),body=details.children.at(-1),evidence=body.children[0];
+ const button=card.children.find(e=>e.tag==='button');
+ const plan=card.children.find(e=>e.tag==='section'),entry=plan.children[1].children[0].children[1];
+ details.open=true;
+ button.events.click();
+ assert.equal(overlays['1h'].plan.entry,100);
+ q.ask=candidate.entry=100.02;
+ receive();
+ assert.ok(cards.children.includes(card));
+ assert.equal(card.dataset.scenarioId,candidate.id);
+ assert.ok(details.open&&body.children.includes(evidence));
+ assert.equal(entry.textContent,'100.02');
+ time+=6;render();
+ assert.equal(card.dataset.state,'UNKNOWN');
+ assert.match(plan.children[0].textContent,/НЕАКТУАЛЕН/);
+ assert.equal(entry.textContent,'100.02');
+ assert.ok(button.hidden&&details.open);
+ assert.equal(overlays['1h'],undefined);
+});

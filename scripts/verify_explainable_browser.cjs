@@ -79,6 +79,9 @@ const server=http.createServer((req,res)=>{if(req.method!=='GET'){posts++;res.wr
  assert.equal(await watch.locator('details').getAttribute('open'),'');
  mode='LONG';for(const res of held)res.destroy();held.clear();
  await page.waitForFunction(()=>document.querySelector('#aura-explainable [data-frame="1h"][data-direction="LONG"]')?.dataset.state==='WATCH',{},{timeout:20000});
+ await page.locator('#aura-explainable [data-frame="1h"][data-direction="LONG"]').getByRole('button',{name:'На графике'}).click();
+ await page.waitForFunction(()=>explainLines.length===3&&document.getElementById('aura-explain-chart-legend').textContent.startsWith('LONG'));
+ await page.screenshot({path:path.join(out,name+'-chart.png'),fullPage:true});
  mode='MALFORMED';await page.waitForFunction(()=>[...document.querySelectorAll('#aura-explainable article')].every(e=>e.dataset.state==='UNKNOWN'),{},{timeout:10000});
  for(const tab of ['chart','more','home','signals'])await page.locator('#app-tab-'+tab).click();
  assert.deepEqual(errors,[]);reports.push({name,long_short:true,rejected_unknown:true,risk:true,details_persist:true,stable_dom:true,chart_overlays:true,quote_expiry:true,navigation:true,overflow:false,errors});await context.close();}

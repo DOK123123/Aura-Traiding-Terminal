@@ -135,7 +135,8 @@ function render(){
   hide(button,!canShow);
   hide(detail,!x&&!historical);
   if(x){
-   const signature=JSON.stringify([x.id,state,x.checks,x.rejection,x.indicators,x.stop_explanation?.anchor,x.target_explanation,levels(x),zones]);
+   const alternatives=verified.slice(1).map(c=>c.name+' · '+c.state+' · '+c.score+'/100 · '+reasons(c).map(label).join(' · '));
+   const signature=JSON.stringify([x.id,state,x.checks,x.rejection,x.indicators,x.stop_explanation?.anchor,x.target_explanation,levels(x),zones,alternatives]);
    if(signature!==slot.detailSignature){
     slot.detailSignature=signature;
     body.replaceChildren();
@@ -153,7 +154,9 @@ function render(){
     if(levels(x))add('p','Расходы в Net R/R: комиссия, проскальзывание и funding-резерв. Вход по Ask/Bid, спред повторно не вычитается.',body);
     add('p','Для входа: '+x.confirmation,body);
     add('p','Отмена: '+x.cancel.replaceAll('anchor','уровня отмены'),body);
-    add('p','Ориентир удержания '+Math.round(x.horizon.min_seconds/60)+'–'+Math.round(x.horizon.max_seconds/60)+' мин.',body);
+    add('p','Ориентир удержания '+Math.round(x.horizon.min_seconds/60)+'–'+Math.round(x.horizon.max_seconds/60)+' мин. Если SL/TP не достигнуты, пересмотреть выход к концу этого окна.',body);
+    add('p','Закрытие свечи '+new Date(x.closed_at*1000).toISOString()+' · срок входа до '+new Date(x.valid_until*1000).toISOString(),body);
+    for(const alternative of alternatives)add('p','Другой сценарий: '+alternative,body);
    }
   }else if(slot.detailSignature!==null){
    slot.detailSignature=null;body.replaceChildren();

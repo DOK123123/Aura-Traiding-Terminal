@@ -7,7 +7,7 @@ let timeframe = '15m', chart, candles, ema20, ema50, volume;
 let controller, requestId = 0, currentData = null;
 let previewHistoryGeneration = 0;
 let liveTickerPriceLine = null;
-let explainOverlays={},explainLines=[],explainZones=[],explainSignature='',updateExplainZones;
+let explainOverlays={},explainLines=[],explainZones=[],explainRange=[],explainSignature='',updateExplainZones;
 
 const metricIds = ['price','rsi','atr','return','volatility','momentum','count','up','down','headline-price','ema20-value','ema50-value'];
 
@@ -22,10 +22,12 @@ function initializeChart() {
     crosshair: {mode: L.CrosshairMode.Normal}, localization: {locale: 'en-US'},
   });
   candles = chart.addSeries(L.CandlestickSeries, {upColor: '#42d6b0', downColor: '#fa788b', borderVisible: false, wickUpColor: '#42d6b0', wickDownColor: '#fa788b'});
-  if(document.body.dataset.manualPreview==='true'){
+  if(document.getElementById('aura-explain-chart-legend')){
     // Native pane primitive tracks price-scale changes, including pan and zoom.
     candles.attachPrimitive?.({
       attached({requestUpdate}){updateExplainZones=requestUpdate;},
+      autoscaleInfo(){return explainRange.length?{priceRange:{
+        minValue:Math.min(...explainRange),maxValue:Math.max(...explainRange)}}:null;},
       paneViews(){return [{zOrder:()=> 'bottom',renderer:()=>({draw(target){
         target.useMediaCoordinateSpace(({context,mediaSize})=>{
           for(const zone of explainZones){
@@ -398,6 +400,8 @@ function drawExplainableOverlay(){
  if(signature===explainSignature)return;
  explainSignature=signature;
  explainZones=zones;
+ explainRange=zones.flatMap(z=>[z.lower,z.upper]);
+ if(plan)explainRange.push(plan.sl,plan.tp);
  updateExplainZones?.();
  if(plan){
   const definitions=[['entry','Entry','#f4c779'],['sl','SL','#fa788b'],['tp','TP','#42d6b0']];
@@ -410,7 +414,7 @@ function drawExplainableOverlay(){
   for(const line of explainLines)candles.removePriceLine(line);
   explainLines=[];
  }
- const legend=$('aura-explain-chart-legend');
+ const legend=document.getElementById('aura-explain-chart-legend');
  if(legend)legend.textContent=overlay?[
   ...(plan?[plan.direction+' · '+plan.name+' · Entry '+fmt(plan.entry)+' · SL '+fmt(plan.sl)+' · TP '+fmt(plan.tp)]:[]),
   ...zones.map(z=>(z.kind==='SUPPORT'?'Поддержка ':'Сопротивление ')+fmt(z.lower)+'–'+fmt(z.upper))
