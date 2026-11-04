@@ -63,9 +63,10 @@ async def snapshot(request:Request):
     running=task is not None and not task.done()
     status={'running':running,'cycles':h.cycles,'last_cycle_at':h.last_cycle_at,'frame_errors':dict(h.frame_errors),
             'diagnostic_write_failures':h.diagnostic_write_failures}
-    data=await asyncio.to_thread(h.store.snapshot,time.time(),dict(h.quotes),h.error if running else 'OBSERVER_STOPPED')
+    now, quotes, error = time.time(), dict(h.quotes), h.error
+    data=await asyncio.to_thread(h.store.snapshot,now,quotes,error if running else 'OBSERVER_STOPPED')
     data['explanation_version']=EXPLANATION_VERSION
-    data['explainable_candidates']=await asyncio.to_thread(from_store,h.store,dict(h.quotes),time.time(),running and not h.error)
+    data['explainable_candidates']=await asyncio.to_thread(from_store,h.store,quotes,now,running and not error)
     data['observer']=status
     data['storage']='EPHEMERAL_RENDER_LOCAL'
     return data

@@ -1,7 +1,7 @@
 """Three causal manual hypotheses. No execution, account or qualification authority.
 
 Frozen v1: 260 closed native bars, 2+2 pivots, ATR14 Wilder, EMA20/50,
-minimum 1.5 ATR stop and .25 ATR structural buffer, nearest opposing pivot TP.
+1.5–3 ATR stop, .25 ATR structural buffer and nearest opposing market structure.
 Score is the equal-weight fraction of strategy conditions, never win probability.
 """
 import hashlib
@@ -58,6 +58,36 @@ def pivots(rows: list, step: int) -> list[dict]:
     return output
 
 
+def confirmed_zones(swings: list[dict], atr: float, step: int) -> list[dict]:
+    """Group same-side pivots within .5 ATR, with at least two separate touches."""
+    zones = []
+    for kind, role in (('LOW', 'SUPPORT'), ('HIGH', 'RESISTANCE')):
+        clusters = []
+        for pivot in sorted((p for p in swings if p['kind'] == kind), key=lambda p: p['price']):
+            if not clusters or pivot['price']-clusters[-1][0]['price'] > .5*atr:
+                clusters.append([])
+            clusters[-1].append(pivot)
+        for cluster in clusters:
+            touches = sorted(cluster, key=lambda p: p['time'])
+            separate = [touches[0]]
+            for touch in touches[1:]:
+                if touch['time']-separate[-1]['time'] >= 3*step:
+                    separate.append(touch)
+            if len(separate) < 2:
+                continue
+            lower = max(cluster[0]['price']-.1*atr, cluster[0]['price']*.5)
+            zones.append(dict(kind=role, lower=lower, upper=cluster[-1]['price']+.1*atr,
+                              touches=len(separate), confirmed_at=max(p['confirmed_at'] for p in cluster)))
+    return zones
+
+
+def nearby_zones(zones: list[dict], price: float) -> list[dict]:
+    """Choose the nearest zone of each kind on the expected side of the close."""
+    supports = [z for z in zones if z['kind'] == 'SUPPORT' and z['lower'] <= price]
+    resistances = [z for z in zones if z['kind'] == 'RESISTANCE' and z['upper'] >= price]
+    return ([max(supports, key=lambda z: z['upper'])] if supports else []) + (
+            [min(resistances, key=lambda z: z['lower'])] if resistances else [])
+
 def evaluate(rows: list, frame: str, quote: dict, now: float) -> list[dict]:
     """Same bounded seed for archive/live; future/forming bars are not accepted."""
     if frame not in STEPS:
@@ -81,6 +111,7 @@ def evaluate(rows: list, frame: str, quote: dict, now: float) -> list[dict]:
     z, p = b[-1], b[-2]
     # Before the signal candle: pivots cannot be confirmed by the signal itself.
     swings = pivots(b[:-1], step)
+    zones = nearby_zones(confirmed_zones(swings, a, step), z[4])
     cutoff = z[0]+step
     output = []
     for side, sign in (('LONG', 1), ('SHORT', -1)):
@@ -158,23 +189,39 @@ def evaluate(rows: list, frame: str, quote: dict, now: float) -> list[dict]:
                 if anchor is None or sign*(entry-anchor) <= 0:
                     rejection.append('NO_STRUCTURAL_INVALIDATION_BEHIND_ENTRY')
                 else:
-                    distance = max(1.5*a, sign*(entry-anchor)+.25*a)
+                    own_zone = next((v for v in zones if v['kind'] == ('SUPPORT' if long else 'RESISTANCE')), None)
+                    stop_anchor = anchor
+                    if own_zone and own_zone['lower']-.25*a <= anchor <= own_zone['upper']+.25*a:
+                        stop_anchor = min(anchor, own_zone['lower']) if long else max(anchor, own_zone['upper'])
+                    distance = max(1.5*a, sign*(entry-stop_anchor)+.25*a)
                     sl = entry-sign*distance
+                    if distance > 3*a:
+                        rejection.append('STOP_WIDER_THAN_3_ATR')
                     targets = [v for v in opposite if sign*(v['price']-entry) > 0]
                     target = min(targets, key=lambda v: sign*(v['price']-entry)) if targets else None
-                    if target is None:
-                        rejection.append('NO_KNOWN_OPPOSING_PIVOT_TARGET')
+                    opposing_zone = next((v for v in zones if v['kind'] == ('RESISTANCE' if long else 'SUPPORT')), None)
+                    if opposing_zone and opposing_zone['lower'] <= entry <= opposing_zone['upper']:
+                        rejection.append('ENTRY_IN_OPPOSING_ZONE')
                     else:
-                        tp = target['price']
-                        target_info = {'pivot': target, 'reason': 'Ближайший известный встречный pivot; цель не растягивается ради R/R'}
+                        edge = opposing_zone['lower' if long else 'upper'] if opposing_zone else None
+                        if edge is not None and sign*(edge-entry) > 0 and (
+                                target is None or sign*(edge-target['price']) <= 0):
+                            tp = edge
+                            target_info = {'zone': opposing_zone, 'reason': 'Ближняя граница встречной подтверждённой зоны'}
+                        elif target is not None:
+                            tp = target['price']
+                            target_info = {'pivot': target, 'reason': 'Ближайший известный встречный экстремум'}
+                        else:
+                            rejection.append('NO_KNOWN_OPPOSING_PIVOT_TARGET')
+                    if tp is not None:
                         costs = risk_reward(entry, sl, tp, side, step, hold, quote['ask']-quote['bid'])
                         if costs is None or costs['net_rr'] < 1.5:
                             rejection.append('NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY')
-                    stop_info = {'atr': a, 'atr_period': 14, 'atr_method': 'WILDER', 'anchor': anchor,
-                                 'anchor_kind': 'PULLBACK_EXTREME' if strategy == 'TREND_PULLBACK' else 'RETEST_LEVEL_EXTREME' if strategy == 'BREAKOUT_RETEST' else 'DIVERGENCE_EXTREME',
-                                 'formula': 'SL = Entry − max(1.5 × ATR14, Entry − anchor + .25 × ATR14)' if long else 'SL = Entry + max(1.5 × ATR14, anchor − Entry + .25 × ATR14)',
+                    stop_info = {'atr': a, 'atr_period': 14, 'atr_method': 'WILDER', 'anchor': stop_anchor,
+                                 'structure_anchor': anchor, 'distance_atr': distance/a,
+                                 'formula': 'Дистанция = max(1.5 × ATR14, расстояние до уровня отмены + .25 × ATR14)',
                                  'distance_usdt': distance, 'distance_percent': 100*distance/entry,
-                                 'reason': 'За уровнем отмены с буфером ≥.25 ATR и дистанцией ≥1.5 ATR; стоп не сужается ради R/R'}
+                                 'reason': 'За структурой или границей зоны с буфером .25 ATR. Допуск 1.5–3 ATR'}
                 if abs(entry-z[4]) > .25*a or abs(entry_fill(entry, side, quoted=True)-z[4]) > .25*a:
                     rejection.append('OUTSIDE_CLOSED_SIGNAL_ENTRY_ZONE')
             valid_levels = costs is not None and sl > 0 and tp > 0
@@ -183,7 +230,7 @@ def evaluate(rows: list, frame: str, quote: dict, now: float) -> list[dict]:
                            'source': SOURCE, 'frame': frame, 'strategy': strategy, 'name': name, 'direction': side,
                            'state': 'REJECTED' if rejection else 'WATCH', 'score': round(100*sum(v['passed'] for v in checks)/len(checks)),
                            'score_basis': 'Равные доли выполненных условий выбранной стратегии; не вероятность прибыли',
-                           'checks': checks, 'rejection': rejection, 'indicators': {k: float(v[-1]) for k, v in m.items()},
+                           'checks': checks, 'rejection': rejection, 'zones': zones, 'indicators': {k: float(v[-1]) for k, v in m.items()},
                            'closed_at': cutoff, 'valid_until': cutoff+step, 'quote_time': quote['time'], 'quote_received_at': quote['received_at'],
                            'entry': entry if valid_levels else None, 'sl': sl if valid_levels else None, 'tp': tp if valid_levels else None,
                            'net_rr': costs['net_rr'] if valid_levels else None, 'gross_rr': sign*(tp-entry)/abs(entry-sl) if valid_levels else None,

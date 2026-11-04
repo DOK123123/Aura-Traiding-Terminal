@@ -137,3 +137,8 @@ body[data-aura-app="mobile"] .aura-tab-pane {overflow-wrap:break-word;}
 .explain-cards h3{font-size:17px;line-height:1.4;margin-top:0}
 .explain-cards p{line-height:1.6}
 @media(max-width:800px){.explain-cards{grid-template-columns:minmax(0,1fr)}}
+
+.explain-plan {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin:.5rem 0}
+.explain-plan div {padding:.5rem;border:1px solid currentColor;border-radius:.5rem}
+.explain-plan dt {font-size:.8rem}
+.explain-plan dd {margin:0;font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums}

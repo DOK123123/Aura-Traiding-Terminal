@@ -34,6 +34,7 @@ def page(ws_token='', *, server_signals=False):
     # The original footer was below the excluded panels; preserve its DOM contract.
     source+='\n<footer><span>PREVIEW ONLY · нет Active43, scheduler и реальных ордеров</span><span id="last-updated">Данные ещё не загружены</span></footer></main></body></html>'
     if server_signals:
+        source=source.replace('<div class="chart-wrap">','<p id="aura-explain-chart-legend"></p><div class="chart-wrap">')
         source=source.replace('<section class="panel" id="aura-notifications"></section>','')
         source=source.replace('<script defer src="/static/signal-center.js"></script>','')
         source=source.replace('<section class="panel" id="aura-signal-center"></section>',

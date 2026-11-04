@@ -7,6 +7,8 @@ let timeframe = '15m', chart, candles, ema20, ema50, volume;
 let controller, requestId = 0, currentData = null;
 let previewHistoryGeneration = 0;
 let liveTickerPriceLine = null;
+let explainOverlays={},explainLines=[],explainZones=[],explainSignature='',updateExplainZones;
+
 const metricIds = ['price','rsi','atr','return','volatility','momentum','count','up','down','headline-price','ema20-value','ema50-value'];
 
 function initializeChart() {
@@ -20,6 +22,22 @@ function initializeChart() {
     crosshair: {mode: L.CrosshairMode.Normal}, localization: {locale: 'en-US'},
   });
   candles = chart.addSeries(L.CandlestickSeries, {upColor: '#42d6b0', downColor: '#fa788b', borderVisible: false, wickUpColor: '#42d6b0', wickDownColor: '#fa788b'});
+  if(document.body.dataset.manualPreview==='true'){
+    // Native pane primitive tracks price-scale changes, including pan and zoom.
+    candles.attachPrimitive?.({
+      attached({requestUpdate}){updateExplainZones=requestUpdate;},
+      paneViews(){return [{zOrder:()=> 'bottom',renderer:()=>({draw(target){
+        target.useMediaCoordinateSpace(({context,mediaSize})=>{
+          for(const zone of explainZones){
+            const top=candles.priceToCoordinate(zone.upper),bottom=candles.priceToCoordinate(zone.lower);
+            if(top===null||bottom===null)continue;
+            context.fillStyle=zone.kind==='SUPPORT'?'#42d6b035':'#fa788b35';
+            context.fillRect(0,top,mediaSize.width,Math.max(2,bottom-top));
+          }
+        });
+      }})}];}
+    });
+  }
   ema20 = chart.addSeries(L.LineSeries, {color: '#42d6b0', lineWidth: 1, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false});
   ema50 = chart.addSeries(L.LineSeries, {color: '#a295fa', lineWidth: 1, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false});
   volume = chart.addSeries(L.HistogramSeries, {priceFormat: {type: 'volume'}, priceScaleId: 'volume', lastValueVisible: false, priceLineVisible: false});
@@ -57,6 +75,7 @@ function showLiveTickerLine(price) {
 function clearData() {
   showLiveTickerLine(null);
   currentData = null;
+  drawExplainableOverlay();
   window.AuraChartTools?.refresh?.();
   metricIds.forEach(id => { $(id).textContent = '—'; $(id).classList.remove('positive', 'negative'); });
   $('trend').textContent = '—'; $('trend').className = 'trend';
@@ -104,6 +123,7 @@ async function loadPreviewClosedHistory(tf,generation) {
   showLiveTickerLine(null);
   currentData={symbol:'BTCUSDT',timeframe:tf,candles:closed};
   candles.setData(closed);
+  drawExplainableOverlay();
   ema20.setData(window.AuraBitgetLive.ema(closed,20));
   ema50.setData(window.AuraBitgetLive.ema(closed,50));
   volume.setData(closed.map(b=>({time:b.time,value:b.volume,color:b.close>=b.open?'#42d6b055':'#fa788b55'})));
@@ -213,6 +233,7 @@ async function loadMarket() {
 
 function selectTimeframe(value) {
   timeframe = value;
+  drawExplainableOverlay();
   document.querySelectorAll('[data-tf]').forEach(b => { b.classList.toggle('active', b.dataset.tf === timeframe); b.setAttribute('aria-pressed', String(b.dataset.tf === timeframe)); });
 }
 $('symbol').addEventListener('change', loadMarket);
@@ -286,7 +307,7 @@ window.addEventListener('aura-manual-market',event=>{
   const bars=fresh?w.bars:closed; // Never display forming candles as current without verified bid/ask.
   $('chart-subtitle').textContent='BTCUSDT · '+timeframe+(fresh?' · LIVE тикер + свечи Bitget':' · история, НЕ LIVE');
   currentData={symbol:'BTCUSDT',timeframe,candles:bars};
-  candles.setData(bars);ema20.setData(window.AuraBitgetLive.ema(bars,20));ema50.setData(window.AuraBitgetLive.ema(bars,50));
+  candles.setData(bars);drawExplainableOverlay();ema20.setData(window.AuraBitgetLive.ema(bars,20));ema50.setData(window.AuraBitgetLive.ema(bars,50));
   showLiveTickerLine(fresh?frameQuote.quotePrice:null);
   volume.setData(bars.map(b=>({time:b.time,value:b.volume,color:b.close>=b.open?'#42d6b055':'#fa788b55'})));
   if(manualChartFrame!==timeframe){chart.timeScale().setVisibleLogicalRange({from:Math.max(0,bars.length-100),to:bars.length+4});manualChartFrame=timeframe;}
@@ -366,4 +387,36 @@ window.addEventListener('aura-manual-scenario',event=>{
  for(const [key,title,color]of [['entry','Scenario Entry','#f4c779'],['stop','Scenario SL','#fa788b'],['target','Scenario TP','#42d6b0']]){
   if(Number.isFinite(s[key])&&s[key]>0)scenarioPriceLines.push(candles.createPriceLine({price:s[key],title:s.name+' '+title,color,lineWidth:1,lineStyle:2}));
  }
+});
+
+function drawExplainableOverlay(){
+ if(document.body.dataset.manualPreview!=='true'||!candles)return;
+ const overlay=currentData?.timeframe===timeframe?explainOverlays[timeframe]:null;
+ const plan=overlay?.plan;
+ const zones=overlay?.zones||[];
+ const signature=JSON.stringify([timeframe,zones,plan?.id,plan?.entry,plan?.sl,plan?.tp]);
+ if(signature===explainSignature)return;
+ explainSignature=signature;
+ explainZones=zones;
+ updateExplainZones?.();
+ if(plan){
+  const definitions=[['entry','Entry','#f4c779'],['sl','SL','#fa788b'],['tp','TP','#42d6b0']];
+  definitions.forEach(([key,title,color],index)=>{
+   const options={price:plan[key],title:plan.direction+' '+title,color,lineWidth:2};
+   if(explainLines[index])explainLines[index].applyOptions(options);
+   else explainLines.push(candles.createPriceLine(options));
+  });
+ }else{
+  for(const line of explainLines)candles.removePriceLine(line);
+  explainLines=[];
+ }
+ const legend=$('aura-explain-chart-legend');
+ if(legend)legend.textContent=overlay?[
+  ...(plan?[plan.direction+' · '+plan.name+' · Entry '+fmt(plan.entry)+' · SL '+fmt(plan.sl)+' · TP '+fmt(plan.tp)]:[]),
+  ...zones.map(z=>(z.kind==='SUPPORT'?'Поддержка ':'Сопротивление ')+fmt(z.lower)+'–'+fmt(z.upper))
+ ].join(' | '):'';
+}
+window.addEventListener('aura-explainable-chart',event=>{
+ explainOverlays=event.detail;
+ drawExplainableOverlay();
 });
