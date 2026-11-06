@@ -160,8 +160,9 @@ function render(){
   text(title,direction+' · '+frame+' · '+({WATCH:'ЕСТЬ ТЕХНИЧЕСКИЙ СЦЕНАРИЙ',REJECTED:'НЕ ВХОДИТЬ',UNKNOWN:'НЕДОСТАТОЧНО ДАННЫХ',SNAPSHOT:'СНИМОК · НЕ ДЕЙСТВУЮЩИЙ СИГНАЛ'}[state])+(x?' · '+x.score+'/100':''));
   const missing=reasons(rows.find(c=>c.state==='UNKNOWN')).map(label).join(' · ');
   text(description,(x?'Стратегия: '+x.name:'Данные не подтверждены. '+(missing||'Нет свежего снимка котировок и закрытых свечей.'))+(!displayed?' Entry/SL/TP не рассчитаны: нет проверенного корректного плана.':''));
-  hide(refusal,state!=='REJECTED');
-  text(refusal,state==='REJECTED'?'Отказ: '+(reasons(x).map(label).join(' · ')||'План не прошёл проверку'): '');
+  const rejected=state==='REJECTED'||slot.snapshot?.state==='REJECTED';
+  hide(refusal,!rejected);
+  text(refusal,rejected?(slot.snapshot?'Снимок отказа: ':'Отказ: ')+(reasons(x).map(label).join(' · ')||'План не прошёл проверку'): '');
   if(displayed){
    text(planStatus,slot.snapshot?'ЗАКРЕПЛЁННЫЙ СНИМОК · НЕАКТУАЛЕН · '+new Date(displayed.quote_time*1000).toISOString()+' · рынок продолжает обновляться':historical?'НЕАКТУАЛЕН · '+displayed.name+' · '+new Date(displayed.quote_time*1000).toISOString()
     :watch?'План WATCH':'Отклонённый расчёт');
