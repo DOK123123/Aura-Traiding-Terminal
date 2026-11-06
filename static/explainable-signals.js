@@ -70,13 +70,14 @@ const reasons=c=>Array.isArray(c?.rejection)?c.rejection.filter(x=>typeof x==='s
 add('h2','BTCUSDT · Сигналы',host);
 const marketLine=add('p','Проверяем котировки…',host);marketLine.id='signals-market';marketLine.setAttribute('role','status');
 const mainState=add('p','НЕДОСТАТОЧНО ДАННЫХ',host);mainState.id='signals-state';
-add('p','WATCH — технический сценарий, а не доказанная прибыльность. Выберите таймфрейм и направление.',host);
+const intro=add('p','WATCH — технический сценарий, а не доказанная прибыльность. Выберите таймфрейм и направление.',host);
 const frameBar=add('div','',host);frameBar.className='signal-frame-bar';frameBar.setAttribute('aria-label','Таймфрейм сигналов');
 const frameButtons={};
 const riskLabel=add('label','Риск на сценарий, USDT ',host),risk=add('input','',riskLabel);risk.type='number';risk.min='0.01';risk.step='0.01';risk.placeholder='Введите допустимый убыток';risk.id='explain-risk';
-add('p','Размер позиции — расчёт по модельному убытку на SL с расходами; комиссии и funding нужно сверять. Гэп и реальное проскальзывание могут увеличить убыток.',host);
+const riskNote=add('p','Размер позиции — расчёт по модельному убытку на SL с расходами; комиссии и funding нужно сверять. Гэп и реальное проскальзывание могут увеличить убыток.',host);
 const audio=add('button','Включить звук WATCH · открытая вкладка',host);audio.type='button';
 const audioStatus=add('p','Звук выключен. Фоновые уведомления не гарантируются.',host);
+const settings=add('details','',host);settings.className='signal-settings';add('summary','Настройки звука и пояснения',settings);settings.append(intro);settings.append(riskNote);settings.append(audio);settings.append(audioStatus);
 const player=new root.AuraSignalAlerts.WebAudioPlayer();let audioReady=false,audioBusy=false;
 async function notify(now){
  if(!audioReady||audioBusy||document.hidden||!navigator.locks?.request)return;
@@ -240,8 +241,9 @@ root.addEventListener('aura-preview-snapshot',event=>{latest=event.detail;
  if(!initialized&&latest?.explanation_version===VERSION){initialized=true;const legacy=document.getElementById('aura-score-diagnostics');if(legacy)legacy.open=false;}
  render();});
 document.addEventListener('visibilitychange',()=>{latest=null;audioReady=false;player.suspend();audio.textContent='Включить звук WATCH · открытая вкладка';render();});
-const restoreScroll=prefs.scroll;
-root.addEventListener('scroll',()=>{if(document.getElementById('app-signals')?.hidden===false){prefs.scroll=root.scrollY||0;savePrefs();}},{passive:true});
+const restoreScroll=prefs.scroll;let scrollTimer;
+root.addEventListener('scroll',()=>{if(document.getElementById('app-signals')?.hidden===false){prefs.scroll=root.scrollY||0;root.clearTimeout(scrollTimer);scrollTimer=root.setTimeout(savePrefs,150);}},{passive:true});
+root.addEventListener('pagehide',savePrefs);
 if(root.requestAnimationFrame)root.requestAnimationFrame(()=>root.requestAnimationFrame(()=>{if(document.getElementById('app-signals')?.hidden===false)root.scrollTo?.(0,restoreScroll);}));
 setInterval(render,1000);render();
 })(typeof window==='undefined'?globalThis:window);

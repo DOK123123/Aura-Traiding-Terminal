@@ -54,8 +54,10 @@ const server=http.createServer((req,res)=>{if(req.method!=='GET'){posts++;res.wr
  await page.waitForFunction(()=>document.querySelector('#aura-explainable [data-frame="1h"][data-direction="SHORT"]')?.dataset.state==='WATCH');
  assert.equal(await page.locator('#aura-explainable article').count(),8);
  assert.equal(await page.locator('#aura-explainable article:visible').count(),2);
+ await page.locator('.signal-settings > summary').click();
  await page.getByRole('button',{name:'Включить звук WATCH · открытая вкладка',exact:true}).click();
  await page.waitForFunction(()=>document.getElementById('aura-explainable').textContent.includes('Web Audio запланирован'));
+ await page.locator('.signal-settings > summary').click();
  const watch=page.locator('#aura-explainable [data-frame="1h"][data-direction="SHORT"]');
  assert.match(await watch.textContent(),/Breakout \+ Retest/);assert.match(await watch.textContent(),/Почему SL здесь/);assert.match(await watch.textContent(),/Почему TP здесь/);assert.doesNotMatch(await watch.textContent(),/max_seconds|Entry time/);
  await page.locator('#explain-risk').fill('25');assert.match(await watch.textContent(),/Размер позиции ≤/);

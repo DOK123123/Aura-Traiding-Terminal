@@ -184,3 +184,6 @@ body[data-aura-app="mobile"] .aura-tab-pane {overflow-wrap:break-word;}
 #signals-market{min-height:3.2em;line-height:1.6}
 .signal-description,.signal-refusal{min-height:3.2em}
 .signal-plan-state{min-height:3.2em}
+.signal-settings{margin:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.signal-settings>summary{min-height:44px;padding:10px 0;cursor:pointer;font-weight:600}
+.signal-settings p{line-height:1.5}
