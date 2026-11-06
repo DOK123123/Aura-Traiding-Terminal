@@ -24,6 +24,18 @@
           "value": "false"
         },
         {
+          "key": "AURA_PREVIEW_SIGNALS_ENABLED",
+          "value": "true"
+        },
+        {
+          "key": "AURA_PREVIEW_SIGNAL_LOCK_ENABLED",
+          "value": "true"
+        },
+        {
+          "key": "AURA_PREVIEW_PUSH_ENABLED",
+          "value": "true"
+        },
+        {
           "key": "AURA_PREVIEW_OWNER_PASSWORD",
           "sync": false
         },
@@ -43,3 +55,4 @@
     }
   ]
 }
+

@@ -77,6 +77,9 @@ jobs:
         run: |
           export PYTHON="$PWD/.ci-venv/bin/python"
           export CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          "$PYTHON" -m pytest -q tests/test_signal_lock.py tests/test_signal_lock_runtime.py tests/test_preview_push_api.py
+          node scripts/verify_signal_lock_browser.cjs work/signal-lock-browser
+          node scripts/verify_signal_lock_integration.cjs work/signal-lock-integration-browser
           node scripts/verify_explainable_browser.cjs work/explainable-browser
           node scripts/verify_replay_alerts_browser.cjs work/replay-alerts-browser
           node scripts/verify_manual_strategies_browser.cjs work/strategies-browser
@@ -93,4 +96,5 @@ jobs:
           path: work/*browser
           if-no-files-found: warn
           retention-days: 7
+
 

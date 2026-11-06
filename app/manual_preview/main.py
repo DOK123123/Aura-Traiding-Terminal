@@ -20,6 +20,8 @@ from .store import PreviewStore
 from .page import page,ROOT,ASSETS
 from .history import archive_history,public_history,bounds as history_bounds
 from .signals import router as signals_router, observer_lifespan
+from .lock_runtime import lock_lifespan
+from .push_api import router as push_router, history_router, allowed_write
 import httpx
 
 
@@ -51,7 +53,8 @@ async def lifespan(app):
             if config.manual_enabled:task=asyncio.create_task(app.state.manual_paper.run_protection())
             app.state.preview_protection_task=task
             try:
-                async with observer_lifespan(app,client,config.signals_enabled):yield
+                async with observer_lifespan(app,client,config.signals_enabled):
+                    async with lock_lifespan(app,store,config.lock_enabled,config.push_enabled):yield
             finally:
                 try:
                     if task:
@@ -70,6 +73,8 @@ app.dependency_overrides[owner]=preview_owner
 app.include_router(manual_router)
 app.include_router(analyst_router)
 app.include_router(signals_router)
+app.include_router(push_router)
+app.include_router(history_router)
 
 @app.middleware('http')
 async def isolate(request,call_next):
@@ -77,8 +82,9 @@ async def isolate(request,call_next):
         try:await preview_owner(request)
         except HTTPException as exc:return JSONResponse({'code':'PREVIEW_OWNER_REQUIRED'},status_code=401,headers=exc.headers)
         if request.method not in ('GET','HEAD'):
-            if (request.method!='POST' or not request.url.path.startswith('/api/manual-paper/')
-                    or request.headers.get('X-Aura-Preview-Confirm')!='manual-virtual'):
+            manual_write=(request.method=='POST' and request.url.path.startswith('/api/manual-paper/')
+                          and request.headers.get('X-Aura-Preview-Confirm')=='manual-virtual')
+            if not manual_write and not allowed_write(request):
                 return JSONResponse({'code':'PREVIEW_EXPLICIT_CONFIRMATION_REQUIRED'},status_code=403,headers=HEADERS)
     if request.method=='POST' and request.url.path=='/api/manual-paper/orders' and request.app.state.preview_config.manual_enabled:
         task=getattr(request.app.state,'preview_protection_task',None)
@@ -317,13 +323,27 @@ async def health():
     reference=last if last is not None else getattr(app.state,'preview_signals_started_at',time.time())
     overdue=enabled and time.time()-reference>120
     degraded=enabled and (not running or overdue)
+    worker=getattr(app.state,'signal_lock',None)
+    lock_enabled=getattr(app.state.preview_config,'lock_enabled',False)
+    lock_ready=bool(worker and worker.error is None and time.time()-worker.updated_at<=7)
+    if lock_enabled and worker and worker.error is not None:degraded=True
     return JSONResponse({'status':'degraded' if degraded else 'ok','scope':'ISOLATED_MANUAL_PREVIEW',
             'exchange_execution':False,'active43_controller_enabled':False,'automatic_entry_scheduler_enabled':False,
             'signal_observer_enabled':enabled,'signal_observer_running':running,
-            'signal_observer_last_cycle_at':last,'signal_observer_overdue':overdue},status_code=503 if degraded else 200)
+            'signal_observer_last_cycle_at':last,'signal_observer_overdue':overdue,
+            'signal_lock_enabled':lock_enabled,'signal_lock_ready':lock_ready,
+            'push_configured':bool(worker and worker.sender),
+            'push_delivery_error':getattr(worker,'delivery_error',None),
+            'build_sha':os.environ.get('RENDER_GIT_COMMIT','LOCAL_UNRELEASED')},status_code=503 if degraded else 200)
 
 @app.get('/')
-async def index(request:Request):return HTMLResponse(page(request.app.state.preview_ws_token,server_signals=request.app.state.preview_config.signals_enabled),headers={'Cache-Control':'no-store'})
+async def index(request:Request):return HTMLResponse(page(request.app.state.preview_ws_token,server_signals=request.app.state.preview_config.signals_enabled,
+    signal_lock=request.app.state.preview_config.lock_enabled),headers={'Cache-Control':'no-store'})
+
+@app.get('/signal-lock-sw.js')
+async def signal_worker():
+    return FileResponse(ROOT/'static/signal-lock-sw.js',media_type='text/javascript',
+                        headers={'Cache-Control':'no-store','Service-Worker-Allowed':'/'})
 
 @app.get('/api/paper/login')
 async def login():return RedirectResponse('/',303)
@@ -374,3 +394,4 @@ async def preview_replay_history(request:Request):
         return JSONResponse(result,headers={'Cache-Control':'no-store'})
     except (httpx.HTTPError,ValueError,TypeError,KeyError,OverflowError,OSError,TimeoutError):
         return JSONResponse({'code':'REPLAY_HISTORY_UNAVAILABLE_OR_INVALID'},503,headers={'Cache-Control':'no-store'})
+
