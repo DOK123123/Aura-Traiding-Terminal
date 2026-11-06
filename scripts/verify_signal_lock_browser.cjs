@@ -7,9 +7,9 @@ const {chromium,devices}=require('playwright');
  const allowed={'/signal-lock.js':'static/signal-lock.js','/signal-lock.css':'static/signal-lock.css'};
  const server=http.createServer((req,res)=>{
   if(req.method!=='GET'){res.writeHead(405);res.end();return;}
-  if(allowed[req.url]){res.setHeader('Content-Type',req.url.endsWith('.js')?'text/javascript':'text/css');res.end(fs.readFileSync(allowed[req.url]));return;}
+  if(allowed[req.url]){res.setHeader('Content-Type',(req.url.endsWith('.js')?'text/javascript':'text/css')+'; charset=utf-8');res.end(fs.readFileSync(allowed[req.url]));return;}
   if(req.url!=='/'){res.writeHead(404);res.end();return;}
-  res.setHeader('Content-Type','text/html');res.end('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/signal-lock.css"><div id="view"></div><script src="/signal-lock.js"></script><script>window.clock=1000;window.view=AuraSignalLock.mount(document.getElementById("view"),{now:()=>clock});</script>');
+  res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/signal-lock.css"><div id="view"></div><script src="/signal-lock.js"></script><script>window.clock=1000;window.view=AuraSignalLock.mount(document.getElementById("view"),{now:()=>clock});</script>');
  });
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  let browser;const results=[];
@@ -23,6 +23,8 @@ const {chromium,devices}=require('playwright');
     window.old={id:'a'.repeat(64),frame:'15m',direction:'LONG',strategy:'TREND_PULLBACK',status:'CANDIDATE',score:70,detected_at:900,valid_until:3000,last_seen:1000,plan:null,missing:['X','Y']};view.update([old]);
    });
    await page.locator('summary').click();
+   assert.equal(await page.locator('[data-status]').textContent(),'Предварительный кандидат');
+   assert.match(await page.locator('summary').textContent(),/Открыть подробности/);
    const original=await page.evaluate(()=>view.selection());
    await page.evaluate(()=>window.scrollTo(0,150));
    const before=await page.evaluate(()=>scrollY);
