@@ -19,6 +19,7 @@ from .config import parse
 from .store import PreviewStore
 from .page import page,ROOT,ASSETS
 from .history import archive_history,public_history,bounds as history_bounds
+from .push import router as push_router
 from .signals import router as signals_router, observer_lifespan
 import httpx
 
@@ -70,13 +71,14 @@ app.dependency_overrides[owner]=preview_owner
 app.include_router(manual_router)
 app.include_router(analyst_router)
 app.include_router(signals_router)
+app.include_router(push_router)
 
 @app.middleware('http')
 async def isolate(request,call_next):
     if request.url.path!='/api/health':
         try:await preview_owner(request)
         except HTTPException as exc:return JSONResponse({'code':'PREVIEW_OWNER_REQUIRED'},status_code=401,headers=exc.headers)
-        if request.method not in ('GET','HEAD'):
+        if request.method not in ('GET','HEAD') and not (request.method == 'POST' and request.url.path in {'/api/preview/push/subscribe','/api/preview/push/unsubscribe','/api/preview/push/test','/api/preview/push/delivery'}):
             if (request.method!='POST' or not request.url.path.startswith('/api/manual-paper/')
                     or request.headers.get('X-Aura-Preview-Confirm')!='manual-virtual'):
                 return JSONResponse({'code':'PREVIEW_EXPLICIT_CONFIRMATION_REQUIRED'},status_code=403,headers=HEADERS)
@@ -317,13 +319,17 @@ async def health():
     reference=last if last is not None else getattr(app.state,'preview_signals_started_at',time.time())
     overdue=enabled and time.time()-reference>120
     degraded=enabled and (not running or overdue)
+    lock=getattr(app.state,'signal_lock',None)
+    push=getattr(app.state,'preview_push',None)
     return JSONResponse({'status':'degraded' if degraded else 'ok','scope':'ISOLATED_MANUAL_PREVIEW',
             'exchange_execution':False,'active43_controller_enabled':False,'automatic_entry_scheduler_enabled':False,
             'signal_observer_enabled':enabled,'signal_observer_running':running,
-            'signal_observer_last_cycle_at':last,'signal_observer_overdue':overdue},status_code=503 if degraded else 200)
+            'signal_observer_last_cycle_at':last,'signal_observer_overdue':overdue,
+            'signal_lock_ready':bool(lock and not lock.error and time.time()-lock.updated_at<=5),
+            'push_configured':bool(push and push.ready)},status_code=503 if degraded else 200)
 
 @app.get('/')
-async def index(request:Request):return HTMLResponse(page(request.app.state.preview_ws_token,server_signals=request.app.state.preview_config.signals_enabled),headers={'Cache-Control':'no-store'})
+async def index(request:Request):return HTMLResponse(page(request.app.state.preview_ws_token,server_signals=request.app.state.preview_config.signals_enabled,server_lock=True),headers={'Cache-Control':'no-store'})
 
 @app.get('/api/paper/login')
 async def login():return RedirectResponse('/',303)
@@ -374,3 +380,9 @@ async def preview_replay_history(request:Request):
         return JSONResponse(result,headers={'Cache-Control':'no-store'})
     except (httpx.HTTPError,ValueError,TypeError,KeyError,OverflowError,OSError,TimeoutError):
         return JSONResponse({'code':'REPLAY_HISTORY_UNAVAILABLE_OR_INVALID'},503,headers={'Cache-Control':'no-store'})
+
+
+@app.get('/aura5-sw.js')
+async def signal_worker():
+    return FileResponse(ROOT/'static/aura5-sw.js', media_type='application/javascript',
+                        headers={'Service-Worker-Allowed': '/', 'Cache-Control': 'no-store'})

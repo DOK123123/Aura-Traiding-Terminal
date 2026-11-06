@@ -1,0 +1,11 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
+const UI=require('../static/signal-lock-ui.js');
+test('cached active scenario becomes UNKNOWN immediately when stale, without losing ID',()=>{const r={id:'a'.repeat(64),status:'WATCH',refreshed_at:100,valid_until:200},d={server_time:100,updated_at:100};assert.equal(UI.current(r,d,100),'WATCH');assert.equal(UI.current(r,d,106),'UNKNOWN');assert.equal(r.id,'a'.repeat(64));assert.equal(UI.current({...r,status:'INVALIDATED'},d,106),'INVALIDATED');});
+test('Service Worker displays a system notification and opens only a same-origin scenario URL',async()=>{const events={},notifications=[],opened=[];
+ const self={location:{origin:'https://preview.example.invalid'},addEventListener:(k,f)=>events[k]=f,registration:{showNotification:async(...x)=>notifications.push(x)},clients:{matchAll:async()=>[],openWindow:async u=>opened.push(u)}};
+ vm.runInNewContext(fs.readFileSync('static/aura5-sw.js','utf8'),{self,URL,Date});let done;
+ events.push({data:{json:()=>({title:'Aura 5 WATCH',body:'DUMMY FIXTURE',event_id:'b'.repeat(64),scenario_id:'a'.repeat(64)})},waitUntil:p=>done=p});await done;
+ assert.equal(notifications.length,1);assert.equal(notifications[0][1].silent,false);assert.equal(notifications[0][1].renotify,false);
+ events.notificationclick({notification:{close(){},data:notifications[0][1].data},waitUntil:p=>done=p});await done;const u=new URL(opened[0]);assert.equal(u.origin,self.location.origin);assert.equal(u.searchParams.get('scenario'),'a'.repeat(64));
+ assert.equal(events.fetch,undefined);
+});

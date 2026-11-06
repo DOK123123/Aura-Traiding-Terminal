@@ -80,7 +80,7 @@ def reduce_signal(previous: dict | None, candidate: dict, now: float, *, trusted
     else:
         state, reason = 'CANDIDATE', 'MISSING_MANDATORY_CONDITIONS'
     row['score'] = score
-    row['missing'] = [x.get('code') for x in checks or [] if isinstance(x, dict) and x.get('passed') is not True]
+    row['missing'] = list(dict.fromkeys([x.get('code') for x in checks or [] if isinstance(x, dict) and x.get('passed') is not True] + candidate.get('rejection', [])))
     row['current_plan'] = ({k: candidate[k] for k in ('entry', 'sl', 'tp', 'net_rr')}
                            if state == 'WATCH' else None)
     if state == 'WATCH' and old != 'WATCH':

@@ -22,3 +22,22 @@ typing-inspection==0.4.4
 typing_extensions==4.16.0
 uvicorn==0.34.2
 websockets==15.0.1
+
+# Aura 5 Web Push dependency closure.
+pywebpush==2.5.0
+py-vapid==1.9.6
+http-ece==1.2.1
+cryptography==50.0.2
+requests==2.34.2
+cffi==2.1.1
+pycparser==3.12
+charset_normalizer==3.5.2
+urllib3==2.8.0
+aiohttp==3.14.5
+aiohappyeyeballs==2.7.1
+aiosignal==1.4.0
+attrs==26.1.0
+frozenlist==1.8.0
+multidict==7.2.1
+propcache==0.5.4
+yarl==1.25.1
