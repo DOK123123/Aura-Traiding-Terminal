@@ -6,6 +6,7 @@ qualify WATCH. Persistence and transport are injected, never local fallbacks.
 import copy
 import hashlib
 import math
+from typing import Protocol
 
 from .explainable import VERSION, NAMES, MODEL_HASH
 from app.hunter.costs import risk_reward
@@ -16,17 +17,17 @@ TERMINAL = {'EXPIRED', 'INVALIDATED'}
 PLAN_KEYS = ('entry', 'sl', 'tp', 'net_rr')
 
 
-def finite(value):
+def finite(value: object) -> bool:
     return type(value) in (int, float) and math.isfinite(value)
 
 
-def identity(c):
+def identity(c: dict) -> str:
     """Independent of quote, score, detection time and process lifetime."""
     parts = [VERSION, c['model_sha256'], c['strategy'], c['direction'], c['frame'], c['closed_at']]
     return hashlib.sha256(repr(parts).encode()).hexdigest()
 
 
-def trusted(c, quote, now):
+def trusted(c: dict, quote: dict | None, now: float) -> bool:
     try:
         step = STEPS[c['frame']]
         return (c['version'] == VERSION and c['source'] == SOURCE
@@ -49,7 +50,7 @@ def trusted(c, quote, now):
         return False
 
 
-def watch(c, quote):
+def watch(c: dict, quote: dict) -> bool:
     try:
         sign = 1 if c['direction'] == 'LONG' else -1
         step = STEPS[c['frame']]
@@ -69,7 +70,7 @@ def watch(c, quote):
         return False
 
 
-def project(event, now):
+def project(event: dict, now: float) -> dict:
     """Cached/durable WATCH must not become actionable after restart or sleep."""
     row = copy.deepcopy(event)
     if row['status'] not in TERMINAL:
@@ -83,7 +84,8 @@ def project(event, now):
     return row
 
 
-def advance(state, candidates, quotes, now, running=True, cooldown=300):
+def advance(state: dict | None, candidates: list[dict], quotes: dict, now: float,
+            running: bool = True, cooldown: int = 300) -> dict:
     if not finite(now) or now < 0:
         raise ValueError('INVALID_CLOCK')
     result = copy.deepcopy(state or {'events': {}, 'notices': {}, 'cooldowns': {}})
@@ -144,14 +146,19 @@ def advance(state, candidates, quotes, now, running=True, cooldown=300):
     return result
 
 
+class LockStore(Protocol):
+    def load(self) -> tuple[int, dict | None]: ...
+    def compare_and_swap(self, version: int, state: dict) -> bool: ...
+
+
 class Service:
     """Store CAS persists lifecycle and dedup notices in one transaction."""
-    def __init__(self, store):
+    def __init__(self, store: LockStore | None) -> None:
         if store is None:
             raise ValueError('DURABLE_STORE_REQUIRED')
         self.store = store
 
-    def step(self, candidates, quotes, now, running=True):
+    def step(self, candidates: list[dict], quotes: dict, now: float, running: bool = True) -> list[dict]:
         for _ in range(3):
             version, state = self.store.load()
             updated = advance(state, candidates, quotes, now, running)

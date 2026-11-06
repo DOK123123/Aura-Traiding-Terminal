@@ -8,11 +8,12 @@ import hashlib
 import json
 import re
 from urllib.parse import urlsplit
+from typing import Callable
 
 ALLOWED_HOSTS = {'fcm.googleapis.com', 'updates.push.services.mozilla.com', 'web.push.apple.com'}
 
 
-def subscription(value):
+def subscription(value: dict) -> dict:
     if not isinstance(value, dict):
         raise ValueError('INVALID_SUBSCRIPTION')
     endpoint = value.get('endpoint', '')
@@ -36,14 +37,16 @@ def subscription(value):
     return {'endpoint': endpoint, 'keys': {k: keys[k] for k in ('p256dh', 'auth')}}
 
 
-def subscription_id(value):
+def subscription_id(value: dict) -> str:
     return hashlib.sha256(subscription(value)['endpoint'].encode()).hexdigest()
 
 
 class Sender:
-    def __init__(self, private_key, public_key, contact, implementation=None):
+    def __init__(self, private_key: str, public_key: str, contact: str,
+                 implementation: Callable | None = None) -> None:
         # A filename is never accepted as a key; pywebpush must not read files.
-        if (not re.fullmatch(r'[A-Za-z0-9_-]{43}', private_key or '')
+        if (not isinstance(private_key, str) or not isinstance(public_key, str)
+                or not re.fullmatch(r'[A-Za-z0-9_-]{43}', private_key or '')
                 or not re.fullmatch(r'[A-Za-z0-9_-]{87}', public_key or '')
                 or not isinstance(contact, str) or not re.fullmatch(r'mailto:[^\s@]+@[^\s@]+', contact)):
             raise ValueError('OWNER_VAPID_CONFIGURATION_REQUIRED')
@@ -58,7 +61,7 @@ class Sender:
             implementation = webpush
         self._send = implementation
 
-    def send(self, target, payload, session):
+    def send(self, target: dict, payload: dict, session: object) -> str:
         """session must be server-owned with redirects disabled (see below)."""
         safe = subscription(target)
         data = json.dumps(payload, separators=(',', ':'))
@@ -76,7 +79,7 @@ class Sender:
         return 'ACCEPTED_NOT_DEVICE_CONFIRMED' if code in (200, 201, 202) else 'GONE' if code in (404, 410) else 'RETRY'
 
 
-def no_redirect_session():
+def no_redirect_session() -> object:
     # Optional dependency only needed when push is actually configured.
     import requests
 

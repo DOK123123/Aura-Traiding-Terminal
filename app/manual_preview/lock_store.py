@@ -6,7 +6,7 @@ class DurableLockStore:
     def __init__(self, preview_store):
         self.preview = preview_store
 
-    def _rpc(self, method, arguments):
+    def _rpc(self, method: str, arguments: dict) -> object:
         self.preview.verify_scope()
         with self.preview.client.stream('POST', self.preview.base + '/rest/v1/rpc/' + method,
                                         json=arguments, timeout=8, follow_redirects=False) as response:
@@ -21,7 +21,7 @@ class DurableLockStore:
                     raise ValueError('LOCK_STORAGE_LIMIT')
             return json.loads(raw)
 
-    def load(self):
+    def load(self) -> tuple[int, dict]:
         value = self._rpc('aura_preview_lock_load_v1', {})
         if (not isinstance(value, dict) or type(value.get('version')) is not int
                 or value['version'] < 0 or not isinstance(value.get('state'), dict)
@@ -29,6 +29,6 @@ class DurableLockStore:
             raise ValueError('LOCK_STORAGE_FORMAT')
         return value['version'], value['state']
 
-    def compare_and_swap(self, version, state):
+    def compare_and_swap(self, version: int, state: dict) -> bool:
         value = self._rpc('aura_preview_lock_commit_v1', {'p_version': version, 'p_state': state})
         return value is True
