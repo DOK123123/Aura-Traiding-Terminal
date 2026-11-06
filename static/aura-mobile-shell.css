@@ -142,3 +142,12 @@ body[data-aura-app="mobile"] .aura-tab-pane {overflow-wrap:break-word;}
 .explain-plan div {padding:.5rem;border:1px solid currentColor;border-radius:.5rem}
 .explain-plan dt {font-size:.8rem}
 .explain-plan dd {margin:0;font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums}
+.explain-plan div,.explain-plan dd{min-width:0;overflow-wrap:anywhere}
+.explain-cards button{min-height:48px;max-width:100%;white-space:normal;padding:12px;margin:6px 0}
+.explain-cards article[data-state="SNAPSHOT"]{border:2px dashed var(--muted)}
+.explain-history{margin:16px 0;padding:16px;border:1px solid var(--line);border-radius:16px;overflow-wrap:anywhere}
+.explain-history summary{min-height:44px;cursor:pointer;font-weight:700}
+.explain-history li{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:12px}
+.explain-history ol{padding-left:20px}
+@media(max-width:480px){.explain-cards article{padding:14px}.explain-cards h3{font-size:19px}.explain-cards button{width:100%}}
+

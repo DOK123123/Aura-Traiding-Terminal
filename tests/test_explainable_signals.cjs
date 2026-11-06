@@ -28,6 +28,7 @@ test('quote refresh preserves card and open details; expiry removes the chart pl
  class Element {
   constructor(tag){this.tag=tag;this.children=[];this.dataset={};this.events={};this.textContent='';this.hidden=false;this.open=false;}
   append(child){this.children.push(child);}
+  setAttribute(key,value){this[key]=value;}
   replaceChildren(){this.children=[];}
   addEventListener(type,handler){this.events[type]=handler;}
  }
@@ -53,12 +54,17 @@ test('quote refresh preserves card and open details; expiry removes the chart pl
  details.open=true;
  button.events.click();
  assert.equal(overlays['1h'].plan.entry,100);
+ for(let i=0;i<120;i++){q.ask=candidate.entry=100+i/10000;receive();assert.ok(cards.children.includes(card)&&details.open);}
+ const pin=card.children.find(e=>e.textContent==='Закрепить сигнал');
+ pin.onclick();const frozen=entry.textContent;
+ for(let i=0;i<120;i++){q.ask=candidate.entry=100+i/10000;receive();assert.equal(entry.textContent,frozen);assert.equal(card.dataset.state,'SNAPSHOT');}
+ pin.onclick();const afterPinEvidence=body.children[0];
  q.ask=candidate.entry=100.02;
  candidate.target_explanation.distance_atr=5.01;
  receive();
  assert.ok(cards.children.includes(card));
  assert.equal(card.dataset.scenarioId,candidate.id);
- assert.ok(details.open&&body.children.includes(evidence));
+ assert.ok(details.open&&body.children.includes(afterPinEvidence));
  assert.equal(entry.textContent,'100.02');
  time+=6;render();
  assert.equal(card.dataset.state,'UNKNOWN');
@@ -66,4 +72,23 @@ test('quote refresh preserves card and open details; expiry removes the chart pl
  assert.equal(entry.textContent,'100.02');
  assert.ok(button.hidden&&details.open);
  assert.equal(overlays['1h'],undefined);
+});
+
+
+
+test('only validated WATCH is archived, first observation survives 120 quotes and reload',()=>{
+ const storage={value:null,getItem(){return this.value;},setItem(k,v){this.value=v;}};
+ const journal=new E.WatchHistory(storage),d=data(),c=d.explainable_candidates[0];c.id='a'.repeat(64);
+ for(let i=0;i<120;i++){d.quotes['1h'].ask=c.entry=100+i/10000;journal.observe(d,now);}
+ assert.equal(journal.rows.length,1);assert.equal(journal.rows[0].c.entry,100);
+ assert.equal(new E.WatchHistory(storage).rows[0].c.entry,100);
+ c.state='REJECTED';c.rejection=['TEST_REFUSAL'];journal.observe(d,now);assert.equal(journal.rows.length,1);
+ c.id='b'.repeat(64);c.state='WATCH';c.rejection=[];d.quotes['1h'].time-=6;journal.observe(d,now);
+ assert.equal(journal.rows.length,1);assert.equal(E.usable(d,journal.rows[0].c,now),false);
+});
+test('missing levels, UNKNOWN and unavailable storage cannot invent a WATCH',()=>{
+ const journal=new E.WatchHistory({getItem(){throw Error('blocked');},setItem(){throw Error('blocked');}});
+ const d=data();d.explainable_candidates[0].entry=null;journal.observe(d,now);assert.equal(journal.rows.length,0);
+ assert.equal(journal.available,false);
+ d.explainable_candidates[0].state='UNKNOWN';journal.observe(d,now);assert.equal(journal.rows.length,0);
 });

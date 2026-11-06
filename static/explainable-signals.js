@@ -43,7 +43,25 @@ function usable(data,c,now,threshold=0){const q=data?.quotes?.[c?.frame];return 
  &&Array.isArray(c.checks)&&c.checks.length>0&&c.checks.every(x=>x.passed===true)&&c.rejection?.length===0&&levels(c)&&c.net_rr>=1.5
  &&c.entry===q[c.direction==='LONG'?'ask':'bid']);}
 function position(c,risk){return Number.isFinite(risk)&&risk>0&&levels(c)?risk/c.costs.net_loss:null;}
-const api={VERSION,FRAMES,NAMES,candidates:candidateRows,evidence,fresh,levels,usable,position};root.AuraExplainable=api;if(typeof module!=='undefined')module.exports=api;
+const HISTORY_KEY='aura5.explainable.watch-history.v1';
+const watchKey=c=>[c.model_sha256,c.id,c.strategy,c.frame,c.direction,c.closed_at].join(':');
+class WatchHistory{
+ constructor(storage){this.storage=storage;this.rows=[];this.available=true;
+  try{const raw=storage.getItem(HISTORY_KEY)||'[]';if(raw.length>2000000)throw Error('LIMIT');
+   const rows=JSON.parse(raw);if(!Array.isArray(rows))throw Error('FORMAT');
+   this.rows=rows.filter(r=>Number.isFinite(r?.at)&&evidence(r.c)&&levels(r.c)&&r.c.state==='WATCH'
+    &&Object.hasOwn(NAMES,r.c.strategy)&&Object.hasOwn(FRAMES,r.c.frame)&&r.key===watchKey(r.c)).slice(-100);
+  }catch{this.available=false;}}
+ observe(data,now){let changed=false;
+  for(const c of candidateRows(data)){if(!usable(data,c,now)||typeof c.id!=='string'||!/^[a-f0-9]{64}$/.test(c.id)||this.rows.some(r=>r.key===watchKey(c)))continue;
+   const raw=JSON.stringify(c);if(raw.length>16000)continue;
+   this.rows.push({key:watchKey(c),at:now,c:JSON.parse(raw)});changed=true;
+  }
+  if(changed){this.rows=this.rows.slice(-100);try{this.storage.setItem(HISTORY_KEY,JSON.stringify(this.rows));}catch{this.available=false;}}
+  return changed;
+ }
+}
+const api={VERSION,FRAMES,NAMES,candidates:candidateRows,evidence,fresh,levels,usable,position,WatchHistory,HISTORY_KEY,watchKey};root.AuraExplainable=api;if(typeof module!=='undefined')module.exports=api;
 if(!root.document)return;
 const host=document.getElementById('aura-explainable');if(!host)return;
 const add=(tag,text,parent)=>{const e=document.createElement(tag);e.textContent=text;parent.append(e);return e;};
@@ -70,9 +88,24 @@ async function notify(now){
 audio.onclick=async()=>{if(audioReady){audioReady=false;player.suspend();audio.textContent='Включить звук WATCH · открытая вкладка';audioStatus.textContent='Звук выключен';return;}
  if(!navigator.locks?.request){audioStatus.textContent='Без безопасного исключения дублей звук недоступен';return;}
  try{audioReady=await player.activate();}catch{audioReady=false;}audio.textContent=audioReady?'Выключить звук WATCH':'Включить звук WATCH · открытая вкладка';if(audioReady)void notify(Date.now()/1000);};
-const cards=add('div','',host);cards.className='sc-cards explain-cards';
 let latest=null,initialized=false,selected=null;
 const slots=[];
+const storage=(()=>{try{return localStorage;}catch{return {getItem(){throw Error('UNAVAILABLE');},setItem(){throw Error('UNAVAILABLE');}};}})();
+const archive=new WatchHistory(storage),history=add('details','',host);
+history.className='explain-history';add('summary','История проверенных WATCH · снимки, не действующие сигналы',history);
+const historyStatus=add('p','',history),historyList=add('ol','',history),historyNodes=new Map();
+function historyPaint(){
+ text(historyStatus,archive.available?'Локальная история этого браузера · до 100 WATCH. Сохранённые уровни не обновляются и не разрешают вход.':'Хранилище недоступно: история сохраняется только до закрытия вкладки.');
+ for(const row of archive.rows.slice().reverse()){
+  if(historyNodes.has(row.key))continue;
+  const c=row.c,li=add('li','',historyList);li.dataset.watchKey=row.key;
+  add('strong','НЕАКТУАЛЕН · сохранённый WATCH · '+c.direction+' · '+c.frame+' · '+c.name,li);
+  add('p',new Date(row.at*1000).toISOString()+' · Entry '+fmt(c.entry)+' · SL '+fmt(c.sl)+' · TP '+fmt(c.tp)+' · Net R/R '+fmt(c.net_rr),li);
+  add('p','Причина входа: '+c.entry_reason+' · Подтверждение: '+c.confirmation+' · Отмена: '+c.cancel,li);
+  historyNodes.set(row.key,li);
+ }
+ for(const [key,node] of historyNodes)if(!archive.rows.some(r=>r.key===key)){node.remove();historyNodes.delete(key);}
+}
 function text(node,value){if(node.textContent!==value)node.textContent=value;}
 function hide(node,hidden){if(node.hidden!==hidden)node.hidden=hidden;}
 function zoneList(candidate){
@@ -80,6 +113,7 @@ function zoneList(candidate){
   &&Number.isFinite(z.lower)&&Number.isFinite(z.upper)&&z.lower>0&&z.upper>z.lower
   &&Number.isInteger(z.touches)&&z.touches>=2&&Number.isFinite(z.confirmed_at)&&z.confirmed_at<candidate.closed_at).slice(0,2):[];
 }
+const cards=add('div','',host);cards.className='sc-cards explain-cards';
 for(const frame of Object.keys(FRAMES))for(const direction of ['LONG','SHORT']){
  const card=add('article','',cards);card.dataset.frame=frame;card.dataset.direction=direction;
  const title=add('h3','',card),description=add('p','',card),refusal=add('p','',card),plan=add('section','',card);
@@ -91,7 +125,10 @@ for(const frame of Object.keys(FRAMES))for(const direction of ['LONG','SHORT']){
  const size=add('p','',plan),button=add('button','На графике',card);button.type='button';
  const detail=add('details','',card);add('summary','Почему такой сигнал',detail);
  const body=add('div','',detail);
- const slot={frame,direction,card,title,description,refusal,plan,planStatus,values,size,button,detail,body};
+ const pin=add('button','Закрепить сигнал',card);pin.type='button';pin.setAttribute('aria-pressed','false');
+ const slot={frame,direction,card,title,description,refusal,plan,planStatus,values,size,button,detail,body,pin};
+ pin.onclick=()=>{slot.snapshot=slot.snapshot?null:slot.reading?JSON.parse(JSON.stringify(slot.reading)):null;
+  pin.setAttribute('aria-pressed',String(!!slot.snapshot));pin.textContent=slot.snapshot?'Открепить снимок':'Закрепить сигнал';render();};
  slots.push(slot);
  button.addEventListener('click',()=>{
   selected={frame,direction,id:slot.id};
@@ -102,37 +139,40 @@ for(const frame of Object.keys(FRAMES))for(const direction of ['LONG','SHORT']){
 }
 function render(){
  const now=Date.now()/1000;
+ archive.observe(latest,now);historyPaint();
  void notify(now);
  const all=candidateRows(latest),overlays={};
  for(const slot of slots){
   const {frame,direction,card,title,description,refusal,plan,planStatus,values,size,button,detail,body}=slot;
   const rows=all.filter(c=>c.frame===frame&&c.direction===direction&&Object.hasOwn(NAMES,c.strategy));
   const verified=rows.filter(c=>fresh(latest,c,now));
-  verified.sort((a,b)=>Number(usable(latest,b,now))-Number(usable(latest,a,now))||b.score-a.score
-   ||Number(b.id===slot.id)-Number(a.id===slot.id));
-  const x=verified[0],watch=usable(latest,x,now),state=x?(watch?'WATCH':'REJECTED'):'UNKNOWN';
+  verified.sort((a,b)=>Number(usable(latest,b,now))-Number(usable(latest,a,now))
+   ||Number(b.id===slot.id)-Number(a.id===slot.id)||b.score-a.score);
+  const x=slot.snapshot||verified[0],watch=!slot.snapshot&&usable(latest,x,now),state=slot.snapshot?'SNAPSHOT':x?(watch?'WATCH':'REJECTED'):'UNKNOWN';
   if(card.dataset.state!==state)card.dataset.state=state;
   if(x&&x.id!==slot.id){slot.id=x.id;card.dataset.scenarioId=x.id;}
   if(watch)slot.lastPlan=x;
-  const historical=!x&&slot.lastPlan;
-  const displayed=x&&levels(x)?x:historical||null;
+  if(!slot.lastPlan){const old=archive.rows.slice().reverse().find(r=>r.c.frame===frame&&r.c.direction===direction);if(old)slot.lastPlan=old.c;}
+  const historical=!watch&&!slot.snapshot&&slot.lastPlan;
+  const displayed=slot.snapshot&&levels(slot.snapshot)?slot.snapshot:watch?x:historical||(x&&levels(x)?x:null);
+  slot.reading=displayed||x||historical||null;slot.pin.disabled=!slot.reading;
   hide(plan,!displayed);
-  text(title,direction+' · '+frame+' · '+state+(x?' · '+x.score+'/100':''));
+  text(title,direction+' · '+frame+' · '+({WATCH:'ЕСТЬ ТЕХНИЧЕСКИЙ СЦЕНАРИЙ',REJECTED:'НЕ ВХОДИТЬ',UNKNOWN:'НЕДОСТАТОЧНО ДАННЫХ',SNAPSHOT:'СНИМОК · НЕ ДЕЙСТВУЮЩИЙ СИГНАЛ'}[state])+(x?' · '+x.score+'/100':''));
   const missing=reasons(rows.find(c=>c.state==='UNKNOWN')).map(label).join(' · ');
-  text(description,x?'Стратегия: '+x.name:'Данные не подтверждены. '+(missing||'Нет свежего снимка котировок и закрытых свечей.'));
+  text(description,(x?'Стратегия: '+x.name:'Данные не подтверждены. '+(missing||'Нет свежего снимка котировок и закрытых свечей.'))+(!displayed?' Entry/SL/TP не рассчитаны: нет проверенного корректного плана.':''));
   hide(refusal,state!=='REJECTED');
   text(refusal,state==='REJECTED'?'Отказ: '+(reasons(x).map(label).join(' · ')||'План не прошёл проверку'): '');
   if(displayed){
-   text(planStatus,historical?'НЕАКТУАЛЕН · '+displayed.name+' · '+new Date(displayed.quote_time*1000).toISOString()
+   text(planStatus,slot.snapshot?'ЗАКРЕПЛЁННЫЙ СНИМОК · НЕАКТУАЛЕН · '+new Date(displayed.quote_time*1000).toISOString()+' · рынок продолжает обновляться':historical?'НЕАКТУАЛЕН · '+displayed.name+' · '+new Date(displayed.quote_time*1000).toISOString()
     :watch?'План WATCH':'Отклонённый расчёт');
    for(const key of Object.keys(values))text(values[key],fmt(displayed[key]));
   }
   const quantity=watch?position(x,Number(risk.value)):null;
   text(size,quantity===null?'':'Размер позиции ≤ '+quantity.toFixed(6)+' BTC · номинал '+fmt(quantity*x.entry)+' USDT.');
   hide(size,quantity===null);
-  const zones=zoneList(x);
+  const zones=slot.snapshot?[]:zoneList(x);
   if(zones.length)overlays[frame]={zones};
-  const canShow=!!x&&(watch||zones.length>0);
+  const canShow=!slot.snapshot&&!!x&&(watch||zones.length>0);
   hide(button,!canShow);
   hide(detail,!x&&!historical);
   if(x){
@@ -177,3 +217,4 @@ root.addEventListener('aura-preview-snapshot',event=>{latest=event.detail;
 document.addEventListener('visibilitychange',()=>{latest=null;audioReady=false;player.suspend();audio.textContent='Включить звук WATCH · открытая вкладка';render();});
 setInterval(render,1000);render();
 })(typeof window==='undefined'?globalThis:window);
+
