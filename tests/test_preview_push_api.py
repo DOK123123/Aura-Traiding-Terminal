@@ -35,7 +35,8 @@ def client(monkeypatch):
             'signal_lock':worker,'signal_lock_enabled':True,'signal_lock_task':SimpleNamespace(done=lambda:False),
             'preview_signals_task':SimpleNamespace(done=lambda:False),'preview_signals':SimpleNamespace(last_cycle_at=time.time())}
     for k,v in values.items():monkeypatch.setattr(main.app.state,k,v,raising=False)
-    c=TestClient(main.app,auth=AUTH)
+    c=TestClient(main.app)
+    c.auth=AUTH
     try:
         # Do not enter the real application's lifespan or touch hosted services.
         yield c,push

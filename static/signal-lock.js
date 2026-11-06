@@ -8,6 +8,13 @@
    if(now>=copy.valid_until)copy.status='EXPIRED';
    else if(!Number.isFinite(now)||!Number.isFinite(copy.last_seen)||now-copy.last_seen<0||now-copy.last_seen>5)copy.status='UNKNOWN';
   }
+  if(copy.archived&&!['EXPIRED','INVALIDATED'].includes(copy.status))copy.status='UNKNOWN';
+  if(copy.status==='WATCH'){
+   const p=copy.plan,s=copy.direction==='LONG'?1:-1;
+   if(!p||!['entry','sl','tp','net_rr','risk_usdt_per_btc'].every(k=>Number.isFinite(p[k]))||
+      Math.min(p.entry,p.sl,p.tp,p.risk_usdt_per_btc)<=0||p.net_rr<1.5||
+      !['LONG','SHORT'].includes(copy.direction)||s*(p.entry-p.sl)<=0||s*(p.tp-p.entry)<=0)copy.status='UNKNOWN';
+  }
   if(copy.status!=='WATCH'||copy.archived)copy.plan=null;
   return copy;
  }
@@ -33,7 +40,7 @@
   host.classList.add('signal-lock');
   host.innerHTML='<header><strong>BTCUSDT</strong> <span data-quote>— · UNKNOWN</span></header>'+
    '<nav aria-label="Таймфрейм"></nav><button data-new hidden></button>'+
-   '<article><h2 data-heading>Нет зафиксированного события</h2><p data-status></p>'+
+   '<article><h2 data-heading>Нет зафиксированного события</h2><p data-status></p><p data-summary-reason></p>'+
    '<p data-time></p><p data-score></p><dl data-plan hidden></dl>'+
    '<details><summary>Открыть подробности</summary><p data-reasons></p><ul data-conditions></ul><p data-detailed-score></p><p data-archive hidden></p>'+ 
    '<p>Технический балл не является вероятностью прибыли. Торговые действия не выполняются.</p></details></article>'+
@@ -41,7 +48,8 @@
    ['5m','15m','1h','4h'].map(tf=>'<option>'+tf+'</option>').join('')+'</select></label>'+
    '<label>Статус <select data-status-filter aria-label="Фильтр истории"><option value="">Все статусы</option>'+
    Object.keys(LABELS).map(s=>'<option value="'+s+'">'+s+'</option>').join('')+
-   '</select></label><label>Направление <select data-direction-filter><option value="">Все</option><option>LONG</option><option>SHORT</option></select></label><div data-history></div></section>';
+   '</select></label><label>Направление <select data-direction-filter><option value="">Все</option><option>LONG</option><option>SHORT</option></select></label>'+
+   '<label>Стратегия <select data-strategy-filter><option value="">Все</option><option value="TREND_PULLBACK">Откат по тренду</option><option value="BREAKOUT_RETEST">Пробой и ретест</option><option value="MOMENTUM_DIVERGENCE">Дивергенция импульса</option></select></label><div data-history></div></section>';
   const historyRoot=host.querySelector('[data-history-root]');
   const get=s=>host.querySelector(s)||historyRoot.querySelector(s),details=get('details');let all=[],historySignature='';
   details.open=saved.details===true;
@@ -49,7 +57,7 @@
   details.addEventListener('toggle',persist);
   for(const tf of ['5m','15m','1h','4h']){
    const b=document.createElement('button');b.textContent=tf;b.dataset.frame=tf;
-   b.onclick=()=>{frame=tf;model.selected=selected[frame]||null;model.events=[];model.newCount=0;refresh();persist();};
+   b.onclick=()=>{frame=tf;model.selected=selected[frame]||null;model.events=[];model.newCount=0;refresh();persist();host.dispatchEvent(new CustomEvent('aura-lock-frame',{bubbles:true}));};
    get('nav').append(b);
   }
   const names={TREND_PULLBACK:'Откат по тренду',BREAKOUT_RETEST:'Пробой и ретест',MOMENTUM_DIVERGENCE:'Дивергенция импульса'};
@@ -57,8 +65,10 @@
   const fmt=t=>Number.isFinite(t)?new Date(t*1000).toLocaleString('ru-RU'):'Время не подтверждено';
   function render(){
    const row=model.current(now());
-   get('[data-heading]').textContent=row?row.direction+' · '+row.frame+' · '+(names[row.strategy]||'Стратегия'):'Нет зафиксированного события';
+   get('[data-heading]').textContent=row?row.direction+' · '+row.frame+' · '+(names[row.strategy]||'Стратегия')+(row.archived?' · архивный снимок':''):'Нет зафиксированного события';
    get('[data-status]').textContent=row?(LABELS[row.status]||LABELS.UNKNOWN):'Ожидание достоверных данных';
+   get('[data-summary-reason]').textContent=row?.status==='CANDIDATE'?reason(row.missing?.[0]||row.reasons?.[0]):
+    row?.status==='WATCH'?'Прибыльность не подтверждена. Проверьте актуальность и риск.':row?'Действующий вход по этому событию не подтверждён.':'Ожидаем реальные события наблюдателя.';
    get('[data-time]').textContent=row?'Обнаружен '+fmt(row.detected_at)+' · до '+fmt(row.valid_until):'';
    get('[data-score]').textContent=row&&row.status==='CANDIDATE'?'Технический балл '+row.score+'/100 · не вероятность прибыли':'';
    const plan=get('[data-plan]');plan.hidden=!row?.plan;
@@ -82,7 +92,8 @@
    host.querySelectorAll('[data-frame]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.frame===frame)));
    get('[data-history-frame]').value=frame;
    const filter=get('[data-status-filter]').value,direction=get('[data-direction-filter]').value;
-   const rows=model.events.filter(e=>(!filter||visible(e,now()).status===filter)&&(!direction||e.direction===direction));
+   const strategy=get('[data-strategy-filter]').value;
+   const rows=model.events.filter(e=>(!filter||visible(e,now()).status===filter)&&(!direction||e.direction===direction)&&(!strategy||e.strategy===strategy));
    const signature=JSON.stringify(rows.map(e=>[e.id,visible(e,now()).status]));
    if(signature!==historySignature){historySignature=signature;get('[data-history]').replaceChildren(...rows.map(e=>{
     const b=document.createElement('button');b.textContent=e.direction+' · '+e.frame+' · '+visible(e,now()).status+' · '+fmt(e.detected_at);
@@ -91,7 +102,7 @@
   }
   function refresh(){model.update(all.filter(e=>e.frame===frame));if(selected[frame])model.selected=selected[frame];
    else if(model.selected)selected[frame]=model.selected;render();persist();}
-  get('[data-status-filter]').onchange=render;get('[data-direction-filter]').onchange=render;
+  get('[data-status-filter]').onchange=render;get('[data-direction-filter]').onchange=render;get('[data-strategy-filter]').onchange=render;
   get('[data-history-frame]').onchange=event=>{host.querySelector('[data-frame="'+event.target.value+'"]').click();};
   get('[data-new]').onclick=()=>{const event=model.events[0];if(event){model.choose(event.id);selected[frame]=event.id;persist();render();}};
   return {update(events){all=events.slice().sort((a,b)=>b.detected_at-a.detected_at);refresh();},

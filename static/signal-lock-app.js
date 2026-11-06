@@ -8,10 +8,11 @@ const historyMessage=document.createElement('p'),more=document.createElement('bu
 historyMessage.setAttribute('role','status');more.type='button';more.textContent='Загрузить более ранние события';
 view.historyRoot.append(more,historyMessage);let cursor=1e11,cursorId='f'.repeat(64),cursorFrame='',busy=false;
 function update(){
- const ids=new Set(live.map(e=>e.id));view.update([...live,...archive.filter(e=>!ids.has(e.id))]);
+ const merged=new Map(archive.map(e=>[e.id,e]));live.forEach(e=>merged.set(e.id,e));view.update([...merged.values()]);
  if(pendingId&&view.choose(pendingId)){pendingId=null;document.getElementById('app-tab-signals')?.click();}
 }
 host.addEventListener('aura-lock-selected',()=>document.getElementById('app-tab-signals')?.click());
+host.addEventListener('aura-lock-frame',()=>{cursor=1e11;cursorId='f'.repeat(64);cursorFrame='';more.hidden=false;historyMessage.textContent='';});
 window.addEventListener('aura-preview-snapshot',event=>{
  const lock=event.detail?.signal_lock;
  if(Array.isArray(lock?.events)){

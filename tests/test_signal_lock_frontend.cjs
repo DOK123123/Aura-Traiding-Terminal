@@ -9,10 +9,12 @@ test('500 quote updates and new events preserve the reading selection',()=>{
  view.choose(id);view.update([{id:'another'},{id}]);assert.equal(view.selected,id);
 });
 test('stale, future and expired WATCH cannot expose live levels',()=>{
- const row={id,status:'WATCH',valid_until:200,last_seen:100,plan:{entry:100}};
+ const row={id,status:'WATCH',direction:'LONG',valid_until:200,last_seen:100,plan:{entry:100,sl:95,tp:115,net_rr:2,risk_usdt_per_btc:6}};
  assert.equal(visible(row,101).plan.entry,100);
  for(const now of [99,106,NaN]){assert.equal(visible(row,now).status,'UNKNOWN');assert.equal(visible(row,now).plan,null);}
  assert.equal(visible(row,200).status,'EXPIRED');assert.equal(row.status,'WATCH');
+ assert.equal(visible({...row,plan:{entry:100}},101).status,'UNKNOWN');
+ assert.equal(visible({...row,archived:true},101).plan,null);
 });
 function worker(){
  const listeners={},notifications=[],opened=[];

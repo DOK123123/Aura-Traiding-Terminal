@@ -57,7 +57,8 @@ def test_signal_state_cas_roles_restart_and_existing_guard(monkeypatch):
         pg.sql(push_sql);pg.sql(push_sql)
         def rpc(action,data=None):
             raw=json.dumps(data or {}).replace("'","''")
-            return json.loads(pg.sql("SELECT public.aura_preview_push_v1('"+action+"','"+raw+"'::jsonb);",role='service_role'))
+            result=pg.sql("SELECT public.aura_preview_push_v1('"+action+"','"+raw+"'::jsonb);",role='service_role')
+            return json.loads(result) if result else None
         for role in ['anon','authenticated']:
             result=pg.sql("SELECT public.aura_preview_push_v1('config','{}');",role=role,check=False)
             assert result.returncode!=0 and 'permission denied' in result.stderr.lower()

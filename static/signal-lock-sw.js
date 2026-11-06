@@ -12,7 +12,7 @@ self.addEventListener('push', event=>{
     await self.registration.showNotification(p.status==='TEST'?'Aura · тест Web Push':'Aura · '+p.direction+' · '+p.frame,{
       body:(stale?'НЕАКТУАЛЕН':p.status)+' · технический балл '+p.score+'/100 · '+
         new Date(p.at*1000).toISOString()+' · снимок обнаружения, проверьте актуальность в Aura · не вероятность прибыли',
-      tag:'aura-signal-'+p.event_id,renotify:false,
+      tag:'aura-signal-'+p.event_id+'-'+p.status,renotify:false,
       data:{event_id:p.event_id,test:p.status==='TEST'},timestamp:p.at*1000
     });
   })());
