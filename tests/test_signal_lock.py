@@ -172,10 +172,13 @@ class LifecycleTest(unittest.TestCase):
 
     def test_transport_acceptance_is_not_device_delivery_and_errors_are_sanitized(self):
         import base64
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from cryptography.hazmat.primitives import serialization
+        point=ec.generate_private_key(ec.SECP256R1()).public_key().public_bytes(serialization.Encoding.X962,serialization.PublicFormat.UncompressedPoint)
         enc = lambda b: base64.urlsafe_b64encode(b).decode().rstrip('=')
         # Clearly dummy, structurally shaped test bytes. No real credentials.
         target = {'endpoint': 'https://fcm.googleapis.com/fcm/send/DUMMY_ONLY_NOT_REAL',
-                  'keys': {'p256dh': enc(bytes([4]) + bytes(64)), 'auth': enc(bytes(16))}}
+                  'keys': {'p256dh': enc(point), 'auth': enc(bytes(16))}}
         for code, expected in [(201, 'ACCEPTED_NOT_DEVICE_CONFIRMED'), (410, 'GONE'),
                                (404, 'GONE'), (429, 'RETRY'), (503, 'RETRY')]:
             def fake(**kwargs):

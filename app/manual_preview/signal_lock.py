@@ -89,6 +89,15 @@ def advance(state: dict | None, candidates: list[dict], quotes: dict, now: float
     if not finite(now) or now < 0:
         raise ValueError('INVALID_CLOCK')
     result = copy.deepcopy(state or {'events': {}, 'notices': {}, 'cooldowns': {}})
+    if now < result.get('watermark', now):
+        for event in result['events'].values():
+            if event['status'] not in TERMINAL:
+                event.update(status='UNKNOWN', live_plan=None)
+        return result
+    result['watermark'] = now
+    for event in result['events'].values():
+        if event['status'] not in TERMINAL and now >= event['valid_until']:
+            event.update(status='EXPIRED', live_plan=None)
     seen = set()
     for c in candidates:
         quote = quotes.get(c.get('frame')) if isinstance(c, dict) else None
@@ -104,7 +113,16 @@ def advance(state: dict | None, candidates: list[dict], quotes: dict, now: float
             if not eligible:
                 continue
             if len(result['events']) >= 2000:
-                raise ValueError('SIGNAL_HISTORY_CAPACITY')  # Never silently forget dedup IDs.
+                # Old records already live in the append-only DB archive. A
+                # persisted clock watermark forbids replay of their old cohort.
+                old = sorted((e for e in result['events'].values() if e['status'] in TERMINAL
+                              and e['valid_until'] < now-300), key=lambda e: e['detected_at'])[:500]
+                if not old:
+                    raise ValueError('SIGNAL_HISTORY_CAPACITY')
+                removed = {e['id'] for e in old}
+                for removed_id in removed:
+                    result['events'].pop(removed_id)
+                result['notices'] = {k: n for k, n in result['notices'].items() if n['event_id'] not in removed}
             event = {'id': key, 'direction': c['direction'], 'frame': c['frame'],
                      'strategy': c['strategy'], 'detected_at': now, 'valid_until': c['valid_until'],
                      'initial_score': c['score'], 'status': 'CANDIDATE', 'archive_plan': None}
@@ -126,6 +144,7 @@ def advance(state: dict | None, candidates: list[dict], quotes: dict, now: float
             status = 'INVALIDATED'
         plan = {**{k: c[k] for k in PLAN_KEYS}, 'risk_usdt_per_btc': c['costs']['net_loss']} if qualified and status == 'WATCH' else None
         event.update(status=status, score=c['score'], last_seen=now, live_plan=plan,
+                     check_details=copy.deepcopy(c['checks']),
                      reasons=list(c['rejection']),
                      missing=[x['code'] for x in c['checks'] if not x['passed']])
         if plan and event['archive_plan'] is None:

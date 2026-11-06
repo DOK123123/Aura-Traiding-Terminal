@@ -12,4 +12,7 @@
 .signal-lock dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
 .signal-lock details{margin-top:12px}.signal-lock summary{display:block}
 .signal-lock [data-new],.signal-lock [data-history] button{width:100%;margin:6px 0;text-align:left}
+.signal-lock [data-new]{height:72px;overflow-anchor:none}
 .signal-lock select{max-width:100%}
+.aura-push-settings{padding:12px;overflow-wrap:anywhere}.aura-push-settings label{display:block;margin:10px 0}.aura-push-settings button{display:block;width:100%;margin:8px 0;min-height:48px;font:inherit;white-space:normal}
+[data-history-root]{overflow-wrap:anywhere;padding:12px;min-width:0}[data-history-root] button{display:block;white-space:normal;width:100%;min-height:48px;margin:8px 0;padding:12px;font:inherit;text-align:left}[data-history-root] label{display:block;margin:8px 0}[data-history-root] select{max-width:100%;min-height:48px;font:inherit}

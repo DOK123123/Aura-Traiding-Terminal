@@ -139,7 +139,12 @@
 
     const signalsHeading=el('div','aura-screen-title');signalsHeading.append(el('p','aura-overline','ИССЛЕДОВАНИЕ · НЕ КОМАНДА НА ВХОД'));
     signalsHeading.append(el('h1','','Сигналы'));panes.signals.append(signalsHeading);
-    move('#aura-explainable',panes.signals);
+    if(document.body.dataset.signalLock==='true'){
+      move('#aura-signal-lock',panes.signals);
+      const current=el('details','aura-advanced');current.id='aura-live-analysis';
+      current.append(el('summary','','Текущий анализ LONG/SHORT · подробные индикаторы и ручное закрепление'));
+      move('#aura-explainable',current);panes.signals.append(current);
+    }else move('#aura-explainable',panes.signals);
     const scores=el('details','aura-advanced');scores.id='aura-score-diagnostics';scores.open=true;
     scores.append(el('summary','','Общий технический скоринг · не торговая стратегия'));
     move('#aura-confidence',scores);panes.signals.append(scores);
@@ -242,5 +247,6 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build,{once:true});else build();
 })(typeof window !== 'undefined' ? window : globalThis);
+
 
 

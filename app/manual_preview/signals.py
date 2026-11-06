@@ -69,6 +69,9 @@ async def snapshot(request:Request):
     data['explainable_candidates']=await asyncio.to_thread(from_store,h.store,quotes,now,running and not error)
     data['observer']=status
     data['storage']='EPHEMERAL_RENDER_LOCAL'
+    if getattr(request.app.state,'signal_lock_enabled',False):
+        from .lock_runtime import snapshot as lock_snapshot
+        data['signal_lock']=lock_snapshot(request.app,now)
     return data
 
 
@@ -94,3 +97,4 @@ async def journal(request:Request,hours:int=Query(24,ge=24,le=48),kind:Literal['
     h=request.app.state.preview_signals
     if h is None:return JSONResponse({'code':'PREVIEW_SIGNALS_UNAVAILABLE'},503)
     return await asyncio.to_thread(h.store.export_diagnostics,time.time(),hours,kind,after,limit)
+

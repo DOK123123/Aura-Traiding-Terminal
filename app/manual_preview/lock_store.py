@@ -32,3 +32,20 @@ class DurableLockStore:
     def compare_and_swap(self, version: int, state: dict) -> bool:
         value = self._rpc('aura_preview_lock_commit_v1', {'p_version': version, 'p_state': state})
         return value is True
+
+    def history(self, before: float, frame: str | None, limit: int, before_id: str = 'f'*64) -> list[dict]:
+        result = self._rpc('aura_preview_lock_history_v1', {'p_before': before, 'p_frame': frame, 'p_limit': limit,'p_before_id':before_id})
+        if not isinstance(result, list):
+            raise ValueError('SIGNAL_HISTORY_FORMAT')
+        return result
+
+    def event(self, event_id: str) -> dict | None:
+        return self._rpc('aura_preview_lock_event_v1', {'p_id':event_id})
+
+
+class PushStore(DurableLockStore):
+    def call(self, action: str, data: dict | None = None) -> object:
+        if action not in {'config', 'bootstrap', 'subscribe', 'preferences', 'unsubscribe',
+                          'diagnostics', 'enqueue', 'test', 'claim', 'complete', 'cleanup'}:
+            raise ValueError('PUSH_ACTION_FORBIDDEN')
+        return self._rpc('aura_preview_push_v1', {'p_action': action, 'p_data': data or {}})

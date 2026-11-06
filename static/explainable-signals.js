@@ -61,7 +61,7 @@ class WatchHistory{
   return changed;
  }
 }
-const api={VERSION,FRAMES,NAMES,candidates:candidateRows,evidence,fresh,levels,usable,position,WatchHistory,HISTORY_KEY,watchKey};root.AuraExplainable=api;if(typeof module!=='undefined')module.exports=api;
+const api={VERSION,FRAMES,NAMES,labels:LABELS,candidates:candidateRows,evidence,fresh,levels,usable,position,WatchHistory,HISTORY_KEY,watchKey};root.AuraExplainable=api;if(typeof module!=='undefined')module.exports=api;
 if(!root.document)return;
 const host=document.getElementById('aura-explainable');if(!host)return;
 const add=(tag,text,parent)=>{const e=document.createElement(tag);e.textContent=text;parent.append(e);return e;};
@@ -247,5 +247,6 @@ root.addEventListener('pagehide',savePrefs);
 if(root.requestAnimationFrame)root.requestAnimationFrame(()=>root.requestAnimationFrame(()=>{if(document.getElementById('app-signals')?.hidden===false)root.scrollTo?.(0,restoreScroll);}));
 setInterval(render,1000);render();
 })(typeof window==='undefined'?globalThis:window);
+
 
 

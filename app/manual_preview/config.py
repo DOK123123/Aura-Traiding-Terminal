@@ -16,6 +16,8 @@ class Config:
     key:str=field(repr=False)
     manual_enabled:bool=False
     signals_enabled:bool=False
+    lock_enabled:bool=False
+    push_enabled:bool=False
 
 
 def parse(env,clock=time.time):
@@ -53,4 +55,9 @@ def parse(env,clock=time.time):
     if enabled not in ('true','false'):raise ValueError('PREVIEW_MANUAL_FLAG_INVALID')
     signals=env.get('AURA_PREVIEW_SIGNALS_ENABLED','false')
     if signals not in ('true','false'):raise ValueError('PREVIEW_SIGNALS_FLAG_INVALID')
-    return Config(password,ref,url,key,enabled=='true',signals=='true')
+    lock=env.get('AURA_PREVIEW_SIGNAL_LOCK_ENABLED','false')
+    push=env.get('AURA_PREVIEW_PUSH_ENABLED','false')
+    if lock not in ('true','false') or push not in ('true','false'):raise ValueError('PREVIEW_SIGNAL_LOCK_FLAG_INVALID')
+    if lock=='true' and signals!='true' or push=='true' and lock!='true':raise ValueError('PREVIEW_SIGNAL_LOCK_DEPENDENCY_REQUIRED')
+    return Config(password,ref,url,key,enabled=='true',signals=='true',lock=='true',push=='true')
+

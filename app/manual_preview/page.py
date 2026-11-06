@@ -8,11 +8,12 @@ ROOT=Path(__file__).resolve().parents[2]
 ASSETS=frozenset({'styles.css','aura-analyst.css','aura-analyst.js',
     'vendor/lightweight-charts.standalone.production.js','active43-live.js','live.js',
     'aura-scenario-journal.js','aura-chart-tools.js','app.js','aura-workspace.css',
+    'signal-lock.js','signal-lock.css','signal-lock-app.js','push-client.js',
     'manual-paper.css','manual-paper.js','manual-live.css','manual-live-analysis.js',
     'manual-live-feed.js','manual-live-ui.js','strategy-engine.js','manual-strategies.js','forward-observer.js','signal-center.js','trade-outcomes.js','historical-replay.js','replay-ui.js','signal-alerts.js','preview-status.js','preview-signals.js','signal-confidence.js','explainable-signals.js','aura-mobile-shell.js','aura-mobile-shell.css','hunter6/hunter.js','favicon.svg'})
 
 
-def page(ws_token='', *, server_signals=False):
+def page(ws_token='', *, server_signals=False,signal_lock=False):
     source=(ROOT/'static/index.html').read_text()
     marker='  <section class="panel scenario-journal"'
     if source.count(marker)!=1:raise ValueError('PREVIEW_PAGE_STRUCTURE_CHANGED')
@@ -43,5 +44,10 @@ def page(ws_token='', *, server_signals=False):
         # Mount after all existing scripts: move their DOM nodes, never clone them.
         # Only the isolated, owner-protected signals preview receives this shell.
         source=source.replace('</head>','<link rel="stylesheet" href="/static/aura-mobile-shell.css"><script defer src="/static/aura-mobile-shell.js"></script></head>')
+    if signal_lock and server_signals:
+        source=source.replace('data-manual-preview="true"','data-manual-preview="true" data-signal-lock="true"')
+        source=source.replace('<section class="panel" id="aura-explainable">','<section class="panel" id="aura-signal-lock"></section><section class="panel" id="aura-explainable">')
+        source=source.replace('</head>','<link rel="stylesheet" href="/static/signal-lock.css"><script defer src="/static/signal-lock.js"></script><script defer src="/static/signal-lock-app.js"></script><script defer src="/static/push-client.js"></script></head>')
     if '/api/active43' in source or 'id="active43-panel"' in source:raise ValueError('PREVIEW_PAGE_SCOPE_ERROR')
     return source
+
