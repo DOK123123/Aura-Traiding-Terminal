@@ -47,10 +47,13 @@ test('quote refresh preserves card and open details; expiry removes the chart pl
  candidate.id='c'.repeat(64);
  const receive=()=>events['aura-preview-snapshot']({detail:d});
  receive();
+ const bar=host.children.find(e=>e.className==='signal-frame-bar');bar.children.find(e=>e.textContent==='1h').onclick();
  const cards=host.children.at(-1),card=cards.children.find(e=>e.dataset.frame==='1h'&&e.dataset.direction==='LONG');
- const details=card.children.find(e=>e.tag==='details'),body=details.children.at(-1),evidence=body.children[0];
+ const details=card.children.find(e=>e.tag==='details'),body=details.children.find(e=>e.tag==='div'),evidence=body.children[0];
  const button=card.children.find(e=>e.tag==='button');
  const plan=card.children.find(e=>e.tag==='section'),entry=plan.children[1].children[0].children[1];
+ assert.equal(cards.children.filter(e=>!e.hidden).length,2);
+ assert.doesNotMatch(card.children.find(e=>e.tag==='h3').textContent,/\/100/);
  details.open=true;
  button.events.click();
  assert.equal(overlays['1h'].plan.entry,100);
@@ -98,3 +101,4 @@ test('damaged saved timestamps cannot crash historical rendering',()=>{
  const rows=[{key:E.watchKey(c),at:now,c}];
  const j=new E.WatchHistory({getItem:()=>JSON.stringify(rows)});assert.equal(j.rows.length,0);
 });
+

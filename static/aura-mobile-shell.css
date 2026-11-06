@@ -151,3 +151,39 @@ body[data-aura-app="mobile"] .aura-tab-pane {overflow-wrap:break-word;}
 .explain-history ol{padding-left:20px}
 @media(max-width:480px){.explain-cards article{padding:14px}.explain-cards h3{font-size:19px}.explain-cards button{width:100%}}
 
+/* Mobile UX 2.0: two persistent cards; quote text has its own stable strip. */
+.signal-frame-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:12px 0}
+.signal-frame-bar button{min-height:44px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font-weight:700}
+.signal-frame-bar button[aria-pressed="true"]{border-color:var(--mint);color:var(--mint);background:color-mix(in srgb,var(--mint) 12%,var(--panel))}
+#signals-market{font-variant-numeric:tabular-nums;min-height:1.6em;margin:6px 0;font-size:16px}
+#signals-state{min-height:3.2em;line-height:1.6;margin:6px 0;font-weight:700}
+.explain-cards article[hidden]{display:none!important}
+.explain-cards h3{min-height:4.2em;font-size:17px}
+.signal-description,.signal-refusal{min-height:3.2em;margin:8px 0}
+.signal-refusal[hidden],.signal-size[hidden]{display:block;visibility:hidden}
+.signal-plan-state{display:block;min-height:4.8em;font-size:13px;line-height:1.6}
+.signal-size{min-height:3.2em;font-size:13px}
+.explain-cards button[hidden],.explain-cards details[hidden]{display:block;visibility:hidden}
+.explain-cards details{max-width:100%;overflow-wrap:anywhere}
+#aura-explainable>p{font-size:14px;line-height:1.5;margin:8px 0}
+#aura-explainable>label{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#aura-explainable #explain-risk{margin:0;min-height:44px;max-width:110px;font-size:16px}
+#app-signals{padding-bottom:24px}
+.explain-plan dd{font-size:17px;line-height:1.5}
+.explain-cards h3{min-height:2.8em;margin:0 0 6px;font-size:16px}
+.signal-description,.signal-refusal{min-height:1.6em;margin:4px 0;font-size:13px;line-height:1.6}
+.signal-plan-state{min-height:1.6em;font-size:12px}
+.explain-cards article>button{width:calc(50% - 6px);margin:4px 3px 4px 0;vertical-align:top;font-size:13px;min-height:48px;padding:8px}
+.explain-cards details{margin-top:4px}
+.explain-cards details>summary{min-height:44px;padding:10px 0}
+.explain-plan{margin:4px 0;gap:4px}
+.explain-plan div{padding:6px}
+
+
+
+#signals-market{min-height:3.2em;line-height:1.6}
+.signal-description,.signal-refusal{min-height:3.2em}
+.signal-plan-state{min-height:3.2em}
+.signal-settings{margin:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.signal-settings>summary{min-height:44px;padding:10px 0;cursor:pointer;font-weight:600}
+.signal-settings p{line-height:1.5}

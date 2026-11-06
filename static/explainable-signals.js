@@ -67,12 +67,17 @@ const host=document.getElementById('aura-explainable');if(!host)return;
 const add=(tag,text,parent)=>{const e=document.createElement(tag);e.textContent=text;parent.append(e);return e;};
 const fmt=n=>Number.isFinite(n)?n.toFixed(2):'—',label=k=>LABELS[k]||k;
 const reasons=c=>Array.isArray(c?.rejection)?c.rejection.filter(x=>typeof x==='string'):[];
-add('h2','Что увидела Aura · LONG и SHORT',host);
-add('p','Три независимые стратегии на закрытых свечах Bitget. Балл 0–100 — доля выполненных условий, не вероятность прибыли. WATCH — технические условия пройдены; REJECTED — есть отказ; UNKNOWN — данные не подтверждены. NO_EDGE_FOUND · CONFIRMED недоступен.',host);
+add('h2','BTCUSDT · Сигналы',host);
+const marketLine=add('p','Проверяем котировки…',host);marketLine.id='signals-market';marketLine.setAttribute('role','status');
+const mainState=add('p','НЕДОСТАТОЧНО ДАННЫХ',host);mainState.id='signals-state';
+const intro=add('p','WATCH — технический сценарий, а не доказанная прибыльность. Выберите таймфрейм и направление.',host);
+const frameBar=add('div','',host);frameBar.className='signal-frame-bar';frameBar.setAttribute('aria-label','Таймфрейм сигналов');
+const frameButtons={};
 const riskLabel=add('label','Риск на сценарий, USDT ',host),risk=add('input','',riskLabel);risk.type='number';risk.min='0.01';risk.step='0.01';risk.placeholder='Введите допустимый убыток';risk.id='explain-risk';
-add('p','Размер позиции — расчёт по модельному убытку на SL с расходами; комиссии и funding нужно сверять. Гэп и реальное проскальзывание могут увеличить убыток.',host);
+const riskNote=add('p','Размер позиции — расчёт по модельному убытку на SL с расходами; комиссии и funding нужно сверять. Гэп и реальное проскальзывание могут увеличить убыток.',host);
 const audio=add('button','Включить звук WATCH · открытая вкладка',host);audio.type='button';
 const audioStatus=add('p','Звук выключен. Фоновые уведомления не гарантируются.',host);
+const settings=add('details','',host);settings.className='signal-settings';add('summary','Настройки звука и пояснения',settings);settings.append(intro);settings.append(riskNote);settings.append(audio);settings.append(audioStatus);
 const player=new root.AuraSignalAlerts.WebAudioPlayer();let audioReady=false,audioBusy=false;
 async function notify(now){
  if(!audioReady||audioBusy||document.hidden||!navigator.locks?.request)return;
@@ -91,6 +96,11 @@ audio.onclick=async()=>{if(audioReady){audioReady=false;player.suspend();audio.t
 let latest=null,initialized=false,selected=null;
 const slots=[];
 const storage=(()=>{try{return localStorage;}catch{return {getItem(){throw Error('UNAVAILABLE');},setItem(){throw Error('UNAVAILABLE');}};}})();
+const UI_KEY='aura5.signals.reading.v2';
+let prefs={frame:'15m',open:{},pins:{},scroll:0};
+try{const raw=storage.getItem(UI_KEY)||'{}';if(raw.length<180000){const p=JSON.parse(raw);if(Object.hasOwn(FRAMES,p.frame))prefs.frame=p.frame;if(p.open&&typeof p.open==='object')prefs.open=p.open;if(p.pins&&typeof p.pins==='object')prefs.pins=p.pins;if(Number.isFinite(p.scroll)&&p.scroll>=0)prefs.scroll=Math.min(p.scroll,100000);}}catch{}
+function savePrefs(){try{storage.setItem(UI_KEY,JSON.stringify(prefs));}catch{}}
+for(const frame of Object.keys(FRAMES)){const b=add('button',frame,frameBar);b.type='button';b.dataset.signalFrame=frame;frameButtons[frame]=b;b.onclick=()=>{prefs.frame=frame;savePrefs();render();};}
 const archive=new WatchHistory(storage),history=add('details','',host);
 history.className='explain-history';add('summary','История проверенных WATCH · снимки, не действующие сигналы',history);
 const historyStatus=add('p','',history),historyList=add('ol','',history),historyNodes=new Map();
@@ -117,18 +127,25 @@ const cards=add('div','',host);cards.className='sc-cards explain-cards';
 for(const frame of Object.keys(FRAMES))for(const direction of ['LONG','SHORT']){
  const card=add('article','',cards);card.dataset.frame=frame;card.dataset.direction=direction;
  const title=add('h3','',card),description=add('p','',card),refusal=add('p','',card),plan=add('section','',card);
+ description.className='signal-description';refusal.className='signal-refusal';
  const planStatus=add('strong','',plan),metrics=add('dl','',plan);metrics.className='explain-plan';
  const values={};
  for(const [key,label] of [['entry','Entry'],['sl','Stop Loss'],['tp','Take Profit'],['net_rr','Net R/R']]){
   const item=add('div','',metrics);add('dt',label,item);values[key]=add('dd','',item);
  }
- const size=add('p','',plan),button=add('button','На графике',card);button.type='button';
+ planStatus.className='signal-plan-state';
+ const size=add('p','',plan),button=add('button','На графике',card);button.type='button';size.className='signal-size';
  const detail=add('details','',card);add('summary','Почему такой сигнал',detail);
- const body=add('div','',detail);
+ const body=add('div','',detail);detail.append(size);
  const pin=add('button','Закрепить сигнал',card);pin.type='button';pin.setAttribute('aria-pressed','false');
+ card.insertBefore?.(pin,detail);
  const slot={frame,direction,card,title,description,refusal,plan,planStatus,values,size,button,detail,body,pin};
  pin.onclick=()=>{slot.snapshot=slot.snapshot?null:slot.reading?JSON.parse(JSON.stringify(slot.reading)):null;
+  const key=frame+':'+direction;if(slot.snapshot)prefs.pins[key]=slot.snapshot;else delete prefs.pins[key];savePrefs();
   pin.setAttribute('aria-pressed',String(!!slot.snapshot));pin.textContent=slot.snapshot?'Открепить снимок':'Закрепить сигнал';render();};
+ const key=frame+':'+direction,persisted=prefs.pins[key];
+ if(persisted&&evidence(persisted)&&persisted.frame===frame&&persisted.direction===direction&&Number.isFinite(persisted.quote_time)&&persisted.quote_time>=0&&persisted.quote_time<1e11){slot.snapshot=persisted;pin.textContent='Открепить снимок';pin.setAttribute('aria-pressed','true');}
+ detail.open=prefs.open[key]===true;detail.addEventListener('toggle',()=>{prefs.open[key]=detail.open;savePrefs();render();});
  slots.push(slot);
  button.addEventListener('click',()=>{
   selected={frame,direction,id:slot.id};
@@ -142,8 +159,16 @@ function render(){
  archive.observe(latest,now);historyPaint();
  void notify(now);
  const all=candidateRows(latest),overlays={};
+ for(const frame of Object.keys(FRAMES))frameButtons[frame].setAttribute('aria-pressed',String(frame===prefs.frame));
+ const q=latest?.quotes?.[prefs.frame],clockOk=Number.isFinite(latest?.server_time)&&Math.abs(now-latest.server_time)<=10;
+ const live=latest?.scope==='AURA6_PUBLIC_OBSERVER_ONLY'&&latest.execution_enabled===false&&latest.account_connected===false&&latest.observer?.running===true&&clockOk&&latest.fresh_frames?.includes(prefs.frame)&&q?.source===SOURCE&&[q.bid,q.ask,q.time,q.received_at].every(Number.isFinite)&&q.bid>0&&q.ask>=q.bid&&(q.ask-q.bid)/q.bid<=.002&&now>=q.time&&now-q.time<=5&&now>=q.received_at&&now-q.received_at<=5;
+ text(marketLine,live?'LIVE · Bid '+fmt(q.bid)+' / Ask '+fmt(q.ask):'STALE · свежая цена не подтверждена');
+ marketLine.dataset.state=live?'LIVE':'STALE';
+ const visible=all.filter(c=>c.frame===prefs.frame);
+ text(mainState,visible.some(c=>usable(latest,c,now))?'WATCH · технический сценарий найден, прибыльность не подтверждена':visible.some(c=>fresh(latest,c,now))?'НЕ ВХОДИТЬ · условия не выполнены':'НЕДОСТАТОЧНО ДАННЫХ · анализ не подтверждён');
  for(const slot of slots){
   const {frame,direction,card,title,description,refusal,plan,planStatus,values,size,button,detail,body}=slot;
+  hide(card,frame!==prefs.frame);
   const rows=all.filter(c=>c.frame===frame&&c.direction===direction&&Object.hasOwn(NAMES,c.strategy));
   const verified=rows.filter(c=>fresh(latest,c,now));
   verified.sort((a,b)=>Number(usable(latest,b,now))-Number(usable(latest,a,now))
@@ -156,16 +181,16 @@ function render(){
   const historical=!watch&&!slot.snapshot&&slot.lastPlan;
   const displayed=slot.snapshot&&levels(slot.snapshot)?slot.snapshot:watch?x:historical||(x&&levels(x)?x:null);
   slot.reading=displayed||x||historical||null;slot.pin.disabled=!slot.reading;
-  hide(plan,!displayed);
-  text(title,direction+' · '+frame+' · '+({WATCH:'ЕСТЬ ТЕХНИЧЕСКИЙ СЦЕНАРИЙ',REJECTED:'НЕ ВХОДИТЬ',UNKNOWN:'НЕДОСТАТОЧНО ДАННЫХ',SNAPSHOT:'СНИМОК · НЕ ДЕЙСТВУЮЩИЙ СИГНАЛ'}[state])+(x?' · '+x.score+'/100':''));
+  hide(plan,false);plan.dataset.empty=String(!displayed);
+  if(!displayed){text(planStatus,'Нет корректного плана');for(const key of Object.keys(values))text(values[key],'—');}
+  text(title,direction+' · '+frame+' · '+({WATCH:'WATCH',REJECTED:'НЕ ВХОДИТЬ',UNKNOWN:'НЕДОСТАТОЧНО ДАННЫХ',SNAPSHOT:'СНИМОК · НЕ ДЕЙСТВУЮЩИЙ СИГНАЛ'}[state]));
   const missing=reasons(rows.find(c=>c.state==='UNKNOWN')).map(label).join(' · ');
-  text(description,(x?'Стратегия: '+x.name:'Данные не подтверждены. '+(missing||'Нет свежего снимка котировок и закрытых свечей.'))+(!displayed?' Entry/SL/TP не рассчитаны: нет проверенного корректного плана.':''));
+  text(description,x?'Стратегия: '+x.name:'Нет подтверждённого снимка рынка.');
   const rejected=state==='REJECTED'||slot.snapshot?.state==='REJECTED';
   hide(refusal,!rejected);
-  text(refusal,rejected?(slot.snapshot?'Снимок отказа: ':'Отказ: ')+(reasons(x).map(label).join(' · ')||'План не прошёл проверку'): '');
+  text(refusal,rejected?(slot.snapshot?'Снимок отказа: ':'Отказ: ')+(reasons(x).slice(0,1).map(label).join(' · ')||'План не прошёл проверку'): '');
   if(displayed){
-   text(planStatus,slot.snapshot?'ЗАКРЕПЛЁННЫЙ СНИМОК · НЕАКТУАЛЕН · '+new Date(displayed.quote_time*1000).toISOString()+' · рынок продолжает обновляться':historical?'НЕАКТУАЛЕН · '+displayed.name+' · '+new Date(displayed.quote_time*1000).toISOString()
-    :watch?'План WATCH':'Отклонённый расчёт');
+   text(planStatus,slot.snapshot?'СНИМОК · НЕАКТУАЛЕН':historical?'НЕАКТУАЛЕН · прошлый WATCH':watch?'Актуален до '+new Date(x.valid_until*1000).toISOString().slice(11,19)+' UTC':'Отклонённый расчёт');
    for(const key of Object.keys(values))text(values[key],fmt(displayed[key]));
   }
   const quantity=watch?position(x,Number(risk.value)):null;
@@ -179,12 +204,14 @@ function render(){
   if(x){
    const alternatives=verified.slice(1).map(c=>c.name+' · '+c.state+' · '+c.score+'/100 · '+reasons(c).map(label).join(' · '));
    const signature=JSON.stringify([x.id,state,x.checks,x.rejection,x.indicators,x.stop_explanation?.anchor,x.target_explanation?.reason,levels(x),zones,alternatives]);
-   if(signature!==slot.detailSignature){
+   if(signature!==slot.detailSignature&&(!detail.open||!slot.detailSignature)){
     slot.detailSignature=signature;
     body.replaceChildren();
+    add('p','Подробнее: снимок расчёта '+new Date(x.quote_time*1000).toISOString()+'. Для обновления подробностей закройте и откройте раздел.',body);
     const met=x.checks.filter(c=>c.passed).map(c=>label(c.code));
+    add('p','Технический балл '+x.score+'/100 — доля выполненных условий, НЕ вероятность прибыли.',body);
     add('p','Aura увидела: '+(met.join(' · ')||'условия пока не выполнены'),body);
-    for(const c of x.checks)add('p',(c.passed?'Выполнено: ':'Не выполнено: ')+label(c.code)+' · факт '+JSON.stringify(c.actual)+' · нужно '+JSON.stringify(c.required),body);
+    for(const c of x.checks)add('p',(c.passed?'Выполнено: ':'Не выполнено: ')+label(c.code)+' · '+(typeof c.required==='string'?c.required:'Условие проверено по закрытым свечам; результат показан выше.'),body);
     add('p','Индикаторы: '+Object.entries(x.indicators).map(([k,v])=>k+' '+fmt(v)).join(' · '),body);
     if(x.stop_explanation){
      const stop=x.stop_explanation;
@@ -200,10 +227,8 @@ function render(){
     add('p','Закрытие свечи '+new Date(x.closed_at*1000).toISOString()+' · срок входа до '+new Date(x.valid_until*1000).toISOString(),body);
     for(const alternative of alternatives)add('p','Другой сценарий: '+alternative,body);
    }
-  }else if(slot.detailSignature!==null){
-   slot.detailSignature=null;body.replaceChildren();
-   if(historical)add('p','Последний подтверждённый план сохранён для истории в этой вкладке.',body);
   }
+
  }
  if(selected){
   const chosen=all.find(c=>c.frame===selected.frame&&c.direction===selected.direction&&c.id===selected.id&&usable(latest,c,now));
@@ -216,6 +241,11 @@ root.addEventListener('aura-preview-snapshot',event=>{latest=event.detail;
  if(!initialized&&latest?.explanation_version===VERSION){initialized=true;const legacy=document.getElementById('aura-score-diagnostics');if(legacy)legacy.open=false;}
  render();});
 document.addEventListener('visibilitychange',()=>{latest=null;audioReady=false;player.suspend();audio.textContent='Включить звук WATCH · открытая вкладка';render();});
+const restoreScroll=prefs.scroll;let scrollTimer;
+root.addEventListener('scroll',()=>{if(document.getElementById('app-signals')?.hidden===false){prefs.scroll=root.scrollY||0;root.clearTimeout(scrollTimer);scrollTimer=root.setTimeout(savePrefs,150);}},{passive:true});
+root.addEventListener('pagehide',savePrefs);
+if(root.requestAnimationFrame)root.requestAnimationFrame(()=>root.requestAnimationFrame(()=>{if(document.getElementById('app-signals')?.hidden===false)root.scrollTo?.(0,restoreScroll);}));
 setInterval(render,1000);render();
 })(typeof window==='undefined'?globalThis:window);
+
 
