@@ -50,19 +50,23 @@ const server=http.createServer((req,res)=>{if(req.method!=='GET'){posts++;res.wr
  mode='LIVE';ticks=0;const context=await browser.newContext(config),page=await context.newPage(),errors=[];
  await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
  await page.addInitScript(()=>{window.addEventListener('aura-preview-snapshot',e=>{window.lastSignalSnapshot=e.detail;});window.WebSocket=class{constructor(){this.readyState=1;}send(){}close(){}};});page.on('pageerror',e=>errors.push(e.message));
- await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#app-tab-signals').click();
+ await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#app-tab-signals').click();await page.locator('[data-signal-frame="1h"]').click();
  await page.waitForFunction(()=>document.querySelector('#aura-explainable [data-frame="1h"][data-direction="SHORT"]')?.dataset.state==='WATCH');
  assert.equal(await page.locator('#aura-explainable article').count(),8);
+ assert.equal(await page.locator('#aura-explainable article:visible').count(),2);
  await page.getByRole('button',{name:'Включить звук WATCH · открытая вкладка',exact:true}).click();
  await page.waitForFunction(()=>document.getElementById('aura-explainable').textContent.includes('Web Audio запланирован'));
  const watch=page.locator('#aura-explainable [data-frame="1h"][data-direction="SHORT"]');
  assert.match(await watch.textContent(),/Breakout \+ Retest/);assert.match(await watch.textContent(),/Почему SL здесь/);assert.match(await watch.textContent(),/Почему TP здесь/);assert.doesNotMatch(await watch.textContent(),/max_seconds|Entry time/);
  await page.locator('#explain-risk').fill('25');assert.match(await watch.textContent(),/Размер позиции ≤/);
  await watch.locator('summary').click();
+ assert.doesNotMatch(await watch.locator('h3').textContent(),/\/100/);
+ assert.doesNotMatch(await watch.locator('details').textContent(),/"kind":|"level":/);
  const entry=await watch.locator('dd').first().textContent();
  await watch.evaluate(e=>{window.savedCard=e;window.savedDetails=e.querySelector('details');window.savedBody=e.querySelector('details div').firstChild;window.savedId=e.dataset.scenarioId;});
  await page.waitForFunction(value=>window.savedCard.querySelector('dd').textContent!==value,entry);
  assert.equal(await watch.evaluate(e=>e===window.savedCard&&e.dataset.scenarioId===window.savedId&&e.querySelector('details')===window.savedDetails&&window.savedDetails.open&&window.savedBody.isConnected),true);
+ const beforeTickTop=(await watch.boundingBox()).y;
  await page.evaluate(()=>{
   window.pushSignalTick=()=>{
    const d=structuredClone(window.lastSignalSnapshot),now=Date.now()/1000;d.server_time=now;
@@ -72,6 +76,7 @@ const server=http.createServer((req,res)=>{if(req.method!=='GET'){posts++;res.wr
    if(window.savedCard!==document.querySelector('#aura-explainable [data-frame="1h"][data-direction="SHORT"]'))throw Error('CARD_DISAPPEARED');
   };for(let i=0;i<120;i++)window.pushSignalTick();
  });
+ assert.ok(Math.abs((await watch.boundingBox()).y-beforeTickTop)<1,'quote ticks must not move the card');
  await watch.getByRole('button',{name:'Закрепить сигнал',exact:true}).click();
  const frozen=await watch.textContent();
  await page.evaluate(()=>{for(let i=0;i<120;i++)window.pushSignalTick();});
@@ -99,10 +104,15 @@ const server=http.createServer((req,res)=>{if(req.method!=='GET'){posts++;res.wr
  await page.screenshot({path:path.join(out,name+'-chart.png'),fullPage:true});
  mode='MALFORMED';await page.waitForFunction(()=>[...document.querySelectorAll('#aura-explainable article')].every(e=>e.dataset.state==='UNKNOWN'),{},{timeout:10000});
  for(const tab of ['chart','more','home','signals'])await page.locator('#app-tab-'+tab).click();
+ await watch.getByRole('button',{name:'Закрепить сигнал',exact:true}).click();
  await page.reload();await page.locator('#app-tab-signals').click();await page.waitForFunction(()=>document.querySelector('.explain-history li'));
+ assert.equal(await page.locator('[data-signal-frame="1h"]').getAttribute('aria-pressed'),'true');
+ assert.equal(await watch.getAttribute('data-state'),'SNAPSHOT');
+ assert.equal(await watch.locator('details').getAttribute('open'),'');
  assert.match(await page.locator('.explain-history').textContent(),/НЕАКТУАЛЕН/);
- assert.deepEqual(errors,[]);reports.push({name,long_short:true,rejected_unknown:true,risk:true,details_persist:true,stable_dom:true,updates:240,pin:true,persistent_history:true,chart_overlays:true,quote_expiry:true,navigation:true,overflow:false,errors});await context.close();}
+ assert.deepEqual(errors,[]);reports.push({name,long_short:true,rejected_unknown:true,risk:true,details_persist:true,stable_dom:true,updates:240,selected_frame:true,no_tick_layout_shift:true,persisted_pin:true,pin:true,persistent_history:true,chart_overlays:true,quote_expiry:true,navigation:true,overflow:false,errors});await context.close();}
  assert.equal(posts,0);fs.writeFileSync(path.join(out,'report.json'),JSON.stringify({status:'PASS',posts,reports},null,2));console.log(JSON.stringify({status:'PASS',posts,reports}));
  }finally{for(const res of held)res.destroy();await browser?.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
 

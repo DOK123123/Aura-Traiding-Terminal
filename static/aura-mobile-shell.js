@@ -3,7 +3,7 @@
   'use strict';
   const SOURCE = 'BITGET_BTCUSDT_USDT_FUTURES_PUBLIC_V2';
   const TABS = ['home', 'signals', 'chart', 'more'];
-  const LABELS = {home:'Главная', signals:'Сигналы', chart:'График', more:'Ещё'};
+  const LABELS = {home:'Главная', signals:'Сигналы', chart:'График', more:'История'};
 
   function resolveTab(hash) {
     const match = /^#app-(home|signals|chart|more)$/.exec(String(hash || ''));
@@ -155,11 +155,12 @@
     for(const selector of ['.toolbar','#status','.feed-strip','#live-candle','.terminal-grid'])move(selector,panes.chart);
 
     const moreHeading=el('div','aura-screen-title');moreHeading.append(el('p','aura-overline','ЖУРНАЛ · НАСТРОЙКИ · ДИАГНОСТИКА'));
-    moreHeading.append(el('h1','','Ещё'));panes.more.append(moreHeading);
+    moreHeading.append(el('h1','','История'));panes.more.append(moreHeading);
     const journal=el('section','aura-more-card');journal.append(el('h2','','Журнал сигналов'));
     journal.append(el('p','aura-subtle','Локальная история Signal Confidence в этом браузере. Не является историей исполненных сделок.'));
     const sourceJournal=document.querySelector('#aura-confidence details');
     if(sourceJournal)journal.append(sourceJournal);
+    move('.explain-history',journal);
     panes.more.append(journal);
     const settings=el('section','aura-more-card');settings.append(el('h2','','Оформление'));
     const themeLabel=el('label','aura-theme-label','Тема интерфейса');
@@ -228,10 +229,10 @@
       quote.textContent=model.quote?'Bid '+fmt(model.quote.bid)+' · Ask '+fmt(model.quote.ask):'Bid — · Ask —';
       updated.textContent=model.quote?'Источник Bitget · '+model.frame+' · получено '+new Date(model.quote.received_at*1000).toLocaleTimeString('ru-RU',{timeZone:'UTC'})+' UTC':'Проверьте соединение. Исторические свечи не считаются LIVE.';
       signal.dataset.state=model.state;
-      signal.textContent=model.state==='WATCH'?(model.candidate.direction+' · WATCH · '+model.candidate.score+'/100'):model.state;
+      signal.textContent=model.state==='WATCH'?(model.candidate.direction+' · WATCH'):model.state;
       details.textContent=model.state==='WATCH'
         ?(model.candidate.name?model.candidate.name+' · ':'')+'Entry '+fmt(model.candidate.entry)+' · SL '+fmt(model.candidate.sl)+' · TP '+fmt(model.candidate.tp)+' · net RR '+model.candidate.net_rr.toFixed(2)+' · '+model.reason
-        :model.reason+(model.state==='WAIT'?' · Порог '+model.threshold+'/100':'');
+        :model.reason;
     }
     const resume=()=>{if(document.hidden)feed.stop();else feed.start();};
     root.addEventListener('pagehide',()=>feed.stop());
@@ -241,4 +242,5 @@
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build,{once:true});else build();
 })(typeof window !== 'undefined' ? window : globalThis);
+
 

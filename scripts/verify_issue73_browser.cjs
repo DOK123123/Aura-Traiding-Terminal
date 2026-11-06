@@ -58,7 +58,7 @@ const server=http.createServer((req,res)=>{
       assert.equal(await page.locator('#app-signals').isVisible(),false);
       assert.match(await page.locator('#app-bid-ask').textContent(),/Bid 49,999\.90 · Ask 50,000\.10/);
       assert.match(await page.locator('#app-signal-detail').textContent(),/Entry .*SL .*TP .*net RR/);
-      assert.match(await page.locator('#app-signal-state').textContent(),/SHORT · WATCH · 75\/100/);
+      assert.match(await page.locator('#app-signal-state').textContent(),/SHORT · WATCH/);
       await page.getByRole('button',{name:'Смотреть сигналы'}).click();
       assert.equal(await page.locator('#app-signals').isVisible(),true);
       assert.equal(await page.locator('#app-tab-signals').getAttribute('aria-selected'),'true');
@@ -123,4 +123,5 @@ const server=http.createServer((req,res)=>{
     console.log(JSON.stringify({status:'PASS',posts,reports}));
   }finally{await browser?.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
 
