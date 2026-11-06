@@ -21,10 +21,15 @@ def case(at=1787464800, frame='1h'):
 
 
 def test_three_real_independent_strategies_detect_both_sides_before_risk_gates():
-    examples = [('TREND_PULLBACK', 'LONG', 1783098900), ('TREND_PULLBACK', 'SHORT', 1783227600),
-                ('BREAKOUT_RETEST', 'LONG', 1783988100), ('BREAKOUT_RETEST', 'SHORT', 1783217700),
-                ('MOMENTUM_DIVERGENCE', 'LONG', 1783987200), ('MOMENTUM_DIVERGENCE', 'SHORT', 1783127700)]
-    for strategy, side, at in examples:
+    low_rr = 'NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY'
+    wide = 'STOP_WIDER_THAN_3_ATR'
+    examples = [('TREND_PULLBACK', 'LONG', 1783098900, 'ENTRY_IN_OPPOSING_ZONE'),
+                ('TREND_PULLBACK', 'SHORT', 1783227600, low_rr),
+                ('BREAKOUT_RETEST', 'LONG', 1783988100, low_rr),
+                ('BREAKOUT_RETEST', 'SHORT', 1783217700, low_rr),
+                ('MOMENTUM_DIVERGENCE', 'LONG', 1783987200, wide),
+                ('MOMENTUM_DIVERGENCE', 'SHORT', 1783127700, wide)]
+    for strategy, side, at, reason in examples:
         b, q = case(at, '15m')
         rows = evaluate(b, '15m', q, at)
         assert len(rows) == 6
@@ -32,7 +37,11 @@ def test_three_real_independent_strategies_detect_both_sides_before_risk_gates()
         assert all(c['passed'] for c in x['checks'])
         assert x['score'] == 100  # full pattern can still fail costs, not probability
         assert x['state'] == 'REJECTED'
-        assert 'NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY' in x['rejection']
+        assert reason in x['rejection']
+        if reason == wide:
+            assert x['stop_explanation']['distance_atr'] > 3
+        if reason == 'ENTRY_IN_OPPOSING_ZONE':
+            assert x['tp'] is None
         assert x['stop_explanation']['atr'] > 0
         if strategy == 'MOMENTUM_DIVERGENCE':
             assert {'RSI_DIVERGENCE', 'MACD_DIVERGENCE', 'CONFIRMED_PIVOTS'} <= {c['code'] for c in x['checks']}
@@ -56,9 +65,33 @@ def test_real_short_and_explicitly_synthetic_mirrored_long_stop_cost_and_horizon
     assert x['entry'] == q['ask' if mirror else 'bid']
     assert x['costs']['funding_reserve'] > 0
     assert x['costs']['entry_basis'] == 'EXECUTABLE_QUOTE'
-    assert x['target_explanation']['pivot']['confirmed_at'] <= b[-1][0]
+    target = x['target_explanation']
+    zone = target['zone']
+    assert zone['confirmed_at'] <= b[-1][0] and zone['touches'] >= 2
+    assert x['tp'] == zone['lower' if mirror else 'upper']
+    assert s['distance_atr'] <= 3
+    changed = {**q, 'bid': q['bid']-.01, 'ask': q['ask']+.01}
+    updated = next(y for y in evaluate(b, '1h', changed, at) if y['id'] == x['id'])
+    assert updated['entry'] != x['entry'] and updated['zones'] == x['zones']
     assert x['horizon']['max_seconds'] == 14400
     assert x['probability_tp_before_sl'] is None and x['edge'] == 'NO_EDGE_FOUND'
+
+
+def test_target_beyond_horizon_is_rejected_without_moving_levels(monkeypatch):
+    b, q = case()
+    def short():
+        return next(x for x in evaluate(b, '1h', q, q['time'])
+                    if x['strategy'] == 'BREAKOUT_RETEST' and x['direction'] == 'SHORT')
+    baseline = short()
+    assert baseline['state'] == 'WATCH'
+    assert baseline['target_explanation']['max_distance_atr'] == 8
+    monkeypatch.setattr('app.manual_preview.explainable.TARGET_ATR_PER_SQRT_BAR', 3)
+    rejected = short()
+    assert rejected['state'] == 'REJECTED'
+    assert rejected['rejection'] == ['TARGET_TOO_FAR_FOR_HORIZON']
+    assert rejected['target_explanation']['distance_atr'] > 6
+    assert [rejected[k] for k in ('entry', 'sl', 'tp', 'net_rr')] == [
+        baseline[k] for k in ('entry', 'sl', 'tp', 'net_rr')]
 
 
 @pytest.mark.parametrize('defect', ['stale', 'future', 'foreign', 'crossed', 'gap', 'warmup', 'forming', 'nan'])

@@ -8,6 +8,8 @@ const LABELS={EMA_TREND:'Тренд EMA20/50',TREND_STRUCTURE:'Структур�
  PRIOR_LEVEL_BREAK:'Пробой известного уровня',LEVEL_HELD:'Удержание уровня',SEPARATE_RETEST:'Отдельный ретест',BREAK_VOLUME:'Объём пробоя',
  CONFIRMED_PIVOTS:'Подтверждённые экстремумы',PRICE_DIVERGENCE:'Новый ценовой экстремум',RSI_DIVERGENCE:'Дивергенция RSI',
  MACD_DIVERGENCE:'Дивергенция MACD',MOMENTUM_TURN:'Разворот импульса MACD',CLOSED_CANDLE_CONFIRMATION:'Подтверждение закрытой свечой',
+ TARGET_TOO_FAR_FOR_HORIZON:'Цель слишком далеко относительно ATR и срока удержания',
+ STOP_WIDER_THAN_3_ATR:'Структурный стоп шире 3 ATR',ENTRY_IN_OPPOSING_ZONE:'Вход внутри встречной зоны',
  NET_RR_BELOW_1_5_OR_INVALID_GEOMETRY:'Net R/R ниже 1.5 или некорректные уровни',NO_KNOWN_OPPOSING_PIVOT_TARGET:'Нет известного встречного экстремума для TP',
  NO_STRUCTURAL_INVALIDATION_BEHIND_ENTRY:'Нет структурного уровня отмены за Entry',OUTSIDE_CLOSED_SIGNAL_ENTRY_ZONE:'Котировка или модельное исполнение вышли из зоны входа',
  STALE_OR_UNVERIFIED_BITGET_QUOTE:'Нет свежих проверенных Bid/Ask Bitget',INCOMPLETE_OR_STALE_CLOSED_HISTORY:'Недостаточная или устаревшая история закрытых свечей',
@@ -35,7 +37,7 @@ function fresh(data,c,now){const q=data?.quotes?.[c?.frame];return !!(evidence(c
  &&q.bid>0&&q.ask>=q.bid&&(q.ask-q.bid)/q.bid<=.002&&now>=q.time&&now-q.time<=5&&now>=q.received_at&&now-q.received_at<=5
  &&c.quote_time===q.time&&c.quote_received_at===q.received_at&&c.closed_at===Math.floor(now/FRAMES[c.frame])*FRAMES[c.frame]
  &&c.valid_until===c.closed_at+FRAMES[c.frame]&&now<c.valid_until);}
-function levels(c){if(!c||typeof c!=='object')return false;const sign=c.direction==='LONG'?1:-1;return [c.entry,c.sl,c.tp,c.net_rr,c.gross_rr,c.costs?.net_loss].every(Number.isFinite)
+function levels(c){if(!c||!['LONG','SHORT'].includes(c.direction))return false;const sign=c.direction==='LONG'?1:-1;return [c.entry,c.sl,c.tp,c.net_rr,c.gross_rr,c.costs?.net_loss].every(Number.isFinite)
  &&Math.min(c.entry,c.sl,c.tp)>0&&sign*(c.entry-c.sl)>0&&sign*(c.tp-c.entry)>0&&c.costs.net_loss>0;}
 function usable(data,c,now,threshold=0){const q=data?.quotes?.[c?.frame];return !!(fresh(data,c,now)&&c.state==='WATCH'&&c.score>=threshold
  &&Array.isArray(c.checks)&&c.checks.length>0&&c.checks.every(x=>x.passed===true)&&c.rejection?.length===0&&levels(c)&&c.net_rr>=1.5
@@ -69,39 +71,104 @@ audio.onclick=async()=>{if(audioReady){audioReady=false;player.suspend();audio.t
  if(!navigator.locks?.request){audioStatus.textContent='Без безопасного исключения дублей звук недоступен';return;}
  try{audioReady=await player.activate();}catch{audioReady=false;}audio.textContent=audioReady?'Выключить звук WATCH':'Включить звук WATCH · открытая вкладка';if(audioReady)void notify(Date.now()/1000);};
 const cards=add('div','',host);cards.className='sc-cards explain-cards';
-let latest=null,initialized=false,lastSignature=null;
-function render(){const clock=Date.now()/1000;void notify(clock);const signature=JSON.stringify([latest,candidateRows(latest).map(c=>fresh(latest,c,clock)),risk.value]);if(signature===lastSignature)return;lastSignature=signature;const opened=new Set([...cards.querySelectorAll('article')].filter(c=>c.querySelector('details')?.open).map(c=>c.dataset.frame+':'+c.dataset.direction));cards.replaceChildren();const now=Date.now()/1000;
- for(const frame of Object.keys(FRAMES))for(const direction of ['LONG','SHORT']){
-  const rows=candidateRows(latest).filter(c=>c.frame===frame&&c.direction===direction&&NAMES[c.strategy]);
-  rows.sort((a,b)=>Number(usable(latest,b,now))-Number(usable(latest,a,now))||(b.score??-1)-(a.score??-1));
-  const x=rows[0],known=x&&fresh(latest,x,now),state=known?(usable(latest,x,now)?'WATCH':'REJECTED'):'UNKNOWN';
-  const card=add('article','',cards);card.dataset.frame=frame;card.dataset.direction=direction;card.dataset.state=state;
-  add('h3',direction+' · '+frame+' · '+state+(known?' · '+x.score+'/100':''),card);
-  if(!known){add('p','Данные не подтверждены. Балл и уровни недоступны. '+reasons(x).map(label).join('; '),card);continue;}
-  add('p','Стратегия: '+x.name,card);
-  const met=x.checks.filter(c=>c.passed).map(c=>label(c.code)),miss=x.checks.filter(c=>!c.passed).map(c=>label(c.code));
-  add('p','Aura увидела: '+(met.join('; ')||'условия пока не выполнены')+'.',card);
-  if(state==='REJECTED')add('p','Отказ: '+([...reasons(x).map(label),...miss].filter((v,i,a)=>a.indexOf(v)===i).join('; ')||'Сценарий не прошёл проверку'),card);
-  if(levels(x)){
-   add('p','Entry '+fmt(x.entry)+' · SL '+fmt(x.sl)+' · TP '+fmt(x.tp)+' USDT',card);
-   add('p','Почему вход здесь: '+x.entry_reason,card);
-   add('p','Почему SL здесь: '+x.stop_explanation.reason+' Уровень отмены '+fmt(x.stop_explanation.anchor)+' USDT.',card);
-   add('p','Почему TP здесь: '+x.target_explanation.reason+' '+fmt(x.tp)+' USDT.',card);
-   add('p','Gross R/R '+fmt(x.gross_rr)+' · Net R/R '+fmt(x.net_rr),card);
-   const quantity=position(x,Number(risk.value));
-   add('p',quantity===null?'Для расчёта размера позиции задайте риск в USDT.':'Размер позиции ≤ '+quantity.toFixed(6)+' BTC · номинал '+fmt(quantity*x.entry)+' USDT. Расчётный риск '+fmt(Number(risk.value))+' USDT.',card);
-  }
-  add('p','Для входа: '+x.confirmation,card);
-  add('p','Отмена: '+x.cancel.replaceAll('anchor','уровня отмены'),card);
-  add('p','Ориентир удержания '+Math.round(x.horizon.min_seconds/60)+'–'+Math.round(x.horizon.max_seconds/60)+' мин. Если SL/TP не достигнуты, пересмотреть выход не позже чем через '+Math.round(x.horizon.max_seconds/60)+' мин после входа. Это оценка, не гарантия.',card);
-  const detail=add('details','',card);detail.open=opened.has(frame+':'+direction);add('summary','Почему такой сигнал',detail);
-  for(const c of x.checks)add('p',(c.passed?'Выполнено: ':'Не выполнено: ')+label(c.code)+' · факт '+JSON.stringify(c.actual)+' · нужно '+JSON.stringify(c.required),detail);
-  add('p','Индикаторы: '+Object.entries(x.indicators).map(([k,v])=>k+' '+fmt(v)).join(' · '),detail);
-  if(x.stop_explanation){const s=x.stop_explanation;add('p','ATR'+s.atr_period+' '+fmt(s.atr)+' USDT ('+s.atr_method+'). Anchor '+fmt(s.anchor)+'. '+s.formula+'. Расстояние '+fmt(s.distance_usdt)+' USDT / '+fmt(s.distance_percent)+'%.',detail);}
-  if(x.costs)add('p','На 1 BTC: комиссия при SL '+fmt(x.costs.stop_fees)+', при TP '+fmt(x.costs.target_fees)+' USDT; funding-резерв '+fmt(x.costs.funding_reserve)+' USDT. Комиссия .1%/сторона, проскальзывание .05%/сторона; Entry уже Ask/Bid, SL/TP — котировки выхода, спред повторно не вычитается. Это модель расходов, не фактический тариф или funding.',detail);
-  add('p','Закрытие свечи '+new Date(x.closed_at*1000).toISOString()+'; вход действует до '+new Date(x.valid_until*1000).toISOString()+'. '+x.score_basis,detail);
-  for(const other of rows.slice(1))add('p','Другой сценарий: '+other.name+' · '+(fresh(latest,other,now)?other.state+' · '+other.score+'/100':'UNKNOWN')+' · '+reasons(other).map(label).join('; '),detail);
+let latest=null,initialized=false,selected=null;
+const slots=[];
+function text(node,value){if(node.textContent!==value)node.textContent=value;}
+function hide(node,hidden){if(node.hidden!==hidden)node.hidden=hidden;}
+function zoneList(candidate){
+ return Array.isArray(candidate?.zones)?candidate.zones.filter(z=>z&&['SUPPORT','RESISTANCE'].includes(z.kind)
+  &&Number.isFinite(z.lower)&&Number.isFinite(z.upper)&&z.lower>0&&z.upper>z.lower
+  &&Number.isInteger(z.touches)&&z.touches>=2&&Number.isFinite(z.confirmed_at)&&z.confirmed_at<candidate.closed_at).slice(0,2):[];
+}
+for(const frame of Object.keys(FRAMES))for(const direction of ['LONG','SHORT']){
+ const card=add('article','',cards);card.dataset.frame=frame;card.dataset.direction=direction;
+ const title=add('h3','',card),description=add('p','',card),refusal=add('p','',card),plan=add('section','',card);
+ const planStatus=add('strong','',plan),metrics=add('dl','',plan);metrics.className='explain-plan';
+ const values={};
+ for(const [key,label] of [['entry','Entry'],['sl','Stop Loss'],['tp','Take Profit'],['net_rr','Net R/R']]){
+  const item=add('div','',metrics);add('dt',label,item);values[key]=add('dd','',item);
  }
+ const size=add('p','',plan),button=add('button','На графике',card);button.type='button';
+ const detail=add('details','',card);add('summary','Почему такой сигнал',detail);
+ const body=add('div','',detail);
+ const slot={frame,direction,card,title,description,refusal,plan,planStatus,values,size,button,detail,body};
+ slots.push(slot);
+ button.addEventListener('click',()=>{
+  selected={frame,direction,id:slot.id};
+  document.getElementById('app-tab-chart')?.click();
+  document.querySelector('#timeframes [data-tf="'+frame+'"]')?.click();
+  render();
+ });
+}
+function render(){
+ const now=Date.now()/1000;
+ void notify(now);
+ const all=candidateRows(latest),overlays={};
+ for(const slot of slots){
+  const {frame,direction,card,title,description,refusal,plan,planStatus,values,size,button,detail,body}=slot;
+  const rows=all.filter(c=>c.frame===frame&&c.direction===direction&&Object.hasOwn(NAMES,c.strategy));
+  const verified=rows.filter(c=>fresh(latest,c,now));
+  verified.sort((a,b)=>Number(usable(latest,b,now))-Number(usable(latest,a,now))||b.score-a.score
+   ||Number(b.id===slot.id)-Number(a.id===slot.id));
+  const x=verified[0],watch=usable(latest,x,now),state=x?(watch?'WATCH':'REJECTED'):'UNKNOWN';
+  if(card.dataset.state!==state)card.dataset.state=state;
+  if(x&&x.id!==slot.id){slot.id=x.id;card.dataset.scenarioId=x.id;}
+  if(watch)slot.lastPlan=x;
+  const historical=!x&&slot.lastPlan;
+  const displayed=x&&levels(x)?x:historical||null;
+  hide(plan,!displayed);
+  text(title,direction+' · '+frame+' · '+state+(x?' · '+x.score+'/100':''));
+  const missing=reasons(rows.find(c=>c.state==='UNKNOWN')).map(label).join(' · ');
+  text(description,x?'Стратегия: '+x.name:'Данные не подтверждены. '+(missing||'Нет свежего снимка котировок и закрытых свечей.'));
+  hide(refusal,state!=='REJECTED');
+  text(refusal,state==='REJECTED'?'Отказ: '+(reasons(x).map(label).join(' · ')||'План не прошёл проверку'): '');
+  if(displayed){
+   text(planStatus,historical?'НЕАКТУАЛЕН · '+displayed.name+' · '+new Date(displayed.quote_time*1000).toISOString()
+    :watch?'План WATCH':'Отклонённый расчёт');
+   for(const key of Object.keys(values))text(values[key],fmt(displayed[key]));
+  }
+  const quantity=watch?position(x,Number(risk.value)):null;
+  text(size,quantity===null?'':'Размер позиции ≤ '+quantity.toFixed(6)+' BTC · номинал '+fmt(quantity*x.entry)+' USDT.');
+  hide(size,quantity===null);
+  const zones=zoneList(x);
+  if(zones.length)overlays[frame]={zones};
+  const canShow=!!x&&(watch||zones.length>0);
+  hide(button,!canShow);
+  hide(detail,!x&&!historical);
+  if(x){
+   const alternatives=verified.slice(1).map(c=>c.name+' · '+c.state+' · '+c.score+'/100 · '+reasons(c).map(label).join(' · '));
+   const signature=JSON.stringify([x.id,state,x.checks,x.rejection,x.indicators,x.stop_explanation?.anchor,x.target_explanation?.reason,levels(x),zones,alternatives]);
+   if(signature!==slot.detailSignature){
+    slot.detailSignature=signature;
+    body.replaceChildren();
+    const met=x.checks.filter(c=>c.passed).map(c=>label(c.code));
+    add('p','Aura увидела: '+(met.join(' · ')||'условия пока не выполнены'),body);
+    for(const c of x.checks)add('p',(c.passed?'Выполнено: ':'Не выполнено: ')+label(c.code)+' · факт '+JSON.stringify(c.actual)+' · нужно '+JSON.stringify(c.required),body);
+    add('p','Индикаторы: '+Object.entries(x.indicators).map(([k,v])=>k+' '+fmt(v)).join(' · '),body);
+    if(x.stop_explanation){
+     const stop=x.stop_explanation;
+     add('p','Почему SL здесь: ATR14 '+fmt(stop.atr)+' USDT. '+stop.reason+' · уровень отмены '+fmt(stop.anchor),body);
+    }
+    if(x.target_explanation)add('p','Почему TP здесь: '+x.target_explanation.reason,body);
+    for(const zone of zones)add('p',(zone.kind==='SUPPORT'?'Поддержка ':'Сопротивление ')+fmt(zone.lower)+'–'+fmt(zone.upper)+' · касаний '+zone.touches,body);
+    if(levels(x))add('p','Почему вход здесь: '+x.entry_reason,body);
+    if(levels(x))add('p','Расходы в Net R/R: комиссия, проскальзывание и funding-резерв. Вход по Ask/Bid, спред повторно не вычитается.',body);
+    add('p','Для входа: '+x.confirmation,body);
+    add('p','Отмена: '+x.cancel.replaceAll('anchor','уровня отмены'),body);
+    add('p','Ориентир удержания '+Math.round(x.horizon.min_seconds/60)+'–'+Math.round(x.horizon.max_seconds/60)+' мин. Если SL/TP не достигнуты, пересмотреть выход к концу этого окна.',body);
+    add('p','Закрытие свечи '+new Date(x.closed_at*1000).toISOString()+' · срок входа до '+new Date(x.valid_until*1000).toISOString(),body);
+    for(const alternative of alternatives)add('p','Другой сценарий: '+alternative,body);
+   }
+  }else if(slot.detailSignature!==null){
+   slot.detailSignature=null;body.replaceChildren();
+   if(historical)add('p','Последний подтверждённый план сохранён для истории в этой вкладке.',body);
+  }
+ }
+ if(selected){
+  const chosen=all.find(c=>c.frame===selected.frame&&c.direction===selected.direction&&c.id===selected.id&&usable(latest,c,now));
+  if(chosen)overlays[chosen.frame]={zones:zoneList(chosen),plan:chosen};
+ }
+ root.dispatchEvent(new CustomEvent('aura-explainable-chart',{detail:overlays}));
 }
 risk.addEventListener('input',render);
 root.addEventListener('aura-preview-snapshot',event=>{latest=event.detail;

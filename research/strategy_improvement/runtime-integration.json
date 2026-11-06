@@ -7,7 +7,7 @@
     },
     "app/manual_preview/page.py": {
       "archive": "research/strategy_improvement/baseline_runtime/page.py.txt",
-      "authorized_runtime_sha256": "96e47853d8610d90cee3ea2da850607fe8eba9e43ffd17ba8ef135c2c46bda5e"
+      "authorized_runtime_sha256": "0e89c3e9e20ea544de5cdc6dd00b8f34bb0661fd0973bd31e8a0abe2cff3605f"
     }
   }
 }
