@@ -49,7 +49,7 @@ class WatchHistory{
  constructor(storage){this.storage=storage;this.rows=[];this.available=true;
   try{const raw=storage.getItem(HISTORY_KEY)||'[]';if(raw.length>2000000)throw Error('LIMIT');
    const rows=JSON.parse(raw);if(!Array.isArray(rows))throw Error('FORMAT');
-   this.rows=rows.filter(r=>Number.isFinite(r?.at)&&evidence(r.c)&&levels(r.c)&&r.c.state==='WATCH'
+   this.rows=rows.filter(r=>Number.isFinite(r?.at)&&r.at>=0&&r.at<1e11&&Number.isFinite(r.c?.quote_time)&&r.c.quote_time>=0&&r.c.quote_time<1e11&&typeof r.c?.id==='string'&&/^[a-f0-9]{64}$/.test(r.c.id)&&evidence(r.c)&&levels(r.c)&&r.c.state==='WATCH'
     &&Object.hasOwn(NAMES,r.c.strategy)&&Object.hasOwn(FRAMES,r.c.frame)&&r.key===watchKey(r.c)).slice(-100);
   }catch{this.available=false;}}
  observe(data,now){let changed=false;

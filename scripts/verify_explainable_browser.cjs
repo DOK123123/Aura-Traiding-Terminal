@@ -64,17 +64,17 @@ const server=http.createServer((req,res)=>{if(req.method!=='GET'){posts++;res.wr
  await page.waitForFunction(value=>window.savedCard.querySelector('dd').textContent!==value,entry);
  assert.equal(await watch.evaluate(e=>e===window.savedCard&&e.dataset.scenarioId===window.savedId&&e.querySelector('details')===window.savedDetails&&window.savedDetails.open&&window.savedBody.isConnected),true);
  await page.evaluate(()=>{
-  for(let i=0;i<120;i++){
+  window.pushSignalTick=()=>{
    const d=structuredClone(window.lastSignalSnapshot),now=Date.now()/1000;d.server_time=now;
-   for(const q of Object.values(d.quotes)){q.time=q.received_at=now;}
-   for(const c of d.explainable_candidates){c.quote_time=c.quote_received_at=now;}
+   for(const q of new Set(Object.values(d.quotes))){q.time=q.received_at=now;q.ask+=.000001;q.bid-=.000001;}
+   for(const c of d.explainable_candidates){c.quote_time=c.quote_received_at=now;if(c.entry!=null)c.entry=d.quotes[c.frame][c.direction==='LONG'?'ask':'bid'];}
    window.dispatchEvent(new CustomEvent('aura-preview-snapshot',{detail:d}));
    if(window.savedCard!==document.querySelector('#aura-explainable [data-frame="1h"][data-direction="SHORT"]'))throw Error('CARD_DISAPPEARED');
-  }
+  };for(let i=0;i<120;i++)window.pushSignalTick();
  });
  await watch.getByRole('button',{name:'Закрепить сигнал',exact:true}).click();
  const frozen=await watch.textContent();
- await page.evaluate(()=>{for(let i=0;i<120;i++)window.dispatchEvent(new CustomEvent('aura-preview-snapshot',{detail:structuredClone(window.lastSignalSnapshot)}));});
+ await page.evaluate(()=>{for(let i=0;i<120;i++)window.pushSignalTick();});
  assert.equal(await watch.textContent(),frozen);assert.match(frozen,/СНИМОК/);
  await watch.getByRole('button',{name:'Открепить снимок',exact:true}).click();
  assert.ok(await page.locator('.explain-history li').count()>0);

@@ -92,3 +92,9 @@ test('missing levels, UNKNOWN and unavailable storage cannot invent a WATCH',()=
  assert.equal(journal.available,false);
  d.explainable_candidates[0].state='UNKNOWN';journal.observe(d,now);assert.equal(journal.rows.length,0);
 });
+
+test('damaged saved timestamps cannot crash historical rendering',()=>{
+ const c=data().explainable_candidates[0];c.id='a'.repeat(64);c.quote_time=null;
+ const rows=[{key:E.watchKey(c),at:now,c}];
+ const j=new E.WatchHistory({getItem:()=>JSON.stringify(rows)});assert.equal(j.rows.length,0);
+});
