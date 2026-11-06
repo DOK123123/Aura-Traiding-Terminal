@@ -326,12 +326,14 @@ async def health():
     worker=getattr(app.state,'signal_lock',None)
     lock_enabled=getattr(app.state.preview_config,'lock_enabled',False)
     lock_ready=bool(worker and worker.error is None and time.time()-worker.updated_at<=7)
+    if lock_enabled and worker and worker.error is not None:degraded=True
     return JSONResponse({'status':'degraded' if degraded else 'ok','scope':'ISOLATED_MANUAL_PREVIEW',
             'exchange_execution':False,'active43_controller_enabled':False,'automatic_entry_scheduler_enabled':False,
             'signal_observer_enabled':enabled,'signal_observer_running':running,
             'signal_observer_last_cycle_at':last,'signal_observer_overdue':overdue,
             'signal_lock_enabled':lock_enabled,'signal_lock_ready':lock_ready,
             'push_configured':bool(worker and worker.sender),
+            'push_delivery_error':getattr(worker,'delivery_error',None),
             'build_sha':os.environ.get('RENDER_GIT_COMMIT','LOCAL_UNRELEASED')},status_code=503 if degraded else 200)
 
 @app.get('/')
