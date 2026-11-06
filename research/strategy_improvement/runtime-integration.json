@@ -1,13 +1,13 @@
 {
-  "reason": "User-authorized Aura 5 integration, observer health correctness, Issue #70 read-only Signal Confidence, and Issue #73 isolated mobile navigation. Original archived runtime/numerical research remain unchanged; page hash tracks the reviewed preview-only CSS/JS injection while main/production remain out of scope. Explainable signal cards are an authorized preview-only addition; the original research archive is unchanged.",
+  "reason": "User-authorized Aura 5 integration, observer health correctness, Issue #70 read-only Signal Confidence, and Issue #73 isolated mobile navigation. Original archived runtime/numerical research remain unchanged; page hash tracks the reviewed preview-only CSS/JS injection while main/production remain out of scope. Explainable signal cards are an authorized preview-only addition; the original research archive is unchanged. PR #83: authorized isolated Signal Lock and Android Push integration; only current preview main/page hashes updated, frozen archive and strategy formulas unchanged.",
   "files": {
     "app/manual_preview/main.py": {
       "archive": "research/strategy_improvement/baseline_runtime/main.py.txt",
-      "authorized_runtime_sha256": "3a7c83bb56fd0ba44a2d31bd71efaaef8a4572d848c95cf0fd6b2cbe4c1b23d1"
+      "authorized_runtime_sha256": "511fdd96fa1c2f35b388dce5934c552ac3287b39c382709deec04bd446b5ada2"
     },
     "app/manual_preview/page.py": {
       "archive": "research/strategy_improvement/baseline_runtime/page.py.txt",
-      "authorized_runtime_sha256": "0e89c3e9e20ea544de5cdc6dd00b8f34bb0661fd0973bd31e8a0abe2cff3605f"
+      "authorized_runtime_sha256": "c47a1b1176a5a8b0f40899963a486490f9aa17cb770cf4a1639c49092e46d3ef"
     }
   }
 }

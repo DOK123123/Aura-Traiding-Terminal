@@ -237,6 +237,7 @@ def evaluate(rows: list, frame: str, quote: dict, now: float) -> list[dict]:
                            'source': SOURCE, 'frame': frame, 'strategy': strategy, 'name': name, 'direction': side,
                            'state': 'REJECTED' if rejection else 'WATCH', 'score': round(100*sum(v['passed'] for v in checks)/len(checks)),
                            'score_basis': 'Равные доли выполненных условий выбранной стратегии; не вероятность прибыли',
+                           'structure': {'model': MODEL_HASH, 'pivots': [[v['kind'], v['time']] for v in sorted(own[-2:]+opposite[-2:], key=lambda v: (v['time'],v['kind']))]},
                            'checks': checks, 'rejection': rejection, 'zones': zones, 'indicators': {k: float(v[-1]) for k, v in m.items()},
                            'closed_at': cutoff, 'valid_until': cutoff+step, 'quote_time': quote['time'], 'quote_received_at': quote['received_at'],
                            'entry': entry if valid_levels else None, 'sl': sl if valid_levels else None, 'tp': tp if valid_levels else None,

@@ -12,6 +12,9 @@ from typing import Literal
 from app.hunter.main import Hunter
 from app.hunter.market import PublicMarket
 from app.hunter.store import Store
+from .push import PushSender
+from .signal_store import SignalStore
+from .signal_service import SignalService
 from .explainable import from_store, VERSION as EXPLANATION_VERSION
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -35,6 +38,10 @@ async def observer_lifespan(app, client, enabled: bool):
     app.state.preview_signals_started_at=time.time()
     app.state.preview_signals=None
     app.state.preview_signals_task=None
+    app.state.signal_lock = None
+    lock_task = None
+    push_task = None
+    app.state.preview_push = None
     market=None
     if enabled:
         try:
@@ -44,6 +51,10 @@ async def observer_lifespan(app, client, enabled: bool):
             observer=Hunter(store,market,{'approved':[]})
             app.state.preview_signals=observer
             app.state.preview_signals_task=asyncio.create_task(run_observer(observer))
+            app.state.signal_lock = SignalService(observer, SignalStore(app.state.preview_store))
+            lock_task = asyncio.create_task(app.state.signal_lock.run())
+            app.state.preview_push = PushSender(SignalStore(app.state.preview_store))
+            push_task = asyncio.create_task(app.state.preview_push.run())
         except Exception:
             log.warning('PREVIEW_SIGNALS_STARTUP_FAILED')
     try:yield
@@ -52,6 +63,12 @@ async def observer_lifespan(app, client, enabled: bool):
         if task:
             task.cancel()
             await asyncio.gather(task,return_exceptions=True)
+        if push_task:
+            push_task.cancel()
+            await asyncio.gather(push_task, return_exceptions=True)
+        if lock_task:
+            lock_task.cancel()
+            await asyncio.gather(lock_task, return_exceptions=True)
         if market:await market.close()
 
 
@@ -94,3 +111,11 @@ async def journal(request:Request,hours:int=Query(24,ge=24,le=48),kind:Literal['
     h=request.app.state.preview_signals
     if h is None:return JSONResponse({'code':'PREVIEW_SIGNALS_UNAVAILABLE'},503)
     return await asyncio.to_thread(h.store.export_diagnostics,time.time(),hours,kind,after,limit)
+
+
+@router.get('/locked')
+async def locked(request: Request, selected: str = Query('', max_length=194, pattern='^(?:[a-f0-9]{64}(?:,[a-f0-9]{64}){0,2})?$')):
+    service = getattr(request.app.state, 'signal_lock', None)
+    if service is None:
+        return JSONResponse({'code': 'SIGNAL_LOCK_UNAVAILABLE'}, 503)
+    return JSONResponse(service.view(time.time(), selected.split(',') if selected else []), headers={'Cache-Control': 'no-store'})

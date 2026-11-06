@@ -187,3 +187,11 @@ body[data-aura-app="mobile"] .aura-tab-pane {overflow-wrap:break-word;}
 .signal-settings{margin:8px 0;border-bottom:1px solid var(--line);font-size:13px}
 .signal-settings>summary{min-height:44px;padding:10px 0;cursor:pointer;font-weight:600}
 .signal-settings p{line-height:1.5}
+
+/* Server lifecycle cards retain their DOM/disclosures while quotes update. */
+.server-lock-active > :not(.server-lock){display:none!important}
+.server-lock article{border:1px solid var(--border,#728096);padding:12px;margin:12px 0;border-radius:12px;overflow-wrap:anywhere}
+.server-lock select{width:100%;min-height:44px}.server-lock pre,.push-settings pre{white-space:pre-wrap;overflow-wrap:anywhere}
+body[data-aura-theme="light"] select,body[data-aura-theme="light"] option,
+body[data-aura-theme="light"] #trend-badge{background:var(--panel);color:var(--text)}
+@media(prefers-color-scheme:light){body:not([data-aura-theme="dark"]) select,body:not([data-aura-theme="dark"]) option,body:not([data-aura-theme="dark"]) #trend-badge{background:var(--panel);color:var(--text)}}
