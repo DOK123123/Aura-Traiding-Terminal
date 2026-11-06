@@ -180,3 +180,7 @@ body[data-aura-app="mobile"] .aura-tab-pane {overflow-wrap:break-word;}
 .explain-plan div{padding:6px}
 
 
+
+#signals-market{min-height:3.2em;line-height:1.6}
+.signal-description,.signal-refusal{min-height:3.2em}
+.signal-plan-state{min-height:3.2em}

@@ -184,7 +184,7 @@ function render(){
   if(!displayed){text(planStatus,'Нет корректного плана');for(const key of Object.keys(values))text(values[key],'—');}
   text(title,direction+' · '+frame+' · '+({WATCH:'WATCH',REJECTED:'НЕ ВХОДИТЬ',UNKNOWN:'НЕДОСТАТОЧНО ДАННЫХ',SNAPSHOT:'СНИМОК · НЕ ДЕЙСТВУЮЩИЙ СИГНАЛ'}[state]));
   const missing=reasons(rows.find(c=>c.state==='UNKNOWN')).map(label).join(' · ');
-  text(description,(x?'Стратегия: '+x.name:'Данные не подтверждены. '+(missing||'Нет свежего снимка котировок и закрытых свечей.'))+(!displayed?' Entry/SL/TP не рассчитаны: нет проверенного корректного плана.':''));
+  text(description,x?'Стратегия: '+x.name:'Нет подтверждённого снимка рынка.');
   const rejected=state==='REJECTED'||slot.snapshot?.state==='REJECTED';
   hide(refusal,!rejected);
   text(refusal,rejected?(slot.snapshot?'Снимок отказа: ':'Отказ: ')+(reasons(x).slice(0,1).map(label).join(' · ')||'План не прошёл проверку'): '');
@@ -240,8 +240,9 @@ root.addEventListener('aura-preview-snapshot',event=>{latest=event.detail;
  if(!initialized&&latest?.explanation_version===VERSION){initialized=true;const legacy=document.getElementById('aura-score-diagnostics');if(legacy)legacy.open=false;}
  render();});
 document.addEventListener('visibilitychange',()=>{latest=null;audioReady=false;player.suspend();audio.textContent='Включить звук WATCH · открытая вкладка';render();});
+const restoreScroll=prefs.scroll;
 root.addEventListener('scroll',()=>{if(document.getElementById('app-signals')?.hidden===false){prefs.scroll=root.scrollY||0;savePrefs();}},{passive:true});
-if(root.requestAnimationFrame)root.requestAnimationFrame(()=>root.requestAnimationFrame(()=>{if(document.getElementById('app-signals')?.hidden===false)root.scrollTo?.(0,prefs.scroll);}));
+if(root.requestAnimationFrame)root.requestAnimationFrame(()=>root.requestAnimationFrame(()=>{if(document.getElementById('app-signals')?.hidden===false)root.scrollTo?.(0,restoreScroll);}));
 setInterval(render,1000);render();
 })(typeof window==='undefined'?globalThis:window);
 
