@@ -45,8 +45,11 @@ def verify(pg):
     assert pg.sql('SELECT count(*) FROM aura5_signals.outbox;')=='1'
     # Schema never changes wallet tables or the public isolation allowlist.
     assert rpc('load')['version']==4
+    rpc('test',{'id':sid}); expired_job=rpc('claim')
+    rpc('finish',{'id':expired_job['id'],'state':'REJECTED_BY_PUSH_SERVICE','code':410})
+    assert pg.sql("SELECT (NOT enabled AND body='{}'::jsonb) FROM aura5_signals.subscriptions;")=='t'
     assert json.loads(pg.sql("SET request.jwt.claims = '{\"role\":\"service_role\"}'; SELECT public.aura_manual_preview_guard();",role='service_role'))['isolated']
-    return {'status':'PASS','checks':['RLS_AND_ROLE_DENIAL','CAS_CONFLICT','CANDIDATE_WATCH','EVENT_OUTBOX_DEDUP','DATABASE_RESTART','CLAIM_ONCE','PROVIDER_ACCEPTED_NOT_DELIVERED','WALLET_SCOPE_UNCHANGED']}
+    return {'status':'PASS','checks':['RLS_AND_ROLE_DENIAL','CAS_CONFLICT','CANDIDATE_WATCH','EVENT_OUTBOX_DEDUP','DATABASE_RESTART','CLAIM_ONCE','PROVIDER_ACCEPTED_NOT_DELIVERED','WALLET_SCOPE_UNCHANGED','EXPIRED_SUBSCRIPTION_CLEARED']}
 
 def run():
     name='aura-manual-pg-'+uuid.uuid4().hex[:12]

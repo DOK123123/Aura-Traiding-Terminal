@@ -1,4 +1,4 @@
-(function(){'use strict';const host=document.getElementById('aura-explainable');if(!host)return;
+(function(){'use strict';const host=document.getElementById('aura-explainable');if(!host||!document.querySelector('meta[name="aura5-server-lock"]'))return;
 const box=document.createElement('details');box.className='push-settings';box.innerHTML='<summary>Android Web Push</summary><p role="status"></p><label><input type="checkbox"> Также CANDIDATE ≥70 (по умолчанию только WATCH)</label><button type="button">Включить Push</button><button type="button">Выключить Push</button><button type="button">Тест Push</button><button type="button">Журнал отправки</button><pre></pre>';
 host.parentElement.append(box);const state=box.querySelector('p'),candidate=box.querySelector('input'),buttons=box.querySelectorAll('button'),log=box.querySelector('pre');let config=null;
 try{candidate.checked=localStorage.getItem('aura5.push.candidate')==='true';}catch{}

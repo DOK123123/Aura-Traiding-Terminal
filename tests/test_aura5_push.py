@@ -60,3 +60,13 @@ def test_keys_and_pair_validation():
     with pytest.raises(ValueError):subscription(value)
     env=config();env[NAMES[1]]=config()[NAMES[1]]
     assert not PushSender(Store(),env).ready
+
+
+def test_transport_keeps_tls_and_disables_redirects(monkeypatch):
+    import requests
+    seen={}
+    def request(self,method,url,**kwargs):seen.update(kwargs);return object()
+    monkeypatch.setattr(requests.Session,'request',request)
+    with VerifiedSession() as session:
+        session.post('https://fcm.googleapis.com/fcm/send/DUMMY_ONLY',allow_redirects=True,verify=False)
+    assert seen['allow_redirects'] is False and seen['verify'] is True
