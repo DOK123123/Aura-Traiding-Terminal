@@ -37,7 +37,8 @@ def valid_plan(c: dict) -> bool:
 
 
 def reduce_signal(previous: dict | None, candidate: dict, now: float, *, trusted: bool,
-                  invalidated: bool = False) -> tuple[dict | None, dict | None]:
+                  invalidated: bool = False,
+                  invalidation_reason: str = 'MANDATORY_CONDITION_LOST') -> tuple[dict | None, dict | None]:
     """Return immutable record and at most one idempotent transition event.
 
     Admission >=70; retention >=65 is score hysteresis only. Mandatory checks,
@@ -74,15 +75,30 @@ def reduce_signal(previous: dict | None, candidate: dict, now: float, *, trusted
     elif now >= row['valid_until']:
         state, reason = 'EXPIRED', 'DEADLINE_REACHED'
     elif invalidated or score < 65 or old == 'WATCH' and not (mandatory and valid_plan(candidate)):
-        state, reason = 'INVALIDATED', 'MANDATORY_CONDITION_LOST'
+        state = 'INVALIDATED'
+        reason = (invalidation_reason if invalidated and invalidation_reason in
+                  {'STRUCTURE_REPLACED', 'LOCKED_PLAN_LEVEL_REACHED'} else 'MANDATORY_CONDITION_LOST')
     elif mandatory and valid_plan(candidate):
         state, reason = 'WATCH', 'ALL_MANDATORY_CONDITIONS_MET'
     else:
         state, reason = 'CANDIDATE', 'MISSING_MANDATORY_CONDITIONS'
-    row['score'] = score
-    row['missing'] = list(dict.fromkeys([x.get('code') for x in checks or [] if isinstance(x, dict) and x.get('passed') is not True] + candidate.get('rejection', [])))
+    # Initial evidence is immutable history; never explain a current score with
+    # the conditions from the first observation of this structural episode.
+    if trusted:
+        row['score'] = score
+        row['current_checks'] = deepcopy(checks) if isinstance(checks, list) else []
+        row['score_details'] = deepcopy(candidate.get('score_details'))
+        row['market_regime'] = deepcopy(candidate.get('market_regime'))
+        row['last_evaluated_at'] = now
+    if state == 'WATCH':
+        row['last_confirmed_at'] = now
+    if trusted:
+        row['missing'] = list(dict.fromkeys([x.get('code') for x in checks or [] if isinstance(x, dict) and x.get('passed') is not True] + candidate.get('rejection', [])))
     row['current_plan'] = ({k: candidate[k] for k in ('entry', 'sl', 'tp', 'net_rr')}
                            if state == 'WATCH' else None)
+    row['plan_absence_reasons'] = ([] if state == 'WATCH' else
+        list(dict.fromkeys([reason, *row['missing'],
+                           *([] if valid_plan(candidate) else ['NO_VALID_RISK_PLAN'])])))
     if state == 'WATCH' and old != 'WATCH':
         row['watch_plan'] = deepcopy(row['current_plan'])
     elif state == 'WATCH':

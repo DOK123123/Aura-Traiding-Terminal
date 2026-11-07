@@ -179,3 +179,16 @@ def test_real_native_5m_patterns_have_closed_numeric_evidence_and_honest_risk_re
     assert x['score'] == 100 and x['indicators']['atr'] > 0
     assert x['horizon']['min_seconds'] == 900 and x['horizon']['max_seconds'] == 3600
     assert x['edge'] == 'NO_EDGE_FOUND' and x['probability_tp_before_sl'] is None
+
+
+def test_score_80_83_is_discrete_condition_count_and_current_contributions_sum():
+    b,q=case();rows=evaluate(b,'1h',q,q['time'])
+    for row in rows:
+        n=6 if row['strategy']=='MOMENTUM_DIVERGENCE' else 5
+        d=row['score_details']
+        assert len(row['checks'])==d['total']==n
+        assert row['score']==round(100*d['passed']/n)
+        assert sum(x['points'] for x in row['checks'])==pytest.approx(d['raw_score'])
+        assert all(x['weight']==1 and x['max_points']==pytest.approx(100/n) for x in row['checks'])
+        assert d['probability'] is False and d['risk_gates_in_score'] is False
+    assert round(100*4/5)==80 and round(100*5/6)==83

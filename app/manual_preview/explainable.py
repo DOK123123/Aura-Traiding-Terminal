@@ -15,11 +15,12 @@ import numpy as np
 from app.hunter.engine import ema, wilder
 from app.hunter.market import SOURCE, STEPS, fresh_quote, validate_bars
 from app.hunter.costs import risk_reward, entry_fill
+from .market_regime import classify, unknown as unknown_regime
 
 VERSION = 'AURA5_EXPLAINABLE_V1'
 TARGET_ATR_PER_SQRT_BAR = 4
 MODEL_HASH = hashlib.sha256(b''.join(p.read_bytes() for p in (
-    Path(__file__), *(Path(__file__).parents[1]/'hunter'/name
+    Path(__file__), Path(__file__).with_name('market_regime.py'), *(Path(__file__).parents[1]/'hunter'/name
                        for name in ('engine.py', 'costs.py', 'market.py', 'rules.json'))))).hexdigest()
 NAMES = {'TREND_PULLBACK': 'Trend Pullback', 'BREAKOUT_RETEST': 'Breakout + Retest',
          'MOMENTUM_DIVERGENCE': 'Momentum Divergence'}
@@ -31,7 +32,8 @@ def unknown(frame: str, reason: str) -> list[dict]:
                  entry=None, sl=None, tp=None, net_rr=None, gross_rr=None,
                  costs=None, checks=[], rejection=[reason], edge='NO_EDGE_FOUND',
                  statistical_status='UNVALIDATED', probability_tp_before_sl=None,
-                 manual_only=True, exchange_execution=False)
+                 market_regime=unknown_regime(reason), plan_absence_reasons=[reason],
+                 score_details=None, manual_only=True, exchange_execution=False)
             for side in ('LONG', 'SHORT') for k, v in NAMES.items()]
 
 
@@ -116,6 +118,7 @@ def evaluate(rows: list, frame: str, quote: dict, now: float) -> list[dict]:
     zones = nearby_zones(confirmed_zones(swings, a, step), z[4])
     cutoff = z[0]+step
     output = []
+    regime = classify(b, frame, now)
     for side, sign in (('LONG', 1), ('SHORT', -1)):
         long = sign == 1
         own = [v for v in swings if v['kind'] == ('LOW' if long else 'HIGH')]
@@ -183,6 +186,17 @@ def evaluate(rows: list, frame: str, quote: dict, now: float) -> list[dict]:
             check('CLOSED_CANDLE_CONFIRMATION', sign*(z[4]-z[1]) > 0 and sign*(z[4]-(p[2] if long else p[3])) > 0,
                   {'open': z[1], 'close': z[4], 'previous_high': p[2], 'previous_low': p[3]}, 'Направленная закрытая свеча за предыдущим high/low')
             rejection = [v['code'] for v in checks if not v['passed']]
+            # A descriptive regime is not a score bonus. Only restrict the trend
+            # family in verified RANGE; other families/sides remain independent.
+            if strategy == 'TREND_PULLBACK' and regime['state'] == 'RANGE':
+                rejection.append('REGIME_RANGE_TREND_RESTRICTED')
+            points = 100/len(checks)
+            for item in checks:
+                item.update(weight=1, points=points if item['passed'] else 0., max_points=points)
+            passed = sum(v['passed'] for v in checks)
+            score_details = dict(method='EQUAL_CONDITION_COUNT_V1', passed=passed, total=len(checks),
+                                 raw_score=100*passed/len(checks), rounded_score=round(100*passed/len(checks)),
+                                 risk_gates_in_score=False, probability=False)
             entry = float(quote['ask' if long else 'bid'])
             hold = max(1, min(12, 14400//step))
             sl = tp = costs = stop_info = target_info = None
@@ -237,6 +251,8 @@ def evaluate(rows: list, frame: str, quote: dict, now: float) -> list[dict]:
                            'source': SOURCE, 'frame': frame, 'strategy': strategy, 'name': name, 'direction': side,
                            'state': 'REJECTED' if rejection else 'WATCH', 'score': round(100*sum(v['passed'] for v in checks)/len(checks)),
                            'score_basis': 'Равные доли выполненных условий выбранной стратегии; не вероятность прибыли',
+                           'score_details': score_details, 'market_regime': regime,
+                           'plan_absence_reasons': list(rejection),
                            'structure': {'model': MODEL_HASH, 'pivots': [[v['kind'], v['time']] for v in sorted(own[-2:]+opposite[-2:], key=lambda v: (v['time'],v['kind']))]},
                            'checks': checks, 'rejection': rejection, 'zones': zones, 'indicators': {k: float(v[-1]) for k, v in m.items()},
                            'closed_at': cutoff, 'valid_until': cutoff+step, 'quote_time': quote['time'], 'quote_received_at': quote['received_at'],

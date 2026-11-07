@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "mode": "OFFLINE_SYNTHETIC_FIXTURE",
+  "reports": [
+    {
+      "name": "desktop",
+      "quoteUpdates": 586,
+      "allFramesBothSides": true,
+      "currentEvidenceNotInitial": true,
+      "stableCard": true,
+      "detailsPreserved": true,
+      "scrollPreserved": true,
+      "terminalMovedToHistory": true,
+      "manualHistoryPinAndReload": true,
+      "newStructureAfterRecovery": true,
+      "marketRegimes": 4,
+      "serviceWorkerRegistered": true,
+      "missingVapidHandled": true,
+      "permissionDeniedHandled": true,
+      "posts": 0,
+      "errors": []
+    },
+    {
+      "name": "android412",
+      "quoteUpdates": 689,
+      "allFramesBothSides": true,
+      "currentEvidenceNotInitial": true,
+      "stableCard": true,
+      "detailsPreserved": true,
+      "scrollPreserved": true,
+      "terminalMovedToHistory": true,
+      "manualHistoryPinAndReload": true,
+      "newStructureAfterRecovery": true,
+      "marketRegimes": 4,
+      "serviceWorkerRegistered": true,
+      "missingVapidHandled": true,
+      "permissionDeniedHandled": true,
+      "posts": 0,
+      "errors": []
+    }
+  ]
+}

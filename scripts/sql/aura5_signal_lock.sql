@@ -41,6 +41,11 @@ BEGIN
  FOR r IN SELECT value FROM jsonb_array_elements(p_data->'records') LOOP
  IF r->>'id' !~ '^[a-f0-9]{64}$' OR r->>'status' NOT IN ('CANDIDATE','WATCH','INVALIDATED','EXPIRED','UNKNOWN') THEN RAISE EXCEPTION 'INVALID_RECORD'; END IF;
  IF r->>'status' IN ('CANDIDATE','WATCH') AND ((r->>'refreshed_at')::double precision < epoch-5 OR (r->>'valid_until')::double precision<=epoch) THEN RAISE EXCEPTION 'STALE_COMMIT'; END IF;
+ -- The global version row is already locked. Completed episodes are immutable
+ -- even if a stale/incorrect caller attempts to re-admit the same identity.
+ IF EXISTS(SELECT 1 FROM aura5_signals.records old WHERE old.id=r->>'id'
+           AND old.body->>'status' IN ('INVALIDATED','EXPIRED','UNKNOWN') AND old.body<>r)
+ THEN RAISE EXCEPTION 'SIGNAL_TERMINAL_IMMUTABLE'; END IF;
  INSERT INTO aura5_signals.records VALUES(r->>'id',r) ON CONFLICT(id) DO UPDATE SET body=excluded.body;
  END LOOP;
  IF (SELECT count(*) FROM aura5_signals.records)>5000 THEN RAISE EXCEPTION 'RETENTION_LIMIT'; END IF;
