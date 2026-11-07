@@ -1,0 +1,1657 @@
+{
+  "scope": "OFFLINE_CAUSAL_RESEARCH_NO_ORDERS",
+  "verdict": "INSUFFICIENT_EVIDENCE",
+  "baseline_commit": "2317fe129bb6d2f3f803df7ac92b88a58a7177f7",
+  "baseline_source_sha256": "f9ade7e2e29aab3a1afd463952eb6297c195669f764db93df7cab71f9b95e432",
+  "model_sha256": "66b83d3bf5f88083db836f267b918c34e5188b623f52ea730e4e86337fdc810a",
+  "rules": {
+    "adx_period": 14,
+    "weak_adx": 20,
+    "strong_adx": 25,
+    "ema_deadband_atr": 0.1,
+    "efficiency_boundary": 0.3,
+    "range_window": 20,
+    "slope_window": 5,
+    "warmup": 260
+  },
+  "archives": {
+    "bitget-2026-07-10-15m.json.gz": "b4e2d3ed703b618ffa140c0aa58e02c6d5f290eb6e43f3e0e6fec20ec761dd3c",
+    "bitget-native-5m-2026-11-02.json.gz": "c266f23af9ec1dddbd002f8dd77b5da45bce7394e1d0d47ee7869c4dc6eaf421"
+  },
+  "costs": {
+    "fee_bps_per_side": 10,
+    "slippage_bps_per_side": 5,
+    "full_spread_bps": 2,
+    "funding_reserve_bps_per_8h": 1
+  },
+  "protocol": {
+    "decisions": "EVERY_CLOSED_PREFIX_260_BARS",
+    "entry": "NEXT_ACTUAL_OPEN_AFTER_DECISION",
+    "ties": "SL_FIRST",
+    "gap": "ADVERSE_STOP_OPEN",
+    "stress": [
+      1,
+      1.5,
+      2
+    ],
+    "parameter_search": false
+  },
+  "limitations": [
+    "Reused historical archive, not independent OOS",
+    "5m archive has a different coverage interval",
+    "1h/4h aggregated from complete 15m groups, not fabricated 5m",
+    "Historical bid/ask and funding unavailable: fixed model, not observed execution costs",
+    "Overlapping hypotheses, not independent trades, not portfolio returns",
+    "Class boundaries are descriptive conventions, not a qualified predictive filter"
+  ],
+  "frames": {
+    "5m": {
+      "bars": 2276,
+      "closed_decisions": 2017,
+      "first_utc": "2026-10-25T22:45:00+00:00",
+      "last_close_utc": "2026-11-02T20:25:00+00:00",
+      "regimes": {
+        "TRANSITION": 1518,
+        "RANGE": 198,
+        "TREND_UP": 128,
+        "TREND_DOWN": 173
+      },
+      "score_histogram": {
+        "TREND_PULLBACK|LONG|20": 265,
+        "BREAKOUT_RETEST|LONG|20": 918,
+        "MOMENTUM_DIVERGENCE|LONG|50": 672,
+        "TREND_PULLBACK|SHORT|40": 577,
+        "BREAKOUT_RETEST|SHORT|40": 737,
+        "MOMENTUM_DIVERGENCE|SHORT|67": 392,
+        "MOMENTUM_DIVERGENCE|LONG|0": 190,
+        "TREND_PULLBACK|SHORT|60": 579,
+        "BREAKOUT_RETEST|SHORT|80": 77,
+        "MOMENTUM_DIVERGENCE|SHORT|100": 17,
+        "TREND_PULLBACK|LONG|0": 375,
+        "BREAKOUT_RETEST|LONG|40": 719,
+        "MOMENTUM_DIVERGENCE|LONG|17": 102,
+        "MOMENTUM_DIVERGENCE|SHORT|50": 663,
+        "MOMENTUM_DIVERGENCE|LONG|33": 444,
+        "TREND_PULLBACK|SHORT|80": 245,
+        "BREAKOUT_RETEST|SHORT|100": 13,
+        "MOMENTUM_DIVERGENCE|SHORT|83": 162,
+        "BREAKOUT_RETEST|SHORT|60": 299,
+        "MOMENTUM_DIVERGENCE|LONG|67": 424,
+        "TREND_PULLBACK|LONG|40": 508,
+        "MOMENTUM_DIVERGENCE|LONG|83": 158,
+        "BREAKOUT_RETEST|SHORT|20": 891,
+        "MOMENTUM_DIVERGENCE|SHORT|0": 222,
+        "TREND_PULLBACK|LONG|60": 564,
+        "MOMENTUM_DIVERGENCE|SHORT|33": 427,
+        "BREAKOUT_RETEST|LONG|60": 275,
+        "TREND_PULLBACK|SHORT|20": 304,
+        "MOMENTUM_DIVERGENCE|SHORT|17": 134,
+        "BREAKOUT_RETEST|LONG|80": 94,
+        "TREND_PULLBACK|SHORT|0": 275,
+        "TREND_PULLBACK|LONG|80": 251,
+        "TREND_PULLBACK|LONG|100": 54,
+        "TREND_PULLBACK|SHORT|100": 37,
+        "BREAKOUT_RETEST|LONG|100": 11,
+        "MOMENTUM_DIVERGENCE|LONG|100": 27
+      },
+      "states": {
+        "TREND_PULLBACK|LONG|REJECTED": 2017,
+        "BREAKOUT_RETEST|LONG|REJECTED": 2017,
+        "MOMENTUM_DIVERGENCE|LONG|REJECTED": 2017,
+        "TREND_PULLBACK|SHORT|REJECTED": 2017,
+        "BREAKOUT_RETEST|SHORT|REJECTED": 2017,
+        "MOMENTUM_DIVERGENCE|SHORT|REJECTED": 2017
+      },
+      "score_differences": [],
+      "removed_watch": [],
+      "groups": {
+        "TREND_PULLBACK|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "TREND_PULLBACK|SHORT": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "BREAKOUT_RETEST|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "BREAKOUT_RETEST|SHORT": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "MOMENTUM_DIVERGENCE|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "MOMENTUM_DIVERGENCE|SHORT": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        }
+      },
+      "before": {
+        "1": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "1.5": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "2": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        }
+      },
+      "after": {
+        "1": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "1.5": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "2": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        }
+      }
+    },
+    "15m": {
+      "bars": 11520,
+      "closed_decisions": 11261,
+      "first_utc": "2026-07-01T00:00:00+00:00",
+      "last_close_utc": "2026-10-29T00:00:00+00:00",
+      "regimes": {
+        "TRANSITION": 8397,
+        "TREND_UP": 862,
+        "RANGE": 1265,
+        "TREND_DOWN": 737
+      },
+      "score_histogram": {
+        "TREND_PULLBACK|LONG|80": 1433,
+        "BREAKOUT_RETEST|LONG|20": 5049,
+        "MOMENTUM_DIVERGENCE|LONG|50": 4014,
+        "TREND_PULLBACK|SHORT|20": 1663,
+        "BREAKOUT_RETEST|SHORT|20": 5133,
+        "MOMENTUM_DIVERGENCE|SHORT|67": 2239,
+        "TREND_PULLBACK|LONG|100": 212,
+        "BREAKOUT_RETEST|LONG|40": 3953,
+        "MOMENTUM_DIVERGENCE|LONG|67": 2172,
+        "TREND_PULLBACK|LONG|60": 3443,
+        "TREND_PULLBACK|SHORT|0": 1870,
+        "TREND_PULLBACK|LONG|40": 3143,
+        "MOMENTUM_DIVERGENCE|LONG|33": 2258,
+        "BREAKOUT_RETEST|SHORT|40": 4042,
+        "MOMENTUM_DIVERGENCE|SHORT|83": 941,
+        "MOMENTUM_DIVERGENCE|LONG|0": 1071,
+        "MOMENTUM_DIVERGENCE|SHORT|50": 4134,
+        "MOMENTUM_DIVERGENCE|SHORT|17": 635,
+        "MOMENTUM_DIVERGENCE|SHORT|0": 1029,
+        "BREAKOUT_RETEST|LONG|80": 523,
+        "TREND_PULLBACK|LONG|20": 1558,
+        "BREAKOUT_RETEST|LONG|60": 1670,
+        "BREAKOUT_RETEST|SHORT|60": 1529,
+        "MOMENTUM_DIVERGENCE|SHORT|33": 2168,
+        "MOMENTUM_DIVERGENCE|LONG|17": 744,
+        "TREND_PULLBACK|SHORT|40": 2991,
+        "MOMENTUM_DIVERGENCE|SHORT|100": 115,
+        "BREAKOUT_RETEST|SHORT|80": 486,
+        "TREND_PULLBACK|SHORT|60": 3314,
+        "MOMENTUM_DIVERGENCE|LONG|83": 917,
+        "TREND_PULLBACK|SHORT|80": 1270,
+        "BREAKOUT_RETEST|SHORT|100": 71,
+        "TREND_PULLBACK|LONG|0": 1472,
+        "TREND_PULLBACK|SHORT|100": 153,
+        "MOMENTUM_DIVERGENCE|LONG|100": 85,
+        "BREAKOUT_RETEST|LONG|100": 66
+      },
+      "states": {
+        "TREND_PULLBACK|LONG|REJECTED": 11261,
+        "BREAKOUT_RETEST|LONG|REJECTED": 11261,
+        "MOMENTUM_DIVERGENCE|LONG|REJECTED": 11261,
+        "TREND_PULLBACK|SHORT|REJECTED": 11261,
+        "BREAKOUT_RETEST|SHORT|REJECTED": 11261,
+        "MOMENTUM_DIVERGENCE|SHORT|REJECTED": 11261
+      },
+      "score_differences": [],
+      "removed_watch": [],
+      "groups": {
+        "TREND_PULLBACK|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "TREND_PULLBACK|SHORT": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "BREAKOUT_RETEST|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "BREAKOUT_RETEST|SHORT": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "MOMENTUM_DIVERGENCE|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "MOMENTUM_DIVERGENCE|SHORT": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        }
+      },
+      "before": {
+        "1": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "1.5": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "2": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        }
+      },
+      "after": {
+        "1": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "1.5": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "2": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        }
+      }
+    },
+    "1h": {
+      "bars": 2880,
+      "closed_decisions": 2621,
+      "first_utc": "2026-07-01T00:00:00+00:00",
+      "last_close_utc": "2026-10-29T00:00:00+00:00",
+      "regimes": {
+        "TRANSITION": 1982,
+        "RANGE": 249,
+        "TREND_DOWN": 156,
+        "TREND_UP": 234
+      },
+      "score_histogram": {
+        "TREND_PULLBACK|LONG|40": 764,
+        "BREAKOUT_RETEST|LONG|40": 924,
+        "MOMENTUM_DIVERGENCE|LONG|33": 486,
+        "TREND_PULLBACK|SHORT|0": 438,
+        "BREAKOUT_RETEST|SHORT|20": 1201,
+        "MOMENTUM_DIVERGENCE|SHORT|67": 512,
+        "TREND_PULLBACK|LONG|80": 324,
+        "BREAKOUT_RETEST|LONG|80": 138,
+        "MOMENTUM_DIVERGENCE|LONG|67": 520,
+        "TREND_PULLBACK|SHORT|20": 396,
+        "MOMENTUM_DIVERGENCE|SHORT|50": 986,
+        "BREAKOUT_RETEST|LONG|60": 406,
+        "MOMENTUM_DIVERGENCE|LONG|50": 991,
+        "BREAKOUT_RETEST|LONG|20": 1138,
+        "TREND_PULLBACK|SHORT|40": 692,
+        "BREAKOUT_RETEST|SHORT|40": 946,
+        "MOMENTUM_DIVERGENCE|SHORT|83": 173,
+        "TREND_PULLBACK|SHORT|80": 292,
+        "TREND_PULLBACK|SHORT|60": 770,
+        "BREAKOUT_RETEST|SHORT|60": 319,
+        "TREND_PULLBACK|LONG|60": 794,
+        "MOMENTUM_DIVERGENCE|LONG|17": 147,
+        "MOMENTUM_DIVERGENCE|LONG|83": 213,
+        "MOMENTUM_DIVERGENCE|SHORT|33": 521,
+        "TREND_PULLBACK|LONG|100": 58,
+        "BREAKOUT_RETEST|LONG|100": 15,
+        "TREND_PULLBACK|LONG|20": 358,
+        "MOMENTUM_DIVERGENCE|SHORT|17": 180,
+        "BREAKOUT_RETEST|SHORT|80": 132,
+        "MOMENTUM_DIVERGENCE|SHORT|100": 33,
+        "MOMENTUM_DIVERGENCE|LONG|0": 249,
+        "TREND_PULLBACK|LONG|0": 323,
+        "MOMENTUM_DIVERGENCE|SHORT|0": 216,
+        "MOMENTUM_DIVERGENCE|LONG|100": 15,
+        "BREAKOUT_RETEST|SHORT|100": 23,
+        "TREND_PULLBACK|SHORT|100": 33
+      },
+      "states": {
+        "TREND_PULLBACK|LONG|REJECTED": 2621,
+        "BREAKOUT_RETEST|LONG|REJECTED": 2621,
+        "MOMENTUM_DIVERGENCE|LONG|REJECTED": 2621,
+        "TREND_PULLBACK|SHORT|REJECTED": 2621,
+        "BREAKOUT_RETEST|SHORT|REJECTED": 2620,
+        "MOMENTUM_DIVERGENCE|SHORT|REJECTED": 2621,
+        "BREAKOUT_RETEST|SHORT|WATCH": 1
+      },
+      "score_differences": [],
+      "removed_watch": [],
+      "groups": {
+        "TREND_PULLBACK|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "TREND_PULLBACK|SHORT": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "BREAKOUT_RETEST|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "BREAKOUT_RETEST|SHORT": {
+          "before": {
+            "1": {
+              "setups": 1,
+              "outcomes": {
+                "TIMEOUT": 1
+              },
+              "filled": 1,
+              "mean_net_r": -0.6715689628647584,
+              "profit_factor": 0.0
+            },
+            "1.5": {
+              "setups": 1,
+              "outcomes": {
+                "TIMEOUT": 1
+              },
+              "filled": 1,
+              "mean_net_r": -0.703743308867067,
+              "profit_factor": 0.0
+            },
+            "2": {
+              "setups": 1,
+              "outcomes": {
+                "TIMEOUT": 1
+              },
+              "filled": 1,
+              "mean_net_r": -0.7301401997088757,
+              "profit_factor": 0.0
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 1,
+              "outcomes": {
+                "TIMEOUT": 1
+              },
+              "filled": 1,
+              "mean_net_r": -0.6715689628647584,
+              "profit_factor": 0.0
+            },
+            "1.5": {
+              "setups": 1,
+              "outcomes": {
+                "TIMEOUT": 1
+              },
+              "filled": 1,
+              "mean_net_r": -0.703743308867067,
+              "profit_factor": 0.0
+            },
+            "2": {
+              "setups": 1,
+              "outcomes": {
+                "TIMEOUT": 1
+              },
+              "filled": 1,
+              "mean_net_r": -0.7301401997088757,
+              "profit_factor": 0.0
+            }
+          }
+        },
+        "MOMENTUM_DIVERGENCE|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "MOMENTUM_DIVERGENCE|SHORT": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        }
+      },
+      "before": {
+        "1": {
+          "setups": 1,
+          "outcomes": {
+            "TIMEOUT": 1
+          },
+          "filled": 1,
+          "mean_net_r": -0.6715689628647584,
+          "profit_factor": 0.0
+        },
+        "1.5": {
+          "setups": 1,
+          "outcomes": {
+            "TIMEOUT": 1
+          },
+          "filled": 1,
+          "mean_net_r": -0.703743308867067,
+          "profit_factor": 0.0
+        },
+        "2": {
+          "setups": 1,
+          "outcomes": {
+            "TIMEOUT": 1
+          },
+          "filled": 1,
+          "mean_net_r": -0.7301401997088757,
+          "profit_factor": 0.0
+        }
+      },
+      "after": {
+        "1": {
+          "setups": 1,
+          "outcomes": {
+            "TIMEOUT": 1
+          },
+          "filled": 1,
+          "mean_net_r": -0.6715689628647584,
+          "profit_factor": 0.0
+        },
+        "1.5": {
+          "setups": 1,
+          "outcomes": {
+            "TIMEOUT": 1
+          },
+          "filled": 1,
+          "mean_net_r": -0.703743308867067,
+          "profit_factor": 0.0
+        },
+        "2": {
+          "setups": 1,
+          "outcomes": {
+            "TIMEOUT": 1
+          },
+          "filled": 1,
+          "mean_net_r": -0.7301401997088757,
+          "profit_factor": 0.0
+        }
+      }
+    },
+    "4h": {
+      "bars": 720,
+      "closed_decisions": 461,
+      "first_utc": "2026-07-01T00:00:00+00:00",
+      "last_close_utc": "2026-10-29T00:00:00+00:00",
+      "regimes": {
+        "TRANSITION": 337,
+        "TREND_DOWN": 18,
+        "TREND_UP": 54,
+        "RANGE": 52
+      },
+      "score_histogram": {
+        "TREND_PULLBACK|LONG|40": 134,
+        "BREAKOUT_RETEST|LONG|40": 173,
+        "MOMENTUM_DIVERGENCE|LONG|67": 118,
+        "TREND_PULLBACK|SHORT|40": 151,
+        "BREAKOUT_RETEST|SHORT|20": 214,
+        "MOMENTUM_DIVERGENCE|SHORT|33": 97,
+        "TREND_PULLBACK|LONG|20": 70,
+        "BREAKOUT_RETEST|LONG|20": 197,
+        "MOMENTUM_DIVERGENCE|LONG|33": 80,
+        "TREND_PULLBACK|SHORT|80": 45,
+        "BREAKOUT_RETEST|SHORT|40": 169,
+        "MOMENTUM_DIVERGENCE|SHORT|67": 84,
+        "TREND_PULLBACK|SHORT|60": 130,
+        "MOMENTUM_DIVERGENCE|SHORT|50": 182,
+        "MOMENTUM_DIVERGENCE|LONG|50": 147,
+        "TREND_PULLBACK|LONG|0": 70,
+        "BREAKOUT_RETEST|SHORT|60": 54,
+        "MOMENTUM_DIVERGENCE|SHORT|0": 34,
+        "MOMENTUM_DIVERGENCE|LONG|83": 45,
+        "MOMENTUM_DIVERGENCE|SHORT|17": 22,
+        "TREND_PULLBACK|LONG|60": 114,
+        "BREAKOUT_RETEST|LONG|60": 67,
+        "BREAKOUT_RETEST|LONG|80": 21,
+        "TREND_PULLBACK|SHORT|0": 75,
+        "MOMENTUM_DIVERGENCE|LONG|0": 42,
+        "TREND_PULLBACK|SHORT|20": 54,
+        "TREND_PULLBACK|LONG|80": 62,
+        "MOMENTUM_DIVERGENCE|LONG|17": 26,
+        "MOMENTUM_DIVERGENCE|SHORT|83": 38,
+        "TREND_PULLBACK|LONG|100": 11,
+        "BREAKOUT_RETEST|SHORT|80": 24,
+        "TREND_PULLBACK|SHORT|100": 6,
+        "BREAKOUT_RETEST|LONG|100": 3,
+        "MOMENTUM_DIVERGENCE|LONG|100": 3,
+        "MOMENTUM_DIVERGENCE|SHORT|100": 4
+      },
+      "states": {
+        "TREND_PULLBACK|LONG|REJECTED": 461,
+        "BREAKOUT_RETEST|LONG|REJECTED": 461,
+        "MOMENTUM_DIVERGENCE|LONG|REJECTED": 461,
+        "TREND_PULLBACK|SHORT|REJECTED": 461,
+        "BREAKOUT_RETEST|SHORT|REJECTED": 461,
+        "MOMENTUM_DIVERGENCE|SHORT|REJECTED": 461
+      },
+      "score_differences": [],
+      "removed_watch": [],
+      "groups": {
+        "TREND_PULLBACK|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "TREND_PULLBACK|SHORT": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "BREAKOUT_RETEST|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "BREAKOUT_RETEST|SHORT": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "MOMENTUM_DIVERGENCE|LONG": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        },
+        "MOMENTUM_DIVERGENCE|SHORT": {
+          "before": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          },
+          "after": {
+            "1": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "1.5": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            },
+            "2": {
+              "setups": 0,
+              "outcomes": {},
+              "filled": 0,
+              "mean_net_r": null,
+              "profit_factor": null
+            }
+          }
+        }
+      },
+      "before": {
+        "1": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "1.5": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "2": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        }
+      },
+      "after": {
+        "1": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "1.5": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        },
+        "2": {
+          "setups": 0,
+          "outcomes": {},
+          "filled": 0,
+          "mean_net_r": null,
+          "profit_factor": null
+        }
+      }
+    }
+  }
+}
