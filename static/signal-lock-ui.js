@@ -23,15 +23,15 @@ const slots=['LONG','SHORT'].map(side=>{const card=add('article',panel);card.dat
 const historyMount=document.querySelector('#app-more .aura-more-card')||panel;
 const history=add('details',historyMount);add('summary',history,'Серверная история · все статусы');const journal=add('ol',history);
 const text=(e,t)=>{if(e.textContent!==t)e.textContent=t;};const date=n=>Number.isFinite(n)?new Date(n*1000).toISOString():'—';
-function paint(){if(!data)return;const now=Date.now()/1000;const q=Object.values(data.quotes||{})[0];text(market,q&&!data.error&&now-q.time<=5&&now-q.received_at<=5?'BTCUSDT · Bid '+q.bid+' / Ask '+q.ask+' · возраст '+(now-q.time).toFixed(1)+' с':'UNKNOWN · свежая котировка не подтверждена');for(const s of slots){const rows=data.records.filter(r=>r.direction===s.side),signature=rows.map(r=>r.id).join('|');
+function paint(){if(!data)return;const now=Date.now()/1000;const q=Object.values(data.quotes||{})[0];text(market,q&&!data.error&&now-q.time<=5&&now-q.received_at<=5?'BTCUSDT · Bid '+q.bid+' / Ask '+q.ask+' · возраст '+(now-q.time).toFixed(1)+' с':'UNKNOWN · свежая котировка не подтверждена');for(const s of slots){const rows=data.records.filter(r=>r.direction===s.side).sort((a,b)=>{const rank=r=>({WATCH:0,CANDIDATE:1,UNKNOWN:2,INVALIDATED:3,EXPIRED:4}[current(r,data,now)]??5);return rank(a)-rank(b)||b.detected_at-a.detected_at;}),signature=rows.map(r=>r.id).join('|');
  if(signature!==s.signature){s.signature=signature;s.select.replaceChildren();for(const r of rows){const o=add('option',s.select,r.strategy+' · '+r.frame+' · '+date(r.detected_at));o.value=r.id;}}
- if(!selection[s.side]&&rows.length){selection[s.side]=rows[0].id;try{localStorage.setItem(KEY,JSON.stringify(selection));}catch{}}
+ if(rows.length&&!pins[s.side]){const active=rows.find(r=>['WATCH','CANDIDATE'].includes(current(r,data,now)));const chosen=rows.find(r=>r.id===selection[s.side]);if(active&&(!chosen||!['WATCH','CANDIDATE'].includes(current(chosen,data,now))))selection[s.side]=active.id;else if(!chosen)selection[s.side]=rows[0].id;try{localStorage.setItem(KEY,JSON.stringify(selection));}catch{}}
  if(link&&!linkApplied){const r=rows.find(r=>r.id===link);if(r){selection[s.side]=r.id;linkApplied=true;document.getElementById('app-tab-signals')?.click();}}
  const r=rows.find(r=>r.id===selection[s.side]);s.select.value=r?.id||'';
  if(!r){text(s.title,s.side+' · Нет зафиксированных сценариев');text(s.plan,'');continue;}
  const state=current(r,data,now);s.card.dataset.scenarioId=r.id;s.card.dataset.state=state;
  text(s.title,s.side+' · '+r.strategy+' · '+r.frame+' · '+state);
- text(s.meta,'Технический балл '+r.score+'/100 · обнаружен '+date(r.detected_at)+' · ID '+r.id);
+ const checks=Array.isArray(r.initial?.checks)?r.initial.checks:[];const passed=checks.filter(x=>x.passed===true).length;const scoreWhy=checks.length?' ('+passed+' из '+checks.length+' равновесных условий; '+checks.filter(x=>x.passed!==true).map(x=>x.code).join(', ')+')':'';text(s.meta,'Технический балл '+r.score+'/100'+scoreWhy+' · обнаружен '+date(r.detected_at)+' · ID '+r.id);
  text(s.missing,state==='CANDIDATE'?'Не выполнено: '+(r.missing||[]).join(', '):'');
  const p=r.current_plan;text(s.plan,state==='WATCH'&&p?'Entry '+p.entry+' · SL '+p.sl+' · TP '+p.tp+' · Net R/R '+p.net_rr:'Действующий план отсутствует. Прошлые уровни — только в истории.');
  text(s.body,'Подтверждение: '+(r.initial.confirmation||'Все обязательные условия')+'\nОтмена: '+(r.initial.cancel||'Нарушение условий, свежести или срока')+'\n'+r.history.map(e=>date(e.at)+' · '+e.to+' · '+e.reason+(e.plan?' · исторический план '+JSON.stringify(e.plan):'')).join('\n'));
